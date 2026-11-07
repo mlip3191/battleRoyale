@@ -1,0 +1,643 @@
+# Team Process — How We Build Battle Royale
+
+> This is the team's setup and working standard (consolidated from the "Project Setup Guide – Claude Code Team Project"). [PRODUCT_SPEC.md](PRODUCT_SPEC.md) says **what** we build, [ARCHITECTURE.md](ARCHITECTURE.md) says **how it's structured**, and this file says **how we work**. The executable prompts for each step live in the lane files under [plan/](plan/LANES.md).
+
+## How to Use This Guide
+
+1. The assignment document (DECISIONS D-05) defines scope, deliverables, and deadlines. PRODUCT_SPEC.md is our reading of it.
+2. This guide defines **how** the team builds: repo setup, rules, review, and workflow. Where any other document conflicts with it on process (branching, review, permissions, cross-platform, secrets), this guide wins.
+3. Each step below is implemented by one or more tasks:
+
+| Step | What | Task(s) |
+|---|---|---|
+| 0 | Repo settings | M01 |
+| 1 | CLAUDE.md | shipped in the repo; finalized in M02 |
+| 2 | Branch protection, critical files, PR template | M07, M08 |
+| 3 | Reviewer agent and the review-prs skill | shipped; verified in M07; guide in F01 |
+| 4 | Issues scaffold | M08 (labels, issues, board), A01 (forms, /new-issue) |
+| 5 | Onboarding | README quick start (shipped), D01 (guide + setup check) |
+| 6 | CI and cross-platform | M04 |
+| 7 | Claude Code settings and hooks | M03 |
+| 8 | Secrets and .gitignore | shipped; verified in M02; Secret scan in M07 |
+| 9 | QA bot | M07 |
+| 10 | Other guardrails | M01, M04, M07, A04 |
+| 11 | Team norms | everyone |
+
+## Step 0: Before You Start
+
+The PM sets up the repo and runs Steps 1 to 10 alone, in order, before inviting anyone. Teammates join only after the scaffold is merged.
+
+### Order of operations
+
+Phase 0 runs as tasks **M01 → M08** in [plan/lane-1-mike.md](plan/lane-1-mike.md), in that order; the kickoff prompt in [plan/00-KICKOFF.md](plan/00-KICKOFF.md) drives it. Branch protection is turned on **last** (M08), and a required status check is only added after it has run at least once: GitHub can only select checks it has already seen, and a required check that never reports blocks every merge. While Mike builds the scaffold alone, he can commit to main directly.
+
+### Create the repository
+
+The repo exists: **github.com/mlip3191/battleRoyale**, owned by Mike's personal account, currently **public** (see DECISIONS D-01 before changing that). Task M01 applies these settings:
+
+- [ ] Settings, General, Pull Requests: squash merging only; "Always suggest updating pull request branches" and "Automatically delete head branches" on.
+- [ ] Settings, Code security: Dependabot alerts and security updates on; secret scanning and push protection on (free because the repo is public — if it goes private on GitHub Free, they disappear and the Secret scan workflow in Step 8 is the only server-side check).
+- [ ] Settings, Actions, General: only GitHub-made actions plus anthropics/claude-code-action, gitleaks/gitleaks-action, astral-sh/setup-uv; workflow permissions "Read repository contents"; "Allow GitHub Actions to create and approve pull requests" off; require approval for workflow runs from outside contributors (public repo — anyone can open a fork PR).
+- [ ] A team channel for questions and review requests (DECISIONS D-21).
+
+Personal-account repos give every collaborator the same Write role, which matches this process. Branch protection on a **private** personal repo needs GitHub Pro (free with the GitHub Student Developer Pack).
+
+### PM prerequisites
+
+- [ ] Claude Code, Git, GitHub CLI, Node 24, and uv installed and logged in on Mike's machine.
+- [ ] `.env` filled from `.env.example` with the course endpoint details (DECISIONS D-03).
+- [ ] Each teammate's GitHub username and OS (DECISIONS D-08).
+
+## Step 1: CLAUDE.md
+
+[CLAUDE.md](../CLAUDE.md) at the repo root is the rulebook every Claude Code session reads first. It is already written for this project and finalized in task M02. It covers: project overview and stack, commands, folder structure and protected files, coding conventions and approved/banned libraries, rules for working with non-coders, testing, definition of done, commits and PRs, environment and secrets, contracts, and permissions/hooks. Keep it under two pages; when Claude repeats a mistake, add a rule.
+
+## Step 2: Branch Protection and Pull Request Workflow
+
+No one pushes directly to main. Every change goes through a feature branch and a pull request. Any teammate can review and approve; once approved, the author merges it into main.
+
+### GitHub settings (PM does this once)
+
+In the repo, go to Settings, then Branches (or Rules, then Rulesets), and add a rule for main:
+
+- [ ] Require a pull request before merging
+
+- [ ] Require at least 1 approval from any teammate other than the author (leave "Require review from Code Owners" off)
+
+- [ ] Dismiss stale approvals when new commits are pushed
+
+- [ ] Require status checks to pass: "AI QA Review" (Step 9), "Secret scan" (Step 8), "Critical files approval" (below), and the three CI checks (Step 6). For each, set the expected source to GitHub Actions, so a status posted from someone's laptop can't satisfy it.
+
+- [ ] Require branches to be up to date before merging
+
+- [ ] Block force pushes and branch deletion
+
+- [ ] Do not allow bypassing these rules, including admins
+
+Also set up:
+
+- [ ] Give every teammate Write access (Settings, Collaborators) so anyone can review and merge. Keep Admin for the PM only.
+
+- [ ] Add a pull request template (.github/pull_request_template.md)
+
+- [ ] Enable "Automatically delete head branches" after merge
+
+- [ ] Use squash merging to keep main history clean
+
+### Team workflow (every task)
+
+1.  Pick an assigned GitHub Issue.
+
+2.  Pull the latest main.
+
+3.  Ask Claude Code to create a branch named issue-\<number\>-short-description.
+
+4.  Work with Claude on that one issue only.
+
+5.  Claude runs tests and lint, then commits.
+
+6.  Claude pushes the branch and opens a pull request linked to the issue ("Closes \#\<number\>").
+
+7.  Any teammate reviews and either requests changes or approves. Once approved, the author merges the pull request into main.
+
+### Review and merge rules
+
+- The author can never approve their own PR; GitHub enforces this.
+
+- Request a review in the team channel when the PR is ready; reviewers aim to respond within one working day.
+
+- If changes are requested, the author fixes them on the same branch and pushes. This resets the approval and the AI QA Review check, so the PR is reviewed again.
+
+- Before merging, the author confirms: approved, all checks green, branch up to date with main.
+
+### Protect critical files
+
+Critical files are CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .env.example, .mcp.json, .gitleaks.toml, dependency manifests and lockfiles (e.g. package.json, package-lock.json, pyproject.toml, requirements.txt), and config files. Two matter most: one changed line in .gitignore or .githooks/ can let a .env file into the repo, and a PR runs its own copy of the workflows in .github/, so a teammate's PR could weaken the QA bot or Secret scan for itself. The approval rule depends on who made the change:
+
+| Who changed a critical file | Who must approve                       |
+|-----------------------------|----------------------------------------|
+| A teammate                  | The PM                                 |
+| The PM                      | Any one teammate                       |
+| Normal code, anyone         | Any one teammate other than the author |
+
+GitHub's built-in CODEOWNERS rule can't do this. If the PM were the only code owner, the PM's own changes would be blocked, because authors can never approve their own PRs. So the rule is enforced with a small GitHub Action instead:
+
+- [ ] Add .github/CODEOWNERS listing the critical paths with the PM as owner. This only auto-requests the PM as a reviewer; leave "Require review from Code Owners" **off**.
+
+- [ ] Add a workflow, .github/workflows/critical-files.yml, that runs when a PR is opened or updated and whenever a review is submitted. If the PR touches a critical file and the author is not the PM, it passes only once the PM has approved the latest commit. If the author is the PM, or no critical files changed, it passes right away; the normal one-approval rule covers the rest.
+
+- [ ] Make "Critical files approval" a required status check on main once it has run once.
+
+- No admin bypass: the PM's own changes still need a teammate's approval.
+
+### When things go wrong
+
+| Situation                                             | What to do                                                                                                                                                                                                                                           |
+|-------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Merge conflict                                        | Ask Claude: "Update my branch from main and resolve the conflicts. Explain each one before you change it." Ask the PM if unsure.                                                                                                                     |
+| Branch is behind main                                 | Click "Update branch" on the PR, or ask Claude to pull main into the branch.                                                                                                                                                                         |
+| CI check failed                                       | Ask Claude: "Read the failed CI check on PR \#\<number\> and explain what broke."                                                                                                                                                                    |
+| Something bad was merged                              | On the merged PR, click "Revert". This opens a new PR that undoes it; review and merge it like any other.                                                                                                                                            |
+| Lost work or a confusing git state                    | Stop. Do not run more commands. Post in the team channel or ask the PM.                                                                                                                                                                              |
+| A key, password, or .env file was committed or pushed | Tell the PM right away by direct message, and say where it is without pasting it. The PM revokes and replaces the key first: deleting the file is not enough, because it stays in git history and in the PR. Then follow "If a key leaks" in Step 8. |
+| The pre-commit hook or Secret scan blocked you        | Ask Claude: "Explain what the secret check found and move the value into .env." Never use --no-verify. If it is a false alarm, ask the PM to allow-list it.                                                                                          |
+| AI QA Review failed                                   | Open the bot's comment on the PR, fix each must-fix item on the same branch, and push. The bot re-runs on every push. If it failed without a comment, re-run the job from the Checks tab or ask the PM.                                              |
+
+## Step 3: Reviewer Agent and the review-prs Skill
+
+Every human review runs through the **review-prs skill** (`.claude/skills/review-prs/SKILL.md`) and the **code-reviewer agent** (`.claude/agents/code-reviewer.md`). A teammate asks Claude Code *"What can I review?"* (or types `/review`, or `/review 42`). No PR can be merged until the QA bot (Step 9) has passed on its latest commit and a teammate has approved after reviewing.
+
+### How it works
+
+1. **List.** The skill lists open PRs grouped as: *Needs your review*, *Your PRs* (you can't review these), *Needs PM* (touches critical files), *Blocked* (checks failing or conflicts), *Drafts*, and *Approved, ready to merge*. Each row shows title, author, linked issue, size, check status, QA bot verdict, approvals, and age.
+2. **Pick.** The reviewer picks a PR. The skill refuses if the reviewer is the author, and asks first if they have uncommitted work.
+3. **Agent review.** The code-reviewer agent reads the linked issue, the diff, and every touched file; checks out the branch to run install, lint, and tests; then returns to the reviewer's original branch.
+4. **Draft.** It drafts the full review: the report, inline comments on exact lines, a GitHub suggestion block with a fix for every must-fix item, and a list of **proposed additional fixes** (missing tests, edge cases, follow-ups).
+5. **Confirm before sending.** The reviewer sees the complete draft and chooses: *Send*, *Edit*, or *Cancel*. Nothing is posted until they say send. Comments are sent as "Comment" or "Request changes".
+6. **Confirm before approving.** Only after the comments are posted, and only if the recommendation is *Ready to merge*, the skill asks a second, separate question: *Approve this PR now?* Approval is never automatic.
+7. **Follow-ups.** Proposed additional fixes that are out of scope can be turned into new issues (again only after confirmation).
+
+### QA process the agent follows
+
+1.  Read the linked issue and confirm the PR does what it asks, and nothing more.
+
+2.  Read the full diff and the files it touches.
+
+3.  Run install, tests, and lint; record pass or fail.
+
+4.  Check against CLAUDE.md conventions and protected files.
+
+5.  Look for bugs, missing error handling, security issues, and committed secrets.
+
+6.  Check for new dependencies and whether they were approved.
+
+7.  Check whether it conflicts with main or other open PRs.
+
+### Report format
+
+- **What this code does:** plain-English summary for non-coders
+
+- **Must fix (blocking):** bugs, failing tests, security issues, scope creep
+
+- **Nits (optional):** style, naming, small cleanups
+
+- **Other considerations:** risks, missing tests, docs to update
+
+- **Proposed additional fixes:** improvements beyond the must-fix list, each with a suggested change or a proposed follow-up issue
+
+- **Dependencies:** does this block or depend on other issues or PRs?
+
+- **Merge recommendation:** Ready to merge / Merge after fixes / Do not merge, with one-line reason
+
+### Reviewer agent rules
+
+- If the person running /review is the PR's author, the agent stops and says a different teammate must review.
+
+- The agent checks out the PR branch with gh pr checkout to run tests, and switches back to the reviewer's original branch afterwards. If the reviewer has uncommitted work, it stops and asks first.
+
+- If CI checks are still running or failing, the report says so, and the recommendation cannot be "Ready to merge".
+
+- If the PR is over about 300 changed lines or touches unrelated areas, it recommends splitting.
+
+- Every "must fix" item cites the file and line, explains why in plain English, and includes a suggested fix.
+
+- The agent never approves a PR with a failing test, a committed secret, or an unmet acceptance criterion, and never approves without the reviewer's explicit second confirmation.
+
+- If the reviewer edits the draft, the agent submits the edited version.
+
+Two layers: /review is the human reviewer's tool, run on their own machine, to understand the change and decide whether to approve. The QA bot in Step 9 runs the same QA process on GitHub on every push and is the required check, so the review gate can't be skipped or faked.
+
+## Step 4: GitHub Issues Scaffold
+
+Every piece of work starts as a GitHub Issue small enough for one Claude Code session and one pull request.
+
+### Issue rules
+
+- One issue = one branch = one PR.
+
+- An issue should take roughly a day or less; anything bigger is split into smaller issues.
+
+- Every issue has acceptance criteria written as checkable statements.
+
+- Every issue has one assignee, a type label, and a size label before work starts.
+
+- Blocked or dependent issues name the issue they depend on ("Blocked by \#12").
+
+### Who does what
+
+- Anyone can create issues with /new-issue; they land in Backlog.
+
+- The PM triages weekly: checks scope and criteria, sets size, and moves ready issues to Ready.
+
+- Teammates pick from Ready, assign themselves, and move the card to In progress.
+
+### Good vs. weak acceptance criteria
+
+| Weak          | Good                                                                     |
+|---------------|--------------------------------------------------------------------------|
+| Login works   | A user with a valid email and password reaches the dashboard             |
+| Handle errors | A wrong password shows "Incorrect email or password" and no data is lost |
+| Make it fast  | The page loads in under 2 seconds on the test data                       |
+
+### Labels
+
+| Label            | Meaning                             |
+|------------------|-------------------------------------|
+| type: feature    | New functionality                   |
+| type: bug        | Something is broken                 |
+| type: chore      | Setup, cleanup, docs, dependencies  |
+| size: S          | A few hours                         |
+| size: M          | About a day                         |
+| size: L          | Too big; split before starting      |
+| status: blocked  | Waiting on another issue            |
+| good first issue | Safe starter task for new teammates |
+
+### Issue templates
+
+- **Feature:** user story ("As a \_\_\_, I want \_\_\_ so that \_\_\_"), acceptance criteria checklist, files or areas likely affected, out of scope, depends on.
+
+- **Bug:** what happened, what should happen, steps to reproduce, screenshots, acceptance criteria.
+
+- **Chore:** what needs doing, why, done-when checklist.
+
+### Board
+
+A GitHub Project board with columns: Backlog, Ready, In progress, In review, Done. Issues move to In review automatically when a PR is linked, and to Done when it merges.
+
+## Step 5: Teammate Onboarding
+
+Each teammate goes from zero to a first merged pull request on day one.
+
+### 1. Accounts and access
+
+- [ ] GitHub account created, with two-factor authentication on
+
+- [ ] Invited to the repo with Write access
+
+- [ ] Claude plan that includes Claude Code
+
+- [ ] The real .env values, shared by the PM through the team password manager (never in chat)
+
+### 2. Installs
+
+- [ ] Git
+
+- [ ] GitHub CLI, then run gh auth login
+
+- [ ] Claude Code
+
+- [ ] VS Code (or another editor)
+
+- [ ] gitleaks (the secret checker): Homebrew on Mac, winget on Windows. The setup check script prints the exact command.
+
+- [ ] Project runtime: Node 24 (via fnm or nvm-windows) and uv (it installs Python 3.12 for you)
+
+OS-specific setup:
+
+| Item                    | Windows                                                                | Mac                                                           |
+|-------------------------|------------------------------------------------------------------------|---------------------------------------------------------------|
+| Git                     | Git for Windows (includes Git Bash, which Claude Code uses on Windows) | Xcode Command Line Tools (xcode-select --install) or Homebrew |
+| Package installer       | winget                                                                 | Homebrew                                                      |
+| Runtime version manager | fnm or nvm-windows (Node); uv (Python)                                | fnm or nvm (Node); uv (Python)                                   |
+| Terminal                | PowerShell or Windows Terminal                                         | Terminal                                                      |
+| Extra setting           | git config --global core.longpaths true                                | none                                                          |
+
+Everyone, once: set your name and email with git config --global user.name and user.email, using the same email as your GitHub account.
+
+People on two computers repeat the installs on both, log in to GitHub and Claude Code on both, and follow the switching rules in Step 6.
+
+### 3. First run
+
+1.  Clone the repo.
+
+2.  Run the setup check script. It also switches on the team's shared git hook (git config core.hooksPath .githooks), which blocks commits that contain keys.
+
+3.  Copy .env.example to a new file named .env and fill in the values from the password manager.
+
+4.  Open Claude Code in the repo folder and ask it to read CLAUDE.md and explain the project in plain English.
+
+5.  Ask Claude to install dependencies, start the app, and run the tests.
+
+6.  Confirm the app runs and tests pass; if not, post in the team channel.
+
+### 4. Practice loop
+
+1.  Pick a "good first issue" and assign it to yourself.
+
+2.  Ask Claude to create the branch and make the change.
+
+3.  Ask Claude to open the pull request.
+
+4.  Run /review on a teammate's PR to practice reviewing.
+
+5.  Once your PR is approved, merge it.
+
+### 5. Cheat sheet
+
+| You want to...     | Type in Claude Code                                |
+|--------------------|----------------------------------------------------|
+| Start a task       | "Start work on issue \#\<number\>"                 |
+| Create a new issue | /new-issue                                         |
+| Review a PR        | "What can I review?" or /review \<PR number\>|
+| Get latest code    | "Pull the latest main"                             |
+| Undo something     | "Undo your last change and explain what you undid" |
+| Ask for help       | "Explain what this does in plain English"          |
+
+## Step 6: CI and Cross-Platform Consistency
+
+Every PR is tested automatically on Windows, macOS, and Linux, and the repo is set up so the same code and commands work on any machine, including one person switching between a Windows PC and a Mac.
+
+### CI with GitHub Actions
+
+- A workflow runs on every PR and every push to main.
+
+- It runs install, lint, and tests on a matrix of windows-latest, macos-latest, and ubuntu-latest.
+
+- Each OS is a required status check, so a PR that breaks on any OS cannot merge.
+
+- Runtime version comes from the repo's version file, so CI matches local machines.
+
+### Cross-platform rules
+
+| Problem                                       | Fix                                                                                                              |
+|-----------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| Windows and Mac save line endings differently | .gitattributes with \* text=auto eol=lf, plus exceptions for .bat/.cmd (CRLF)                                    |
+| Editors format differently                    | .editorconfig for indentation, line endings, final newline, UTF-8                                                |
+| Different runtime versions                    | Pin the version in a file (.nvmrc, .python-version, or engines) and use a version manager                        |
+| Different dependency versions                 | Commit the lockfile; install with the lockfile-respecting command (e.g. npm ci)                                  |
+| Shell scripts only work on Mac                | All project commands are cross-platform scripts in the package manager or Python, never bash- or PowerShell-only |
+| File paths break                              | Build paths with the language's path library; never hard-code / or \\                                            |
+| Case-sensitive filenames                      | Never have two files differing only by case; keep names lowercase-with-dashes                                    |
+| Secrets and local settings                    | .env.example committed; real .env ignored; same variable names on every OS. Full setup in Step 8.                |
+| OS junk files                                 | .gitignore covers .DS_Store, Thumbs.db, desktop.ini, and editor folders (Step 8)                                 |
+
+Optional: a dev container (.devcontainer/) gives everyone an identical environment via Docker or GitHub Codespaces, regardless of OS.
+
+### Switching between machines
+
+1.  Before leaving a machine: ask Claude to commit and push your branch.
+
+2.  On the other machine: ask Claude to pull your branch and run the install command.
+
+3.  Never copy project files between computers by hand; always go through GitHub.
+
+## Step 7: Shared Claude Code Settings, Permissions, and Hooks
+
+CLAUDE.md tells Claude the rules; settings and hooks enforce them, so a non-coder cannot accidentally approve something dangerous.
+
+### What gets committed vs. kept local
+
+| File                        | Committed?      | Purpose                                    |
+|-----------------------------|-----------------|--------------------------------------------|
+| CLAUDE.md                   | Yes             | Project rules for every session            |
+| .claude/settings.json       | Yes             | Team-wide permissions and hooks            |
+| .claude/agents/             | Yes             | Shared agents, e.g. code-reviewer          |
+| .claude/commands/           | Yes             | Shared slash commands: /review, /new-issue |
+| .claude/settings.local.json | No (gitignored) | Personal overrides on one machine          |
+| CLAUDE.local.md             | No (gitignored) | Personal notes for Claude                  |
+
+### Permissions
+
+- **Allow without asking:** reading files, running the project's install, test, lint, and run scripts, git status, diff, log, branch, checkout, add, commit, pull, push of the current branch, and read-only gh commands.
+
+- **Always ask:** installing new packages, editing config files, any gh command that writes (creating PRs, issues, reviews).
+
+- **Deny:** reading .env and secret files, git push --force, git reset --hard, deleting branches, pushing to main, recursive deletes, commands that use sudo or admin rights, git add -f or --force, git commit --no-verify, changing core.hooksPath, and printing environment variables (printenv, env). Also set "disableBypassPermissionsMode": "disable" so no one can switch Claude into skip-all-permissions mode.
+
+- **Watch out:** a Read deny rule only blocks Claude's file-reading tool. It does not stop a shell command like cat .env, or a script that prints the file. So also deny the shell forms (cat, type, more, head, tail, grep, Get-Content on .env files) and add the secret-file hook below. Where Claude Code's sandbox is supported, turning it on adds OS-level blocking.
+
+- **List .env files by exact name** (.env, .env.local, .env.\*.local, .env.development, .env.production, .env.test), not .env.\*: deny always beats allow, so a .env.\* rule would also block .env.example, which Claude needs to read.
+
+### Hooks
+
+- **Block commits on main:** before any git commit, if the current branch is main, stop and tell the user to create a feature branch.
+
+- **Auto-format:** after Claude edits a file, run the formatter on it.
+
+- **Secret guard:** before git commit, confirm core.hooksPath is set to .githooks (and set it if not), so the shared secret check from Step 8 always runs.
+
+- **Secret-file guard:** before any shell command, block it if it mentions a .env file other than .env.example, or a key file such as \*.pem, and tell the user Claude isn't allowed to read secrets.
+
+- Hooks must be written as cross-platform scripts (same language as the project scripts), not bash-only.
+
+## Step 8: Secrets, Keys, and .gitignore
+
+A leaked key can't be un-leaked. Once it is pushed, assume someone has it, even in a private repo, and replace it. The team uses four layers so one mistake is caught by the next.
+
+| Layer                                    | What it catches                                                                                               | Can it be skipped?                                           |
+|------------------------------------------|---------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| 1\. .gitignore                           | Stops .env and key files from being added at all                                                              | Yes, with git add -f (Claude is blocked from this in Step 7) |
+| 2\. Claude Code rules and hooks (Step 7) | Stops Claude from reading, printing, or force-adding secrets                                                  | Only by changing .claude/, a critical file                   |
+| 3\. Shared pre-commit hook               | Blocks any commit, from any tool, that contains a .env file, a key file, key-shaped text, or a file over 5 MB | Yes, with --no-verify (banned) or if never switched on       |
+| 4\. Secret scan on GitHub                | Scans every commit in every PR on GitHub's servers                                                            | No: a PR can't merge until it passes                         |
+
+### How the .env files work
+
+- **.env** holds the real values on each person's machine. It is never committed.
+
+- **.env.example** is committed. It has the same variable names, placeholder values, and a comment for each.
+
+- The PM keeps the real values in a shared password-manager vault and shares them there. Never in Slack, Teams, Discord, issues, PRs, email, or Claude chats.
+
+- Where the provider allows it, each person gets their own key, so a leak means one key to replace and usage is traceable.
+
+- Every key has a spend or usage limit set at the provider.
+
+- Deployment secrets live in GitHub Actions secrets or the host's settings, never in a file.
+
+### The .gitignore, section by section
+
+The full annotated file is the repo's root .gitignore. Commit it first, before anyone creates a .env.
+
+| Section                        | What it covers                                                                                                                                 | Why                                                                                                     |
+|--------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| 1\. Secrets and environment    | .env, .env.\*, \*.env, private keys (\*.pem, \*.key, \*.p12, id_rsa), cloud credential JSON files, secrets folders, infrastructure state files | The core of this step. A pattern with no slash matches in every folder, so backend/.env is covered too. |
+| Exceptions                     | !.env.example, !.env.sample, !.env.template                                                                                                    | Templates stay committed. The "!" lines must come after .env.\*; order matters.                         |
+| 2\. Claude Code personal files | .claude/settings.local.json, CLAUDE.local.md                                                                                                   | Personal overrides stay local; the shared .claude/ folder stays committed.                              |
+| 3\. Local data and logs        | \*.log, \*.db, \*.sqlite, dumps, tmp/                                                                                                          | Logs and local databases often contain tokens or real user data.                                        |
+| 4\. OS junk                    | .DS_Store, Thumbs.db, desktop.ini                                                                                                              | Mac and Windows add these silently.                                                                     |
+| 5\. Editors                    | .vscode/\* except extensions.json, .idea/, swap files                                                                                          | Personal settings stay local; recommended extensions are shared.                                        |
+| 6-7. Node and Python           | node_modules/, build output, virtual environments, caches, coverage                                                                            | Generated files. Keeping both sections is harmless.                                                     |
+| Never ignored                  | Lockfiles, CLAUDE.md, .claude/settings.json, .env.example, .mcp.json                                                                           | Lockfiles keep everyone on identical versions (Step 6).                                                 |
+
+### Rules that trip people up
+
+- .gitignore does not untrack a file that was already committed. If one slips in, run git rm --cached \<file\>, commit, and treat any key in it as leaked.
+
+- Deleting a file in a later commit doesn't remove it from history or from the PR's commits, and squash merging doesn't either. Replace the key first.
+
+- Never ignore the whole .claude/ folder, and never ignore lockfiles.
+
+- .mcp.json is committed, so reference keys as ${VARIABLE_NAME}. Never paste the key into it.
+
+- Don't rely on anyone's personal global gitignore; the repo file must cover everything.
+
+- To check: git check-ignore -v .env shows which rule ignores .env. git ls-files --cached --ignored --exclude-standard must print nothing; anything it lists was committed before it was ignored.
+
+### The shared pre-commit hook
+
+A git hook runs on every commit however it is made: Claude Code, VS Code, GitHub Desktop, or the terminal. The hook lives in the repo at .githooks/pre-commit so everyone runs the same one, and the setup check script switches it on for each clone with git config core.hooksPath .githooks. Git for Windows runs hooks with its own built-in shell, so the same file works on Windows and Mac.
+
+- Blocks .env and key files by name, even if someone force-added them.
+
+- Blocks added lines that look like keys. It uses gitleaks if installed, otherwise a built-in list of common formats (Anthropic, OpenAI, AWS, GitHub, Google, Slack, Stripe, private keys, and long quoted passwords).
+
+- Blocks files over 5 MB.
+
+- Names the file but never prints the key, so the key doesn't end up in a terminal log or a Claude chat.
+
+- For a false alarm, the PM adds "gitleaks:allow" in a comment at the end of that line, or adds it to .gitleaksignore.
+
+- Mark the hook as executable in git (git update-index --chmod=+x .githooks/pre-commit) so it runs on a Mac even when it was committed from Windows.
+
+### Secret scan on GitHub
+
+Local hooks can be skipped or never switched on, so a workflow (.github/workflows/secret-scan.yml, installed from setup/templates/ in task M07) checks every PR on GitHub. It blocks .env and key files by name, then runs gitleaks over every commit in the PR. Make "Secret scan" a required check (Step 2).
+
+- This repo belongs to a personal account, so gitleaks needs no license key. (An organization-owned repo would need a free key saved as GITLEAKS_LICENSE.)
+
+- Because the repo is public, GitHub push protection is free and is turned on in M01: it rejects the push itself, before the key reaches GitHub. In a public repo a leaked key is visible to the whole internet within minutes, so treat any leak as an emergency.
+
+### If a key leaks
+
+1.  Tell the PM right away by direct message. Say where the key is; don't paste it.
+
+2.  The PM revokes the key at the provider and creates a new one before doing anything else. Assume it is compromised, even in a private repo.
+
+3.  The PM checks the provider's usage page for anything unexpected.
+
+4.  Remove the file or line in a new commit and add any missing .gitignore rule.
+
+5.  Only if the key can't be revoked: the PM rewrites history (git filter-repo) and asks GitHub Support to clear cached PR views. Otherwise, replacing the key is enough.
+
+6.  Add a rule to CLAUDE.md or the hook so the same mistake is caught next time.
+
+## Step 9: QA Bot (Automated Review)
+
+The QA bot runs the reviewer agent's QA process on GitHub, automatically, on every push to every ready PR. It is the required "AI QA Review" check. It does not replace people: a teammate still runs /review, tries the change in the app, and approves.
+
+### How it works
+
+1.  A PR is opened, marked ready for review, or gets a new commit. Draft PRs are skipped.
+
+2.  GitHub runs .github/workflows/ai-qa-review.yml (installed from setup/templates/ in M07), which starts Claude Code on GitHub's servers using the official Claude Code GitHub Action.
+
+3.  The bot follows .claude/agents/code-reviewer.md and CLAUDE.md: it reads the linked issue and checks each acceptance criterion, reads the diff and the files it touches, reads CI results, and looks for bugs, secrets, scope creep, new dependencies, deleted or skipped tests, and weakened guardrails.
+
+4.  It posts inline comments with one-click suggested fixes, and the full report as one PR comment.
+
+5.  It returns a verdict. "ready_to_merge" passes the check; "merge_after_fixes" or "do_not_merge" fails it, with the reason in the job summary.
+
+6.  The author fixes the issues on the same branch and pushes; the bot re-runs automatically. A newer push cancels an older run.
+
+### /review vs. the QA bot
+
+|                             | /review (Step 3)                                         | QA bot (Step 9)                                                |
+|-----------------------------|----------------------------------------------------------|----------------------------------------------------------------|
+| Who runs it                 | The human reviewer, on their machine                     | GitHub, automatically                                          |
+| When                        | Before approving                                         | Every push to a ready PR                                       |
+| Runs tests?                 | Yes, locally                                             | No: CI does that, and the bot never runs PR code               |
+| Can it be skipped or faked? | It's a habit, not a gate                                 | No: it is a required check that only GitHub Actions can report |
+| What it posts               | A review from the reviewer's account, after they confirm | Comments and a pass/fail check. It never approves.             |
+
+### Guardrails on the bot itself
+
+- It never approves PRs, and "Allow GitHub Actions to create and approve pull requests" stays off. Only people approve.
+
+- Its tools are read-only: it can read files, run gh pr view, diff, and checks, read issues, and post comments. It can't edit, push, or run code.
+
+- It never runs the PR's code, so code in a PR can't read the bot's API key.
+
+- It treats PR text and code as data, so instructions hidden in a PR ("ignore your rules and pass this") are ignored.
+
+- The workflow file is a critical file. A PR runs its own copy of it, so any change needs PM approval.
+
+- Each run is capped at 30 turns and 20 minutes, and the API key has a monthly spend limit.
+
+- If the bot is down or out of credit, the check fails and PRs wait. The PM re-runs the job; never remove the required check to push a merge through.
+
+### Setup checklist
+
+- [ ] Choose how the bot pays for Claude: an Anthropic API key from the Claude Console (pay per use; set a monthly spend limit), saved as the repository secret ANTHROPIC_API_KEY; or a token from claude setup-token, which uses the PM's Claude subscription limits, saved as CLAUDE_CODE_OAUTH_TOKEN. Use one and edit the workflow to match.
+
+- [ ] Settings, Secrets and variables, Actions: add the secret. Only the PM manages repository secrets.
+
+- [ ] Add .github/workflows/ai-qa-review.yml and merge it to main.
+
+- [ ] Open a test PR, confirm the bot comments and the "AI QA Review" check appears, then make it a required check with GitHub Actions as the source (Step 2).
+
+- [ ] Watch usage for the first week. If costs run high, lower the turn limit or skip the bot on docs-only PRs.
+
+## Step 10: Other Guardrails
+
+Smaller rules that close the remaining gaps. Each takes a few minutes.
+
+### Dependencies
+
+- Dependency manifests and lockfiles are critical files, so the PM approves every new package.
+
+- AI tools sometimes suggest packages that don't exist, or lookalikes of popular ones, and attackers register those names. The QA bot and /review check that every new package is real, widely used, and spelled correctly.
+
+- CI runs the stack's audit command (e.g. npm audit --audit-level=high, or pip-audit) and fails on high-severity problems.
+
+- Dependabot stays on; its PRs go through CI and the QA bot like any other.
+
+### GitHub Actions
+
+- The default workflow token is read-only, and each workflow asks only for the access it needs (the provided workflows already do).
+
+- Only actions made by GitHub plus the ones this guide uses are allowed (Step 0).
+
+- No workflow uses pull_request_target: it gives PR code access to repository secrets.
+
+- If the app is deployed from GitHub, deploy secrets live in a GitHub Environment named production, with the PM as required reviewer.
+
+### Accounts and access
+
+- Two-factor authentication is required for everyone (organization setting), not just requested.
+
+- Everyone has Write; only the PM has Admin (Step 2).
+
+- When someone leaves, their access is removed the same day and the PM replaces every key they had.
+
+### Tests and data
+
+- The QA bot flags any deleted, skipped, or weakened test as must fix. CLAUDE.md already forbids it; now it is checked.
+
+- Optional: a coverage floor in CI, so total test coverage can't drop below today's level.
+
+- No real personal data in test fixtures, sample data, screenshots, or Claude chats; use made-up data.
+
+## Step 11: Team Norms and Maintenance
+
+The scaffold stays healthy only if the team keeps the habits and the PM keeps the rules current.
+
+### Team norms
+
+- One short check-in a week (or async in the channel): what I finished, what I am on, what is blocking me.
+
+- Post every PR in the channel when it is ready for review.
+
+- Ask early: if stuck for more than 30 minutes, post in the channel.
+
+- Never share API keys or passwords in chat, issues, or PRs; the PM shares secrets through a password manager.
+
+- Each person uses their own Claude account; watch usage limits and tell the PM if you run out.
+
+### Keeping the scaffold up to date
+
+- Changes to CLAUDE.md, .claude/, .github/, .githooks/, or .gitignore go through a normal PR like any other change.
+
+- When Claude repeatedly makes the same mistake, add a rule to CLAUDE.md to prevent it.
+
+- Review CLAUDE.md monthly and keep it under two pages; remove rules nobody needs.
+
+- Merge Dependabot PRs after they pass CI and the QA bot.
+
+- When someone leaves the team, remove their access the same day, and the PM replaces every key they had.
+
+- Replace shared keys at the end of the project, and review the collaborator list monthly.
+
+### Open decisions
+
+All open decisions are tracked in [DECISIONS.md](DECISIONS.md).

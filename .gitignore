@@ -1,0 +1,203 @@
+# =============================================================================
+#  .gitignore - Battle Royale
+#  Owner: PM. This is a CRITICAL FILE: changes need PM approval (Step 2).
+#
+#  How this file works (plain English):
+#    - Each line is a pattern. Files matching a pattern are never added to git.
+#    - A pattern with no "/" matches at ANY depth (".env" also catches
+#      "backend/.env").  A trailing "/" means "this folder and everything in it".
+#    - A line starting with "!" UN-ignores something matched earlier. Order
+#      matters: the "!" line must come AFTER the line it overrides.
+#    - .gitignore does NOT remove files git already tracks. If a file was
+#      committed before it was ignored, run:  git rm --cached <file>
+#      (and if it held a key, ROTATE THE KEY - see Step 8).
+#
+#  Check it any time:
+#    git check-ignore -v .env                         -> shows which rule ignores .env
+#    git ls-files --cached --ignored --exclude-standard
+#                                                     -> lists tracked files that SHOULD
+#                                                        be ignored (must print nothing)
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# 1. SECRETS AND ENVIRONMENT FILES  (most important section - do not weaken)
+# -----------------------------------------------------------------------------
+# Every real .env variant, in every folder: .env, .env.local, .env.production,
+# .env.development.local, backend/.env, etc.
+.env
+.env.*
+*.env
+.envrc
+
+# ...except the committed TEMPLATES, which hold variable names and
+# placeholder values only - never real keys.
+!.env.example
+!.env.sample
+!.env.template
+
+# Secret folders and files by name
+secrets/
+.secrets/
+secrets.json
+secrets.yaml
+secrets.yml
+secrets.toml
+*.secret
+*.secrets
+
+# Private keys and certificates bundles
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.ppk
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# Cloud and service credentials (Google, Firebase, AWS, Azure, etc.)
+credentials.json
+client_secret*.json
+service-account*.json
+*-service-account*.json
+*serviceAccount*.json
+firebase-adminsdk*.json
+gcp-key*.json
+.aws/
+.azure/
+.gcloud/
+
+# Personal tool credentials (these belong in your home folder, never the repo)
+.netrc
+.pypirc
+.npmrc.local
+
+# Infrastructure state files (contain secrets in plain text)
+*.tfvars
+*.tfvars.json
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Hosting tool folders (contain project tokens/ids)
+.vercel/
+.netlify/
+
+
+# -----------------------------------------------------------------------------
+# 2. CLAUDE CODE - PERSONAL FILES ONLY
+# -----------------------------------------------------------------------------
+# DO commit: CLAUDE.md, .claude/settings.json, .claude/agents/, .claude/commands/
+# DO NOT ignore the whole .claude/ folder - the team's shared rules live there.
+.claude/settings.local.json
+CLAUDE.local.md
+.claude/*.local.*
+# Temporary review payloads written by the review-prs skill
+.claude/tmp/
+# Note: .mcp.json IS committed, but must reference keys as ${VAR_NAME},
+# never paste the key itself into it.
+
+
+# -----------------------------------------------------------------------------
+# 3. LOCAL DATA, LOGS AND DUMPS  (can contain real user data or tokens)
+# -----------------------------------------------------------------------------
+# Generated at runtime: database, downloaded knowledge base, generated media.
+# data/seed/ and data/benchmark/ ARE committed.
+data/app.db*
+data/kb/
+data/media/
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.dump
+*.sql.gz
+*.bak
+tmp/
+temp/
+*.tmp
+
+
+# -----------------------------------------------------------------------------
+# 4. OPERATING SYSTEM JUNK  (Windows + Mac)
+# -----------------------------------------------------------------------------
+# macOS
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+# Windows
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+
+# -----------------------------------------------------------------------------
+# 5. EDITORS
+# -----------------------------------------------------------------------------
+# VS Code: ignore personal settings but share the recommended-extensions list
+.vscode/*
+!.vscode/extensions.json
+# JetBrains, Vim, Emacs, local history plugins
+.idea/
+*.swp
+*.swo
+*~
+.history/
+
+
+# -----------------------------------------------------------------------------
+# 6. NODE / JAVASCRIPT / TYPESCRIPT  (harmless to keep if you use Python)
+# -----------------------------------------------------------------------------
+node_modules/
+dist/
+build/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.vite/
+.cache/
+.parcel-cache/
+.eslintcache
+*.tsbuildinfo
+coverage/
+.nyc_output/
+# NEVER ignore lockfiles: package-lock.json, pnpm-lock.yaml, yarn.lock
+
+
+# -----------------------------------------------------------------------------
+# 7. PYTHON  (harmless to keep if you use Node)
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.python-venv/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.ipynb_checkpoints/
+# NEVER ignore lockfiles: poetry.lock, uv.lock, requirements*.txt

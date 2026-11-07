@@ -1,0 +1,59 @@
+# CLAUDE.md — Battle Royale
+
+Read this first in every session. It is a critical file: changes need PM (Mike) approval.
+
+## 1. Project
+**Battle Royale: The Science-Backed Fight Simulator** — a web app where users name two combatants; the app builds cited stat sheets from vetted sources, a Monte Carlo simulation in code decides the outcome, and the result plays as a corny late-night sports broadcast. **Corny voice, serious brain: no language model sets a number.**
+Stack: Python 3.12 + FastAPI + Pydantic v2 + SQLite/sqlite-vec (`backend/`, uv); React + Vite + TypeScript + Phaser 3 (`frontend/`, Node 24, npm); Docker Compose. All AI calls go to course-provided endpoints through `backend/app/providers/`.
+Docs: `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SPEC.md` · `ARCHITECTURE.md` · `TEAM_PROCESS.md` · `DECISIONS.md` · `plan/` (tasks and prompts per lane).
+**Phase:** if `backend/` doesn't exist yet, we're in Phase 0 — follow `docs/plan/00-KICKOFF.md`.
+
+## 2. Commands (from the repo root; work the same on Windows and Mac — available after task M04)
+- Install: `npm run setup` · Run: `npm run dev` (backend :8000, frontend :5173) · Docker: `npm run docker:up`
+- Test + lint everything: `npm run check` · Format: `npm run format` · Regenerate API types: `npm run gen:api`
+- Backend only: `uv run --directory backend pytest` · Environment check: `npm run doctor`
+
+## 3. Folders and protected files
+`backend/app/` modules: models (contracts), providers, safety, intake, research, simulation, narration, media, pipeline, api, db. `backend/prompts/` holds every prompt. `frontend/src/`: api, pages, components, game (Phaser), fixtures. `data/seed/` and `data/benchmark/` are committed; `data/app.db`, `data/kb/`, `data/media/` are generated and ignored.
+**Protected (PM approval):** CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, docker-compose.yml, all package.json / lockfiles / pyproject.toml / uv.lock, `backend/app/models/`, `docs/ARCHITECTURE.md`.
+
+## 4. Conventions
+- Python: ruff format + ruff check, type hints everywhere, snake_case. TypeScript: ESLint + Prettier, camelCase, components PascalCase. Files: lowercase-with-dashes (Python modules snake_case).
+- Small functions with a one-line comment on intent. Prompts live in `backend/prompts/*.md`, never inline strings.
+- Only `backend/app/config.py` reads environment variables. Only `backend/app/providers/` calls course endpoints. The front end only calls our own `/api` and `/media`.
+- Front-end API types are generated (`npm run gen:api`); never hand-write them.
+- Banned without a PM-approved issue: LangChain/LlamaIndex, paid API SDKs, new databases, CSS frameworks, any model call from the front end.
+
+## 5. Rules for working with non-coders (every session)
+- Never work on `main`. Branch per issue: `issue-<number>-short-description`. One issue at a time; don't expand scope — suggest a new issue (`/new-issue`) instead.
+- Before changing anything, explain the plan in plain English and wait for a yes. After, summarize what changed and why.
+- Run `npm run check` before every commit; don't commit if it fails. Never delete, skip, or weaken a test to make it pass — explain the failure.
+- Never touch files outside the task's scope. Ask before adding any dependency.
+- Never run destructive commands without explicit confirmation: no force push, `git reset --hard`, deleting branches/folders, or dropping databases.
+- If a git command fails or conflicts, stop, explain in plain English, propose a fix.
+- Before switching tasks or branches, make sure work is committed or stashed, and say so.
+- Commit messages: imperative summary + issue, e.g. `Add matchup count clamping (#12)`. PRs under ~300 changed lines, using the PR template, with `Closes #<n>`. Merge only after a teammate approves and all checks pass.
+- If unsure, stop and ask.
+
+## 6. Battle Royale rules
+- **Number rule:** a model may only copy a number together with the exact quote it came from, and code verifies it. Estimates come from code and are labeled `is_estimate`. Scripts may only contain numbers present in the stat sheets or results.
+- **Contracts:** shapes in `backend/app/models/` are shared by all lanes. Don't change them without an issue labeled `contract-change` and PM approval. Until a module exists, use its fixture in `backend/tests/fixtures/contracts/`.
+- **Mocks:** every provider has a mock; tests and CI run with `PROVIDER_MODE=mock`. Live calls have timeouts, retries, and a fallback.
+- **Simulation:** all randomness from the seeded generator; bump `ENGINE_VERSION` when results change.
+- **Safety and tone:** no real people, minors, or groups of people as fighters; PG — no gore; no real artists, songs, franchises, or characters in media prompts; voice cloning only with written consent.
+
+## 7. Testing and Definition of Done
+Every feature or fix has at least one test (`backend/tests/{unit,contract,golden,property}`, `frontend/src/**/*.test.tsx`). A bug fix starts with a failing test. **Done** = the issue's acceptance criteria all met, `npm run check` passes, the app still starts, the PR explains the change in plain English, docs updated if behavior changed.
+
+## 8. Secrets and environment (this repo is PUBLIC)
+- All config comes from `.env` (never committed), documented in `.env.example` with a comment and placeholder per variable. New variable → add it to `.env.example` and tell the user how to get the value.
+- Never put keys **or course endpoint hosts** in code, tests, fixtures, docs, logs, or `.mcp.json` (use `${VAR}` there).
+- Never read, print, or edit `.env`. Never `git add -f`, `--no-verify`, or edit `.gitignore`/`.githooks/` to let a file through. Never print environment variables.
+- If the pre-commit hook or Secret scan blocks a commit, explain why and move the value into `.env`. If you see something that looks like a real key, stop and tell the user to alert the PM — don't copy or move it.
+
+## 9. Reviews and issues
+- To review: the user asks "What can I review?" or types `/review [n]` → use the **review-prs** skill. Nothing is posted until the user says send; approval is a separate confirmation.
+- Work only on an assigned issue; read its acceptance criteria and its task in `docs/plan/` first. If it's bigger than size M or unclear, stop and suggest splitting or clarifying.
+
+## 10. Permissions and hooks
+`.claude/settings.json` (task M03) enforces these rules with permissions and hooks. Never suggest bypassing them or changing them outside a PM-approved PR.

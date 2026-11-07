@@ -1,0 +1,83 @@
+#!/bin/sh
+# =============================================================================
+#  Shared pre-commit hook: blocks commits that contain keys, .env files,
+#  private keys, or very large files.
+#
+#  Works on Mac, Linux and Windows: Git for Windows runs hooks with its own
+#  built-in shell, so this same file runs everywhere.
+#
+#  Turned on per clone by the setup check script:
+#      git config core.hooksPath .githooks
+#
+#  It catches commits made ANY way: Claude Code, VS Code, GitHub Desktop,
+#  or the terminal. The CI "Secret scan" check is the backup if it is skipped.
+#  CRITICAL FILE: changes need PM approval.
+# =============================================================================
+
+MAX_BYTES=5242880   # 5 MB
+fail=0
+
+say() { printf '%s\n' "$*" >&2; }
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# Split the file list on new lines only, so file names with spaces work.
+IFS='
+'
+
+# ---- 1. Blocked file names --------------------------------------------------
+for f in $staged; do
+  base=$(basename "$f")
+  case "$base" in
+    .env.example|.env.sample|.env.template) continue ;;
+    .env|.env.*|*.env|.envrc|*.pem|*.key|*.p8|*.p12|*.pfx|*.jks|*.keystore|*.ppk|\
+    id_rsa*|id_dsa*|id_ecdsa*|id_ed25519*|credentials.json|client_secret*.json|\
+    service-account*.json|*-service-account*.json|firebase-adminsdk*.json|\
+    secrets.json|secrets.yaml|secrets.yml|secrets.toml|*.tfvars|*.tfstate|.netrc|.pypirc)
+      say "BLOCKED: '$f' is a secrets file and must never be committed."
+      fail=1 ;;
+  esac
+done
+
+# ---- 2. Large files ---------------------------------------------------------
+for f in $staged; do
+  size=$(git cat-file -s ":$f" 2>/dev/null || echo 0)
+  if [ "$size" -gt "$MAX_BYTES" ]; then
+    say "BLOCKED: '$f' is larger than 5 MB. Ask the PM where large files should go."
+    fail=1
+  fi
+done
+
+# ---- 3. Key-shaped text inside the changes ----------------------------------
+if command -v gitleaks >/dev/null 2>&1; then
+  # Preferred: gitleaks knows hundreds of key formats.
+  if ! gitleaks git --pre-commit --staged --redact --no-banner >&2 2>&1; then
+    say "BLOCKED: gitleaks found something that looks like a key (shown above, redacted)."
+    fail=1
+  fi
+else
+  # Fallback when gitleaks is not installed: common key formats only.
+  pattern='(sk-ant-[A-Za-z0-9_-]{20,}|sk-(proj-)?[A-Za-z0-9_-]{32,}|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|glpat-[A-Za-z0-9_-]{20}|xox[abposr]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}|sk_live_[0-9A-Za-z]{20,}|rk_live_[0-9A-Za-z]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(api[_-]?key|secret|token|passw(or)?d)["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"'[:space:]]{16,}["'"'"'])'
+  for f in $staged; do
+    count=$(git diff --cached -U0 --no-color -- "$f" | grep -E '^\+[^+]' \
+            | grep -E -i -- "$pattern" | grep -v -c 'gitleaks:allow')
+    if [ "${count:-0}" -gt 0 ]; then
+      # Name the file only - never print the key itself to the screen.
+      say "BLOCKED: '$f' has $count added line(s) that look like a key or password."
+      fail=1
+    fi
+  done
+  [ "$fail" -ne 0 ] && say "(Tip: install gitleaks for stronger checks - see docs/onboarding.md.)"
+fi
+
+if [ "$fail" -ne 0 ]; then
+  say ""
+  say "Commit stopped to protect the team's keys. What to do:"
+  say "  1. Move the value into your .env file and read it from an environment variable."
+  say "  2. Unstage the file:  git restore --staged <file>"
+  say "  3. If a REAL key was already pushed anywhere, tell the PM now - it must be replaced."
+  say "  False alarm? Ask the PM. Do NOT use --no-verify."
+  exit 1
+fi
+exit 0
