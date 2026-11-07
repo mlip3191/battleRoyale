@@ -45,7 +45,7 @@ Docs: `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SPEC.md` · `ARCHITECTURE
 ## 7. Testing and Definition of Done
 Every feature or fix has at least one test (`backend/tests/{unit,contract,golden,property}`, `frontend/src/**/*.test.tsx`). A bug fix starts with a failing test. **Done** = the issue's acceptance criteria all met, `npm run check` passes, the app still starts, the PR explains the change in plain English, docs updated if behavior changed.
 
-## 8. Secrets and environment (this repo is PUBLIC)
+## 8. Secrets and environment (private repo — but treat every commit as if it were public)
 - All config comes from `.env` (never committed), documented in `.env.example` with a comment and placeholder per variable. New variable → add it to `.env.example` and tell the user how to get the value.
 - Never put keys **or course endpoint hosts** in code, tests, fixtures, docs, logs, or `.mcp.json` (use `${VAR}` there).
 - Never read, print, or edit `.env`. Never `git add -f`, `--no-verify`, or edit `.gitignore`/`.githooks/` to let a file through. Never print environment variables.

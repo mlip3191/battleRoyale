@@ -105,7 +105,7 @@ All GenAI calls use course-provided endpoints, so no paid API keys are needed fo
 | Text-to-Speech and Voice Cloning | ? | announcer voice | **port unknown** |
 | Music Generation | ? | soundtrack | **port unknown** |
 | Speech-to-Text, Multimodal Embeddings | ? | stretch only | not in MVP |
-| Hermes Primary Model + Hermes Agent | 9000 | the proposal names this as our coding agent; the team builds with Claude Code (D-02) | app never calls it |
+| Hermes Primary Model + Hermes Agent | 9000 | Claude Code builds the app; Hermes Agent builds one task (G06) to show it in use (D-02) | app never calls it |
 | Wikipedia / Wikidata APIs, Hugging Face datasets | public | knowledge base | no key |
 
 App software: Python 3.12 (FastAPI), React + Vite + TypeScript, Phaser 3, SQLite + sqlite-vec, Pydantic v2, Docker Compose. Full detail in [ARCHITECTURE.md](ARCHITECTURE.md).

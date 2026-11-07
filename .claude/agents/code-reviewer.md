@@ -31,7 +31,7 @@ PR number, REPO, ME (the reviewer), START_BRANCH, re-review flag (+ last reviewe
    - **Front end:** no hand-written API types; every stat shows a source or an estimate tag; captions present; reduced motion respected.
    - **Safety:** nothing lets real people, minors, or groups of people through.
 8. **Bugs and robustness:** wrong logic, missing error handling, missing fallbacks, unhandled edge cases from ARCHITECTURE §14, race conditions, performance against the stage budget.
-9. **Security:** secrets or endpoint hosts in code, logs, fixtures, or docs (this repo is public); unsafe workflows (`pull_request_target`, broad permissions); new dependencies (real, popular, correctly spelled, approved in an issue?).
+9. **Security:** secrets or endpoint hosts in code, logs, fixtures, or docs (treat the repo as if it were public); unsafe workflows (`pull_request_target`, broad permissions); new dependencies (real, popular, correctly spelled, approved in an issue?).
 10. **Tests:** new behavior has tests; no test deleted, skipped, or weakened; bug fixes start with a failing test.
 11. **Size and scope:** over ~300 changed lines or unrelated changes → recommend splitting. Conflicts with main (`gh pr view <n> --json mergeable`) or overlap with other open PRs (`gh pr list` + shared files).
 12. **CI status:** `gh pr checks <n>`. If anything is pending or failing, the recommendation cannot be "Ready to merge".

@@ -300,7 +300,7 @@ Rules:
 - Every live call has a timeout, 2 retries with backoff, and logs latency but never logs payloads that could contain keys.
 - `backend/scripts/smoke_providers.py` (task M06) calls each live endpoint once and writes what it learned (URL shape, auth, request/response format, latency) to `docs/providers.md`. Run it before building any live adapter beyond the chat LLM.
 - CI always runs with `PROVIDER_MODE=mock`. Course endpoints are not reachable from GitHub.
-- Course endpoint URLs go in `.env`, never in code: this repo is public.
+- Course endpoint URLs go in `.env`, never in code: they are public URLs, so anyone holding them could spend the course's quota.
 
 ## 8. Data and caching
 
@@ -349,7 +349,7 @@ Pure Python, no I/O, no providers. Lane owner: Felipe.
 - **Voice cloning:** only a voice whose owner gave written consent (e.g. a teammate). Never imitate a celebrity or real announcer.
 - **Music and images:** prompts never name real artists, songs, franchises, or characters.
 - **Attribution:** Wikipedia/Wikidata text is CC BY-SA / CC0; the results page lists sources with links and license.
-- **Public repo:** no endpoint URLs, keys, or student data in commits. See TEAM_PROCESS Step 8.
+- **Repo hygiene:** the repo is private, but no endpoint URLs, keys, or student data in commits — treat every commit as if it were public. See TEAM_PROCESS Step 8.
 
 ## 12. Testing strategy
 

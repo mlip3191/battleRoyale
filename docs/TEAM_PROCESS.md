@@ -33,14 +33,14 @@ Phase 0 runs as tasks **M01 → M08** in [plan/lane-1-mike.md](plan/lane-1-mike.
 
 ### Create the repository
 
-The repo exists: **github.com/mlip3191/battleRoyale**, owned by Mike's personal account, currently **public** (see DECISIONS D-01 before changing that). Task M01 applies these settings:
+The repo exists: **github.com/mlip3191/battleRoyale**, owned by Mike's personal account, and is being made **private** with GitHub Pro (DECISIONS D-01). Task M01 applies these settings:
 
 - [ ] Settings, General, Pull Requests: squash merging only; "Always suggest updating pull request branches" and "Automatically delete head branches" on.
-- [ ] Settings, Code security: Dependabot alerts and security updates on; secret scanning and push protection on (free because the repo is public — if it goes private on GitHub Free, they disappear and the Secret scan workflow in Step 8 is the only server-side check).
-- [ ] Settings, Actions, General: only GitHub-made actions plus anthropics/claude-code-action, gitleaks/gitleaks-action, astral-sh/setup-uv; workflow permissions "Read repository contents"; "Allow GitHub Actions to create and approve pull requests" off; require approval for workflow runs from outside contributors (public repo — anyone can open a fork PR).
+- [ ] Settings, Code security: Dependabot alerts and security updates on. GitHub secret scanning and push protection are **not available** for private repos on personal accounts (they need GitHub Secret Protection on an organization), so the gitleaks **Secret scan** workflow (Step 8) and the local git hook are our secret checks.
+- [ ] Settings, Actions, General: only GitHub-made actions plus anthropics/claude-code-action, gitleaks/gitleaks-action, astral-sh/setup-uv; workflow permissions "Read repository contents"; "Allow GitHub Actions to create and approve pull requests" off. Settings, General: "Allow forking" off.
 - [ ] A team channel for questions and review requests (DECISIONS D-21).
 
-Personal-account repos give every collaborator the same Write role, which matches this process. Branch protection on a **private** personal repo needs GitHub Pro (free with the GitHub Student Developer Pack).
+Personal-account repos give every collaborator the same Write role, which matches this process. Branch protection on a private personal repo needs **GitHub Pro** (free with the GitHub Student Developer Pack) — turn Pro on before making the repo private, or protection silently stops being enforced. Private repos also use GitHub Actions minutes (Pro: 3,000 a month; Windows minutes count double and macOS ten times), so CI runs the full three-OS matrix on pull requests and Linux only on pushes to main.
 
 ### PM prerequisites
 
@@ -496,7 +496,7 @@ Local hooks can be skipped or never switched on, so a workflow (.github/workflow
 
 - This repo belongs to a personal account, so gitleaks needs no license key. (An organization-owned repo would need a free key saved as GITLEAKS_LICENSE.)
 
-- Because the repo is public, GitHub push protection is free and is turned on in M01: it rejects the push itself, before the key reaches GitHub. In a public repo a leaked key is visible to the whole internet within minutes, so treat any leak as an emergency.
+- GitHub push protection isn't available for this private personal repo, so a key is only caught after it is pushed (by Secret scan) unless the local hook stops it first. That makes the hook (`npm run doctor` checks it is on) essential, and any leak means replacing the key.
 
 ### If a key leaks
 

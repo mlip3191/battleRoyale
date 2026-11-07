@@ -47,8 +47,8 @@ Wave dates follow the course calendar (DECISIONS D-05).
 
 1. **Install and log in:** Git, GitHub CLI (`gh auth login`), Claude Code (`claude`), Node 24, uv.
 2. **Clone:** `git clone https://github.com/mlip3191/battleRoyale.git`, `cd battleRoyale`.
-3. **Fill `.env`:** copy `.env.example` to `.env`; add the course endpoint URLs (D-03). Never paste them anywhere else — the repo is public.
-4. **Answer the blocking decisions** in [DECISIONS.md](DECISIONS.md): D-01 (public/private), D-03 (endpoints), D-04 (QA bot payment), D-08 (usernames).
+3. **Fill `.env`:** copy `.env.example` to `.env`; add the course endpoint URLs (D-03). Never paste them anywhere else — they're public URLs, so anyone holding them could use the course's quota.
+4. **Turn on GitHub Pro** through the GitHub Student Developer Pack (D-01), and collect the remaining open items in [DECISIONS.md](DECISIONS.md): D-03 (missing ports), D-05 (deadlines), D-06 (roster), D-08 (usernames).
 5. **Open Claude Code in the repo and paste the kickoff prompt** from [plan/00-KICKOFF.md](plan/00-KICKOFF.md). It runs M01–M08 one at a time, stops for your confirmation, and tells you when to click something in GitHub. In order:
    - **M01** GitHub settings: squash-only merges, Dependabot, secret scanning + push protection, read-only Actions token, allowed-actions list.
    - **M02** Switch on and test the secret-blocking git hook; finalize CLAUDE.md.
@@ -107,12 +107,12 @@ Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → buil
 | # | Gap or ambiguity found | How it's resolved | Where |
 |---|---|---|---|
 | 1 | "No language model sets a number" conflicts with the model filling the stat schema | Precise rule: models copy numbers only with a verified quote; estimates come from code | ARCHITECTURE §5, D-14 |
-| 2 | Five endpoints have no port listed (Structured Decisions, Reranking, TTS/Voice, Music, STT) | Provider layer + smoke test discovers and documents them; mocks unblock everyone meanwhile | ARCHITECTURE §7, M06, D-03 |
+| 2 | Five endpoints have no port listed (Structured Decisions, Reranking, TTS/Voice, Music, STT); endpoints are public URLs | Provider layer + smoke test discovers and documents them; mocks unblock everyone meanwhile; URLs kept in `.env` | ARCHITECTURE §7, M06, D-03 |
 | 3 | Course endpoints aren't reachable from GitHub CI | Mock-first providers; CI always in mock mode | D-15 |
-| 4 | Proposal names Hermes as the coding agent; team uses Claude Code | Open decision | D-02 |
+| 4 | Proposal names Hermes as the coding agent; team uses Claude Code | Claude Code for the build; Hermes Agent builds task G06 for the report | D-02 |
 | 5 | Dillon isn't on the proposal; group letter and last names are blank | Open decision | D-06 |
 | 6 | No deadlines or rubric in hand | Waves are relative; add the assignment doc | D-05 |
-| 7 | The repo is public: protection is free, but code and any leak are public | Push protection on; no endpoint hosts in code; decision on visibility | D-01, Step 8 |
+| 7 | The repo was public; going private on GitHub Free would silently drop branch protection | Private + GitHub Pro (Student Pack); gitleaks Secret scan replaces GitHub's secret scanning, which private personal repos don't get | D-01, Step 8 |
 | 8 | "Expert answers" for the benchmark undefined | Three groups (obvious, documented, count) with pass rules set in advance | G07, D-10 |
 | 9 | Stat schema undefined | Ten fixed stats + habitat + weapons | ARCHITECTURE §5 |
 | 10 | Long media generation would block the verdict | Staged pipeline with progressive reveal and per-stage fallbacks | ARCHITECTURE §4 |
@@ -122,8 +122,8 @@ Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → buil
 | 14 | No demo-day plan | Five cached showcase battles + backup video | PRODUCT_SPEC §9 |
 | 15 | Setup guide said "PM does everything first"; lanes need balance | Each teammate's first task is a setup task; Mike's lane is Phase 0 | LANES.md |
 | 16 | Setup guide's review tool posted and set status automatically | review-prs skill: draft → confirm send → separate confirm approve | Step 3, D-23 |
-| 17 | Fork PRs in a public repo could run code on a reviewer's machine | Skill refuses to run fork code; Actions require approval for outside contributors | SKILL.md, M01 |
-| 18 | Docker containers can't reach a host's `localhost` endpoints | Use `host.docker.internal`; documented | G08 |
+| 17 | Fork PRs could run code on a reviewer's machine or slip past the QA bot | Forking disabled; skill refuses to run fork code; QA bot fails (not skips) fork PRs | SKILL.md, M01 |
+| 18 | QA bot cost and Actions minutes on a private repo | Bot on Mike's subscription token, skips drafts, cancels stale runs; macOS/Windows CI only on PRs | D-01, D-04 |
 
 The full list of edge cases the app must handle is in [ARCHITECTURE §14](ARCHITECTURE.md#14-edge-cases-the-design-must-handle). Outstanding questions are the **Open** rows in [DECISIONS.md](DECISIONS.md).
 

@@ -8,7 +8,7 @@ This is the single prompt Mike pastes into Claude Code, at the root of a fresh c
 2. Clone: `git clone https://github.com/mlip3191/battleRoyale.git` and `cd battleRoyale`.
 3. Copy `.env.example` to `.env` and fill in the course endpoint URLs (DECISIONS D-03). Never paste them anywhere else.
 4. Skim [DECISIONS.md](../DECISIONS.md) — the items marked **OPEN** need your answer; Claude will ask about them when a task depends on one.
-5. Have ready: teammates' GitHub usernames, and the QA bot secret (DECISIONS D-04).
+5. Have ready: GitHub Pro active through the Student Developer Pack (D-01), teammates' GitHub usernames, and run `claude setup-token` for the QA bot secret when M07 asks (D-04).
 
 ## The prompt
 
@@ -20,7 +20,7 @@ CLAUDE.md, docs/PROJECT_GUIDE.md, docs/PRODUCT_SPEC.md, docs/ARCHITECTURE.md, do
 
 Then:
 1. Give me a 10-line summary of what we are building and how Phase 0 works, and list any contradiction or gap you found between those documents, with your recommended fix. Wait for my answers.
-2. Check docs/DECISIONS.md for OPEN items that block Phase 0 (D-01, D-03, D-04, D-08) and ask me about each one I haven't answered. Record my answers in DECISIONS.md.
+2. Check docs/DECISIONS.md for OPEN items that block Phase 0 (D-03 missing ports, D-08 usernames) and confirm GitHub Pro is active (D-01) and ask me about each one I haven't answered. Record my answers in DECISIONS.md.
 3. Execute docs/plan/lane-1-mike.md tasks M01 through M08, strictly in order, one at a time. For each task:
    a. Say which task you are starting and show its acceptance criteria.
    b. Follow the task's "Prompt for Claude Code" exactly, including its confirmation points.

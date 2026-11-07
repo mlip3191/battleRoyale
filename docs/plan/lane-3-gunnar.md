@@ -137,6 +137,7 @@ Add a test that every file validates and that no hand_verified value lacks a sou
 ## G06 · Traceability checker · S (1)
 
 **Goal:** Prove the promise "every stat on screen links to its source."
+**Hermes task (DECISIONS D-02):** build this one with the course's Hermes Agent (port 9000) instead of Claude Code, with Mike pairing. Keep screenshots of the session for the final report. Same branch, PR, and review rules apply.
 **Prompt for Claude Code:**
 ```text
 Task G06 from docs/plan/lane-3-gunnar.md. Build backend/app/research/trace.py and a test.
@@ -175,7 +176,7 @@ Show me the draft before committing.
 **Goal:** `docker compose up` gives anyone a working app for the demo.
 **Prompt for Claude Code:**
 ```text
-Task G08 from docs/plan/lane-3-gunnar.md. Create backend/Dockerfile (uv, Python 3.12, non-root user), frontend/Dockerfile (build with Node 24, serve the built files), and docker-compose.yml with services backend and frontend, env_file .env, a volume for ./data, and health checks. The frontend proxies /api and /media to the backend. Course endpoints: use the URLs from .env; if they point at the host machine's localhost, document using host.docker.internal instead. Add "docker:up" and "docker:down" scripts to the root package.json and a "Run with Docker" section in README.md. Test on my machine and tell me whether it was Windows or Mac; ask a teammate on the other OS to test it in their review.
+Task G08 from docs/plan/lane-3-gunnar.md. Create backend/Dockerfile (uv, Python 3.12, non-root user), frontend/Dockerfile (build with Node 24, serve the built files), and docker-compose.yml with services backend and frontend, env_file .env, a volume for ./data, and health checks. The frontend proxies /api and /media to the backend. Course endpoints are public URLs (DECISIONS D-03), so containers reach them directly; pass them in through .env. Add "docker:up" and "docker:down" scripts to the root package.json and a "Run with Docker" section in README.md. Test on my machine and tell me whether it was Windows or Mac; ask a teammate on the other OS to test it in their review.
 ```
 
 **Acceptance criteria**

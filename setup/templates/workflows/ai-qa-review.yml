@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      # Fork PRs get no secrets in a public repo, so the bot can't run. Fail
+      # Fork PRs get no secrets, so the bot can't run. Fail
       # (not skip) so a fork PR can never pass this required check silently.
       - name: Block fork PRs
         if: github.event.pull_request.head.repo.full_name != github.repository
@@ -49,11 +49,9 @@ jobs:
         id: review
         uses: anthropics/claude-code-action@v1
         with:
-          # Use ONE of these two. API key: set a monthly spend limit in the
-          # Claude Console. OAuth token: from `claude setup-token`, uses the
-          # PM's subscription limits.
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # DECISIONS D-04: Mike's subscription token from `claude setup-token`.
+          # Alternative: anthropic_api_key with a spend-capped Console key.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             REPO: ${{ github.repository }}
@@ -73,7 +71,7 @@ jobs:
             - Apply the Battle Royale checks in the agent file: the number rule,
               simulation determinism, providers only in backend/app/providers,
               prompts in backend/prompts, contract changes need the
-              contract-change label, no course endpoint hosts in code (public repo).
+              contract-change label, no course endpoint URLs or keys in code.
             - Never quote a secret's value in a comment; say where it is.
             - Always flag as MUST FIX: any key, token, password, or .env file;
               changes to .gitignore, .githooks/, .github/, .claude/,

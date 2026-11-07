@@ -20,16 +20,17 @@ How to run a task: open Claude Code at the repo root and paste the task's prompt
 ## M01 · GitHub repo settings, security, and Actions permissions · S (1)
 
 **Goal:** Configure the repo so it is safe before any code lands.
-**Read first:** TEAM_PROCESS Step 0 and Step 10; DECISIONS D-01 (public vs private).
-**Manual prerequisites:** GitHub CLI logged in as `mlip3191` (`gh auth status`); decision D-01 made.
+**Read first:** TEAM_PROCESS Step 0 and Step 10; DECISIONS D-01 (private + GitHub Pro).
+**Manual prerequisites:** GitHub CLI logged in as `mlip3191` (`gh auth status`); **GitHub Pro active** on the account (claim it through the GitHub Student Developer Pack at education.github.com, then confirm at github.com/settings/billing).
 
 **Prompt for Claude Code:**
 ```text
 Task M01 from docs/plan/lane-1-mike.md. Configure the GitHub repository mlip3191/battleRoyale using the GitHub CLI. For each change, show me the exact gh command first and run it only after I confirm. If a command fails or the API is not available for this account, stop and give me the exact click path in the GitHub web UI instead.
 
+0. Confirm GitHub Pro is active on my account (ask me to check github.com/settings/billing; do not continue until I confirm). Then make the repo private: gh repo edit mlip3191/battleRoyale --visibility private --accept-visibility-change-consequences. Turn off "Allow forking".
 1. Merge settings: squash merge only (disable merge commits and rebase merges), "Always suggest updating pull request branches" on, "Automatically delete head branches" on.
-2. Security: turn on Dependabot alerts and Dependabot security updates. The repo is public today, so also turn on secret scanning and push protection (free for public repos). If DECISIONS.md D-01 says we switched to private, skip secret scanning and tell me.
-3. Actions: set default workflow permissions to read-only, and make sure "Allow GitHub Actions to create and approve pull requests" is OFF. Restrict allowed actions to GitHub-made actions plus these patterns: anthropics/claude-code-action@*, gitleaks/gitleaks-action@*, astral-sh/setup-uv@*. Require approval for workflow runs from all outside contributors (fork PRs).
+2. Security: turn on Dependabot alerts and Dependabot security updates. GitHub secret scanning and push protection are not available for private personal repos; confirm that, and remind me that the gitleaks Secret scan (M07) and the local hook cover it.
+3. Actions: set default workflow permissions to read-only, and make sure "Allow GitHub Actions to create and approve pull requests" is OFF. Restrict allowed actions to GitHub-made actions plus these patterns: anthropics/claude-code-action@*, gitleaks/gitleaks-action@*, astral-sh/setup-uv@*.
 4. Print a final table of every setting with its current value, read back from the API, so I can confirm.
 
 Do not create branch protection yet; that is task M08.
@@ -37,7 +38,8 @@ Do not create branch protection yet; that is task M08.
 
 **Acceptance criteria**
 - [ ] Squash-only merging, auto-delete head branches, update-branch suggestion on
-- [ ] Dependabot alerts + security updates on; secret scanning + push protection on (public repo)
+- [ ] Repo is private, GitHub Pro active, forking off
+- [ ] Dependabot alerts + security updates on
 - [ ] Default `GITHUB_TOKEN` is read-only; Actions cannot approve PRs; allowed-actions list set
 - [ ] Settings table pasted into the M01 issue/notes
 
@@ -131,7 +133,7 @@ Root:
 - .editorconfig (utf-8, lf, final newline, 2 spaces; 4 spaces for .py).
 - Keep the existing .gitignore; do not remove any rule.
 
-CI: create .github/workflows/ci.yml that runs on pull_request and push to main, with jobs named "backend" and "frontend", each on a matrix of ubuntu-latest, windows-latest, macos-latest, using the pinned versions (astral-sh/setup-uv and actions/setup-node with node-version-file: .nvmrc), PROVIDER_MODE=mock, permissions: contents: read. Steps: install from lockfiles, lint, test.
+CI: create .github/workflows/ci.yml that runs on pull_request and push to main, with jobs named "backend" and "frontend", each on a matrix of ubuntu-latest, windows-latest, macos-latest for pull requests and ubuntu-latest only for pushes to main (private repo: macOS minutes count 10x against our quota), with concurrency cancel-in-progress per branch, using the pinned versions (astral-sh/setup-uv and actions/setup-node with node-version-file: .nvmrc), PROVIDER_MODE=mock, permissions: contents: read. Steps: install from lockfiles, lint, test.
 
 Finally: run npm run setup and npm run check locally and show me the output, tell me the exact CI check names that will appear on PRs, and update the Commands section of CLAUDE.md with the real commands. Commit: "Add monorepo skeleton and CI (M04)".
 ```
@@ -203,12 +205,12 @@ Run the smoke script, show me docs/providers.md, run npm run check, then commit:
 
 **Goal:** Every PR is checked by the QA bot and the secret scan on GitHub, and critical files need the right approver.
 **Read first:** TEAM_PROCESS Steps 2, 3, 8, 9; `.claude/skills/review-prs/SKILL.md`; `.claude/agents/code-reviewer.md`.
-**Manual prerequisite:** add the repository secret for the QA bot (DECISIONS D-04): Settings → Secrets and variables → Actions → `ANTHROPIC_API_KEY` (with a monthly spend limit set in the Claude Console) **or** `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`.
+**Manual prerequisite:** add the QA bot secret (DECISIONS D-04): run `claude setup-token` on your machine, then Settings → Secrets and variables → Actions → New repository secret `CLAUDE_CODE_OAUTH_TOKEN`. Paste it only into GitHub, never into chat or a file. Every bot run uses your Claude plan's limits.
 
 **Prompt for Claude Code:**
 ```text
 Task M07 from docs/plan/lane-1-mike.md.
-1. Install the workflow templates: copy setup/templates/workflows/secret-scan.yml and setup/templates/workflows/ai-qa-review.yml into .github/workflows/. In ai-qa-review.yml, use the auth input that matches the secret I added (ask me which: ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN). This repo is owned by a personal account, so gitleaks needs no license; remove the GITLEAKS_LICENSE line.
+1. Install the workflow templates: copy setup/templates/workflows/secret-scan.yml and setup/templates/workflows/ai-qa-review.yml into .github/workflows/. ai-qa-review.yml already uses CLAUDE_CODE_OAUTH_TOKEN (DECISIONS D-04); confirm the secret exists with gh secret list. This repo is owned by a personal account, so gitleaks needs no license.
 2. Create .github/CODEOWNERS assigning these critical paths to @mlip3191: CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, docker-compose.yml, package.json, package-lock.json, frontend/package.json, frontend/package-lock.json, backend/pyproject.toml, backend/uv.lock, backend/app/models/, docs/ARCHITECTURE.md.
 3. Create .github/workflows/critical-files.yml with a job named "Critical files approval" that runs on pull_request (opened, synchronize, reopened) and pull_request_review (submitted, dismissed), permissions contents: read and pull-requests: read. Using gh, it checks whether the PR changes any CODEOWNERS path. If it does and the PR author is not mlip3191, it fails unless mlip3191 has an APPROVED review on the PR's latest commit. In every other case it passes. Print a plain-English reason either way.
 4. Create .github/pull_request_template.md with sections: Linked issue (Closes #), What changed (plain English), How it was tested, Screenshots (if UI), Checklist (tests pass, lint passes, no secrets, scope limited to the issue, contract unchanged or contract-change label added).
