@@ -15,7 +15,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SP
 
 ## 3. Folders and protected files
 `backend/app/` modules: models (contracts), providers, safety, intake, research, simulation, narration, media, pipeline, api, db. `backend/prompts/` holds every prompt. `frontend/src/`: api, pages, components, game (Phaser), fixtures. `data/seed/` and `data/benchmark/` are committed; `data/app.db`, `data/kb/`, `data/media/` are generated and ignored.
-**Protected (PM approval):** CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, all package.json / lockfiles / pyproject.toml / uv.lock, `backend/app/models/`, `docs/ARCHITECTURE.md`.
+**Protected (PM approval; the list in `.github/CODEOWNERS` is authoritative):** CLAUDE.md, INIT.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, .mcp.json, .gitleaks.toml, scripts/, all package.json / lockfiles / pyproject.toml / uv.lock, `backend/app/config.py`, `backend/app/models/`, `docs/ARCHITECTURE.md`.
 
 ## 4. Conventions
 - Python: ruff format + ruff check, type hints everywhere, snake_case. TypeScript: ESLint + Prettier, camelCase, components PascalCase. Files: lowercase-with-dashes (Python modules snake_case).
@@ -25,7 +25,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SP
 - Banned without a PM-approved issue: LangChain/LlamaIndex, paid API SDKs, new databases, CSS frameworks, any model call from the front end.
 
 ## 5. Rules for working with non-coders (every session)
-- Never work on `main` (only exception: INIT.md tasks M01–M02). Branch per issue: `issue-<number>-short-description`. One issue at a time; don't expand scope — suggest a new issue (`/new-issue`) instead.
+- Never work on `main` (only exception: INIT.md task M02). Branch per issue: `issue-<number>-short-description`. One issue at a time; don't expand scope — suggest a new issue (`/new-issue`) instead.
 - Before changing anything, explain the plan in plain English and wait for a yes. After, summarize what changed and why.
 - Run `npm run check` before every commit; don't commit if it fails. Never delete, skip, or weaken a test to make it pass — explain the failure.
 - Never touch files outside the task's scope. Ask before adding any dependency.
@@ -53,6 +53,7 @@ Every feature or fix has at least one test (`backend/tests/{unit,contract,golden
 
 ## 9. Reviews and issues
 - To review: the user asks "What can I review?" or types `/review [n]` → use the **review-prs** skill. Nothing is posted until the user says send; approval is a separate confirmation.
+- The QA bot on GitHub is **advisory**. Treat its comments as suggestions; a teammate's approval and the required checks (CI, Secret scan, Critical files approval) are the gate. To have it look again after fixes, add the `re-review` label.
 - Work only on an assigned issue; read its acceptance criteria and its task in `docs/plan/` first. If it's bigger than size M or unclear, stop and suggest splitting or clarifying.
 
 ## 10. Permissions and hooks

@@ -19,7 +19,7 @@ From the **MBAX 6418 Final Project Overview**. Everything is submitted on Canvas
 | Requirement (overview) | How we meet it | Owner |
 |---|---|---|
 | Repo starts from scratch, step-by-step buildout | First commit is the plan; every change is an issue → PR → squash merge, so history shows the build step by step | everyone |
-| Private repo → add the instructor as collaborator | M08 invites david.dobolyi@colorado.edu (Settings → Collaborators → Add people → email) | Mike |
+| Private repo → add the instructor as collaborator | M02 invites david.dobolyi@colorado.edu (Settings → Collaborators → Add people → email); confirm he accepted before Nov 25 | Mike |
 | README describes the project from the proposal, kept up to date | README updated at each milestone (MS-1…MS-4); final pass before submission | Mike |
 | Documentation for a naïve user | `docs/user-guide.md`: what the app does, how to run it, how to read results | Dillon |
 | Runnable code the instructor can test easily | `npm run setup` then `npm start` (one process, http://localhost:8000, no Docker); mock mode runs with no endpoints; showcase battles committed in `data/showcase/` (D-24); `node scripts/check-env.mjs` tells him what to fill in | Mike + Gunnar (G08) |
@@ -36,10 +36,10 @@ Title slide: **Battle Royale: The Science-Backed Fight Simulator** · Group A ·
 | Deck design + title slide | Broadcast-style template matching the app; title slide | **Dillon** | app theme (D02) |
 | Project framing | Finalized proposal: the situation, the product, "corny voice, serious brain" | **Adam** | PRODUCT_SPEC §1–2 |
 | App demonstration | Live demo plan (2 showcase battles + 1 audience pick), screenshots, backup video | **Felipe** | showcase battles, benchmark results |
-| Build stack | AI coding tools + models: Claude Code (model per the PR records), Hermes Agent with its model (G06), the QA bot | **Mike** | PR template "Built with" field |
+| Build stack | AI coding tools + models: Claude Code (model per the PR records), Hermes Agent with its model (G06), the advisory QA bot on GitHub | **Mike** | PR template "Built with" field |
 | App software / API / model stack | FastAPI, React, Phaser, SQLite + sqlite-vec; each course endpoint with its model name and what it does | **Mike** | ARCHITECTURE §2, §7, `docs/providers.md` |
 | Sources | Wikipedia Structured Contents, Wikidata, PanTHERIA, AnimalTraits; licenses; no apps or screenshots used as a base | **Gunnar** | DECISIONS D-20, `docs/research.md` |
-| Build process + bug testing | How it grew (milestones), what changed vs the proposal, how we tested (CI on 3 OSes, QA bot, benchmark, bug bash), top bugs fixed | **Adam** | closed issues labeled `type: bug`, `docs/benchmark-results.md` |
+| Build process + bug testing | How it grew (milestones), what changed vs the proposal, how we tested (CI on Linux/Windows per PR + macOS on merges, advisory QA bot, benchmark, bug bash), top bugs fixed | **Adam** | closed issues labeled `type: bug`, `docs/benchmark-results.md` |
 | Contributions | CRediT-style table (below) | **Dillon** | lanes + git history |
 | Lessons learned + limitations | What worked (contracts, mocks, review skill), what we'd change, limits (estimates, two sides only), future work | **Gunnar** | retro notes |
 

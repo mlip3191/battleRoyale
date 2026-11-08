@@ -31,10 +31,10 @@ PR number, REPO, ME (the reviewer), START_BRANCH, re-review flag (+ last reviewe
    - **Front end:** no hand-written API types; every stat shows a source or an estimate tag; captions present; reduced motion respected.
    - **Safety:** nothing lets real people, minors, or groups of people through.
 8. **Bugs and robustness:** wrong logic, missing error handling, missing fallbacks, unhandled edge cases from ARCHITECTURE §14, race conditions, performance against the stage budget.
-9. **Security:** secrets or endpoint hosts in code, logs, fixtures, or docs (treat the repo as if it were public); unsafe workflows (`pull_request_target`, broad permissions); new dependencies (real, popular, correctly spelled, approved in an issue?).
+9. **Security:** secrets or endpoint hosts in code, logs, fixtures, or docs (treat the repo as if it were public); unsafe workflows (`pull_request_target`, broad permissions); new dependencies (real, popular, correctly spelled?) — mark them **Needs PM**, not must-fix; the critical-files check already requires Mike's approval for lockfiles.
 10. **Tests:** new behavior has tests; no test deleted, skipped, or weakened; bug fixes start with a failing test.
 11. **Size and scope:** over ~300 changed lines or unrelated changes → recommend splitting. Conflicts with main (`gh pr view <n> --json mergeable`) or overlap with other open PRs (`gh pr list` + shared files).
-12. **CI status:** `gh pr checks <n>`. If anything is pending or failing, the recommendation cannot be "Ready to merge".
+12. **CI status:** `gh pr checks <n>`. Report it. A **failed** required check (CI, Secret scan, Critical files approval) means the recommendation can't be "Ready to merge". **Pending** checks don't change the code verdict — say "Ready to merge once checks pass". Ignore the advisory **AI QA Review** check entirely.
 13. **Re-review:** if this is a re-review, focus on commits after the last reviewed commit and state whether each earlier comment was addressed.
 
 ## Output (return exactly these five parts)
@@ -49,7 +49,7 @@ PR number, REPO, ME (the reviewer), START_BRANCH, re-review flag (+ last reviewe
 - [x] <criterion> — met (<evidence>)
 - [ ] <criterion> — not met (<why>)
 
-**Tests, lint, and CI:** <local results> · <CI summary> · AI QA Review: <status>
+**Tests, lint, and CI:** <local results> · <required checks summary> · QA bot (advisory): <verdict if posted>
 
 **Must fix (blocking)**
 1. `<file>:<line>` — <what's wrong, why it matters, how to fix>
@@ -57,7 +57,9 @@ PR number, REPO, ME (the reviewer), START_BRANCH, re-review flag (+ last reviewe
 **Nits (optional)**
 - `<file>:<line>` — <small improvement>
 
-**Other considerations:** <risks, docs to update, contract impact>
+**Needs PM:** <new dependencies, contract changes, critical files, size>
+
+**Other considerations:** <risks, docs to update>
 
 **Proposed additional fixes**
 - <improvement> — *in this PR* | *follow-up issue*
@@ -84,7 +86,7 @@ PR number, REPO, ME (the reviewer), START_BRANCH, re-review flag (+ last reviewe
 ## Hard rules
 
 - Never post, approve, push, merge, or edit files.
-- Never recommend "Ready to merge" with a failing or pending check, an unmet acceptance criterion, a must-fix item, or a secret.
+- Never recommend "Ready to merge" with a failed required check, an unmet acceptance criterion, a must-fix item, or a secret. (Pending checks and the advisory QA bot don't block the verdict.)
 - Never quote a secret's value; say where it is and that the PM must replace it.
 - Never check out or run code from a fork or outside contributor.
 - Always return to START_BRANCH.

@@ -22,7 +22,7 @@
 | Validation | Pydantic v2 + pydantic-settings | per `uv.lock` | all contracts + config |
 | Database | SQLite (WAL mode) + sqlite-vec | per `uv.lock` | single file `data/app.db` (gitignored) |
 | HTTP client | httpx (async) | per `uv.lock` | used only inside `providers/` |
-| Backend tests | pytest, pytest-asyncio, hypothesis | | property tests for the simulation |
+| Backend tests | pytest, pytest-asyncio, hypothesis | | property tests for the simulation; `conftest.py` forces mock mode |
 | Backend lint/format | ruff | | `ruff check`, `ruff format` |
 | Front-end runtime | Node.js | 24 LTS (`.nvmrc`) | |
 | Front end | React + Vite + TypeScript | per `package-lock.json` | |
@@ -33,7 +33,7 @@
 | One-command run | `npm start` | — | builds the front end; FastAPI serves it plus the API on :8000. No Docker (D-25) |
 | Task runner | root `package.json` scripts | | cross-platform: no bash- or PowerShell-only scripts |
 
-**Banned without a PM-approved issue:** LangChain/LlamaIndex (too heavy for our needs), any paid API SDK, any new database, CSS frameworks beyond the one chosen in task D02, any library that calls a model provider directly from the front end.
+**Banned without a PM-approved issue:** LangChain/LlamaIndex (too heavy for our needs), any paid API SDK, any new database, any CSS framework (D-11), any library that calls a model provider directly from the front end.
 
 ## 3. Repository layout
 
@@ -41,6 +41,7 @@
 battleRoyale/
 ├── INIT.md                       # Phase 0: the one document that initializes the project
 ├── CLAUDE.md                     # rules every Claude Code session reads first   (critical)
+├── .gitattributes                # LF line endings (keeps the git hook working on Windows) (critical)
 ├── README.md
 ├── package.json                  # root task runner: setup, dev, test, lint, check (critical)
 ├── .env.example                  # every config variable, placeholder values      (critical)
@@ -302,7 +303,7 @@ Rules:
 - `config.py` reads `PROVIDER_MODE` (`mock` | `live`) and one base URL per service (see `.env.example`). Nothing else reads environment variables.
 - Every live call has a timeout, 2 retries with backoff, and logs latency but never logs payloads that could contain keys.
 - `backend/scripts/smoke_providers.py` (task M06) calls each live endpoint once and writes what it learned (URL shape, auth, request/response format, latency) to `docs/providers.md`. Run it before building any live adapter beyond the chat LLM.
-- CI always runs with `PROVIDER_MODE=mock`. Course endpoints are not reachable from GitHub.
+- CI and all automated tests run with `PROVIDER_MODE=mock` (`backend/tests/conftest.py` forces it and ignores `.env`). The endpoints are public URLs, but their keys never go to GitHub, and tests must not depend on them.
 - Course endpoint URLs go in `.env`, never in code: they are public URLs, so anyone holding them could spend the course's quota.
 
 ## 8. Data and caching

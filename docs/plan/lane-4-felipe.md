@@ -27,7 +27,7 @@ Task F01 from docs/plan/lane-4-felipe.md. Write docs/reviewing.md for non-coders
 3. How to read the report sections (what this code does, acceptance criteria, must fix, nits, proposed additional fixes, merge recommendation).
 4. How to check the change yourself in the running app (npm run dev, what to click).
 5. When to approve, when to request changes, and why you can never approve your own PR.
-6. How the QA bot on GitHub differs from your review (it's automatic and required; your approval is still required).
+6. How the QA bot on GitHub differs from your review: it's automatic and advisory (it never blocks); your approval is what lets a PR merge. How to ask it to look again: add the re-review label.
 7. A one-screen checklist at the top.
 Then use the review-prs skill to review the open dry-run PR from Mike's task M08, follow the skill to send the comments, and approve only if the report says Ready to merge. Link that review in this PR.
 ```

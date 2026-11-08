@@ -51,14 +51,14 @@ Then: bug bash Nov 21, deck and rehearsals Nov 22–23, buffer Nov 24, **due Wed
 3. **Fill `.env`:** copy `.env.example` to `.env`; add the course endpoint URLs (D-03). Never paste them anywhere else — they're public URLs, so anyone holding them could use the course's quota.
 4. **Turn on GitHub Pro** through the GitHub Student Developer Pack (D-01), and collect the remaining open items in [DECISIONS.md](DECISIONS.md): D-03 (missing ports), D-05 (deadlines), D-06 (roster), D-08 (usernames).
 5. **Open Claude Code in the repo and say: "Read INIT.md and follow it."** ([INIT.md](../INIT.md)) It runs M01–M08 one at a time, stops for your confirmation, and tells you when to click something in GitHub. In order:
-   - **M01** GitHub settings: squash-only merges, Dependabot, secret scanning + push protection, read-only Actions token, allowed-actions list.
-   - **M02** Switch on and test the secret-blocking git hook; finalize CLAUDE.md.
-   - **M03** Claude Code permissions and hooks (`.claude/settings.json`).
-   - **M04** Backend + front-end skeleton, cross-platform files, CI on Windows/Mac/Linux.
+   - **M01** GitHub settings: confirm Pro, make the repo private, squash-only merges, Dependabot, read-only Actions token, allowed-actions list.
+   - **M02** Line-ending rules, test the secret-blocking hook with decoys, build log, a light ruleset on `main`, and early invites so teammates can install while you finish.
+   - **M03** Claude Code permissions and hooks (`.claude/settings.json`); needs one Claude Code restart.
+   - **M04** Backend + front-end skeleton, `npm start`, cross-platform files, CI (Linux + Windows on PRs, Mac on merges).
    - **M05** Shared contracts — the shapes all lanes build against.
    - **M06** Provider layer with mocks; smoke-test the course endpoints; `docs/providers.md`.
-   - **M07** QA bot, Secret scan, critical-files check, CODEOWNERS, PR template.
-   - **M08** Labels, one issue per task, project board, branch protection, dry run, invites.
+   - **M07** Advisory QA bot, Secret scan, critical-files check, CODEOWNERS, PR template.
+   - **M08** Labels, one issue per task, project board, full branch protection, dry run, assignments.
 6. **Kickoff call:** walk the team through the board, their lane file, and the dry-run PR.
 
 ## 5. Step by step — every teammate (Adam, Gunnar, Felipe, Dillon)
@@ -86,7 +86,7 @@ Then: bug bash Nov 21, deck and rehearsals Nov 22–23, buffer Nov 24, **due Wed
 9. Open the project board → **Ready** → your Wave 1 issue (A01, G01, F01, or D01). Assign yourself; move it to **In progress**.
 10. In Claude Code: *"Start work on issue #<n>. Read the task in docs/plan/<your lane file> under its ID, follow its prompt, and check off its acceptance criteria before opening the PR."*
 11. Claude explains its plan → you say yes → it builds, runs tests, commits, pushes, and opens the PR.
-12. Request a reviewer on the PR (GitHub notifies them). Wait for the QA bot and a teammate's review. Fix anything requested on the same branch.
+12. Request a reviewer on the PR (GitHub notifies them). The advisory QA bot comments within a few minutes; a teammate's review and approval are what count. Fix anything requested on the same branch.
 13. When it's approved and all checks are green, click **Squash and merge**.
 
 **Every day after**
@@ -99,7 +99,7 @@ Then: bug bash Nov 21, deck and rehearsals Nov 22–23, buffer Nov 24, **due Wed
 
 ```
 Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → build + tests
-→ PR (template, "Closes #n") → CI ×6 + Secret scan + QA bot + Critical files
+→ PR (template, "Closes #n") → required: CI ×4 + Secret scan + Critical files · advisory: QA bot
 → teammate review (review-prs skill: draft → send → separate approve) → author merges → Done
 ```
 
@@ -123,8 +123,8 @@ Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → buil
 | 14 | No demo-day plan | Five cached showcase battles + backup video | PRODUCT_SPEC §9 |
 | 15 | Setup guide said "PM does everything first"; lanes need balance | Each teammate's first task is a setup task; Mike's lane is Phase 0 | LANES.md |
 | 16 | Setup guide's review tool posted and set status automatically | review-prs skill: draft → confirm send → separate confirm approve | Step 3, D-23 |
-| 17 | Fork PRs could run code on a reviewer's machine or slip past the QA bot | Forking disabled; skill refuses to run fork code; QA bot fails (not skips) fork PRs | SKILL.md, M01 |
-| 18 | QA bot cost and Actions minutes on a private repo | Bot on Mike's subscription token, skips drafts, cancels stale runs; macOS/Windows CI only on PRs | D-01, D-04 |
+| 17 | Fork PRs could run code on a reviewer's machine or slip past the QA bot | Private repo (only collaborators can fork); skill refuses to run fork code; QA bot skips fork PRs and is advisory only | SKILL.md, M01 |
+| 18 | QA bot cost and Actions minutes on a private repo | Bot advisory, runs only when a PR opens or on a `re-review` label; PR CI on Linux + Windows, macOS on merges and nightly; no "up to date" rule | D-01, D-04, D-26 |
 
 The full list of edge cases the app must handle is in [ARCHITECTURE §14](ARCHITECTURE.md#14-edge-cases-the-design-must-handle). Outstanding questions are the **Open** rows in [DECISIONS.md](DECISIONS.md).
 
@@ -150,7 +150,7 @@ The full list of edge cases the app must handle is in [ARCHITECTURE §14](ARCHIT
 - Mock mode for every AI service, so everything runs offline and in CI
 - Provider smoke test that documents the real course endpoints
 - review-prs skill: lists open PRs by what they need, agent-drafted comments with suggested fixes, confirm-before-send, separate approval
-- QA bot, Secret scan, and critical-files check as required GitHub checks
+- Secret scan and critical-files check as required GitHub checks, plus an advisory QA bot
 - Shared git hook that blocks keys, `.env` files, and large files on every commit
 - Setup-check (`npm run doctor`) for Windows and Mac
 - `/new-issue` command that scopes and splits work

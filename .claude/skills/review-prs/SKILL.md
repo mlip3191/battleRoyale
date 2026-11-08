@@ -33,7 +33,7 @@ For each PR, work out:
 
 - **Linked issue:** from `Closes #n` / `Fixes #n` in the body (say "none" if missing — that's a finding).
 - **Size:** additions + deletions; flag over 300.
-- **Checks:** from `statusCheckRollup` — all passed / some pending / some failed. Report the **AI QA Review** check separately (passed, failed, pending, missing).
+- **Checks:** from `statusCheckRollup` — required checks (CI, Secret scan, Critical files approval) all passed / some pending / some failed. Report the **AI QA Review** separately as advisory (its verdict from the bot's PR comment, or "not run").
 - **Approvals:** count of `APPROVED` in `latestReviews`, and whether `ME` already reviewed (and on which commit).
 - **Critical files:** `gh pr view <n> --json files --jq '.files[].path'`, compared with the paths in `.github/CODEOWNERS` (if it doesn't exist yet, use: CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .env.example, package.json, package-lock.json, backend/pyproject.toml, backend/uv.lock, backend/app/models/, docs/ARCHITECTURE.md).
 - **From a fork?** `headRepositoryOwner` differs from the repo owner.
@@ -42,7 +42,7 @@ Then show **one table per group**, in this order, skipping empty groups:
 
 1. **Needs your review** — not authored by `ME`, not draft, and either review requested from `ME` or fewer than 1 approval.
 2. **Needs the PM** — touches critical files and the author isn't the PM; only the PM's approval satisfies the critical-files check (anyone can still review and comment).
-3. **Blocked** — failing checks or merge conflicts (`mergeable` = CONFLICTING). Reviewing is still useful; approving isn't yet.
+3. **Blocked** — a failing required check or merge conflicts (`mergeable` = CONFLICTING). Reviewing is still useful; approving isn't yet. (A QA bot verdict alone never makes a PR blocked.)
 4. **Approved, ready to merge** — the author should merge it.
 5. **Your PRs** — authored by `ME`. You can't review these; show their status so you know what to fix.
 6. **Drafts** — not ready; review only if the author asked.
@@ -133,7 +133,7 @@ Only consider approval if **all** are true; otherwise explain which one fails an
 
 - The review was just posted (Step 5).
 - Recommendation is **Ready to merge** and there are **zero must-fix items**.
-- All checks have passed, including **AI QA Review** and **Secret scan** (none failing or pending).
+- All **required** checks have passed: CI, **Secret scan**, and **Critical files approval** (none failing or pending — except Critical files approval when `ME` is the PM, which this approval itself fixes; see below). The **AI QA Review** is advisory: mention its verdict, but it doesn't block.
 - No merge conflicts; not a draft; `ME` is not the author.
 - The reviewer actually ran or looked at the change (for UI changes, ask: "Did you try it in the running app?").
 
@@ -149,7 +149,9 @@ Only on **Approve**:
 gh pr review <n> --approve --body "Approved after review (see my review above)."
 ```
 
-If the PR touches critical files and `ME` isn't the PM, add: "Mike's approval is still required by the critical-files check."
+If the PR touches critical files:
+- `ME` isn't the PM: say "Mike's approval is still required by the critical-files check."
+- `ME` is the PM (`mlip3191`): approvals don't re-trigger that check, so re-run it now. Find its run: `gh pr checks <n> --json name,link --jq '.[] | select(.name=="Critical files approval") | .link'`, take the number after `/runs/`, and (after a yes) run `gh run rerun <run id>`. Tell Mike it should turn green in about a minute.
 
 ## Step 7 — Follow-up issues (optional)
 
@@ -167,7 +169,7 @@ gh issue create --title "<title>" --body "<body>" --label "type: chore"
 ## Rules that never bend
 
 - Nothing is posted without "Send". Nothing is approved without a separate "Approve".
-- Never approve your own PR, a draft, a PR with failing or pending checks, a PR with a must-fix item, or a PR containing a secret.
+- Never approve your own PR, a draft, a PR with failing or pending required checks, a PR with a must-fix item, or a PR containing a secret. The advisory QA bot never blocks approval on its own.
 - Never run code from a fork or outside contributor.
 - Never repeat a secret's value anywhere.
 - Never push to, merge, or edit the PR's branch during a review. Suggestions go in comments; the author applies them.

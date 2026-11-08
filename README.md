@@ -19,10 +19,10 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 1. GitHub account with two-factor authentication on. Send Mike your username and OS. Accept the repo invite.
 2. Install Git, GitHub CLI (`gh auth login`), Claude Code (`claude`), Node 24, and uv.
 3. `git clone https://github.com/mlip3191/battleRoyale.git` then `cd battleRoyale`
-4. `git config core.hooksPath .githooks` — switches on the guard that blocks keys and `.env` files from being committed.
+4. `git config core.hooksPath .githooks` — switches on the guard that blocks keys and `.env` files from being committed. (After setup is finished, `npm run setup` does this for you.)
 5. Copy `.env.example` to `.env` (Windows: `copy .env.example .env`) and fill every `[required]` line with the course endpoint URLs, ports, and keys you already have. Check it with `node scripts/check-env.mjs` — it never shows your values.
 6. Run `claude` in the folder and say: *"Read CLAUDE.md and docs/PROJECT_GUIDE.md and explain the project to me in plain English."*
-7. Pick your Wave 1 issue from the project board and say: *"Start work on issue #<n>."*
+7. Wait until Mike assigns your first issue (end of Phase 0), then pick it from the project board and say: *"Start work on issue #<n>."*
 8. To review a teammate's work, say: *"What can I review?"*
 
 ## Documents

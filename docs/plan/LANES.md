@@ -10,7 +10,7 @@ Five lanes, one per person, sized to similar effort. **S = 1 point (a few hours)
 | 4 | **Felipe Cervino** `felcervino` | Simulation & analytics: engine, numbers/size, terrain/behavior, stats, fair fight, benchmark runner | F01–F07 | 13 |
 | 5 | **Dillon Smart** `dilloncsmart` | Front end & battle stage: onboarding, app shell, intake UI, results, Phaser scene, images, broadcast page | D01–D07 | 13 |
 
-Mike's lane is one point higher because Phase 0 has to happen before anyone else can start; in exchange, Mike has no Wave 2–4 build tasks and spends that time reviewing and integrating.
+Mike's lane is one point higher because Phase 0 has to happen before anyone else can start (teammates are invited early, in M02, so they can install and read while Mike finishes); in exchange, Mike has no Wave 2–4 build tasks and spends that time reviewing and integrating.
 
 Each teammate's **first task (Wave 1) is a setup task** that also teaches the workflow: Adam builds the issue system, Gunnar plans the sources, Felipe writes the review guide and does the first review, Dillon builds onboarding and the setup checker.
 

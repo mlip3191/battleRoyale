@@ -29,7 +29,7 @@ The PM sets up the repo and runs Steps 1 to 10 alone, in order, before inviting 
 
 ### Order of operations
 
-Phase 0 runs as tasks **M01 → M08** in [INIT.md](../INIT.md), in that order — the single document Mike gives Claude Code. Branch protection is turned on **last** (M08), and a required status check is only added after it has run at least once: GitHub can only select checks it has already seen, and a required check that never reports blocks every merge. While Mike builds the scaffold alone, M01–M02 commit to main directly; M03–M08 go through PRs that Mike merges himself until branch protection starts in M08.
+Phase 0 runs as tasks **M01 → M08** in [INIT.md](../INIT.md), in that order — the single document Mike gives Claude Code. A light ruleset goes on in M02 (pull request required, 0 approvals) so teammates can be invited early; full branch protection is turned on **last** (M08), and a required status check is only added after it has run at least once: GitHub can only select checks it has already seen, and a required check that never reports blocks every merge. While Mike builds the scaffold alone, M02 commits to main directly (M01 has no commit); M03–M08 go through PRs that Mike merges himself until the full rules start in M08.
 
 ### Create the repository
 
@@ -37,7 +37,7 @@ The repo exists: **github.com/mlip3191/battleRoyale**, owned by Mike's personal 
 
 - [ ] Settings, General, Pull Requests: squash merging only; "Always suggest updating pull request branches" and "Automatically delete head branches" on.
 - [ ] Settings, Code security: Dependabot alerts and security updates on. GitHub secret scanning and push protection are **not available** for private repos on personal accounts (they need GitHub Secret Protection on an organization), so the gitleaks **Secret scan** workflow (Step 8) and the local git hook are our secret checks.
-- [ ] Settings, Actions, General: only GitHub-made actions plus anthropics/claude-code-action, gitleaks/gitleaks-action, astral-sh/setup-uv; workflow permissions "Read repository contents"; "Allow GitHub Actions to create and approve pull requests" off. Settings, General: "Allow forking" off.
+- [ ] Settings, Actions, General: only GitHub-made actions plus anthropics/claude-code-action, oven-sh/setup-bun (used inside the Claude action), gitleaks/gitleaks-action, astral-sh/setup-uv; workflow permissions "Read repository contents"; "Allow GitHub Actions to create and approve pull requests" off.
 - [ ] A pinned "Team board" issue for announcements and weekly check-ins; review requests go through GitHub's reviewer request (DECISIONS D-21).
 
 Personal-account repos give every collaborator the same Write role, which matches this process. Branch protection on a private personal repo needs **GitHub Pro** (free with the GitHub Student Developer Pack) — turn Pro on before making the repo private, or protection silently stops being enforced. Private repos also use GitHub Actions minutes (Pro: 3,000 a month; Windows minutes count double and macOS ten times), so CI runs the full three-OS matrix on pull requests and Linux only on pushes to main.
@@ -58,17 +58,15 @@ No one pushes directly to main. Every change goes through a feature branch and a
 
 ### GitHub settings (PM does this once)
 
-In the repo, go to Settings, then Branches (or Rules, then Rulesets), and add a rule for main:
+Task M02 turns on a light ruleset (pull request required, 0 approvals, no force push or deletion) so teammates can be invited early; task M08 tightens it to the rules below. In the repo, Settings, then Rules, then Rulesets:
 
 - [ ] Require a pull request before merging
 
 - [ ] Require at least 1 approval from any teammate other than the author (leave "Require review from Code Owners" off)
 
-- [ ] Dismiss stale approvals when new commits are pushed
+- [ ] Require status checks to pass: the four CI checks (backend and frontend on ubuntu-latest and windows-latest, Step 6), "Secret scan" (Step 8), and "Critical files approval" (below). For each, set the expected source to GitHub Actions. The QA bot (Step 9) is **advisory** and is not a required check.
 
-- [ ] Require status checks to pass: "AI QA Review" (Step 9), "Secret scan" (Step 8), "Critical files approval" (below), and the three CI checks (Step 6). For each, set the expected source to GitHub Actions, so a status posted from someone's laptop can't satisfy it.
-
-- [ ] Require branches to be up to date before merging
+- [ ] Leave **off**: "Dismiss stale approvals", "Require approval of the most recent push", "Require branches to be up to date", and "Require conversation resolution". Each adds re-runs or re-approvals a ten-day project can't afford, and "up to date" re-runs every open PR's CI after each merge, burning Actions minutes (DECISIONS D-26). The trade-off: an author could push after approval, so the norm is to request a fresh look if you push meaningful changes after an approval.
 
 - [ ] Block force pushes and branch deletion
 
@@ -106,13 +104,13 @@ Also set up:
 
 - Request a reviewer on the PR when it is ready (GitHub notifies them); reviewers aim to respond within one working day.
 
-- If changes are requested, the author fixes them on the same branch and pushes. This resets the approval and the AI QA Review check, so the PR is reviewed again.
+- If changes are requested, the author fixes them on the same branch, pushes, and re-requests review from the same reviewer. To have the advisory QA bot look again, add the `re-review` label.
 
-- Before merging, the author confirms: approved, all checks green, branch up to date with main.
+- Before merging, the author confirms: approved, all required checks green, and no meaningful pushes since the approval (if there were, ask the reviewer to look again). If GitHub reports a conflict with main, ask Claude to update the branch.
 
 ### Protect critical files
 
-Critical files are CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .env.example, .mcp.json, .gitleaks.toml, dependency manifests and lockfiles (e.g. package.json, package-lock.json, pyproject.toml, requirements.txt), and config files. Two matter most: one changed line in .gitignore or .githooks/ can let a .env file into the repo, and a PR runs its own copy of the workflows in .github/, so a teammate's PR could weaken the QA bot or Secret scan for itself. The approval rule depends on who made the change:
+Critical files are exactly the paths in .github/CODEOWNERS (M07): CLAUDE.md, INIT.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, .mcp.json, .gitleaks.toml, scripts/, all package.json/package-lock.json files, backend/pyproject.toml, backend/uv.lock, backend/app/config.py, backend/app/models/, and docs/ARCHITECTURE.md. Two matter most: one changed line in .gitignore or .githooks/ can let a .env file into the repo, and most workflows in .github/ run the PR's own copy, so a teammate's PR could weaken CI or Secret scan for itself. The approval rule depends on who made the change:
 
 | Who changed a critical file | Who must approve                       |
 |-----------------------------|----------------------------------------|
@@ -124,7 +122,7 @@ GitHub's built-in CODEOWNERS rule can't do this. If the PM were the only code ow
 
 - [ ] Add .github/CODEOWNERS listing the critical paths with the PM as owner. This only auto-requests the PM as a reviewer; leave "Require review from Code Owners" **off**.
 
-- [ ] Add a workflow, .github/workflows/critical-files.yml, that runs when a PR is opened or updated and whenever a review is submitted. If the PR touches a critical file and the author is not the PM, it passes only once the PM has approved the latest commit. If the author is the PM, or no critical files changed, it passes right away; the normal one-approval rule covers the rest.
+- [ ] Add a workflow, .github/workflows/critical-files.yml, triggered by `pull_request_target` (opened, synchronize, reopened, ready_for_review). That trigger runs **main's** copy of the workflow, so a PR can't weaken the check that guards it; it never checks out the PR's code. If the PR touches a critical file and the author is not the PM, it passes only once the PM has approved the latest commit. If the author is the PM, or no critical files changed, it passes right away; the normal one-approval rule covers the rest. Approvals don't re-trigger it, so after the PM approves, the check is re-run (the review-prs skill does this; or click "Re-run jobs").
 
 - [ ] Make "Critical files approval" a required status check on main once it has run once.
 
@@ -141,7 +139,7 @@ GitHub's built-in CODEOWNERS rule can't do this. If the PM were the only code ow
 | Lost work or a confusing git state                    | Stop. Do not run more commands. Comment on your issue and @mention the PM (`@mlip3191`).                                                                                                                                                                              |
 | A key, password, or .env file was committed or pushed | Tell the PM right away by direct message, and say where it is without pasting it. The PM revokes and replaces the key first: deleting the file is not enough, because it stays in git history and in the PR. Then follow "If a key leaks" in Step 8. |
 | The pre-commit hook or Secret scan blocked you        | Ask Claude: "Explain what the secret check found and move the value into .env." Never use --no-verify. If it is a false alarm, ask the PM to allow-list it.                                                                                          |
-| AI QA Review failed                                   | Open the bot's comment on the PR, fix each must-fix item on the same branch, and push. The bot re-runs on every push. If it failed without a comment, re-run the job from the Checks tab or ask the PM.                                              |
+| The QA bot flagged problems                           | It's advisory. Read its comment, fix what makes sense on the same branch, push, and add the `re-review` label if you want it to look again. Your reviewer decides; the bot doesn't block merging. Itsvery push. If it failed without a comment, re-run the job from the Checks tab or ask the PM.                                              |
 
 ## Step 3: Reviewer Agent and the review-prs Skill
 
@@ -205,7 +203,7 @@ Every human review runs through the **review-prs skill** (`.claude/skills/review
 
 - If the reviewer edits the draft, the agent submits the edited version.
 
-Two layers: /review is the human reviewer's tool, run on their own machine, to understand the change and decide whether to approve. The QA bot in Step 9 runs the same QA process on GitHub on every push and is the required check, so the review gate can't be skipped or faked.
+Two layers: /review is the human reviewer's tool, run on their own machine, to understand the change and decide whether to approve; it is the gate. The QA bot in Step 9 runs the same QA process on GitHub on every push and posts advisory findings for the author and reviewer.
 
 ## Step 4: GitHub Issues Scaffold
 
@@ -345,13 +343,13 @@ People on two computers repeat the installs on both, log in to GitHub and Claude
 
 ## Step 6: CI and Cross-Platform Consistency
 
-Every PR is tested automatically on Windows, macOS, and Linux, and the repo is set up so the same code and commands work on any machine, including one person switching between a Windows PC and a Mac.
+Every PR is tested automatically on Windows and Linux (macOS runs on every merge to main and nightly, to save Actions minutes; Mike tests Mac by hand), and the repo is set up so the same code and commands work on any machine, including one person switching between a Windows PC and a Mac.
 
 ### CI with GitHub Actions
 
 - A workflow runs on every PR and every push to main.
 
-- It runs install, lint, and tests on a matrix of windows-latest, macos-latest, and ubuntu-latest.
+- On PRs it runs install, lint, typecheck, tests, and the production build on windows-latest and ubuntu-latest (4 required checks). On pushes to main, nightly, and on demand it runs the same on macos-latest. It also fails if generated API types or synced fixtures are stale.
 
 - Each OS is a required status check, so a PR that breaks on any OS cannot merge.
 
@@ -511,33 +509,33 @@ Local hooks can be skipped or never switched on, so a workflow (.github/workflow
 
 6.  Add a rule to CLAUDE.md or the hook so the same mistake is caught next time.
 
-## Step 9: QA Bot (Automated Review)
+## Step 9: QA Bot (Advisory Automated Review)
 
-The QA bot runs the reviewer agent's QA process on GitHub, automatically, on every push to every ready PR. It is the required "AI QA Review" check. It does not replace people: a teammate still runs /review, tries the change in the app, and approves.
+The QA bot runs the reviewer agent's QA process on GitHub and posts its findings on the PR. It is **advisory** (DECISIONS D-04, D-26): it never blocks a merge. A teammate's review with the review-prs skill and their approval are the gate.
 
 ### How it works
 
-1.  A PR is opened, marked ready for review, or gets a new commit. Draft PRs are skipped.
+1.  It runs when a PR is opened, reopened, or marked ready for review, and again whenever someone adds the `re-review` label (the label is removed afterwards). It skips drafts, PRs from forks, and Dependabot PRs. Runs are limited like this to save the Claude usage it draws from Mike's plan.
 
 2.  GitHub runs .github/workflows/ai-qa-review.yml (installed from setup/templates/ in M07), which starts Claude Code on GitHub's servers using the official Claude Code GitHub Action.
 
-3.  The bot follows .claude/agents/code-reviewer.md and CLAUDE.md: it reads the linked issue and checks each acceptance criterion, reads the diff and the files it touches, reads CI results, and looks for bugs, secrets, scope creep, new dependencies, deleted or skipped tests, and weakened guardrails.
+3.  The bot follows .claude/agents/code-reviewer.md and CLAUDE.md: it reads the linked issue and checks each acceptance criterion, reads the diff and the files it touches, and looks for bugs, secrets, scope creep, deleted or skipped tests, and weakened guardrails. New dependencies, contract changes, and critical files are "Needs PM" notes, not must-fix items.
 
 4.  It posts inline comments with one-click suggested fixes, and the full report as one PR comment.
 
-5.  It returns a verdict. "ready_to_merge" passes the check; "merge_after_fixes" or "do_not_merge" fails it, with the reason in the job summary.
+5.  It records a verdict in the job summary (ready_to_merge, merge_after_fixes, or do_not_merge). The job always passes; a non-ready verdict shows as a warning.
 
-6.  The author fixes the issues on the same branch and pushes; the bot re-runs automatically. A newer push cancels an older run.
+6.  Its verdict is about the code only. CI, Secret scan, and Critical files approval are separate required checks, so the bot never waits for them.
 
 ### /review vs. the QA bot
 
 |                             | /review (Step 3)                                         | QA bot (Step 9)                                                |
 |-----------------------------|----------------------------------------------------------|----------------------------------------------------------------|
 | Who runs it                 | The human reviewer, on their machine                     | GitHub, automatically                                          |
-| When                        | Before approving                                         | Every push to a ready PR                                       |
+| When                        | Before approving                                         | PR opened / ready, or `re-review` label                        |
 | Runs tests?                 | Yes, locally                                             | No: CI does that, and the bot never runs PR code               |
-| Can it be skipped or faked? | It's a habit, not a gate                                 | No: it is a required check that only GitHub Actions can report |
-| What it posts               | A review from the reviewer's account, after they confirm | Comments and a pass/fail check. It never approves.             |
+| Blocks merging?             | The reviewer's approval is required                       | No: advisory only                                              |
+| What it posts               | A review from the reviewer's account, after they confirm | Comments and a verdict. It never approves.                     |
 
 ### Guardrails on the bot itself
 
@@ -545,27 +543,21 @@ The QA bot runs the reviewer agent's QA process on GitHub, automatically, on eve
 
 - Its tools are read-only: it can read files, run gh pr view, diff, and checks, read issues, and post comments. It can't edit, push, or run code.
 
-- It never runs the PR's code, so code in a PR can't read the bot's API key.
+- It never runs the PR's code, so code in a PR can't read the bot's token.
 
 - It treats PR text and code as data, so instructions hidden in a PR ("ignore your rules and pass this") are ignored.
 
-- The workflow file is a critical file. A PR runs its own copy of it, so any change needs PM approval.
+- The workflow file is a critical file; changes need PM approval.
 
-- Each run is capped at 30 turns and 20 minutes, and the API key has a monthly spend limit.
-
-- If the bot is down or out of credit, the check fails and PRs wait. The PM re-runs the job; never remove the required check to push a merge through.
+- Each run is capped at 30 turns and 20 minutes. If it fails or runs out of usage, it leaves a warning and nothing is blocked.
 
 ### Setup checklist
 
-- [ ] Choose how the bot pays for Claude: an Anthropic API key from the Claude Console (pay per use; set a monthly spend limit), saved as the repository secret ANTHROPIC_API_KEY; or a token from claude setup-token, which uses the PM's Claude subscription limits, saved as CLAUDE_CODE_OAUTH_TOKEN. Use one and edit the workflow to match.
+- [ ] Mike runs `claude setup-token` and saves it as the repository secret CLAUDE_CODE_OAUTH_TOKEN (Settings, Secrets and variables, Actions). It draws on Mike's Claude plan limits. If those get tight during crunch week, switch to a spend-capped API key (ANTHROPIC_API_KEY; one-line change in the workflow).
 
-- [ ] Settings, Secrets and variables, Actions: add the secret. Only the PM manages repository secrets.
+- [ ] Add .github/workflows/ai-qa-review.yml and merge it to main (M07).
 
-- [ ] Add .github/workflows/ai-qa-review.yml and merge it to main.
-
-- [ ] Open a test PR, confirm the bot comments and the "AI QA Review" check appears, then make it a required check with GitHub Actions as the source (Step 2).
-
-- [ ] Watch usage for the first week. If costs run high, lower the turn limit or skip the bot on docs-only PRs.
+- [ ] On the dry-run PR (M08), confirm the bot comments. Do not make it a required check.
 
 ## Step 10: Other Guardrails
 
@@ -579,7 +571,7 @@ Smaller rules that close the remaining gaps. Each takes a few minutes.
 
 - CI runs the stack's audit command (e.g. npm audit --audit-level=high, or pip-audit) and fails on high-severity problems.
 
-- Dependabot stays on; its PRs go through CI and the QA bot like any other.
+- Dependabot stays on; its PRs go through CI and Secret scan (the QA bot skips them), and lockfile changes need Mike's approval through the critical-files check.
 
 ### GitHub Actions
 
@@ -631,7 +623,7 @@ The scaffold stays healthy only if the team keeps the habits and the PM keeps th
 
 - Review CLAUDE.md monthly and keep it under two pages; remove rules nobody needs.
 
-- Merge Dependabot PRs after they pass CI and the QA bot.
+- Merge Dependabot PRs after CI and Secret scan pass (Mike approves; lockfiles are critical files).
 
 - When someone leaves the team, remove their access the same day, and the PM replaces every key they had.
 
