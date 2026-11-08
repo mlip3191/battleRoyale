@@ -125,7 +125,7 @@ gh api repos/<REPO>/pulls/<n>/reviews --method POST --input .claude/tmp/review-<
 ```
 
 3. If GitHub rejects an inline comment position, move those comments into the body and retry once. Then delete the temp file.
-4. Show the review URL and tell the author's name to ping in the team channel.
+4. Show the review URL. GitHub notifies the author automatically; if they need a nudge, @mention them in a PR comment.
 
 ## Step 6 — Approval: a separate, second confirmation
 

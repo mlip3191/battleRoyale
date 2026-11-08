@@ -10,7 +10,7 @@
 
 | Step | What | Task(s) |
 |---|---|---|
-| 0 | Repo settings | M01 |
+| 0 | Repo settings | M01 (all Phase 0 tasks are in INIT.md) |
 | 1 | CLAUDE.md | shipped in the repo; finalized in M02 |
 | 2 | Branch protection, critical files, PR template | M07, M08 |
 | 3 | Reviewer agent and the review-prs skill | shipped; verified in M07; guide in F01 |
@@ -29,7 +29,7 @@ The PM sets up the repo and runs Steps 1 to 10 alone, in order, before inviting 
 
 ### Order of operations
 
-Phase 0 runs as tasks **M01 → M08** in [plan/lane-1-mike.md](plan/lane-1-mike.md), in that order; the kickoff prompt in [plan/00-KICKOFF.md](plan/00-KICKOFF.md) drives it. Branch protection is turned on **last** (M08), and a required status check is only added after it has run at least once: GitHub can only select checks it has already seen, and a required check that never reports blocks every merge. While Mike builds the scaffold alone, he can commit to main directly.
+Phase 0 runs as tasks **M01 → M08** in [INIT.md](../INIT.md), in that order — the single document Mike gives Claude Code. Branch protection is turned on **last** (M08), and a required status check is only added after it has run at least once: GitHub can only select checks it has already seen, and a required check that never reports blocks every merge. While Mike builds the scaffold alone, M01–M02 commit to main directly; M03–M08 go through PRs that Mike merges himself until branch protection starts in M08.
 
 ### Create the repository
 
@@ -38,7 +38,7 @@ The repo exists: **github.com/mlip3191/battleRoyale**, owned by Mike's personal 
 - [ ] Settings, General, Pull Requests: squash merging only; "Always suggest updating pull request branches" and "Automatically delete head branches" on.
 - [ ] Settings, Code security: Dependabot alerts and security updates on. GitHub secret scanning and push protection are **not available** for private repos on personal accounts (they need GitHub Secret Protection on an organization), so the gitleaks **Secret scan** workflow (Step 8) and the local git hook are our secret checks.
 - [ ] Settings, Actions, General: only GitHub-made actions plus anthropics/claude-code-action, gitleaks/gitleaks-action, astral-sh/setup-uv; workflow permissions "Read repository contents"; "Allow GitHub Actions to create and approve pull requests" off. Settings, General: "Allow forking" off.
-- [ ] A team channel for questions and review requests (DECISIONS D-21).
+- [ ] A pinned "Team board" issue for announcements and weekly check-ins; review requests go through GitHub's reviewer request (DECISIONS D-21).
 
 Personal-account repos give every collaborator the same Write role, which matches this process. Branch protection on a private personal repo needs **GitHub Pro** (free with the GitHub Student Developer Pack) — turn Pro on before making the repo private, or protection silently stops being enforced. Private repos also use GitHub Actions minutes (Pro: 3,000 a month; Windows minutes count double and macOS ten times), so CI runs the full three-OS matrix on pull requests and Linux only on pushes to main.
 
@@ -46,7 +46,7 @@ Personal-account repos give every collaborator the same Write role, which matche
 
 - [ ] Claude Code, Git, GitHub CLI, Node 24, and uv installed and logged in on Mike's machine.
 - [ ] `.env` filled from `.env.example` with the course endpoint details (DECISIONS D-03).
-- [ ] Each teammate's GitHub username and OS (DECISIONS D-08).
+- [ ] Team handles and OS are recorded in DECISIONS (team table).
 
 ## Step 1: CLAUDE.md
 
@@ -104,7 +104,7 @@ Also set up:
 
 - The author can never approve their own PR; GitHub enforces this.
 
-- Request a review in the team channel when the PR is ready; reviewers aim to respond within one working day.
+- Request a reviewer on the PR when it is ready (GitHub notifies them); reviewers aim to respond within one working day.
 
 - If changes are requested, the author fixes them on the same branch and pushes. This resets the approval and the AI QA Review check, so the PR is reviewed again.
 
@@ -138,7 +138,7 @@ GitHub's built-in CODEOWNERS rule can't do this. If the PM were the only code ow
 | Branch is behind main                                 | Click "Update branch" on the PR, or ask Claude to pull main into the branch.                                                                                                                                                                         |
 | CI check failed                                       | Ask Claude: "Read the failed CI check on PR \#\<number\> and explain what broke."                                                                                                                                                                    |
 | Something bad was merged                              | On the merged PR, click "Revert". This opens a new PR that undoes it; review and merge it like any other.                                                                                                                                            |
-| Lost work or a confusing git state                    | Stop. Do not run more commands. Post in the team channel or ask the PM.                                                                                                                                                                              |
+| Lost work or a confusing git state                    | Stop. Do not run more commands. Comment on your issue and @mention the PM (`@mlip3191`).                                                                                                                                                                              |
 | A key, password, or .env file was committed or pushed | Tell the PM right away by direct message, and say where it is without pasting it. The PM revokes and replaces the key first: deleting the file is not enough, because it stays in git history and in the PR. Then follow "If a key leaks" in Step 8. |
 | The pre-commit hook or Secret scan blocked you        | Ask Claude: "Explain what the secret check found and move the value into .env." Never use --no-verify. If it is a false alarm, ask the PM to allow-list it.                                                                                          |
 | AI QA Review failed                                   | Open the bot's comment on the PR, fix each must-fix item on the same branch, and push. The bot re-runs on every push. If it failed without a comment, re-run the job from the Checks tab or ask the PM.                                              |
@@ -276,7 +276,7 @@ Each teammate goes from zero to a first merged pull request on day one.
 
 - [ ] Claude plan that includes Claude Code
 
-- [ ] The real .env values, shared by the PM through the team password manager (never in chat)
+- [ ] The course endpoint URLs, ports, and keys (everyone has them) for your `.env`
 
 ### 2. Installs
 
@@ -312,13 +312,13 @@ People on two computers repeat the installs on both, log in to GitHub and Claude
 
 2.  Run the setup check script. It also switches on the team's shared git hook (git config core.hooksPath .githooks), which blocks commits that contain keys.
 
-3.  Copy .env.example to a new file named .env and fill in the values from the password manager.
+3.  Copy .env.example to a new file named .env and fill in every [required] line with the course endpoint values; check with node scripts/check-env.mjs.
 
 4.  Open Claude Code in the repo folder and ask it to read CLAUDE.md and explain the project in plain English.
 
 5.  Ask Claude to install dependencies, start the app, and run the tests.
 
-6.  Confirm the app runs and tests pass; if not, post in the team channel.
+6.  Confirm the app runs and tests pass; if not, comment on your issue and @mention the PM.
 
 ### 4. Practice loop
 
@@ -614,13 +614,13 @@ The scaffold stays healthy only if the team keeps the habits and the PM keeps th
 
 ### Team norms
 
-- One short check-in a week (or async in the channel): what I finished, what I am on, what is blocking me.
+- One short check-in a week (as a comment on the pinned Team board issue): what I finished, what I am on, what is blocking me.
 
-- Post every PR in the channel when it is ready for review.
+- Request a reviewer on every PR when it is ready for review.
 
-- Ask early: if stuck for more than 30 minutes, post in the channel.
+- Ask early: if stuck for more than 30 minutes, comment on your issue and @mention the PM.
 
-- Never share API keys or passwords in chat, issues, or PRs; the PM shares secrets through a password manager.
+- Never share API keys or passwords in chat, issues, or PRs; everyone keeps the course values only in their own `.env`.
 
 - Each person uses their own Claude account; watch usage limits and tell the PM if you run out.
 

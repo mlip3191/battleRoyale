@@ -148,7 +148,7 @@ Task A05 from docs/plan/lane-2-adam.md. Build backend/app/pipeline/ and the batt
 **Prompt for Claude Code:**
 ```text
 Task A06 from docs/plan/lane-2-adam.md. Build backend/app/narration/.
-1. Prompts in backend/prompts/: announcer_intro.md, play_by_play.md, outro.md. Persona: a cheesy late-night sports announcer plus a deadpan color commentator. PG: knockouts and retreats, no blood or gore, no jokes about groups of people.
+1. Prompts in backend/prompts/: announcer_intro.md, play_by_play.md, outro.md. Persona: a gruff, deep-voiced, hard-hitting veteran fight announcer who delivers corny lines with total seriousness, plus a deadpan color commentator. Short, punchy sentences that sound good read aloud in a gravel voice. PG: knockouts and retreats, no blood or gore, no jokes about groups of people.
 2. write_scripts(stat_sheets, result, fair_fight) -> list[Script]:
    - intro: 4–8 lines grounded only in the stat sheets (the prompt receives a compact fact list; estimates must be called estimates);
    - play_by_play: compress representative_log into 8–20 beats; each ScriptLine sets at_event to the event index it describes, so captions sync with the animation;
@@ -169,13 +169,14 @@ Task A06 from docs/plan/lane-2-adam.md. Build backend/app/narration/.
 
 **Goal:** Turn the scripts into audio in one consistent announcer voice and add a short soundtrack.
 **Read first:** ARCHITECTURE §7 (TTS, MusicGen), §11 (voice-cloning consent); `docs/providers.md` from M06.
-**Before you start:** DECISIONS D-09 (which voice) must be decided.
+**Voice (DECISIONS D-09):** stock voice, gruff, deep, and hard-hitting.
 
 **Prompt for Claude Code:**
 ```text
 Task A07 from docs/plan/lane-2-adam.md.
 1. Live adapters backend/app/providers/live/tts.py and live/music.py matching the TTS and MusicGen interfaces, following what docs/providers.md says about those endpoints. If the endpoint details are unknown, stop and ask me to run the smoke script first.
 2. backend/app/media/audio.py:
+   - Voice audition first: backend/scripts/audition_voices.py lists the endpoint's stock voices and renders the same test line ("Ladies and gentlemen... in this corner... weighing in at four hundred kilos... THE GRIZZLY!") with each into data/media/auditions/. I pick the deepest, gruffest one; put its id as the default ANNOUNCER_VOICE_ID in .env.example (it's not a secret). If the endpoint supports pitch, rate, or style settings, lower pitch slightly, slow the rate a little, and pass ANNOUNCER_VOICE_STYLE.
    - make_audio(scripts) -> list[Asset]: one audio file per script (intro, play-by-play, outro), lines joined with short pauses, using settings.announcer_voice_id. Cache by prompt_hash so the same script never regenerates.
    - make_music(matchup, result) -> Asset: build a mood prompt in code from the matchup (e.g. "upbeat retro sports-broadcast theme, brass and synth, 30 seconds") — never name a real artist, song, or franchise.
    - Save files under data/media/ (gitignored) and serve them at GET /media/{asset_id}.
@@ -185,6 +186,7 @@ Task A07 from docs/plan/lane-2-adam.md.
 ```
 
 **Acceptance criteria**
+- [ ] Voice auditions done; the chosen gruff, deep stock voice is the default
 - [ ] Three narration files + one music file generated live for a sample battle (links in the PR)
 - [ ] Re-running the same battle reuses cached audio
 - [ ] Failures fall back cleanly; consent rule enforced

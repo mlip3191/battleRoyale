@@ -27,7 +27,7 @@ G07 pairs with Felipe's F07: Gunnar builds the benchmark data, Felipe builds the
 Task G01 from docs/plan/lane-3-gunnar.md. Help me write docs/research.md. Do not write code.
 1. Propose 25 seed fighters across categories (big predators, small animals good for swarms, herbivores, birds, reptiles, aquatic, insects, 2–3 dinosaurs, 3 generic historical human archetypes). For each: fighter_id slug, display name, default variant, category, habitat, and the Wikipedia article title. Include classics: house cat, golden retriever, grizzly bear, gray wolf, African elephant, honey badger, chimpanzee, bald eagle, saltwater crocodile, great white shark, army ant, Tyrannosaurus rex, Roman legionary.
 2. For each StatName, explain in plain English what it means, its unit, where it usually appears in Wikipedia/Wikidata (e.g. Wikidata property for mass), and what we do when it's missing (category default).
-3. The source policy: allowed sources (Wikipedia, Wikidata, the Hugging Face datasets we choose — name them and their licenses), how we attribute (CC BY-SA), and what is not allowed (forums, AI-generated pages, fan wikis).
+3. The source policy, starting from the recommended datasets in docs/DECISIONS.md (D-20): Wikipedia Structured Contents (wikimedia/structured-wikipedia on Hugging Face) as the main text source, FineWiki as backup, Wikidata for referenced numbers, PanTHERIA and AnimalTraits for body mass and size, and optionally the TreeOfLife taxonomy metadata for name normalization. For each: what we take, license, and how we attribute. Not allowed: forums, fan wikis, AI-generated pages, and any dataset whose card says values were AI-generated or unsourced.
 4. A short "variants" rule: what default we pick when a user says just "bear" or "shark".
 Show me the draft, I'll edit it, then commit.
 ```
@@ -48,10 +48,10 @@ Show me the draft, I'll edit it, then commit.
 **Prompt for Claude Code:**
 ```text
 Task G02 from docs/plan/lane-3-gunnar.md. Build backend/app/research/ingest.py and backend/scripts/ingest_seed.py.
-1. For each seed fighter in docs/research.md (store the list as data/seed/fighters.yaml so code can read it): fetch the Wikipedia article (REST API, plain text or HTML) and the Wikidata entity JSON (no key needed; send a descriptive User-Agent with the project name, not a personal email). Save raw files under data/kb/ (gitignored) with title, URL, license, retrieved_at.
+1. For each seed fighter in docs/research.md (store the list as data/seed/fighters.yaml so code can read it): get the article from the Hugging Face dataset wikimedia/structured-wikipedia by streaming and filtering on the fighter's Wikidata QID (never download the whole dataset; fall back to the Wikipedia REST API if missing), and fetch the Wikidata entity JSON (no key needed; send a descriptive User-Agent with the project name, not a personal email). Save raw files under data/kb/ (gitignored) with title, URL, license, retrieved_at.
 2. Parse HTML/PDF through the DocParser provider (port 9005) when it is HTML or PDF; plain text skips parsing.
 3. Chunk text (~800 characters, 100 overlap, keep section headings as chunk metadata), embed with the Embedder provider (port 9002) in batches, and store in SQLite: documents, chunks, and a sqlite-vec virtual table chunks_vec. Add the migration file in backend/app/db/migrations/.
-4. Pull structured Wikidata facts too (mass, length, speed where present) into a wikidata_facts table with the property ID, value, unit, and reference — these are high-confidence sources for G04.
+4. Pull structured facts into a facts table with source, field, value, unit, and reference: Wikidata (mass, length, speed where present, with property IDs), PanTHERIA (adult body mass, head-body length) and AnimalTraits (body mass) matched by scientific name. Download the trait files once into data/kb/ by script; they are high-confidence sources for G04. Ask me before adding the datasets library.
 5. Live adapters for DocParser and Embedder in backend/app/providers/live/ following docs/providers.md.
 6. The script is idempotent (re-running skips unchanged docs) and prints a summary table: fighters, documents, chunks, facts, failures.
 7. Tests on mocks: chunking, idempotency, a fighter whose article is missing (logged, not fatal).
@@ -176,9 +176,10 @@ Show me the draft before committing.
 **Goal:** `docker compose up` gives anyone a working app for the demo.
 **Prompt for Claude Code:**
 ```text
-Task G08 from docs/plan/lane-3-gunnar.md. Create backend/Dockerfile (uv, Python 3.12, non-root user), frontend/Dockerfile (build with Node 24, serve the built files), and docker-compose.yml with services backend and frontend, env_file .env, a volume for ./data, and health checks. The frontend proxies /api and /media to the backend. Course endpoints are public URLs (DECISIONS D-03), so containers reach them directly; pass them in through .env. Add "docker:up" and "docker:down" scripts to the root package.json and a "Run with Docker" section in README.md. Test on my machine and tell me whether it was Windows or Mac; ask a teammate on the other OS to test it in their review.
+Task G08 from docs/plan/lane-3-gunnar.md. Create backend/Dockerfile (uv, Python 3.12, non-root user), frontend/Dockerfile (build with Node 24, serve the built files), and docker-compose.yml with services backend and frontend, env_file .env, a volume for ./data, and health checks. The frontend proxies /api and /media to the backend. Course endpoints are public URLs (DECISIONS D-03), so containers reach them directly; pass them in through .env. Add "docker:up" and "docker:down" scripts to the root package.json and a "Run with Docker" section in README.md. Test on my Windows machine; Mike tests it on Mac during review. Also add backend/scripts/export_showcase.py and import_showcase.py: export the five showcase battles (records + small media, under 20 MB total) to data/showcase/ (committed) and load them into an empty database on first start, so the instructor's fresh clone shows them immediately (DECISIONS D-24).
 ```
 
 **Acceptance criteria**
 - [ ] `docker compose up` serves the app at http://localhost:8080 (or the documented port)
-- [ ] Data persists across restarts; tested on both Windows and Mac
+- [ ] Data persists across restarts; tested on Windows (Gunnar) and Mac (Mike)
+- [ ] A fresh clone shows the five showcase battles from `data/showcase/`

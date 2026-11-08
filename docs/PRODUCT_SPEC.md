@@ -68,7 +68,7 @@ The LLM proposes candidate opponents for the winner; the simulation quick-tests 
 
 ## 5. Tone guide [added]
 
-- **Voice:** cheesy late-night sports broadcast. Puns welcome. An announcer and a deadpan color commentator.
+- **Voice:** cheesy late-night sports broadcast. Puns welcome. A gruff, deep-voiced, hard-hitting fight announcer delivers the corny lines dead serious; a deadpan color commentator backs him up.
 - **Rating:** PG. Knockouts, retreats, and "taps out." No blood, gore, or suffering described.
 - **Respect:** jokes are about the animals and the absurdity, never about groups of people.
 - **Honesty:** estimates are called estimates on air ("our best guess puts this badger at…").
@@ -97,16 +97,16 @@ All GenAI calls use course-provided endpoints, so no paid API keys are needed fo
 | Service | Port | Used for | Status |
 |---|---|---|---|
 | Chat/Classification LLM | 9001 | parsing, moderation, scripts, challenger names | confirmed in proposal |
-| Structured Decisions | ? | schema-validated stat extraction | **port unknown** (D-03) |
+| Structured Decisions | in `.env` | schema-validated stat extraction | ports and keys in each person's `.env` (D-03) |
 | Document Parsing | 9005 | HTML/PDF → text | confirmed |
 | Text Embeddings | 9002 | vector index | confirmed |
-| Multimodal Reranking | ? | passage ranking | **port unknown** |
+| Multimodal Reranking | in `.env` | passage ranking | |
 | Image Generation and Editing | 9006 | sprites, battlefields, background removal | confirmed |
-| Text-to-Speech and Voice Cloning | ? | announcer voice | **port unknown** |
-| Music Generation | ? | soundtrack | **port unknown** |
+| Text-to-Speech and Voice Cloning | in `.env` | gruff, deep stock announcer voice (D-09) | |
+| Music Generation | in `.env` | soundtrack | |
 | Speech-to-Text, Multimodal Embeddings | ? | stretch only | not in MVP |
 | Hermes Primary Model + Hermes Agent | 9000 | Claude Code builds the app; Hermes Agent builds one task (G06) to show it in use (D-02) | app never calls it |
-| Wikipedia / Wikidata APIs, Hugging Face datasets | public | knowledge base | no key |
+| Wikipedia Structured Contents + FineWiki (Hugging Face), Wikidata, PanTHERIA, AnimalTraits | public | knowledge base and trait numbers (D-20) | no key |
 
 App software: Python 3.12 (FastAPI), React + Vite + TypeScript, Phaser 3, SQLite + sqlite-vec, Pydantic v2, Docker Compose. Full detail in [ARCHITECTURE.md](ARCHITECTURE.md).
 

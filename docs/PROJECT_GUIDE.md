@@ -1,7 +1,7 @@
 # Project Guide — start here
 
 **Battle Royale: The Science-Backed Fight Simulator** · MBAX 6418 AI Business Solutions final project
-Team: **Mike** (PM), **Adam**, **Gunnar**, **Felipe**, **Dillon** · Repo: https://github.com/mlip3191/battleRoyale
+**Group A:** Mike Lippert (PM, `mlip3191`), Adam Fondale (`afondale`), Gunnar O'Connor (`gunnaroc`), Felipe Cervino (`felcervino`), Dillon Smart (`dilloncsmart`) · Repo: https://github.com/mlip3191/battleRoyale
 
 This guide consolidates the project proposal and the team's setup standard into one plan. It tells you what we're building, how the documents fit together, and exactly what to do, step by step, from an empty repo to a finished demo.
 
@@ -15,7 +15,8 @@ This guide consolidates the project proposal and the team's setup standard into 
 | [DECISIONS.md](DECISIONS.md) | Something is unclear or undecided | Mike |
 | [plan/LANES.md](plan/LANES.md) | You want the big picture of who does what, when | everyone |
 | `plan/lane-<n>-<name>.md` | You're starting a task: **every task has a ready-to-paste prompt** | each owner |
-| [plan/00-KICKOFF.md](plan/00-KICKOFF.md) | Mike, once: the prompt that builds the scaffold | Mike |
+| [../INIT.md](../INIT.md) | Mike, once: the single document Claude Code follows to initialize the project | Mike |
+| [plan/DELIVERABLES.md](plan/DELIVERABLES.md) | Planning the deck, presentation, and Canvas submission | everyone |
 | [../CLAUDE.md](../CLAUDE.md) | Claude reads it automatically every session | Mike |
 
 ## 2. The product in one minute
@@ -49,7 +50,7 @@ Wave dates follow the course calendar (DECISIONS D-05).
 2. **Clone:** `git clone https://github.com/mlip3191/battleRoyale.git`, `cd battleRoyale`.
 3. **Fill `.env`:** copy `.env.example` to `.env`; add the course endpoint URLs (D-03). Never paste them anywhere else — they're public URLs, so anyone holding them could use the course's quota.
 4. **Turn on GitHub Pro** through the GitHub Student Developer Pack (D-01), and collect the remaining open items in [DECISIONS.md](DECISIONS.md): D-03 (missing ports), D-05 (deadlines), D-06 (roster), D-08 (usernames).
-5. **Open Claude Code in the repo and paste the kickoff prompt** from [plan/00-KICKOFF.md](plan/00-KICKOFF.md). It runs M01–M08 one at a time, stops for your confirmation, and tells you when to click something in GitHub. In order:
+5. **Open Claude Code in the repo and say: "Read INIT.md and follow it."** ([INIT.md](../INIT.md)) It runs M01–M08 one at a time, stops for your confirmation, and tells you when to click something in GitHub. In order:
    - **M01** GitHub settings: squash-only merges, Dependabot, secret scanning + push protection, read-only Actions token, allowed-actions list.
    - **M02** Switch on and test the secret-blocking git hook; finalize CLAUDE.md.
    - **M03** Claude Code permissions and hooks (`.claude/settings.json`).
@@ -77,7 +78,7 @@ Wave dates follow the course calendar (DECISIONS D-05).
    Windows only: `git config --global core.longpaths true`
 5. **Clone and enter the project:** `git clone https://github.com/mlip3191/battleRoyale.git` then `cd battleRoyale`.
 6. **Switch on the secret guard:** `git config core.hooksPath .githooks` (the setup check does this for you after D01).
-7. **Create your `.env`:** copy `.env.example` to `.env` (Mac: `cp .env.example .env`, Windows: `copy .env.example .env`) and fill in values Mike shares through the password manager.
+7. **Create your `.env`:** copy `.env.example` to `.env` (Mac: `cp .env.example .env`, Windows: `copy .env.example .env`) and fill in every `[required]` line with the course endpoint URLs, ports, and keys you already have; then run `node scripts/check-env.mjs` (it never shows values). Values everyone already has.
 8. **Start Claude Code** in the folder (`claude`) and say: *"Read CLAUDE.md and docs/PROJECT_GUIDE.md and explain the project to me in plain English. Then run npm run setup and npm run dev and tell me if it works."*
 
 **Day 2 — your first task**
@@ -85,14 +86,14 @@ Wave dates follow the course calendar (DECISIONS D-05).
 9. Open the project board → **Ready** → your Wave 1 issue (A01, G01, F01, or D01). Assign yourself; move it to **In progress**.
 10. In Claude Code: *"Start work on issue #<n>. Read the task in docs/plan/<your lane file> under its ID, follow its prompt, and check off its acceptance criteria before opening the PR."*
 11. Claude explains its plan → you say yes → it builds, runs tests, commits, pushes, and opens the PR.
-12. Post the PR link in the team channel. Wait for the QA bot and a teammate's review. Fix anything requested on the same branch.
+12. Request a reviewer on the PR (GitHub notifies them). Wait for the QA bot and a teammate's review. Fix anything requested on the same branch.
 13. When it's approved and all checks are green, click **Squash and merge**.
 
 **Every day after**
 
 14. **Review someone's PR:** ask Claude *"What can I review?"* Pick one; the agent drafts comments and fixes; you read them, say **send**, and approve only if it's ready (Claude asks separately).
 15. **Need new work tracked?** Type `/new-issue` (after A01).
-16. **Stuck more than 30 minutes?** Post in the channel.
+16. **Stuck more than 30 minutes?** Comment on your issue and @mention Mike (`@mlip3191`).
 
 ## 6. How a task flows (everyone, every time)
 
@@ -110,14 +111,14 @@ Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → buil
 | 2 | Five endpoints have no port listed (Structured Decisions, Reranking, TTS/Voice, Music, STT); endpoints are public URLs | Provider layer + smoke test discovers and documents them; mocks unblock everyone meanwhile; URLs kept in `.env` | ARCHITECTURE §7, M06, D-03 |
 | 3 | Course endpoints aren't reachable from GitHub CI | Mock-first providers; CI always in mock mode | D-15 |
 | 4 | Proposal names Hermes as the coding agent; team uses Claude Code | Claude Code for the build; Hermes Agent builds task G06 for the report | D-02 |
-| 5 | Dillon isn't on the proposal; group letter and last names are blank | Open decision | D-06 |
-| 6 | No deadlines or rubric in hand | Waves are relative; add the assignment doc | D-05 |
+| 5 | Dillon isn't on the proposal; group letter and last names are blank | Group A, Dillon confirmed, names and handles recorded | D-06, D-08 |
+| 6 | Deliverables weren't mapped to work | Final Project Overview mapped to owners, record-keeping, bug bash, and instructor access | plan/DELIVERABLES.md |
 | 7 | The repo was public; going private on GitHub Free would silently drop branch protection | Private + GitHub Pro (Student Pack); gitleaks Secret scan replaces GitHub's secret scanning, which private personal repos don't get | D-01, Step 8 |
 | 8 | "Expert answers" for the benchmark undefined | Three groups (obvious, documented, count) with pass rules set in advance | G07, D-10 |
 | 9 | Stat schema undefined | Ten fixed stats + habitat + weapons | ARCHITECTURE §5 |
 | 10 | Long media generation would block the verdict | Staged pipeline with progressive reveal and per-stage fallbacks | ARCHITECTURE §4 |
 | 11 | No safety detail beyond "block real people" | Code rules + classifier + Wikidata human check; minors and groups of people blocked; PG tone | A04, ARCHITECTURE §11 |
-| 12 | Voice cloning and music raise consent/copyright issues | Consent file required; no real artists or franchises in prompts | A07, D-09 |
+| 12 | Voice cloning and music raise consent/copyright issues | Stock gruff voice first; cloning needs consent; no real artists or franchises in prompts | A07, D-09 |
 | 13 | Wikipedia text license | Attribution (CC BY-SA) on the results page | D04, ARCHITECTURE §11 |
 | 14 | No demo-day plan | Five cached showcase battles + backup video | PRODUCT_SPEC §9 |
 | 15 | Setup guide said "PM does everything first"; lanes need balance | Each teammate's first task is a setup task; Mike's lane is Phase 0 | LANES.md |

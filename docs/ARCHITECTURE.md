@@ -39,6 +39,7 @@
 
 ```
 battleRoyale/
+├── INIT.md                       # Phase 0: the one document that initializes the project
 ├── CLAUDE.md                     # rules every Claude Code session reads first   (critical)
 ├── README.md
 ├── package.json                  # root task runner: setup, dev, test, lint, check (critical)
@@ -46,6 +47,7 @@ battleRoyale/
 ├── .env.example                  # every config variable, placeholder values      (critical)
 ├── .gitignore  .gitattributes  .editorconfig  .nvmrc                              (critical)
 ├── .githooks/pre-commit          # shared secret/large-file guard                 (critical)
+├── scripts/                      # check-env.mjs (checks .env without showing values), setup-check.mjs (D01)
 ├── .claude/                      # shared Claude Code config                      (critical)
 │   ├── settings.json             # permissions + hooks (task M03)
 │   ├── agents/code-reviewer.md   # QA reviewer subagent
@@ -81,6 +83,7 @@ battleRoyale/
 │       └── fixtures/             # copies of backend contract fixtures for offline UI work
 ├── data/
 │   ├── seed/fighters/*.json      # hand-verified stat sheets (committed)
+│   ├── showcase/                 # five demo battles + small media (committed, D-24)
 │   ├── benchmark/matchups.yaml   # evaluation set (committed)
 │   ├── app.db, kb/, media/       # generated at runtime (gitignored)
 └── docs/                         # this documentation set
@@ -285,14 +288,14 @@ One adapter per course endpoint, each behind an interface:
 | Interface | Course endpoint | Port | Mock behavior |
 |---|---|---|---|
 | `ChatLLM.complete(messages, json_schema=None)` | Chat/Classification LLM | 9001 | canned responses keyed by prompt name + input hash, from `tests/fixtures/providers/` |
-| `StructuredLLM.extract(prompt, schema)` | Structured Decisions | **unknown** | returns fixture stat extractions with quotes |
+| `StructuredLLM.extract(prompt, schema)` | Structured Decisions | `.env` | returns fixture stat extractions with quotes |
 | `Embedder.embed(texts)` | Text Embeddings | 9002 | deterministic hash-based vectors (fixed dimension from config) |
-| `Reranker.rerank(query, passages)` | Multimodal Reranking | **unknown** | keyword-overlap score |
+| `Reranker.rerank(query, passages)` | Multimodal Reranking | `.env` | keyword-overlap score |
 | `DocParser.parse(bytes, mime)` | Document Parsing | 9005 | returns plain text |
 | `ImageGen.generate(prompt)` / `.edit(image, prompt)` | Image Generation & Editing | 9006 | colored silhouette PNG |
-| `TTS.speak(text, voice_id)` | Text-to-Speech / Voice Cloning | **unknown** | 1 s silent WAV per line |
-| `MusicGen.compose(prompt, seconds)` | Music Generation | **unknown** | silent track |
-| `STT`, `MultimodalEmbedder` | stretch | **unknown** | not built in MVP |
+| `TTS.speak(text, voice_id)` | Text-to-Speech / Voice Cloning | `.env` | 1 s silent WAV per line |
+| `MusicGen.compose(prompt, seconds)` | Music Generation | `.env` | silent track |
+| `STT`, `MultimodalEmbedder` | stretch | `.env` | not built in MVP |
 | *(not used by the app)* | Hermes Primary Model + Hermes Agent | 9000 | — |
 
 Rules:

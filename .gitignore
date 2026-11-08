@@ -107,7 +107,7 @@ CLAUDE.local.md
 # 3. LOCAL DATA, LOGS AND DUMPS  (can contain real user data or tokens)
 # -----------------------------------------------------------------------------
 # Generated at runtime: database, downloaded knowledge base, generated media.
-# data/seed/ and data/benchmark/ ARE committed.
+# data/seed/, data/benchmark/ and data/showcase/ ARE committed.
 data/app.db*
 data/kb/
 data/media/

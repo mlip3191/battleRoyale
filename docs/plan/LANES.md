@@ -4,11 +4,11 @@ Five lanes, one per person, sized to similar effort. **S = 1 point (a few hours)
 
 | Lane | Owner | Focus | Tasks | Points |
 |---|---|---|---|---|
-| 1 | **Mike** (PM) | Foundation & platform: repo, guardrails, skeleton, contracts, providers, review tooling | M01–M08 | 14 |
-| 2 | **Adam** | Intake, safety & orchestration: parsing, clarifying, moderation, pipeline, announcer script + voice | A01–A07 | 13 |
-| 3 | **Gunnar** | Research & knowledge base: sources, ingestion, retrieval, stat sheets, traceability, benchmark data, Docker | G01–G08 | 13 |
-| 4 | **Felipe** | Simulation & analytics: engine, numbers/size, terrain/behavior, stats, fair fight, benchmark runner | F01–F07 | 13 |
-| 5 | **Dillon** | Front end & battle stage: onboarding, app shell, intake UI, results, Phaser scene, images, broadcast page | D01–D07 | 13 |
+| 1 | **Mike Lippert** (PM) `mlip3191` | Foundation & platform: repo, guardrails, skeleton, contracts, providers, review tooling | M01–M08 | 14 |
+| 2 | **Adam Fondale** `afondale` | Intake, safety & orchestration: parsing, clarifying, moderation, pipeline, announcer script + voice | A01–A07 | 13 |
+| 3 | **Gunnar O'Connor** `gunnaroc` | Research & knowledge base: sources, ingestion, retrieval, stat sheets, traceability, benchmark data, Docker | G01–G08 | 13 |
+| 4 | **Felipe Cervino** `felcervino` | Simulation & analytics: engine, numbers/size, terrain/behavior, stats, fair fight, benchmark runner | F01–F07 | 13 |
+| 5 | **Dillon Smart** `dilloncsmart` | Front end & battle stage: onboarding, app shell, intake UI, results, Phaser scene, images, broadcast page | D01–D07 | 13 |
 
 Mike's lane is one point higher because Phase 0 has to happen before anyone else can start; in exchange, Mike has no Wave 2–4 build tasks and spends that time reviewing and integrating.
 
@@ -84,4 +84,6 @@ Anyone can review anything, but to spread knowledge and keep reviews fast, the d
 | Dillon | Adam | Adam's APIs feed the UI |
 | Mike | rotating | everyone sees the platform code |
 
-Critical-file changes from anyone except Mike also need Mike's approval (enforced by the "Critical files approval" check).
+Critical-file changes from anyone except Mike also need Mike's approval (enforced by the "Critical files approval" check). Everyone except Mike is on Windows, so Mike also checks on Mac any PR that touches setup scripts, hooks, Docker, or file paths.
+
+Final deliverables (deck sections, user guide, submission) are split one owner per section in [DELIVERABLES.md](DELIVERABLES.md).

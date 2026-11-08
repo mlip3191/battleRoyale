@@ -5,8 +5,8 @@ Read this first in every session. It is a critical file: changes need PM (Mike) 
 ## 1. Project
 **Battle Royale: The Science-Backed Fight Simulator** — a web app where users name two combatants; the app builds cited stat sheets from vetted sources, a Monte Carlo simulation in code decides the outcome, and the result plays as a corny late-night sports broadcast. **Corny voice, serious brain: no language model sets a number.**
 Stack: Python 3.12 + FastAPI + Pydantic v2 + SQLite/sqlite-vec (`backend/`, uv); React + Vite + TypeScript + Phaser 3 (`frontend/`, Node 24, npm); Docker Compose. All AI calls go to course-provided endpoints through `backend/app/providers/`.
-Docs: `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SPEC.md` · `ARCHITECTURE.md` · `TEAM_PROCESS.md` · `DECISIONS.md` · `plan/` (tasks and prompts per lane).
-**Phase:** if `backend/` doesn't exist yet, we're in Phase 0 — follow `docs/plan/00-KICKOFF.md`.
+Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SPEC.md` · `ARCHITECTURE.md` · `TEAM_PROCESS.md` · `DECISIONS.md` · `plan/` (tasks and prompts per lane).
+**Phase:** if `backend/` doesn't exist yet, we're in Phase 0 — follow `INIT.md`.
 
 ## 2. Commands (from the repo root; work the same on Windows and Mac — available after task M04)
 - Install: `npm run setup` · Run: `npm run dev` (backend :8000, frontend :5173) · Docker: `npm run docker:up`
@@ -25,7 +25,7 @@ Docs: `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SPEC.md` · `ARCHITECTURE
 - Banned without a PM-approved issue: LangChain/LlamaIndex, paid API SDKs, new databases, CSS frameworks, any model call from the front end.
 
 ## 5. Rules for working with non-coders (every session)
-- Never work on `main`. Branch per issue: `issue-<number>-short-description`. One issue at a time; don't expand scope — suggest a new issue (`/new-issue`) instead.
+- Never work on `main` (only exception: INIT.md tasks M01–M02). Branch per issue: `issue-<number>-short-description`. One issue at a time; don't expand scope — suggest a new issue (`/new-issue`) instead.
 - Before changing anything, explain the plan in plain English and wait for a yes. After, summarize what changed and why.
 - Run `npm run check` before every commit; don't commit if it fails. Never delete, skip, or weaken a test to make it pass — explain the failure.
 - Never touch files outside the task's scope. Ask before adding any dependency.

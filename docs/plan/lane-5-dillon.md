@@ -22,14 +22,14 @@
 **Prompt for Claude Code:**
 ```text
 Task D01 from docs/plan/lane-5-dillon.md.
-1. Write docs/onboarding.md for non-coders: accounts and access (GitHub with 2FA, invite accepted, Claude plan with Claude Code), installs with download links and how to check each version (Git — Git for Windows on Windows; GitHub CLI then gh auth login; Claude Code; VS Code; Node 24 via fnm or nvm-windows; uv; Docker Desktop optional; gitleaks via Homebrew or winget), first run (clone, setup check, copy .env.example to .env and fill values from the password manager, npm run setup, npm run dev), the practice loop (pick issue, branch, change, PR, review someone else), and a cheat sheet of Claude Code requests (start work on issue #n, /new-issue, "what can I review?", pull latest main, undo your last change and explain, explain this in plain English).
-2. Create scripts/setup-check.mjs (Node, so it runs the same on Windows and Mac) and a root npm script "doctor" that runs it. It checks: git, gh logged in, claude installed, node version matches .nvmrc, uv installed, gitleaks installed (prints the install command for the user's OS if not), git user.name/email set, core.hooksPath is .githooks (sets it if not, and says so), .env exists (warns if missing; never reads its contents), and that git ls-files --cached --ignored --exclude-standard prints nothing. Output is a checklist with a plain-English fix for each failure.
+1. Write docs/onboarding.md for non-coders: accounts and access (GitHub with 2FA, invite accepted, Claude plan with Claude Code), installs with download links and how to check each version (Git — Git for Windows on Windows; GitHub CLI then gh auth login; Claude Code; VS Code; Node 24 via fnm or nvm-windows; uv; Docker Desktop optional; gitleaks via Homebrew or winget), first run (clone, setup check, copy .env.example to .env, fill every [required] line with the course endpoint values everyone has, run node scripts/check-env.mjs until it passes, npm run setup, npm run dev), the practice loop (pick issue, branch, change, PR, review someone else), and a cheat sheet of Claude Code requests (start work on issue #n, /new-issue, "what can I review?", pull latest main, undo your last change and explain, explain this in plain English).
+2. Create scripts/setup-check.mjs (Node, so it runs the same on Windows and Mac) and a root npm script "doctor" that runs it; it reuses scripts/check-env.mjs for the .env part. It checks: git, gh logged in, claude installed, node version matches .nvmrc, uv installed, gitleaks installed (prints the install command for the user's OS if not), git user.name/email set, core.hooksPath is .githooks (sets it if not, and says so), .env passes scripts/check-env.mjs (never shows values), and that git ls-files --cached --ignored --exclude-standard prints nothing. Output is a checklist with a plain-English fix for each failure.
 3. Add "If a teammate is new, point them to docs/onboarding.md." to CLAUDE.md.
-Run npm run doctor on your machine and paste the output (no secrets) in the PR. Ask a teammate on the other OS to run it in their review.
+Run npm run doctor on your machine and paste the output (no secrets) in the PR. Mike runs it on his Mac during review (the rest of the team is on Windows).
 ```
 
 **Acceptance criteria**
-- [ ] `npm run doctor` passes on Windows and on Mac (two teammates confirm)
+- [ ] `npm run doctor` passes on Windows (Dillon) and Mac (Mike)
 - [ ] The script never prints `.env` contents
 - [ ] `docs/onboarding.md` gets a new person to a first PR
 
