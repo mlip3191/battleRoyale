@@ -18,7 +18,6 @@ Every decision that shapes the build, with its status. **Open** items need Mike'
 
 | ID | Question | Why it matters | Recommendation | Blocks |
 |---|---|---|---|---|
-| D-05 | **Dates:** presentation date, final submission date (from the syllabus), and format: live in class (10–12 min + 3 min Q&A) or recorded MP4 (online). | Sets wave dates and the deliverables schedule. | Put the dates in `docs/plan/DELIVERABLES.md`; work back from them | wave dates |
 | D-16 | **Where does the demo run?** Endpoints are public URLs, so any machine with internet works. | The showcase battles and Docker must work on that machine. | Mike's laptop with Docker, plus the recorded backup | G08, demo |
 
 ## Decided
@@ -29,6 +28,7 @@ Every decision that shapes the build, with its status. **Open** items need Mike'
 | D-02 | **Claude Code builds the app; Hermes Agent is used once:** task G06 is built with Hermes Agent (port 9000), Mike pairing, with screenshots for the Build Stack slide. | 2026-11-07 |
 | D-03 | **Course endpoints:** public URLs; Mike and every teammate have the hosts, ports, and keys. Everyone fills their own `.env` from `.env.example` and checks it with `node scripts/check-env.mjs` (never shows values). Per-service keys are supported (`<SERVICE>_API_KEY` overrides `COURSE_API_KEY`). The repo never contains hosts or keys. | 2026-11-08 |
 | D-04 | **QA bot uses Mike's Claude subscription token** (`claude setup-token` → repo secret `CLAUDE_CODE_OAUTH_TOKEN`). Counts against Mike's plan limits; drafts skipped and stale runs cancelled. Switch to a spend-capped API key if limits bite. | 2026-11-07 |
+| D-05 | **Due Wednesday, November 25, 2026.** Day-by-day schedule in `docs/plan/DELIVERABLES.md`; cut order in `docs/plan/LANES.md`. Assumed: presentation and Canvas submission are both that day. | 2026-11-08 |
 | D-06 | **Team roster:** Group A, five members including Dillon (confirmed). | 2026-11-08 |
 | D-07 | **Allowed fighters:** animals (living and extinct) and generic historical human archetypes. **Blocked:** named real people, minors, groups of people, sexual content, copyrighted fictional characters. Mythical creatures are a stretch goal and always all-estimate. | 2026-11-07 |
 | D-08 | **GitHub handles and OS** as in the team table. Everyone but Mike is Windows-only, so **Mike is the Mac tester**: any PR touching setup scripts, hooks, Docker, or paths gets a Mac check from Mike (CI also runs macOS on PRs). | 2026-11-08 |
@@ -42,7 +42,7 @@ Every decision that shapes the build, with its status. **Open** items need Mike'
 | D-17 | **Monorepo** (`backend/`, `frontend/`) with root npm scripts as the cross-platform task runner. | 2026-11-07 |
 | D-18 | **No license file** while the repo is private. | 2026-11-07 |
 | D-19 | **No user accounts; battles stored locally** in SQLite; no personal data collected. | 2026-11-07 |
-| D-20 | **Data sources** (details and licenses in `docs/research.md`, written in G01): see "Recommended datasets" below. | 2026-11-08 |
+| D-20 | **Data sources approved by Mike:** the recommended datasets below; details and licenses go in `docs/research.md` (G01). | 2026-11-08 |
 | D-21 | **No team channel and no password manager.** All coordination happens on GitHub: request reviewers on the PR (GitHub notifies them), @mention people in issues and PR comments, and use one pinned "Team board" issue for announcements and weekly check-ins. Everyone already has the `.env` values. | 2026-11-08 |
 | D-22 | **Five lanes,** 13–14 points each, owners as in `docs/plan/LANES.md`; final deliverables split one-per-person in `docs/plan/DELIVERABLES.md`. | 2026-11-08 |
 | D-23 | **PR review flow:** the review-prs skill drafts; nothing posts until the reviewer says send; approval is a separate, second confirmation. The QA bot never approves. | 2026-11-07 |
@@ -61,4 +61,4 @@ The proposal promised Wikipedia, Wikidata, and Hugging Face datasets. Recommende
 | 5 | **AnimalTraits** (body mass, metabolic rate, brain size) | Scientific Data 2022 (download linked from the paper) | Body mass for ~2,000 terrestrial species incl. arthropods, reptiles, birds | CC BY 4.0 | Covers insects/spiders that PanTHERIA doesn't. Metabolic rate can inform `endurance_s`. |
 | 6 | **TreeOfLife taxonomy metadata** (`imageomics/TreeOfLife-10M`, `metadata/` only) | Hugging Face | Common name → scientific name → class/order, for normalizing fighter names and setting `category` | CC0 | Optional; download only the taxonomy CSV, not the images. |
 
-**Avoid:** Kaggle-style "animal facts" tables and Hugging Face uploads whose cards say values were generated with AI or have no sources (some do). They would break the "every number is traceable" promise. Speed, bite force, and armor rarely appear in trait databases; those come from Wikipedia text through the verified-quote extractor, or from code estimates.
+**Avoid (confirmed by Mike, 2026-11-08):** Kaggle-style "animal facts" tables and Hugging Face uploads whose cards say values were generated with AI or have no sources — for example `pcwoods/2026-animaldescription-text-dataset`, whose card says generative AI was used to identify the animal facts. They would break the "every number is traceable" promise. Speed, bite force, and armor rarely appear in trait databases; those come from Wikipedia text through the verified-quote extractor, or from code estimates.

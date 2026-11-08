@@ -18,22 +18,30 @@ Each teammate's **first task (Wave 1) is a setup task** that also teaches the wo
 
 | Wave | When (suggested) | Mike | Adam | Gunnar | Felipe | Dillon |
 |---|---|---|---|---|---|---|
-| 0 — Foundation | Days 1–3 | M01 → M08 | — | — | — | — |
-| 1 — Onboard + setup | Days 4–5 | review, unblock | A01 | G01 | F01 | D01 |
-| 2 — Skeleton | Week 2 | review | A02, A04 | G02, G05, G07 (start) | F02, F03 | D02, D03 |
-| 3 — Core | Week 3 | review, integration checks | A03, A05 | G03, G04 | F04, F05 | D04, D05 |
-| 4 — Complete MVP | Week 4 | review, demo prep | A06, A07 | G06, G07, G08 | F06, F07 | D06, D07 |
+| 0 — Foundation | Mon Nov 9 – Tue Nov 10 | M01 → M08 | — | — | — | — |
+| 1 — Onboard + setup | Wed Nov 11 | review, unblock | A01 | G01 | F01 | D01 |
+| 2 — Skeleton | Thu Nov 12 – Sat Nov 14 | review | A02, A04 | G02, G05, G07 (start) | F02, F03 | D02, D03 |
+| 3 — Core | Sun Nov 15 – Tue Nov 17 | review, integration checks | A03, A05 | G03, G04 | F04, F05 | D04, D05 |
+| 4 — Complete MVP | Wed Nov 18 – Fri Nov 20 (feature freeze end of day) | review, demo prep | A06, A07 | G06, G07, G08 | F06, F07 | D06, D07 |
 
-Dates depend on the course calendar (DECISIONS D-05). If the deadline is tighter, drop to the "Must" list in PRODUCT_SPEC and cut A07, D06, and G08 first; the app still works with captions and placeholder sprites.
+**Due Wednesday, November 25** (DECISIONS D-05). That leaves about ten working days for 66 points, roughly one M task every day and a half per person, so the schedule has no slack.
+
+**Cut order if we're behind** (check at MS-1 on Nov 14 and MS-2 on Nov 17). Cut from the top; the app still works with captions and placeholder sprites:
+1. Music generation (keep the announcer voice) — part of A07
+2. G08 Docker (use `npm run setup` + `npm run dev` for the demo and the instructor)
+3. D06 generated sprites (placeholders already exist in D05)
+4. A07 voice (captions carry the narration)
+5. F07 benchmark reduced to the 15 "obvious" matchups
+6. G05 hand-verified sheets reduced from 15 to the 5 showcase fighters
 
 ## Integration milestones
 
 | Milestone | Proves | Needs |
 |---|---|---|
-| **MS-1 Walking skeleton** (end of Wave 2) | Type a matchup in the UI → see a verdict from mocks and stubs | M04–M06, A02, A05 stub path, F02, D02, D03 |
-| **MS-2 Real brain** (end of Wave 3) | Real stat sheets with sources + real simulation in the UI | G04, F03–F05, D04, A05 |
-| **MS-3 The show** (end of Wave 4) | Announcer, music, sprites, animation; benchmark baseline | A06, A07, D05–D07, F06, F07 |
-| **MS-4 Demo-ready** | Five pre-generated showcase battles, Docker run on both OSes, backup video | G08, everyone |
+| **MS-1 Walking skeleton** (Sat Nov 14) | Type a matchup in the UI → see a verdict from mocks and stubs | M04–M06, A02, A05 stub path, F02, D02, D03 |
+| **MS-2 Real brain** (Tue Nov 17) | Real stat sheets with sources + real simulation in the UI | G04, F03–F05, D04, A05 |
+| **MS-3 The show** (Fri Nov 20) | Announcer, music, sprites, animation; benchmark baseline | A06, A07, D05–D07, F06, F07 |
+| **MS-4 Demo-ready** (Sun Nov 22) | Five pre-generated showcase battles, Docker run on both OSes, backup video | G08, everyone |
 
 ## Dependency graph
 

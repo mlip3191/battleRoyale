@@ -36,13 +36,13 @@ Users type a matchup ("100 duck-sized horses vs 1 horse-sized duck"). The app:
 
 | Phase | Who | What | Done when |
 |---|---|---|---|
-| **0 Foundation** (days 1–3) | Mike alone | Repo settings, guardrails, skeleton, contracts, providers, review tooling, protection, issues, invites (M01–M08) | Dry-run PR passes all checks; teammates invited |
-| **1 Onboard + setup** (days 4–5) | Everyone | Each teammate's setup task: A01, G01, F01, D01 | Everyone has merged one PR and reviewed one |
-| **2 Skeleton** (week 2) | Lanes in parallel | Parsing, ingestion, engine core, app shell | **MS-1:** matchup → verdict on mocks in the UI |
-| **3 Core** (week 3) | Lanes | Clarify, orchestrator, retrieval, stat sheets, terrain, results UI, animation | **MS-2:** real stat sheets + real simulation |
-| **4 Complete** (week 4) | Lanes | Scripts, audio, images, fair fight, benchmark, broadcast page, Docker | **MS-3:** the full show; **MS-4:** demo-ready |
+| **0 Foundation** (Nov 9–10) | Mike alone | Repo settings, guardrails, skeleton, contracts, providers, review tooling, protection, issues, invites (M01–M08) | Dry-run PR passes all checks; teammates invited |
+| **1 Onboard + setup** (Nov 11) | Everyone | Each teammate's setup task: A01, G01, F01, D01 | Everyone has merged one PR and reviewed one |
+| **2 Skeleton** (Nov 12–14) | Lanes in parallel | Parsing, ingestion, engine core, app shell | **MS-1:** matchup → verdict on mocks in the UI |
+| **3 Core** (Nov 15–17) | Lanes | Clarify, orchestrator, retrieval, stat sheets, terrain, results UI, animation | **MS-2:** real stat sheets + real simulation |
+| **4 Complete** (Nov 18–20) | Lanes | Scripts, audio, images, fair fight, benchmark, broadcast page, Docker | **MS-3:** the full show; **MS-4:** demo-ready |
 
-Wave dates follow the course calendar (DECISIONS D-05).
+Then: bug bash Nov 21, deck and rehearsals Nov 22–23, buffer Nov 24, **due Wednesday, November 25**. The cut order if we fall behind is in [plan/LANES.md](plan/LANES.md).
 
 ## 4. Step by step — Mike (Phase 0)
 

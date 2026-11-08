@@ -34,7 +34,7 @@ You are the build assistant for **Battle Royale: The Science-Backed Fight Simula
 3. Read, in order: `CLAUDE.md`, `docs/PROJECT_GUIDE.md`, `docs/PRODUCT_SPEC.md`, `docs/ARCHITECTURE.md`, `docs/TEAM_PROCESS.md`, `docs/DECISIONS.md`, `docs/plan/LANES.md`, `docs/plan/DELIVERABLES.md`.
 4. Give Mike a 10-line summary of what we're building and how Phase 0 works. List any contradiction or gap you found between the documents, with a recommended fix. Wait for his answers.
 5. **Check the `.env`:** run `node scripts/check-env.mjs`. Never open, print, or edit `.env` yourself. If it reports problems, show Mike the report and walk him through Part 1 step 4; wait until it passes. (Mock mode still works without it, but M06 needs it.)
-6. Ask Mike for the presentation and submission dates (DECISIONS D-05) and write them into `docs/plan/DELIVERABLES.md`. If he doesn't have them yet, continue.
+6. The project is **due Wednesday, November 25**; the day-by-day schedule is in `docs/plan/DELIVERABLES.md` and `docs/plan/LANES.md`. Phase 0 is planned for Nov 9–10, so keep each task moving and flag anything that threatens that.
 
 ### Rules for this session
 
@@ -306,7 +306,7 @@ Show me each write command before running it.
 ## Part 4 — What happens next (Claude: give Mike this briefing after M08, with real issue numbers and links)
 
 1. **Kickoff (30 min, video call).** Mike shares his screen: the project board, one lane file, the dry-run PR. Everyone does the README "Teammate quick start", including creating their `.env` and running `node scripts/check-env.mjs`.
-2. **Wave 1 (days 4–5):** each teammate's setup task — A01 (Adam), G01 (Gunnar), F01 (Felipe, includes reviewing the dry-run PR with the review-prs skill), D01 (Dillon).
+2. **Wave 1 (Wed Nov 11):** each teammate's setup task — A01 (Adam), G01 (Gunnar), F01 (Felipe, includes reviewing the dry-run PR with the review-prs skill), D01 (Dillon).
 3. **Waves 2–4:** teammates pick their next issue from **Ready**; every task's prompt is in their lane file (`docs/plan/lane-2-adam.md` … `lane-5-dillon.md`). Mike moves issues to Ready as dependencies merge.
 4. **Weekly:** Monday, Mike triages the board. Mid-week, everyone comments on the pinned Team board issue (done / doing / blocked). Friday, after F07 exists, run the benchmark and review `docs/benchmark-results.md`.
 5. **Milestones:** MS-1 walking skeleton (end of Wave 2) → MS-2 real brain (Wave 3) → MS-3 the show (Wave 4) → MS-4 demo-ready. Mike adds three lines to `docs/build-log.md` at each.

@@ -1,14 +1,18 @@
 # Final Deliverables — Group A
 
-From the **MBAX 6418 Final Project Overview**. Everything is submitted on Canvas. Dates come from the syllabus (DECISIONS D-05) — fill them in here.
+From the **MBAX 6418 Final Project Overview**. Everything is submitted on Canvas. **Due Wednesday, November 25, 2026** (DECISIONS D-05).
 
 | Date | What |
 |---|---|
-| ____ | Feature freeze (only bug fixes after this) — suggest 7 days before the presentation |
-| ____ | Bug bash (everyone, 90 minutes) |
-| ____ | Slide deck draft + first rehearsal |
-| ____ | Presentation (live 10–12 min + 3 min Q&A, or recorded MP4) |
-| ____ | Canvas submission: deck, repo link, repo export, peer evaluations |
+| Sat Nov 14 | MS-1 walking skeleton; first scope check against the cut order in LANES.md |
+| Tue Nov 17 | MS-2 real brain; second scope check; deck owners start their slides |
+| Fri Nov 20 | MS-3 the show; **feature freeze** at end of day (only bug fixes after this) |
+| Sat Nov 21 | Bug bash (everyone, 90 minutes); fixes through Nov 22 |
+| Sun Nov 22 | MS-4 demo-ready (showcase battles saved); slide deck draft + first timed rehearsal |
+| Mon Nov 23 | Second rehearsal (or record the MP4 if presenting online); backup demo video recorded |
+| Tue Nov 24 | Buffer; README and user guide final; repo export tested from a fresh unzip |
+| **Wed Nov 25** | Presentation (live 10–12 min + 3 min Q&A, or recorded MP4) |
+| **Wed Nov 25** | Canvas submission: deck, repo link, repo export, peer evaluations (submit the morning of, not at midnight) |
 
 ## What the instructor requires, and how we meet it
 
