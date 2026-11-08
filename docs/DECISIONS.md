@@ -18,7 +18,7 @@ Every decision that shapes the build, with its status. **Open** items need Mike'
 
 | ID | Question | Why it matters | Recommendation | Blocks |
 |---|---|---|---|---|
-| D-16 | **Where does the demo run?** Endpoints are public URLs, so any machine with internet works. | The showcase battles and Docker must work on that machine. | Mike's laptop with Docker, plus the recorded backup | G08, demo |
+| D-16 | **Where does the demo run?** Endpoints are public URLs, so any machine with internet works. | The showcase battles and `npm start` must work on that machine. | Mike's laptop, plus the recorded backup | G08, demo |
 
 ## Decided
 
@@ -31,7 +31,7 @@ Every decision that shapes the build, with its status. **Open** items need Mike'
 | D-05 | **Due Wednesday, November 25, 2026.** Day-by-day schedule in `docs/plan/DELIVERABLES.md`; cut order in `docs/plan/LANES.md`. Assumed: presentation and Canvas submission are both that day. | 2026-11-08 |
 | D-06 | **Team roster:** Group A, five members including Dillon (confirmed). | 2026-11-08 |
 | D-07 | **Allowed fighters:** animals (living and extinct) and generic historical human archetypes. **Blocked:** named real people, minors, groups of people, sexual content, copyrighted fictional characters. Mythical creatures are a stretch goal and always all-estimate. | 2026-11-07 |
-| D-08 | **GitHub handles and OS** as in the team table. Everyone but Mike is Windows-only, so **Mike is the Mac tester**: any PR touching setup scripts, hooks, Docker, or paths gets a Mac check from Mike (CI also runs macOS on PRs). | 2026-11-08 |
+| D-08 | **GitHub handles and OS** as in the team table. Everyone but Mike is Windows-only, so **Mike is the Mac tester**: any PR touching setup scripts, hooks, the start command, or paths gets a Mac check from Mike (CI also runs macOS on PRs). | 2026-11-08 |
 | D-09 | **Announcer voice, first iteration: a stock TTS voice, gruff, deep, and hard-hitting.** A07 auditions the endpoint's stock voices with the same test line and picks the deepest, gruffest one; it lowers pitch/slows rate if the endpoint allows. The writing stays corny; the delivery is a gravel-voiced fight announcer. Voice cloning is a later polish item and needs written consent. | 2026-11-08 |
 | D-10 | **"Expert answers" for the benchmark** = obvious-by-biology cases + documented expert views with citations + rough fair-fight ranges (G07). Pass rules written before the first run. | 2026-11-07 |
 | D-11 | **Styling:** plain CSS modules with CSS variables; no CSS framework. | 2026-11-07 |
@@ -46,6 +46,7 @@ Every decision that shapes the build, with its status. **Open** items need Mike'
 | D-21 | **No team channel and no password manager.** All coordination happens on GitHub: request reviewers on the PR (GitHub notifies them), @mention people in issues and PR comments, and use one pinned "Team board" issue for announcements and weekly check-ins. Everyone already has the `.env` values. | 2026-11-08 |
 | D-22 | **Five lanes,** 13–14 points each, owners as in `docs/plan/LANES.md`; final deliverables split one-per-person in `docs/plan/DELIVERABLES.md`. | 2026-11-08 |
 | D-23 | **PR review flow:** the review-prs skill drafts; nothing posts until the reviewer says send; approval is a separate, second confirmation. The QA bot never approves. | 2026-11-07 |
+| D-25 | **No Docker.** The app runs with `npm start`: the backend serves the built front end and the API together at http://localhost:8000, so the instructor needs only Node 24 and uv. | 2026-11-08 |
 | D-24 | **Showcase battles ship with the repo** (`data/showcase/`, small, committed) so the instructor's clone shows the five demo battles even before he fills `.env`. | 2026-11-08 |
 
 ## Recommended datasets (D-20)

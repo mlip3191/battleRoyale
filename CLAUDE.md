@@ -4,18 +4,18 @@ Read this first in every session. It is a critical file: changes need PM (Mike) 
 
 ## 1. Project
 **Battle Royale: The Science-Backed Fight Simulator** — a web app where users name two combatants; the app builds cited stat sheets from vetted sources, a Monte Carlo simulation in code decides the outcome, and the result plays as a corny late-night sports broadcast. **Corny voice, serious brain: no language model sets a number.**
-Stack: Python 3.12 + FastAPI + Pydantic v2 + SQLite/sqlite-vec (`backend/`, uv); React + Vite + TypeScript + Phaser 3 (`frontend/`, Node 24, npm); Docker Compose. All AI calls go to course-provided endpoints through `backend/app/providers/`.
+Stack: Python 3.12 + FastAPI + Pydantic v2 + SQLite/sqlite-vec (`backend/`, uv); React + Vite + TypeScript + Phaser 3 (`frontend/`, Node 24, npm). No Docker: `npm start` runs the whole app at http://localhost:8000. All AI calls go to course-provided endpoints through `backend/app/providers/`.
 Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SPEC.md` · `ARCHITECTURE.md` · `TEAM_PROCESS.md` · `DECISIONS.md` · `plan/` (tasks and prompts per lane).
 **Phase:** if `backend/` doesn't exist yet, we're in Phase 0 — follow `INIT.md`.
 
 ## 2. Commands (from the repo root; work the same on Windows and Mac — available after task M04)
-- Install: `npm run setup` · Run: `npm run dev` (backend :8000, frontend :5173) · Docker: `npm run docker:up`
+- Install: `npm run setup` · Develop: `npm run dev` (backend :8000 + frontend :5173 with hot reload) · Run the finished app: `npm start` (builds the front end; backend serves everything at http://localhost:8000)
 - Test + lint everything: `npm run check` · Format: `npm run format` · Regenerate API types: `npm run gen:api`
 - Backend only: `uv run --directory backend pytest` · Environment check: `npm run doctor`
 
 ## 3. Folders and protected files
 `backend/app/` modules: models (contracts), providers, safety, intake, research, simulation, narration, media, pipeline, api, db. `backend/prompts/` holds every prompt. `frontend/src/`: api, pages, components, game (Phaser), fixtures. `data/seed/` and `data/benchmark/` are committed; `data/app.db`, `data/kb/`, `data/media/` are generated and ignored.
-**Protected (PM approval):** CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, docker-compose.yml, all package.json / lockfiles / pyproject.toml / uv.lock, `backend/app/models/`, `docs/ARCHITECTURE.md`.
+**Protected (PM approval):** CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, all package.json / lockfiles / pyproject.toml / uv.lock, `backend/app/models/`, `docs/ARCHITECTURE.md`.
 
 ## 4. Conventions
 - Python: ruff format + ruff check, type hints everywhere, snake_case. TypeScript: ESLint + Prettier, camelCase, components PascalCase. Files: lowercase-with-dashes (Python modules snake_case).

@@ -35,7 +35,7 @@ For each PR, work out:
 - **Size:** additions + deletions; flag over 300.
 - **Checks:** from `statusCheckRollup` — all passed / some pending / some failed. Report the **AI QA Review** check separately (passed, failed, pending, missing).
 - **Approvals:** count of `APPROVED` in `latestReviews`, and whether `ME` already reviewed (and on which commit).
-- **Critical files:** `gh pr view <n> --json files --jq '.files[].path'`, compared with the paths in `.github/CODEOWNERS` (if it doesn't exist yet, use: CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .env.example, package.json, package-lock.json, backend/pyproject.toml, backend/uv.lock, backend/app/models/, docker-compose.yml, docs/ARCHITECTURE.md).
+- **Critical files:** `gh pr view <n> --json files --jq '.files[].path'`, compared with the paths in `.github/CODEOWNERS` (if it doesn't exist yet, use: CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .env.example, package.json, package-lock.json, backend/pyproject.toml, backend/uv.lock, backend/app/models/, docs/ARCHITECTURE.md).
 - **From a fork?** `headRepositoryOwner` differs from the repo owner.
 
 Then show **one table per group**, in this order, skipping empty groups:

@@ -30,7 +30,7 @@
 | Front-end tests | Vitest + Testing Library | | Playwright e2e is a later task |
 | Front-end lint/format | ESLint + Prettier | | |
 | API types | openapi-typescript | | generated from the backend schema, never hand-written |
-| One-command run | Docker Compose | Docker Desktop (Windows needs WSL2) | |
+| One-command run | `npm start` | — | builds the front end; FastAPI serves it plus the API on :8000. No Docker (D-25) |
 | Task runner | root `package.json` scripts | | cross-platform: no bash- or PowerShell-only scripts |
 
 **Banned without a PM-approved issue:** LangChain/LlamaIndex (too heavy for our needs), any paid API SDK, any new database, CSS frameworks beyond the one chosen in task D02, any library that calls a model provider directly from the front end.
@@ -43,7 +43,6 @@ battleRoyale/
 ├── CLAUDE.md                     # rules every Claude Code session reads first   (critical)
 ├── README.md
 ├── package.json                  # root task runner: setup, dev, test, lint, check (critical)
-├── docker-compose.yml            # one-command run                                (critical)
 ├── .env.example                  # every config variable, placeholder values      (critical)
 ├── .gitignore  .gitattributes  .editorconfig  .nvmrc                              (critical)
 ├── .githooks/pre-commit          # shared secret/large-file guard                 (critical)
@@ -274,6 +273,7 @@ Unit conversion lives in code (`research/units.py`). The model returns the unit 
 | `POST /api/intake/{pending_id}/answer` | `{answer}` | `IntakeResult` | A03 |
 | `POST /api/battles` | `Matchup` | `202 {battle_id}` | A05 |
 | `GET /api/battles/{id}` | — | `BattleRecord` (partial while running) | A05 |
+| `GET /api/battles?showcase=true` | — | `[{battle_id, title}]` for the five saved showcase battles | G08 |
 | `GET /api/battles/{id}/events` | — | Server-Sent Events: `StageStatus` updates; poll fallback every 1 s | A05 |
 | `GET /api/fighters?q=` | search text | `[{fighter_id, display_name, cached: bool}]` | G04 |
 | `GET /api/fighters/{fighter_id}` | — | `StatSheet` | G04 |
@@ -336,6 +336,7 @@ Pure Python, no I/O, no providers. Lane owner: Felipe.
 
 ## 10. Front end (frontend/)
 
+- **Serving:** in development Vite serves the front end on :5173 and proxies `/api` and `/media`; with `npm start` the backend serves the built files from `frontend/dist` on :8000, falling back to `index.html` for front-end routes.
 - Routes: `/` intake (text box, examples, clarification chips), `/battle/:id` (broadcast: intro card → Phaser arena + narration captions + music → verdict), `/battle/:id/results` (stats, stat sheets with source links, fair fight, next challenger button).
 - State: a `useBattle(id)` hook subscribes to SSE and falls back to polling.
 - **Phaser** lives in `src/game/`, mounted by one React component. `BattleScene` takes `representative_log` + asset URLs and plays events on a timeline; it never computes outcomes. Controls: play/pause, 1×/2×, skip to result, mute, reduced-motion mode (static frames).

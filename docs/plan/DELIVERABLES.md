@@ -22,7 +22,7 @@ From the **MBAX 6418 Final Project Overview**. Everything is submitted on Canvas
 | Private repo → add the instructor as collaborator | M08 invites david.dobolyi@colorado.edu (Settings → Collaborators → Add people → email) | Mike |
 | README describes the project from the proposal, kept up to date | README updated at each milestone (MS-1…MS-4); final pass before submission | Mike |
 | Documentation for a naïve user | `docs/user-guide.md`: what the app does, how to run it, how to read results | Dillon |
-| Runnable code the instructor can test easily | `npm run setup` + `npm run dev`, or `docker compose up`; mock mode runs with no endpoints; showcase battles committed in `data/showcase/` (D-24); `node scripts/check-env.mjs` tells him what to fill in | Mike + Gunnar (G08) |
+| Runnable code the instructor can test easily | `npm run setup` then `npm start` (one process, http://localhost:8000, no Docker); mock mode runs with no endpoints; showcase battles committed in `data/showcase/` (D-24); `node scripts/check-env.mjs` tells him what to fill in | Mike + Gunnar (G08) |
 | API keys only if we use non-course APIs | We use only course endpoints + public Wikipedia/Wikidata (no key) → **no extra keys**; say so in the README | Mike |
 | Repo export (ZIP) | `git archive --format=zip -o battleRoyale.zip main` (excludes ignored files) — confirm size and that it runs from a fresh unzip | Mike |
 | Peer evaluation | Each person submits their own on Canvas | everyone |

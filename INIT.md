@@ -10,7 +10,7 @@ It takes the project from "plan only" to a protected repo with a running skeleto
 
 ## Part 1 — For Mike, before starting (about 15 minutes, by hand)
 
-1. **Install and sign in** (Windows or Mac): Git, GitHub CLI (`gh auth login` as `mlip3191`), Claude Code (`claude`), Node 24, uv. Optional: Docker Desktop.
+1. **Install and sign in** (Windows or Mac): Git, GitHub CLI (`gh auth login` as `mlip3191`), Claude Code (`claude`), Node 24, uv. (No Docker needed.)
 2. **GitHub Pro:** claim it through the GitHub Student Developer Pack (education.github.com) and confirm at github.com/settings/billing. Needed because the repo is going private (D-01).
 3. **Get the code:** `git clone https://github.com/mlip3191/battleRoyale.git` then `cd battleRoyale` (Claude can do this for you in Step 0 below).
 4. **Create your `.env` with the course endpoints** — the most important manual step:
@@ -126,7 +126,7 @@ Create the shared Claude Code configuration. Use the current, documented Claude 
 
 1. Create .claude/settings.json with:
    - allow: Read/Grep/Glob of the repo; running our project scripts (npm run setup|dev|test|lint|format|check|gen:api, uv run pytest, uv run ruff); git status, diff, log, branch, switch, checkout, add (not -f), commit, pull, fetch, stash, push of the current branch; read-only gh commands (gh pr view|list|diff|checks, gh issue view|list, gh api with GET).
-   - ask: installing or upgrading packages (uv add, npm install <pkg>), editing files under .github/, .claude/, .githooks/, CLAUDE.md, .gitignore, package.json, pyproject.toml, docker-compose.yml; any gh command that writes (gh pr create|review|merge|comment, gh issue create|edit, gh api with POST/PUT/PATCH/DELETE).
+   - ask: installing or upgrading packages (uv add, npm install <pkg>), editing files under .github/, .claude/, .githooks/, CLAUDE.md, .gitignore, package.json, pyproject.toml; any gh command that writes (gh pr create|review|merge|comment, gh issue create|edit, gh api with POST/PUT/PATCH/DELETE).
    - deny: Read of .env, .env.local, .env.development, .env.production, .env.test, .env.*.local and **/*.pem, **/*.key (list .env files by exact name so .env.example stays readable); the shell forms of reading those files (cat, type, more, head, tail, grep, Get-Content); git push --force and -f; git reset --hard; git branch -D; git push to main; git add -f / --force; git commit --no-verify / -n; git config core.hooksPath; rm -rf / Remove-Item -Recurse; sudo; printenv and env.
    - permissions.disableBypassPermissionsMode set to "disable".
 2. Add hooks, each written as a Node.js script in .claude/hooks/ (Node is already required for the front end, so it runs the same on Windows and Mac):
@@ -160,7 +160,7 @@ Build the project skeleton exactly as laid out in docs/ARCHITECTURE.md sections 
 Backend (backend/):
 - uv project, Python 3.12 pinned in backend/.python-version, uv.lock committed.
 - Dependencies: fastapi, uvicorn[standard], pydantic, pydantic-settings, httpx, sqlite-vec. Dev: pytest, pytest-asyncio, hypothesis, ruff.
-- app/main.py with an app factory, CORS for FRONTEND_ORIGIN, and GET /api/health returning {"status":"ok"}.
+- app/main.py with an app factory, CORS for FRONTEND_ORIGIN, and GET /api/health returning {"status":"ok"}. When frontend/dist exists, also serve it as static files at / (with index.html as the fallback for front-end routes), so npm start needs only one process and one port.
 - app/config.py: a Settings class (pydantic-settings) reading .env; the only module allowed to read environment variables.
 - Empty packages with __init__.py and a one-line docstring for: models, providers, safety, intake, research, simulation, narration, media, pipeline, api, db. Create backend/prompts/, backend/scripts/, backend/tests/{unit,contract,golden,property,fixtures}.
 - ruff config (line length 100, import sorting on) and pytest config in pyproject.toml. One passing test for /api/health.
@@ -172,7 +172,7 @@ Front end (frontend/):
 - One passing Vitest test.
 
 Root:
-- package.json scripts (cross-platform; use the concurrently package for dev): setup (uv sync in backend + npm ci in frontend), dev (backend on :8000 and frontend on :5173 together), test, lint, format, check (lint + test for both), gen:api (export OpenAPI from the backend and generate frontend/src/api/schema.d.ts), env:check (node scripts/check-env.mjs).
+- package.json scripts (cross-platform; use the concurrently package for dev): setup (uv sync in backend + npm ci in frontend), dev (backend on :8000 and frontend on :5173 together, with hot reload), start (the one-command way to run the finished app: build the front end, then run the backend, which serves the built files and the API together at http://localhost:8000 — print that URL when it's ready), test, lint, format, check (lint + test for both), gen:api (export OpenAPI from the backend and generate frontend/src/api/schema.d.ts), env:check (node scripts/check-env.mjs).
 - .gitattributes (* text=auto eol=lf; *.bat and *.cmd eol=crlf; images/audio binary), then git add --renormalize .
 - .editorconfig (utf-8, lf, final newline, 2 spaces; 4 spaces for .py).
 - Keep the existing .gitignore; do not remove any rule.
@@ -183,7 +183,8 @@ Finally: run npm run setup and npm run check locally and show me the output, tel
 
 **Acceptance criteria**
 - [ ] `npm run setup`, `npm run dev`, `npm run check` work on Mike's machine
-- [ ] Browser at http://localhost:5173 shows "Backend: ok"
+- [ ] Browser at http://localhost:5173 (dev) shows "Backend: ok"
+- [ ] `npm start` serves the same page at http://localhost:8000 from one process, on Windows and Mac
 - [ ] CI is green on all 6 matrix jobs
 - [ ] CLAUDE.md Commands section updated with real commands
 
@@ -251,7 +252,7 @@ Run the smoke script, show me docs/providers.md, run npm run check, then commit:
 **Do this:**
 
 1. Install the workflow templates: copy setup/templates/workflows/secret-scan.yml and setup/templates/workflows/ai-qa-review.yml into .github/workflows/. ai-qa-review.yml already uses CLAUDE_CODE_OAUTH_TOKEN (DECISIONS D-04); confirm the secret exists with gh secret list. This repo is owned by a personal account, so gitleaks needs no license.
-2. Create .github/CODEOWNERS assigning these critical paths to @mlip3191: CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, docker-compose.yml, package.json, package-lock.json, frontend/package.json, frontend/package-lock.json, backend/pyproject.toml, backend/uv.lock, backend/app/models/, docs/ARCHITECTURE.md.
+2. Create .github/CODEOWNERS assigning these critical paths to @mlip3191: CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, package.json, package-lock.json, frontend/package.json, frontend/package-lock.json, backend/pyproject.toml, backend/uv.lock, backend/app/models/, docs/ARCHITECTURE.md.
 3. Create .github/workflows/critical-files.yml with a job named "Critical files approval" that runs on pull_request (opened, synchronize, reopened) and pull_request_review (submitted, dismissed), permissions contents: read and pull-requests: read. Using gh, it checks whether the PR changes any CODEOWNERS path. If it does and the PR author is not mlip3191, it fails unless mlip3191 has an APPROVED review on the PR's latest commit. In every other case it passes. Print a plain-English reason either way.
 4. Create .github/pull_request_template.md with sections: Linked issue (Closes #), What changed (plain English), How it was tested, Screenshots (if UI), Built with (AI tool and model, e.g. "Claude Code — <model>"; this feeds the Build Stack slide), Checklist (tests pass, lint passes, no secrets, scope limited to the issue, contract unchanged or contract-change label added).
 5. Verify the shipped review tooling: .claude/agents/code-reviewer.md, .claude/commands/review.md, and .claude/skills/review-prs/SKILL.md. Read them, check that the gh commands they use are valid, and list any fixes needed. Do not change the confirm-before-send and confirm-before-approve rules.

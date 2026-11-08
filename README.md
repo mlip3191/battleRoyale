@@ -36,8 +36,8 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 
 ## For the instructor
 
-Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run: copy `.env.example` to `.env`, fill in the course endpoints, `npm run setup`, `npm run dev`. With `PROVIDER_MODE=mock` the app runs without any endpoints. A naïve-user guide will be in `docs/user-guide.md`.
+Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 24 and uv; copy `.env.example` to `.env` and fill in the course endpoints (`node scripts/check-env.mjs` confirms); `npm run setup`; `npm start`; open http://localhost:8000. With `PROVIDER_MODE=mock` the app runs without any endpoints. A naïve-user guide will be in `docs/user-guide.md`.
 
 ## Stack
 
-Python 3.12 · FastAPI · Pydantic v2 · SQLite + sqlite-vec · React + Vite + TypeScript · Phaser 3 · Docker Compose · course-provided GenAI endpoints.
+Python 3.12 · FastAPI · Pydantic v2 · SQLite + sqlite-vec · React + Vite + TypeScript · Phaser 3 · course-provided GenAI endpoints.

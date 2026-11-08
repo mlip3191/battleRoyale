@@ -108,7 +108,7 @@ All GenAI calls use course-provided endpoints, so no paid API keys are needed fo
 | Hermes Primary Model + Hermes Agent | 9000 | Claude Code builds the app; Hermes Agent builds one task (G06) to show it in use (D-02) | app never calls it |
 | Wikipedia Structured Contents + FineWiki (Hugging Face), Wikidata, PanTHERIA, AnimalTraits | public | knowledge base and trait numbers (D-20) | no key |
 
-App software: Python 3.12 (FastAPI), React + Vite + TypeScript, Phaser 3, SQLite + sqlite-vec, Pydantic v2, Docker Compose. Full detail in [ARCHITECTURE.md](ARCHITECTURE.md).
+App software: Python 3.12 (FastAPI), React + Vite + TypeScript, Phaser 3, SQLite + sqlite-vec, Pydantic v2; runs with one command (`npm start`), no Docker. Full detail in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## 9. Demo plan [added]
 

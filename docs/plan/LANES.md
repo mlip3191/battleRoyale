@@ -6,7 +6,7 @@ Five lanes, one per person, sized to similar effort. **S = 1 point (a few hours)
 |---|---|---|---|---|
 | 1 | **Mike Lippert** (PM) `mlip3191` | Foundation & platform: repo, guardrails, skeleton, contracts, providers, review tooling | M01–M08 | 14 |
 | 2 | **Adam Fondale** `afondale` | Intake, safety & orchestration: parsing, clarifying, moderation, pipeline, announcer script + voice | A01–A07 | 13 |
-| 3 | **Gunnar O'Connor** `gunnaroc` | Research & knowledge base: sources, ingestion, retrieval, stat sheets, traceability, benchmark data, Docker | G01–G08 | 13 |
+| 3 | **Gunnar O'Connor** `gunnaroc` | Research & knowledge base: sources, ingestion, retrieval, stat sheets, traceability, benchmark data, showcase battles | G01–G08 | 13 |
 | 4 | **Felipe Cervino** `felcervino` | Simulation & analytics: engine, numbers/size, terrain/behavior, stats, fair fight, benchmark runner | F01–F07 | 13 |
 | 5 | **Dillon Smart** `dilloncsmart` | Front end & battle stage: onboarding, app shell, intake UI, results, Phaser scene, images, broadcast page | D01–D07 | 13 |
 
@@ -28,11 +28,10 @@ Each teammate's **first task (Wave 1) is a setup task** that also teaches the wo
 
 **Cut order if we're behind** (check at MS-1 on Nov 14 and MS-2 on Nov 17). Cut from the top; the app still works with captions and placeholder sprites:
 1. Music generation (keep the announcer voice) — part of A07
-2. G08 Docker (use `npm run setup` + `npm run dev` for the demo and the instructor)
-3. D06 generated sprites (placeholders already exist in D05)
-4. A07 voice (captions carry the narration)
-5. F07 benchmark reduced to the 15 "obvious" matchups
-6. G05 hand-verified sheets reduced from 15 to the 5 showcase fighters
+2. D06 generated sprites (placeholders already exist in D05)
+3. A07 voice (captions carry the narration)
+4. F07 benchmark reduced to the 15 "obvious" matchups
+5. G05 hand-verified sheets reduced from 15 to the 5 showcase fighters
 
 ## Integration milestones
 
@@ -41,7 +40,7 @@ Each teammate's **first task (Wave 1) is a setup task** that also teaches the wo
 | **MS-1 Walking skeleton** (Sat Nov 14) | Type a matchup in the UI → see a verdict from mocks and stubs | M04–M06, A02, A05 stub path, F02, D02, D03 |
 | **MS-2 Real brain** (Tue Nov 17) | Real stat sheets with sources + real simulation in the UI | G04, F03–F05, D04, A05 |
 | **MS-3 The show** (Fri Nov 20) | Announcer, music, sprites, animation; benchmark baseline | A06, A07, D05–D07, F06, F07 |
-| **MS-4 Demo-ready** (Sun Nov 22) | Five pre-generated showcase battles, Docker run on both OSes, backup video | G08, everyone |
+| **MS-4 Demo-ready** (Sun Nov 22) | Five showcase battles in `data/showcase/`, `npm start` from a fresh clone on Windows and Mac, backup video | G08, everyone |
 
 ## Dependency graph
 
@@ -92,6 +91,6 @@ Anyone can review anything, but to spread knowledge and keep reviews fast, the d
 | Dillon | Adam | Adam's APIs feed the UI |
 | Mike | rotating | everyone sees the platform code |
 
-Critical-file changes from anyone except Mike also need Mike's approval (enforced by the "Critical files approval" check). Everyone except Mike is on Windows, so Mike also checks on Mac any PR that touches setup scripts, hooks, Docker, or file paths.
+Critical-file changes from anyone except Mike also need Mike's approval (enforced by the "Critical files approval" check). Everyone except Mike is on Windows, so Mike also checks on Mac any PR that touches setup scripts, hooks, the start command, or file paths.
 
 Final deliverables (deck sections, user guide, submission) are split one owner per section in [DELIVERABLES.md](DELIVERABLES.md).

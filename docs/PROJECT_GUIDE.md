@@ -40,7 +40,7 @@ Users type a matchup ("100 duck-sized horses vs 1 horse-sized duck"). The app:
 | **1 Onboard + setup** (Nov 11) | Everyone | Each teammate's setup task: A01, G01, F01, D01 | Everyone has merged one PR and reviewed one |
 | **2 Skeleton** (Nov 12–14) | Lanes in parallel | Parsing, ingestion, engine core, app shell | **MS-1:** matchup → verdict on mocks in the UI |
 | **3 Core** (Nov 15–17) | Lanes | Clarify, orchestrator, retrieval, stat sheets, terrain, results UI, animation | **MS-2:** real stat sheets + real simulation |
-| **4 Complete** (Nov 18–20) | Lanes | Scripts, audio, images, fair fight, benchmark, broadcast page, Docker | **MS-3:** the full show; **MS-4:** demo-ready |
+| **4 Complete** (Nov 18–20) | Lanes | Scripts, audio, images, fair fight, benchmark, broadcast page, showcase battles | **MS-3:** the full show; **MS-4:** demo-ready |
 
 Then: bug bash Nov 21, deck and rehearsals Nov 22–23, buffer Nov 24, **due Wednesday, November 25**. The cut order if we fall behind is in [plan/LANES.md](plan/LANES.md).
 

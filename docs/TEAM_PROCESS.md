@@ -371,7 +371,6 @@ Every PR is tested automatically on Windows, macOS, and Linux, and the repo is s
 | Secrets and local settings                    | .env.example committed; real .env ignored; same variable names on every OS. Full setup in Step 8.                |
 | OS junk files                                 | .gitignore covers .DS_Store, Thumbs.db, desktop.ini, and editor folders (Step 8)                                 |
 
-Optional: a dev container (.devcontainer/) gives everyone an identical environment via Docker or GitHub Codespaces, regardless of OS.
 
 ### Switching between machines
 

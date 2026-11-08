@@ -1,6 +1,6 @@
 # Lane 3 — Gunnar: Research & Knowledge Base
 
-**Total effort: 13 points.** Gunnar owns the facts: where they come from, how they are retrieved, how they become a stat sheet, and how we prove every number is sourced. Also owns the benchmark set and the Docker setup.
+**Total effort: 13 points.** Gunnar owns the facts: where they come from, how they are retrieved, how they become a stat sheet, and how we prove every number is sourced. Also owns the benchmark set and the showcase battles that ship with the repo.
 
 | ID | Task | Size | Depends on | Blocks | Wave |
 |---|---|---|---|---|---|
@@ -11,7 +11,7 @@
 | G05 | Hand-verified seed stat sheets | M | G01, M05 | F07, demo | 2 |
 | G06 | Traceability checker | S | G04 | benchmark | 4 |
 | G07 | Benchmark matchup set | M | G01 | F07 | 2–4 |
-| G08 | Docker Compose one-command run | S | M04 | demo | 4 |
+| G08 | Showcase battles + fresh-clone run check | S | A05, M04 | demo, instructor | 4 |
 
 G07 pairs with Felipe's F07: Gunnar builds the benchmark data, Felipe builds the runner that scores it.
 
@@ -171,15 +171,24 @@ Show me the draft before committing.
 
 ---
 
-## G08 · Docker Compose one-command run · S (1)
+## G08 · Showcase battles + fresh-clone run check · S (1)
 
-**Goal:** `docker compose up` gives anyone a working app for the demo.
+**Goal:** The instructor's fresh clone runs with `npm start` and already shows our five showcase battles.
+**Read first:** DECISIONS D-24, D-25; PRODUCT_SPEC §9 (demo plan); README "For the instructor".
+
 **Prompt for Claude Code:**
 ```text
-Task G08 from docs/plan/lane-3-gunnar.md. Create backend/Dockerfile (uv, Python 3.12, non-root user), frontend/Dockerfile (build with Node 24, serve the built files), and docker-compose.yml with services backend and frontend, env_file .env, a volume for ./data, and health checks. The frontend proxies /api and /media to the backend. Course endpoints are public URLs (DECISIONS D-03), so containers reach them directly; pass them in through .env. Add "docker:up" and "docker:down" scripts to the root package.json and a "Run with Docker" section in README.md. Test on my Windows machine; Mike tests it on Mac during review. Also add backend/scripts/export_showcase.py and import_showcase.py: export the five showcase battles (records + small media, under 20 MB total) to data/showcase/ (committed) and load them into an empty database on first start, so the instructor's fresh clone shows them immediately (DECISIONS D-24).
+Task G08 from docs/plan/lane-3-gunnar.md.
+1. backend/scripts/export_showcase.py: export the five showcase battles named in docs/PRODUCT_SPEC.md section 9 (BattleRecords plus their sprites, narration audio, and music) from the local database and data/media/ into data/showcase/ (committed). Keep the total under 20 MB; if it's bigger, drop music first, then audio, and say what was dropped.
+2. backend/scripts/import_showcase.py, called automatically at backend startup: if the database has no battles, load data/showcase/ into it so the battles and their media appear without any endpoint calls.
+3. A "Showcase" row on the Home page is Dillon's; give him a GET /api/battles?showcase=true route (list of battle_id and title) and tell him in the PR.
+4. Fresh-clone check on my Windows machine: clone the repo into a new folder, follow README "For the instructor" exactly (copy .env.example to .env, fill it, node scripts/check-env.mjs, npm run setup, npm start), open http://localhost:8000, and confirm the showcase battles play. Then repeat with PROVIDER_MODE=mock and an empty .env to confirm the app still opens. Write down every step that was unclear and fix the README.
+5. Tests: export then import round-trips identical records; import skips when battles already exist.
+Mike repeats step 4 on his Mac during review.
 ```
 
 **Acceptance criteria**
-- [ ] `docker compose up` serves the app at http://localhost:8080 (or the documented port)
-- [ ] Data persists across restarts; tested on Windows (Gunnar) and Mac (Mike)
-- [ ] A fresh clone shows the five showcase battles from `data/showcase/`
+- [ ] `data/showcase/` committed, under 20 MB, five battles
+- [ ] A fresh clone + `npm start` shows them at http://localhost:8000 (Windows: Gunnar, Mac: Mike)
+- [ ] Mock mode with an empty `.env` still opens the app
+- [ ] README "For the instructor" steps corrected from the fresh-clone run
