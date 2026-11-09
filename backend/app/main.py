@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 
 from app.config import REPO_ROOT, Settings, get_settings
 from app.models import contract_schemas
+from app.providers.health import provider_statuses
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
@@ -30,10 +31,14 @@ def create_app(settings: Settings | None = None, frontend_dist: Path = FRONTEND_
         allow_headers=["*"],
     )
 
-    # Liveness check used by the front end and CI.
+    # Liveness check used by the front end and CI, with each provider's mock/up/down status.
     @app.get("/api/health")
-    def health() -> dict[str, str]:
-        return {"status": "ok"}
+    async def health() -> dict[str, Any]:
+        return {
+            "status": "ok",
+            "provider_mode": settings.provider_mode,
+            "providers": await provider_statuses(settings),
+        }
 
     if frontend_dist.is_dir():
         _serve_frontend(app, frontend_dist.resolve())
