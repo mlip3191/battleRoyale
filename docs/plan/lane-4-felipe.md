@@ -47,7 +47,7 @@ Then use the review-prs skill to review the open dry-run PR from Mike's task M08
 ```text
 Task F02 from docs/plan/lane-4-felipe.md. Build backend/app/simulation/ with no I/O and no providers.
 1. rng.py: make_seed(matchup, sheet_hash_0, sheet_hash_1) using a stable hash (hashlib) plus ENGINE_VERSION; all randomness comes from numpy.random.Generator or random.Random created from that seed (ask me before adding numpy).
-2. fighters.py: build combatant instances from a StatSheet: hp proportional to mass_kg, damage per hit from attack_force_n, hit chance from top_speed_mps and size_m ratio, armor_0_1 reduces damage, attacks_per_s sets the tick rate. Put every constant in simulation/constants.py with a comment explaining it.
+2. fighters.py: build combatant instances from a StatSheet: hp proportional to mass_kg, damage per hit from attack_force_n, hit chance from top_speed_mps and size_m ratio, armor_0_1 reduces damage, attacks_per_s sets the tick rate. On every run, sample each stat from its low–high range (seeded) so input uncertainty shows up in the results. Put every constant in simulation/constants.py, and write docs/simulation-model.md explaining each constant with a source (e.g. Lanchester's laws, Kleiber/allometric scaling, published bite-force or running-speed studies) or, where none exists, the reasoning and a note that it's an assumption. This document is what we show when someone asks "where do your numbers come from?"
 3. engine.py: run_once(sides, terrain, rng, record_events) runs a time-stepped fight (0.1 s ticks, max 600 s) and returns the winner (0, 1, draw), survivors, duration, and optionally the event log using FightEvent with short neutral text_hint values.
 4. run(matchup, stat_sheets, runs=settings.sim_runs) -> SimulationResult: runs N times, computes win/draw probabilities with 95% Wilson intervals, mean survivors, mean duration, picks the representative run (closest to the median duration among the most common outcome), re-runs it with events on, and caps the log at 300 events. deciding_factor can be a placeholder until F05.
 5. Property tests (hypothesis) in backend/tests/property/: same inputs give identical results; probabilities sum to 1; mirror match is within 0.45–0.55 at 1,000 runs. A timing test: 1,000 runs of 1 v 1 under 1 second.
@@ -69,7 +69,7 @@ Task F02 from docs/plan/lane-4-felipe.md. Build backend/app/simulation/ with no 
 ```text
 Task F03 from docs/plan/lane-4-felipe.md. Extend backend/app/simulation/.
 1. Engagement limits (Lanchester linear law for melee): each target can be attacked by at most max_engagers = clamp((size_target / size_attacker)^2, 1, 8) attackers at once; idle attackers queue. Fighters with weapon_ranged use the square law (everyone can engage).
-2. Square-cube scaling: hp scales with mass; strength and damage scale with mass^(2/3); apply when the user gives a variant like "horse-sized duck" (scale factor from the size words in FighterRequest.variant — coordinate with Adam on the variant format).
+2. Square-cube scaling for FighterRequest.size_reference ("horse-sized duck" = entity duck, size_reference horse): the orchestrator gives you both stat sheets; scale factor k = reference mass_kg / entity mass_kg, computed here in code. Scaled mass = mass × k; hp scales with mass; strength and damage with k^(2/3); size with k^(1/3); speed per a documented allometric rule (cite it in docs/simulation-model.md). Record the scaling in the result so the UI and announcer can say "scaled to horse size". This powers showcase battle #1 (100 duck-sized horses vs 1 horse-sized duck), so test it explicitly.
 3. Swarm mode: when a side has more than 200 individuals, simulate in groups (bins of identical fighters with a count) so 10,000 ants run in under 3 seconds; events become group events with group_size.
 4. Tests: more fighters on a side never lowers its win probability (monotonic, within noise); 100 v 1,000 runs under 3 seconds; "100 duck-sized horses vs 1 horse-sized duck" produces a sensible, explainable result (write the explanation in the PR).
 ```
@@ -109,7 +109,7 @@ Task F04 from docs/plan/lane-4-felipe.md.
 ```text
 Task F05 from docs/plan/lane-4-felipe.md.
 1. deciding_factor: one-at-a-time sensitivity — for each StatName plus "numbers" and "terrain", equalize that factor between the sides, re-run 200 times, and measure the change in the favorite's win probability. The biggest change wins. Cache within a run.
-2. deciding_factor_explainer: a code template (no LLM), e.g. "Size did it: the grizzly outweighs each wolf about 8 to 1, and the pack couldn't surround it in the trees." Use values from the stat sheets; round sensibly.
+2. deciding_factor_explainer: a code template (no LLM), e.g. "Size did it: the grizzly outweighs each wolf about 8 to 1, and the pack couldn't surround it in the trees." Use values from the stat sheets; round sensibly. If the deciding factor is a behavioral stat (aggression, group tactics, armor), say it rests on an assumption.
 3. A summary() helper that returns the numbers the UI and the announcer need: win % per side, survivors, duration in seconds, favorite, and the deciding factor text.
 4. Tests: a size-dominated matchup reports SIZE or MASS; a swarm matchup reports numbers; the explainer contains no number that isn't in the inputs.
 Keep total time for simulate + deciding factor under 5 seconds for 1 v 1.
@@ -149,9 +149,9 @@ Task F06 from docs/plan/lane-4-felipe.md.
 **Prompt for Claude Code:**
 ```text
 Task F07 from docs/plan/lane-4-felipe.md. Build backend/scripts/run_benchmark.py.
-1. Load data/benchmark/matchups.yaml; for each, build stat sheets (seed sheets first), run the simulation and fair-fight search, and compare to the expected answer using the pass rules in docs/benchmark.md.
+1. Load data/benchmark/matchups.yaml and the sealed data/benchmark/heldout.yaml (G07). For each matchup, run the simulation and fair-fight search and compare to the expected answer using the pass rules in docs/benchmark.md. Two modes via a flag: --sheets seed (hand-verified seed sheets) and --sheets research (research pipeline only, ignoring seed files). Report the tuning set and the held-out set separately; never use held-out results to change constants.
 2. Also run Gunnar's traceability check (research/trace.py) on each result.
-3. Output docs/benchmark-results.md: overall pass rate, pass rate by group (obvious/documented/count), a table per matchup (expected, our favorite, win %, pass/fail), traceability %, total runtime, and the git commit hash. Never overwrite silently: include the date in the heading and keep the previous run below it (latest first, keep the last 5).
+3. Output docs/benchmark-results.md: pass rate for each mode (seed vs research) and each set (tuning vs held-out), overall pass rate, pass rate by group (obvious/documented/count), a table per matchup (expected, our favorite, win %, pass/fail), traceability %, total runtime, and the git commit hash. Never overwrite silently: include the date in the heading and keep the previous run below it (latest first, keep the last 5).
 4. Flags: --mock (CI-safe, uses fixtures) and --live.
 5. A CI test that runs --mock on 3 matchups so the runner can't silently break.
 Run it live once and paste the headline numbers in the PR.

@@ -129,7 +129,7 @@ You are the build assistant for **Battle Royale: The Science-Backed Fight Simula
 *Part C — light ruleset and early invites:*
 
 11. Create a repository ruleset via `gh api repos/mlip3191/battleRoyale/rulesets` (method POST; show Mike the JSON first) targeting the default branch: require a pull request with **0 required approvals**, block force pushes, block deletions, no bypass actors. Verify with `gh api repos/mlip3191/battleRoyale/rules/branches/main` that the pull-request rule is listed.
-12. Invite the teammates: `gh api -X PUT repos/mlip3191/battleRoyale/collaborators/<handle> -f permission=push` for `afondale`, `gunnaroc`, `felcervino`, `dilloncsmart`. Give Mike the click path to invite the instructor by email: Settings → Collaborators → Add people → `david.dobolyi@colorado.edu`.
+12. Invite the teammates: `gh api -X PUT repos/mlip3191/battleRoyale/collaborators/<handle> -f permission=push` for `afondale`, `gunnaroc`, `felcervino`, `dilloncsmart`. (The instructor is not invited during Phase 0; Mike handles that himself later — see "After Phase 0".)
 13. Draft a short email/text for Mike to send the team: accept the GitHub invite; follow README "Teammate quick start" steps 1–6 (install, clone, `.env`, `node scripts/check-env.mjs`); read `docs/PROJECT_GUIDE.md`; **don't start a task and don't merge anything until Mike assigns your first issue (Tue/Wed).**
 14. The `M02: done` line is written in M03's PR (main now requires a PR). If the session stops before then, Step 0 sees `M02: committed — …` and checks the ruleset and invites through the API before moving on.
 
@@ -138,7 +138,7 @@ You are the build assistant for **Battle Royale: The Science-Backed Fight Simula
 - [ ] Fake key and decoy `.env` both blocked by the hook's own messages; nothing committed; real `.env` never touched
 - [ ] No tracked file matches an ignore rule; CLAUDE.md reviewed
 - [ ] Light ruleset active (PR required, 0 approvals, no force push/deletion)
-- [ ] Four teammates + instructor invited; team message drafted
+- [ ] Four teammates invited; team message drafted
 
 ### M03 · Claude Code settings, permissions, and hooks · M (2) — needs one restart
 
@@ -195,7 +195,7 @@ You are the build assistant for **Battle Royale: The Science-Backed Fight Simula
 
 Backend (`backend/`):
 - uv project; Python 3.12 in `backend/.python-version`; `uv.lock` committed.
-- Dependencies: fastapi, uvicorn[standard], pydantic, pydantic-settings, httpx, sqlite-vec. Dev: pytest, pytest-asyncio, hypothesis, ruff.
+- Dependencies: fastapi, uvicorn[standard], pydantic, pydantic-settings, httpx, sqlite-vec, plus the ones later lanes are known to need, installed now so teammates don't wait on a critical-file approval: numpy (simulation), pyyaml (safety lists, benchmark). Dev: pytest, pytest-asyncio, hypothesis, ruff.
 - `app/config.py`: a `Settings` class (pydantic-settings), the only module that reads environment variables:
   - `REPO_ROOT = Path(__file__).resolve().parents[2]`; `env_file = REPO_ROOT / ".env"` (the root `.env`, even though commands run from `backend/`); `extra="ignore"` (the root `.env` also holds `VITE_*`, `HERMES_URL`, and per-service keys).
   - Relative paths such as `DATA_DIR` resolve against `REPO_ROOT`, not the current folder.
@@ -208,7 +208,7 @@ Backend (`backend/`):
 Front end (`frontend/`):
 - Scaffold with the current create-vite, non-interactively: `npm create vite@latest frontend -- --template react-ts` (answer any prompt with the defaults; record the create-vite version in the build log). Node 24 pinned in root `.nvmrc` and `engines`; `package-lock.json` committed.
 - `vite.config.ts`: `envDir: '..'` so Vite reads the **root** `.env` (only `VITE_*` variables reach the browser); dev proxy for `/api` and `/media` to :8000.
-- Add phaser, vitest, @testing-library/react, jsdom, eslint, prettier, openapi-typescript.
+- Add phaser, react-router-dom (D02 needs it), vitest, @testing-library/react, jsdom, eslint, prettier, openapi-typescript.
 - Folders `src/api`, `src/pages`, `src/components`, `src/game`, `src/fixtures`. A Home page that calls `/api/health` and shows "Backend: ok". One passing Vitest test.
 
 Root:
@@ -243,7 +243,7 @@ Finally: run `npm run setup`, `npm run check`, and `npm start` (open http://loca
 **Do this** (branch `phase0-m05`; build log `M05: in progress`):
 
 1. Implement every model in ARCHITECTURE §5 in `backend/app/models/` (one module per heading: terrain, matchup, stats, simulation, narration, media, battle) with the exact field names, types, and constraints; docstrings explain each field in plain English.
-2. Validators: `StatSheet` contains every `StatName`; `is_estimate=True` ⇒ `source=None` and confidence `low`; `method="extracted"` ⇒ source with a non-empty quote; `Matchup` has exactly 2 fighters.
+2. Validators: `StatSheet` contains every `StatName`; `is_estimate=True` ⇒ `source=None` and confidence `low`; `method="extracted"` ⇒ source with a non-empty quote; `method="assumption"` only for `aggression_0_1`, `group_tactics_0_1`, `armor_0_1`, with a non-empty `note`; when `low`/`high` are set, `low ≤ value ≤ high`; `Matchup` has exactly 2 fighters; `FighterRequest.size_reference`, when set, is a non-empty entity name (never a number).
 3. `backend/scripts/export_schema.py` writes JSON Schema for every model to `backend/app/models/schema/*.json`.
 4. One realistic, valid fixture per model in `backend/tests/fixtures/contracts/` ("grizzly bear (adult male)" vs "6 gray wolves" on "forest"; every extracted value has a Wikipedia URL and quote). A `BattleRecord` fixture in "running" and one in "done".
 5. `backend/tests/contract/`: every fixture validates; one negative test per validator rule.
@@ -292,11 +292,13 @@ Run the smoke script; show Mike `docs/providers.md` and confirm with him that it
 2. `.github/CODEOWNERS` assigning these critical paths to `@mlip3191` (leading `/` anchors a path at the repo root): `/CLAUDE.md`, `/INIT.md`, `/.claude/`, `/.github/`, `/.githooks/`, `/.gitignore`, `/.gitattributes`, `/.editorconfig`, `/.nvmrc`, `/.env.example`, `/.mcp.json`, `/.gitleaks.toml`, `/.gitleaksignore`, `/scripts/` (root only — `backend/scripts/` is not critical, D-29), `/package.json`, `/package-lock.json`, `/frontend/package.json`, `/frontend/package-lock.json`, `/backend/pyproject.toml`, `/backend/uv.lock`, `/backend/app/config.py`, `/backend/app/models/`, `/docs/ARCHITECTURE.md`.
 3. `.github/workflows/critical-files.yml`, job name **"Critical files approval"**:
    - Trigger: `pull_request_target` with types `opened, synchronize, reopened, ready_for_review`. This runs **main's** copy of the workflow, so a PR can't weaken the check that guards it. Do **not** check out the PR's code; use only `gh`/API calls. Permissions: `contents: read`, `pull-requests: read`.
-   - Logic: read the CODEOWNERS patterns **from `main`** via the API, and match the PR's changed files against them with the same root-anchored semantics. If any file matches and the author isn't `mlip3191`, pass only if `mlip3191` has an `APPROVED` review whose commit is the PR's current head SHA; otherwise fail with a plain-English reason. Every other case passes.
+   - Logic: read the CODEOWNERS patterns **from `main`** via the API, and match the PR's changed files against them with the same root-anchored semantics. If any file matches and the author isn't `mlip3191`, pass only if `mlip3191` — or the backup approver `gunnaroc` when he isn't the author (DECISIONS D-31) — has an `APPROVED` review whose commit is the PR's current head SHA; otherwise fail with a plain-English reason. Every other case passes.
    - Approvals don't re-trigger `pull_request_target`, so after Mike approves a critical-file PR the check must be re-run. The review-prs skill does this automatically (`gh run rerun`), and Mike can also click "Re-run jobs".
 4. `.github/pull_request_template.md`: Linked issue (`Closes #`), What changed (plain English), How it was tested, Screenshots (if UI), **Built with** (AI tool + model, e.g. "Claude Code — <model>"; feeds the Build Stack slide), Checklist (tests pass, lint passes, no secrets, scope limited to the issue, contract unchanged or `contract-change` label).
 5. Verify the shipped review tooling (`.claude/agents/code-reviewer.md`, `.claude/commands/review.md`, `.claude/skills/review-prs/SKILL.md`): read them, check the `gh` commands are valid, and make sure the skill's fallback critical-files list matches CODEOWNERS. List any fixes. Don't change the confirm-before-send / confirm-before-approve rules.
 6. Build log `M07: done`; commit "Add review tooling and checks (M07)"; PR; merge. Tell Mike that Secret scan, Critical files approval, and the advisory QA bot will all run on the dry-run PR in M08.
+
+*If Phase 0 is behind:* the QA bot (step 1, second file) is advisory and can move to a follow-up PR later in the week. Secret scan and the critical-files check can't — they become required in M08.
 
 **Acceptance criteria**
 - [ ] `ci.yml`, `secret-scan.yml`, `critical-files.yml`, `ai-qa-review.yml` in `.github/workflows/`
@@ -312,11 +314,11 @@ Run the smoke script; show Mike `docs/providers.md` and confirm with him that it
 
 **Do this** (show each write command before running it; for repetitive creates, show Mike the full batch once and let him approve the batch):
 
-1. **Labels** (`gh label create --force`, so existing defaults like `good first issue` are updated rather than failing): `type: feature`, `type: bug`, `type: chore`, `size: S`, `size: M`, `size: L`, `status: blocked`, `good first issue`, `contract-change`, `needs-pm`, `re-review` (asks the advisory QA bot to look again), `lane: mike|adam|gunnar|felipe|dillon`, `wave: 1|2|3|4`.
-2. **Issues**, created in dependency order (wave by wave, and within a wave so that a task's dependencies already exist), so every body can say "Blocked by #n" without a second pass. Read `docs/plan/lane-2-adam.md` … `lane-5-dillon.md`. One issue per task (A01…D07): title "<ID> · <task name>"; body (via `--body-file`) = Goal, Read first, Blocked by #n, Acceptance criteria checklist, "Prompt: see docs/plan/<lane file> → <ID>". Labels: type, size, lane, wave. Show Mike the full list first. Also create closed issues M01–M07 linking their PRs, and an open M08 issue.
+1. **Labels** (`gh label create --force`, so existing defaults like `good first issue` are updated rather than failing): `type: feature`, `type: bug`, `type: chore`, `size: S`, `size: M`, `size: L`, `status: blocked`, `good first issue`, `contract-change`, `needs-pm`, `re-review` (asks the advisory QA bot to look again), `usability` (findings from D10), `lane: mike|adam|gunnar|felipe|dillon`, `wave: 1|2|3|4`.
+2. **Issues**, created in dependency order (wave by wave, and within a wave so that a task's dependencies already exist), so every body can say "Blocked by #n" without a second pass. Read `docs/plan/lane-1-mike.md` (M09 only) and `docs/plan/lane-2-adam.md` … `lane-5-dillon.md`. One issue per task in lanes 2–5 (A01–A08, G01–G08, F01–F07, D01–D05, D07–D10) plus M09 from `docs/plan/lane-1-mike.md`: title "<ID> · <task name>"; body (via `--body-file`) = Goal, Read first, Blocked by #n, Acceptance criteria checklist, "Prompt: see docs/plan/<lane file> → <ID>". Labels: type, size, lane, wave. Show Mike the full list first. Also create closed issues M01–M07 linking their PRs, and an open M08 issue.
 3. **Project board** (D-28): `gh project create --owner mlip3191 --title "Battle Royale"`; `gh project link <number> --owner mlip3191 --repo mlip3191/battleRoyale`; add all issues. Then give Mike the web-UI click paths for what the CLI can't do: (a) Status field values Backlog, Ready, In progress, In review, Done; (b) Workflows → turn on "Auto-add to project" (filter `is:issue,pr is:open` for this repo), "Item added to project → Backlog", and "Pull request merged → Done"; (c) Settings → Manage access → add `afondale`, `gunnaroc`, `felcervino`, `dilloncsmart` with Write. Then set Wave 1 issues to Ready.
-4. **Invites accepted?** `gh api repos/mlip3191/battleRoyale/invitations --jq '.[] | select(.invitee != null) | .invitee.login'` must print nothing (email invites, like the instructor's, have no `invitee` and are ignored here; just remind Mike to confirm the instructor accepted before Nov 25). GitHub won't let you assign people who haven't accepted; if anyone is pending, give Mike their handle to nudge, and wait.
-5. **Assign** every issue to its lane owner (A→`afondale`, G→`gunnaroc`, F→`felcervino`, D→`dilloncsmart`).
+4. **Invites accepted?** `gh api repos/mlip3191/battleRoyale/invitations --jq '.[].invitee.login'` must print nothing. GitHub won't let you assign people who haven't accepted, and invitations expire after 7 days; if anyone is pending, give Mike their handle to nudge (or re-invite), and wait.
+5. **Assign** every issue to its lane owner (A→`afondale`, G→`gunnaroc`, F→`felcervino`, D→`dilloncsmart`, M09→`mlip3191`).
 6. **Dry run** (before tightening the ruleset): issue "Dry run"; branch `issue-<n>-dry-run`; change one line in README.md and set `M08: done` in `docs/build-log.md`; push; open a PR with the template. Wait for CI (4), Secret scan, Critical files approval, and the advisory QA bot to report. Run the review-prs skill as if Mike were the reviewer and show that it refuses (he's the author). Leave the PR open for Felipe's first review (F01).
 7. **Full ruleset:** update the M02 ruleset: require a pull request with **1 approval**; required status checks with source GitHub Actions — the 4 CI check names confirmed in M04, `Secret scan`, `Critical files approval`; block force pushes and deletions; no bypass actors. **Don't** turn on "branches up to date", "dismiss stale approvals", "approval of the most recent push", or "conversation resolution" (D-26). The QA bot is **not** a required check.
 8. **Team board issue:** create and pin "Team board" (no chat channel): @mention all four with links to README "Teammate quick start", their lane file, their first issue, the board, the dry-run PR to review, and the rule: once a week comment here with done / doing / blocked.
@@ -336,7 +338,8 @@ Run the smoke script; show Mike `docs/providers.md` and confirm with him that it
 - Before each milestone (Nov 14, 17, 20, 22): `gh workflow run ci.yml --ref main -f os=macos-latest` and test on the Mac by hand.
 - Run `backend/scripts/smoke_providers.py` whenever an endpoint changes.
 - Merge Dependabot PRs after CI and Secret scan pass (they need your approval for lockfiles).
-- Check Actions minutes weekly (Settings → Billing). If they run low, stop manual macOS runs first.
+- Check Actions minutes weekly (Settings → Billing). **Downgrade plan (D-34)** if fewer than ~600 minutes remain: (1) stop manual macOS runs; (2) switch the Windows CI jobs to on-demand and edit the ruleset so only the two ubuntu checks plus Secret scan and Critical files approval are required; (3) run Windows CI by hand before milestones. Keep the ruleset JSON for step 2 ready in `docs/build-log.md` so the switch takes one command.
+- **Instructor access (your call, whenever you choose):** the overview requires adding the instructor as a collaborator on a private repo. GitHub invitations expire after 7 days, so invite close to when he'll look, or re-check and re-send. Claude doesn't send this.
 - Squash-merged local branches can't be deleted by Claude (`git branch -D` is denied); clean them up yourself occasionally, or ignore them.
 
 ---

@@ -12,23 +12,23 @@ Every decision that shapes the build, with its status. **Open** items need Mike'
 | Felipe Cervino | `felcervino` | Windows | 4 — Simulation & analytics |
 | Dillon Smart | `dilloncsmart` | Windows | 5 — Front end & battle stage |
 
-**Group A** · MBAX 6418 AI Business Solutions · Instructor: David Dobolyi (david.dobolyi@colorado.edu — must be added as a collaborator because the repo is private).
+**Group A** · MBAX 6418 AI Business Solutions · Instructor: David Dobolyi. The overview requires adding the instructor as a collaborator on a private repo; Mike does that by hand when he chooses (invitations expire after 7 days).
 
 ## Open — need an answer
 
 | ID | Question | Why it matters | Recommendation | Blocks |
 |---|---|---|---|---|
-| D-16 | **Where does the demo run?** Endpoints are public URLs, so any machine with internet works. | The showcase battles and `npm start` must work on that machine. | Mike's laptop, plus the recorded backup | G08, demo |
+| D-16 | **Which machine shows the app in the presentation?** (The presentation itself is prepared outside the repo.) | Showcase battles and `npm start` must work there. | Mike's laptop, plus a recorded backup | demo |
 
 ## Decided
 
 | ID | Decision | Date |
 |---|---|---|
-| D-01 | **Private repo + GitHub Pro** (Pro confirmed active 2026-11-08). M01 checks `plan.name` and makes the repo private (on a private personal repo only collaborators can fork; the "Allow forking" setting exists only for organizations). Teammates and the instructor (david.dobolyi@colorado.edu, required by the overview for private repos) are invited early, in M02. GitHub secret scanning/push protection aren't available for private personal repos, so the gitleaks Secret scan + local hook are our secret checks. | 2026-11-08 |
+| D-01 | **Private repo + GitHub Pro** (Pro confirmed active 2026-11-08). M01 checks `plan.name` and makes the repo private (on a private personal repo only collaborators can fork; the "Allow forking" setting exists only for organizations). Teammates are invited early, in M02; the instructor is invited by Mike by hand when he chooses. GitHub secret scanning/push protection aren't available for private personal repos, so the gitleaks Secret scan + local hook are our secret checks. | 2026-11-08 |
 | D-02 | **Claude Code builds the app; Hermes Agent is used once:** task G06 is built with Hermes Agent (port 9000), Mike pairing, with screenshots for the Build Stack slide. | 2026-11-07 |
 | D-03 | **Course endpoints:** public URLs; Mike and every teammate have the hosts, ports, and keys. Everyone fills their own `.env` from `.env.example` and checks it with `node scripts/check-env.mjs` (never shows values). Per-service keys are supported (`<SERVICE>_API_KEY` overrides `COURSE_API_KEY`). The repo never contains hosts or keys. | 2026-11-08 |
 | D-04 | **QA bot is advisory** and uses Mike's Claude subscription token (`claude setup-token` → repo secret `CLAUDE_CODE_OAUTH_TOKEN`). It comments and records a verdict but never blocks a merge and is not a required check. It runs on PR open/reopen/ready and on the `re-review` label; skips drafts, forks, and Dependabot. Switch to a spend-capped API key if Mike's plan limits get tight. | 2026-11-08 |
-| D-05 | **Due Wednesday, November 25, 2026.** Day-by-day schedule in `docs/plan/DELIVERABLES.md`; cut order in `docs/plan/LANES.md`. Assumed: presentation and Canvas submission are both that day. | 2026-11-08 |
+| D-05 | **Code complete Wednesday, November 25, 2026.** The slide deck and presentation are prepared outside this repo, starting Nov 25. Feature freeze end of Sun Nov 22; fixes Nov 23–24. Schedule in `docs/plan/DELIVERABLES.md` and `docs/plan/LANES.md`. | 2026-11-08 |
 | D-06 | **Team roster:** Group A, five members including Dillon (confirmed). | 2026-11-08 |
 | D-07 | **Allowed fighters:** animals (living and extinct) and generic historical human archetypes. **Blocked:** named real people, minors, groups of people, sexual content, copyrighted fictional characters. Mythical creatures are a stretch goal and always all-estimate. | 2026-11-07 |
 | D-08 | **GitHub handles and OS** as in the team table. Everyone but Mike is Windows-only, and Mike runs Phase 0 on his Mac. **Mike is the Mac tester:** any PR touching setup scripts, hooks, the start command, or file paths gets a Mac check from him; CI runs macOS on demand (Mike triggers it before each milestone). gitleaks is optional (`brew install gitleaks` / `winget install gitleaks`); without it the hook's built-in checker runs. | 2026-11-08 |
@@ -44,15 +44,36 @@ Every decision that shapes the build, with its status. **Open** items need Mike'
 | D-19 | **No user accounts; battles stored locally** in SQLite; no personal data collected. | 2026-11-07 |
 | D-20 | **Data sources approved by Mike:** the recommended datasets below; details and licenses go in `docs/research.md` (G01). | 2026-11-08 |
 | D-21 | **No team channel and no password manager.** All coordination happens on GitHub: request reviewers on the PR (GitHub notifies them), @mention people in issues and PR comments, and use one pinned "Team board" issue for announcements and weekly check-ins. Everyone already has the `.env` values. | 2026-11-08 |
-| D-22 | **Five lanes,** 13–14 points each, owners as in `docs/plan/LANES.md`; final deliverables split one-per-person in `docs/plan/DELIVERABLES.md`. | 2026-11-08 |
+| D-22 | **Five lanes:** Mike 16, Adam 14, Gunnar 13, Felipe 13, Dillon 14 points (see `docs/plan/LANES.md`). Mike's extra points are Phase 0 plus the live AI evaluation. | 2026-11-08 |
 | D-23 | **PR review flow:** the review-prs skill drafts; nothing posts until the reviewer says send; approval is a separate, second confirmation. The QA bot never approves. | 2026-11-07 |
 | D-26 | **Merge rules kept light for speed:** 1 approval; required checks = CI (backend + frontend on ubuntu + windows), Secret scan, Critical files approval. Off: dismiss stale approvals, approval of the most recent push, branches up to date, conversation resolution. macOS CI runs only on demand (Mike triggers it before each milestone: `gh workflow run ci.yml --ref main`), because one macOS run bills ~80 of the 3,000 monthly Actions minutes. Norm: re-request review if you push meaningful changes after an approval. | 2026-11-08 |
 | D-27 | **Early invites, light rules until M08.** Teammates and the instructor are invited in M02 so they can install and read; until M08 the ruleset needs a PR but 0 approvals. Team rule: start no task and merge nothing until M08 assigns your first issue. Accepted risk for 1–2 days. | 2026-11-08 |
 | D-28 | **Project board access:** the board is owned by `mlip3191`, linked to the repo, with the four teammates added as project collaborators (Write) and auto-add turned on for new issues and PRs. | 2026-11-08 |
 | D-29 | **Critical-file scope:** only the root `/scripts/` folder is critical (not `backend/scripts/`). `.gitleaksignore` is critical, since it can silence the secret scan. | 2026-11-08 |
 | D-30 | **QA bot trust boundary:** before running, the bot replaces the PR's `.claude/` and `CLAUDE.md` with `main`'s copies, so a PR can't change the bot's rules or hooks. | 2026-11-08 |
+| D-31 | **Gunnar is the backup approver** for critical-file PRs when Mike is unavailable; the critical-files check accepts his approval on PRs he didn't write. | 2026-11-08 |
+| D-32 | **Behavioral stats are assumptions, not sourced facts.** Aggression, group tactics, and armor use method `assumption` with a written 5-level rubric (`docs/research.md`); the UI tags them. Every stat carries a plausible range, and the simulation samples within it, so the win-probability range reflects input uncertainty. Engine constants are documented in `docs/simulation-model.md`. | 2026-11-08 |
+| D-33 | **Size phrases use a `size_reference` field** ("horse-sized duck" → entity duck, reference horse). The scale factor is computed by code from both sourced masses; the model only names the reference. Added to the contracts before M05. | 2026-11-08 |
+| D-34 | **Actions-minutes downgrade plan:** below ~600 remaining minutes, stop macOS runs, then make Windows CI on-demand and require only the Linux checks (steps in INIT.md "After Phase 0"). | 2026-11-08 |
+| D-35 | **Lane changes after the grading review:** Gunnar keeps G05 (five showcase fighters by Nov 14, the rest by Nov 18). The clarifying-question backend moves from Adam to Dillon (now D08) and the sprite/image backend from Dillon to Adam (now A08). New: M09 live AI evaluation (Mike), D09 user guide and D10 usability sessions (Dillon). | 2026-11-08 |
+| D-36 | **Next challenger uses the Structured Decisions model**, as the proposal specified, choosing only among seed and already-cached fighters so the 10-second budget holds. | 2026-11-08 |
+| D-37 | **Evaluation measures the AI, not just the simulator:** 10 benchmark matchups are held out from all tuning; the benchmark runs with hand-verified and research-only sheets; M09 reports extraction accuracy, sourced share, retrieval, live intake and safety accuracy, and cost per battle (`docs/evaluation.md`). | 2026-11-08 |
 | D-25 | **No Docker.** The app runs with `npm start`: the backend serves the built front end and the API together at http://localhost:8000, so the instructor needs only Node 24 and uv. | 2026-11-08 |
 | D-24 | **Showcase battles ship with the repo** (`data/showcase/`, small, committed) so the instructor's clone shows the five demo battles even before he fills `.env`. | 2026-11-08 |
+
+## Changes from the proposal
+
+Each one is deliberate and recorded here, so it reads as a decision, not a broken promise. This list feeds the deck.
+
+| Proposal said | We're doing | Why |
+|---|---|---|
+| Hermes Primary Model + Hermes Agent as the AI coding agent | Claude Code builds the app; Hermes Agent builds one task (G06) as a documented comparison | The team's guardrails and review tooling are built on Claude Code (D-02) |
+| Four team members | Five: Dillon joined | D-06 |
+| Docker Compose implied by the stack | One command, `npm start`, no Docker | Simpler for non-coders and the instructor (D-25) |
+| Voice cloning for the announcer | A stock gruff, deep voice first; cloning only with written consent | Consent and time (D-09) |
+| Every stat from sources | Seven physical stats from sources or labeled estimates; three behavioral stats labeled assumptions from a rubric | No source measures aggression or armor; honesty over false precision (D-32) |
+| Benchmark against expert answers | Benchmark plus held-out set plus a live evaluation of the AI parts | Measure the GenAI, not just the simulator (D-37) |
+| Any media cut under the cut order | (fill in at code complete) | LANES.md cut order |
 
 ## Recommended datasets (D-20)
 
@@ -60,7 +81,7 @@ The proposal promised Wikipedia, Wikidata, and Hugging Face datasets. Recommende
 
 | # | Dataset | Where | What we use it for | License | Notes |
 |---|---|---|---|---|---|
-| 1 | **Wikipedia Structured Contents** (`wikimedia/structured-wikipedia`) | Hugging Face | Main RAG text: article abstracts, sections, and **parsed infoboxes**, each linked to its Wikidata ID | CC BY-SA 4.0 / GFDL | Official Wikimedia dataset. Don't download it all: stream it and keep only seed-fighter articles (filter by Wikidata QID). |
+| 1 | **Wikipedia Structured Contents** (`wikimedia/structured-wikipedia`) | Hugging Face | Main RAG text: article abstracts, sections, and **parsed infoboxes**, each linked to its Wikidata ID | CC BY-SA 4.0 / GFDL | Official Wikimedia dataset. Never download or stream the whole thing: look up individual fighters through the Hugging Face Dataset Viewer API. Article text itself comes from the Wikipedia REST API (same content, much faster). If the viewer lookup is impractical, mirror our small trait subset (#4–5) as a team dataset on Hugging Face instead. |
 | 2 | **FineWiki** (`HuggingFaceFW/finewiki`) | Hugging Face | Backup text source with infobox JSON and `wikidata_id` per article, built from recent Wikimedia dumps | CC BY-SA (Wikipedia) | Use if #1 lacks an article or is stale. |
 | 3 | **Wikidata** (live API, no key) | wikidata.org | High-confidence numbers with property IDs and references (mass, length, speed when present); "is this a real human?" check | CC0 | Not a Hugging Face dataset; already in the plan (G02, A04). |
 | 4 | **PanTHERIA** (mammal traits) | Ecological Archives / figshare (mirror to a team HF dataset if we want it "on HF") | Adult body mass, head-body length, limb length, group size for ~5,400 mammals | CC0 | Peer-reviewed, citable; ideal for `mass_kg` and `size_m`. |

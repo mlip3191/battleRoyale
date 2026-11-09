@@ -38,11 +38,11 @@ Users type a matchup ("100 duck-sized horses vs 1 horse-sized duck"). The app:
 |---|---|---|---|
 | **0 Foundation** (Nov 9–10) | Mike alone | Repo settings, guardrails, skeleton, contracts, providers, review tooling, protection, issues, invites (M01–M08) | Dry-run PR passes all checks; teammates invited |
 | **1 Onboard + setup** (Nov 11) | Everyone | Each teammate's setup task: A01, G01, F01, D01 | Everyone has merged one PR and reviewed one |
-| **2 Skeleton** (Nov 12–14) | Lanes in parallel | Parsing, ingestion, engine core, app shell | **MS-1:** matchup → verdict on mocks in the UI |
+| **2 Skeleton** (Nov 12–14) | Lanes in parallel | Parsing, ingestion, showcase stat sheets, engine core, app shell | **MS-1:** matchup → verdict on mocks in the UI |
 | **3 Core** (Nov 15–17) | Lanes | Clarify, orchestrator, retrieval, stat sheets, terrain, results UI, animation | **MS-2:** real stat sheets + real simulation |
-| **4 Complete** (Nov 18–20) | Lanes | Scripts, audio, images, fair fight, benchmark, broadcast page, showcase battles | **MS-3:** the full show; **MS-4:** demo-ready |
+| **4 Complete** (Nov 18–20) | Lanes | Scripts, audio, images, fair fight, benchmark, broadcast page, showcase battles, live AI evaluation | **MS-3:** the full show; **MS-4:** demo-ready |
 
-Then: bug bash Nov 21, deck and rehearsals Nov 22–23, buffer Nov 24, **due Wednesday, November 25**. The cut order if we fall behind is in [plan/LANES.md](plan/LANES.md).
+Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of Nov 22, fixes Nov 23–24, **code complete Wednesday, November 25**. The slide deck is prepared outside the repo from Nov 25. The cut order if we fall behind is in [plan/LANES.md](plan/LANES.md).
 
 ## 4. Step by step — Mike (Phase 0)
 
@@ -125,6 +125,9 @@ Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → buil
 | 16 | Setup guide's review tool posted and set status automatically | review-prs skill: draft → confirm send → separate confirm approve | Step 3, D-23 |
 | 17 | Fork PRs could run code on a reviewer's machine or slip past the QA bot | Private repo (only collaborators can fork); skill refuses to run fork code; QA bot skips fork PRs and is advisory only | SKILL.md, M01 |
 | 18 | QA bot cost and Actions minutes on a private repo | Bot advisory, runs only when a PR opens or on a `re-review` label; PR CI on Linux + Windows, macOS on demand before milestones; no "up to date" rule | D-01, D-04, D-26 |
+| 19 | The evaluation tested the simulator, not the AI | Live AI evaluation (M09) and a held-out benchmark run with hand-verified and research-only sheets | D-37 |
+| 20 | "Science-backed" claim stretched over unsourced behavioral stats | Behavioral stats labeled assumptions with a rubric; ranges and uncertainty sampling; constants documented | D-32 |
+| 21 | No business case in an AI *Business* Solutions course | Business case added: segments, comparison, unit economics, metrics | PRODUCT_SPEC §2a |
 
 The full list of edge cases the app must handle is in [ARCHITECTURE §14](ARCHITECTURE.md#14-edge-cases-the-design-must-handle). Outstanding questions are the **Open** rows in [DECISIONS.md](DECISIONS.md).
 
@@ -154,3 +157,9 @@ The full list of edge cases the app must handle is in [ARCHITECTURE §14](ARCHIT
 - Shared git hook that blocks keys, `.env` files, and large files on every commit
 - Setup-check (`npm run doctor`) for Windows and Mac
 - `/new-issue` command that scopes and splits work
+- Live AI evaluation (`docs/evaluation.md`): extraction accuracy vs hand-verified sheets, sourced share, retrieval, live intake and safety accuracy, cost per battle
+- Held-out benchmark set, run with hand-verified and research-only stat sheets
+- Behavioral stats labeled as rubric-based assumptions; stat ranges with uncertainty sampling; engine constants documented
+- `size_reference` so "horse-sized duck" is scaled by code, not the model
+- Outside usability sessions and a first-time-user guide
+- Business case: segments, competitor comparison, unit economics, success metrics

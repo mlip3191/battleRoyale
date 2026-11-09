@@ -62,11 +62,11 @@ battleRoyale/
 │   │   ├── models/               # SHARED CONTRACTS (task M05)                      (critical)
 │   │   ├── providers/            # one adapter per course endpoint + mocks (M06)
 │   │   ├── safety/               # moderation + blocklists (A04)
-│   │   ├── intake/               # step 1: matchup parsing + clarification (A02, A03)
+│   │   ├── intake/               # step 1: matchup parsing + clarification (A02, D08)
 │   │   ├── research/             # step 2: ingest, retrieve, rerank, stat sheets (G02–G06)
 │   │   ├── simulation/           # step 3 + 7 + 8-sim: Monte Carlo engine (F01–F06)
 │   │   ├── narration/            # steps 4–5 text: intro + play-by-play scripts (A06)
-│   │   ├── media/                # steps 5–6 assets: tts, music, images (A07, D06)
+│   │   ├── media/                # steps 5–6 assets: tts, music, images (A07, A08)
 │   │   ├── pipeline/             # orchestrator + stage runner + progress events (A05)
 │   │   ├── api/                  # HTTP routes (thin; call pipeline/)
 │   │   └── db/                   # sqlite connection, migrations, repositories
@@ -123,13 +123,13 @@ Stages run in the orchestrator (`pipeline/`). Each stage records `pending | runn
 | Stage | Cached fighter | New fighter | On failure |
 |---|---|---|---|
 | 1 Intake | ≤ 3 s | ≤ 3 s | retry once, then ask the user to rephrase |
-| 2 Research | ≤ 0.5 s | ≤ 45 s | fall back to seed sheet or all-estimate sheet with a banner |
+| 2 Research | ≤ 0.5 s | ≤ 45 s | fall back to seed sheet or all-estimate sheet with a banner; size-reference entities are researched too |
 | 3 Simulate (1,000 runs) | ≤ 3 s | — | must not fail; it is pure code |
 | 4–5 Scripts | ≤ 10 s | — | template-based fallback script |
 | 5 Audio + music | ≤ 60 s | — | captions only / no music |
 | 6 Images | ≤ 60 s (cached per fighter) | — | placeholder shapes in the fighter's color |
 | 7 Fair fight | ≤ 5 s | — | "no fair fight within limits" |
-| 8 Next challenger | ≤ 10 s | — | pick from seed list by closest odds |
+| 8 Next challenger | ≤ 10 s | — | candidates come only from seed/cached fighters (no new research), so the budget holds; fallback: closest odds from the seed list |
 
 ## 5. Shared contracts (backend/app/models)
 
@@ -144,6 +144,9 @@ class FighterRequest(BaseModel):
     entity: str                 # normalized name, e.g. "grizzly bear"
     count: int = Field(1, ge=1, le=10_000)
     variant: str | None = None  # e.g. "adult male", "polar"
+    size_reference: str | None = None  # "horse-sized duck" -> entity "duck", size_reference "horse".
+                                # The scale factor is computed by CODE from both stat sheets'
+                                # mass_kg (reference mass / entity mass); the model only names the reference.
     raw: str                    # the user's words for this fighter
 
 class Matchup(BaseModel):
@@ -171,9 +174,11 @@ class StatValue(BaseModel):
     value: float; unit: str
     source: Source | None = None
     confidence: Confidence
-    is_estimate: bool                      # True ⇒ source is None and value came from code
-    method: Literal["extracted", "derived", "category_default", "hand_verified"]
-    note: str | None = None
+    is_estimate: bool                      # True ⇒ not from a source (category_default or assumption)
+    method: Literal["extracted", "derived", "category_default", "hand_verified", "assumption"]
+    low: float | None = None               # plausible range used for uncertainty sampling;
+    high: float | None = None              # filled by code (from sources if given, else by confidence)
+    note: str | None = None                # required for "assumption": the rubric level and why
 
 class StatName(StrEnum):
     MASS="mass_kg"; SIZE="size_m"; SPEED="top_speed_mps"; ATTACK_FORCE="attack_force_n"
@@ -262,6 +267,11 @@ The proposal says "no language model sets a number." Because the Structured Deci
 | `derived` | Code (e.g. size from mass via allometric formula) | An input stat exists; note says which formula |
 | `category_default` | Code, from `backend/app/research/defaults.py` | No evidence found. `is_estimate=True`, confidence `low` |
 | `hand_verified` | A teammate, in `data/seed/fighters/*.json` | Seed fighters only; source required |
+| `assumption` | A teammate or code, from the written rubric in `docs/research.md` | Only for the behavioral stats that no source measures: `aggression_0_1`, `group_tactics_0_1`, `armor_0_1`. `is_estimate=True`, confidence `low`, `note` cites the rubric level (e.g. "aggression level 4: territorial apex predator"). Shown in the UI with an "assumption" tag. |
+
+**Honest scope of the claim:** the seven *physical* stats (mass, size, speed, attack force, attack rate, reach, endurance) are sourced or labeled estimates. The three *behavioral* stats are documented assumptions, and the engine's constants (`simulation/constants.py`) cite their source or reasoning in `docs/simulation-model.md`. The results page and the Limitations material say so plainly.
+
+**Ranges:** every `StatValue` gets `low`/`high`. If a source gives a range, use it; otherwise code sets ±10% (high confidence), ±25% (medium), ±50% (low, estimates and assumptions). The simulation samples each stat from its range on every run, so the reported win-probability interval reflects input uncertainty, not just Monte Carlo noise.
 
 Unit conversion lives in code (`research/units.py`). The model returns the unit string it saw; code converts.
 
@@ -271,14 +281,14 @@ Unit conversion lives in code (`research/units.py`). The model returns the unit 
 |---|---|---|---|
 | `GET /api/health` | — | `{status, provider_mode, providers: {name: up/down/mock}}` | M06 |
 | `POST /api/intake` | `{text}` | `IntakeResult` | A02 |
-| `POST /api/intake/{pending_id}/answer` | `{answer}` | `IntakeResult` | A03 |
+| `POST /api/intake/{pending_id}/answer` | `{answer}` | `IntakeResult` | D08 |
 | `POST /api/battles` | `Matchup` | `202 {battle_id}` | A05 |
 | `GET /api/battles/{id}` | — | `BattleRecord` (partial while running) | A05 |
 | `GET /api/battles?showcase=true` | — | `[{battle_id, title}]` for the five saved showcase battles | G08 |
 | `GET /api/battles/{id}/events` | — | Server-Sent Events: `StageStatus` updates; poll fallback every 1 s | A05 |
 | `GET /api/fighters?q=` | search text | `[{fighter_id, display_name, cached: bool}]` | G04 |
 | `GET /api/fighters/{fighter_id}` | — | `StatSheet` | G04 |
-| `GET /media/{asset_id}` | — | file | A07/D06 |
+| `GET /media/{asset_id}` | — | file | A07/A08 |
 
 The front end only calls these. It never calls a course endpoint.
 
@@ -326,11 +336,13 @@ Rules:
 
 Pure Python, no I/O, no providers. Lane owner: Felipe.
 
+- **Inputs:** each of the ~1,000 runs samples every stat from its `low`–`high` range (seeded), so uncertain inputs widen the result's interval. Constants are documented with sources or reasoning in `docs/simulation-model.md` (F02).
+- **Size references:** for a `size_reference` ("horse-sized duck"), code scales the duck's stat sheet to the horse's mass with square-cube rules (mass × k, strength × k^(2/3), speed per documented allometry) and records the scaling in the result.
 - **Individuals:** each fighter instance has HP ∝ mass (square-cube: volume), damage per hit from `attack_force_n` scaled by mass^(2/3) (muscle cross-section), armor reduces damage, hit chance from speed and size ratio.
 - **Numbers (Lanchester):** melee uses the linear law: only as many attackers engage one target as fit around it (`max_engagers = clamp((size_target/size_attacker)², 1, 8)`). Ranged weapons use the square law. Swarms above 200 individuals switch to aggregated "group" mode for speed.
 - **Terrain/habitat:** a habitat mismatch (e.g. shark on land) applies speed and attack penalties; if neither side can reach the other the result is `no_contest`.
 - **Behavior:** each side retreats when losses pass a morale threshold derived from `aggression_0_1`. Fights time out at 600 simulated seconds → draw.
-- **Outputs:** win/draw probabilities with 95% Wilson intervals, survivors, duration, the representative run's event log (closest to the median outcome, capped at 300 events), and the deciding factor by one-at-a-time sensitivity (equalize one stat, re-run 200 times, biggest swing wins).
+- **Outputs:** win/draw probabilities with 95% intervals (labeled "range" in the UI; they include input uncertainty), survivors, duration, the representative run's event log (closest to the median outcome, capped at 300 events), and the deciding factor by one-at-a-time sensitivity (equalize one stat, re-run 200 times, biggest swing wins).
 - **Fair fight:** vary the count of the side the user did not fix (default: the losing side) with doubling then binary search on integers, 200 runs per probe, max 20 probes, count cap 10,000; target |p − 0.5| ≤ 0.05.
 - **Performance:** 1,000 runs for 1 v 1 in under 1 s; 100 v 1,000 under 3 s on a laptop.
 - `ENGINE_VERSION` constant bumps whenever results would change; it is part of the seed.
@@ -349,7 +361,7 @@ Pure Python, no I/O, no providers. Lane owner: Felipe.
 
 - **Blocked fighters:** named real people (checked two ways: LLM classifier, and Wikidata "instance of human (Q5)" lookup), anyone under 18 or "a child", sexual content, ethnic/religious/national groups, self-harm, real-world attack planning. Copyrighted fictional characters are blocked in MVP (see DECISIONS D-07).
 - **Allowed:** animals (living and extinct), generic historical human archetypes ("Roman legionary"), mythical creatures only as a stretch goal and always all-estimate.
-- **Prompt injection:** user text is wrapped as data in every prompt; outputs are schema-validated; the simulation, not the model, decides the winner, so "make the duck win" cannot change a result.
+- **Prompt injection:** user text is wrapped as data in every prompt; media and narration prompts use the resolved `display_name` from the stat sheet (validated against an allowlist of letters, digits, spaces, hyphens), never the raw user text; Wikipedia text fetched on demand is also treated as untrusted data; outputs are schema-validated; the simulation, not the model, decides the winner, so "make the duck win" cannot change a result.
 - **Tone:** PG. Knockouts and retreats, no gore or blood descriptions. Announcer jokes never target groups of people.
 - **Voice cloning:** only a voice whose owner gave written consent (e.g. a teammate). Never imitate a celebrity or real announcer.
 - **Music and images:** prompts never name real artists, songs, franchises, or characters.
@@ -376,7 +388,7 @@ See `.env.example` for the full list with comments. Groups: app (`APP_ENV`, `POR
 
 | Case | Expected behavior | Owner |
 |---|---|---|
-| Vague fighter ("bear") | One clarifying question with 2–4 options; if the answer is still vague, pick the most common variant and add it to `assumptions` | A02/A03 |
+| Vague fighter ("bear") | One clarifying question with 2–4 options; if the answer is still vague, pick the most common variant and add it to `assumptions` | A02/D08 |
 | Unknown or made-up fighter | Block as `nonsense` with a friendly message, or (if plausible) all-estimate sheet with a red banner | A04/G04 |
 | Mirror match ("wolf vs wolf") | ~50/50; property test enforces it | F07 |
 | Huge counts ("1,000,000 ants") | Clamp to 10,000 with an assumption note; swarm mode | A02/F02 |

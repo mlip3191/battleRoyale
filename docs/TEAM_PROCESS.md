@@ -122,7 +122,7 @@ GitHub's built-in CODEOWNERS rule can't do this. If the PM were the only code ow
 
 - [ ] Add .github/CODEOWNERS listing the critical paths with the PM as owner. This only auto-requests the PM as a reviewer; leave "Require review from Code Owners" **off**.
 
-- [ ] Add a workflow, .github/workflows/critical-files.yml, triggered by `pull_request_target` (opened, synchronize, reopened, ready_for_review). That trigger runs **main's** copy of the workflow, so a PR can't weaken the check that guards it; it never checks out the PR's code. If the PR touches a critical file and the author is not the PM, it passes only once the PM has approved the latest commit. If the author is the PM, or no critical files changed, it passes right away; the normal one-approval rule covers the rest. Approvals don't re-trigger it, so after the PM approves, the check is re-run (the review-prs skill does this; or click "Re-run jobs").
+- [ ] Add a workflow, .github/workflows/critical-files.yml, triggered by `pull_request_target` (opened, synchronize, reopened, ready_for_review). That trigger runs **main's** copy of the workflow, so a PR can't weaken the check that guards it; it never checks out the PR's code. If the PR touches a critical file and the author is not the PM, it passes only once the PM — or the backup approver, Gunnar, on a PR he didn't write (DECISIONS D-31) — has approved the latest commit. If the author is the PM, or no critical files changed, it passes right away; the normal one-approval rule covers the rest. Approvals don't re-trigger it, so after the PM approves, the check is re-run (the review-prs skill does this; or click "Re-run jobs").
 
 - [ ] Make "Critical files approval" a required status check on main once it has run once.
 

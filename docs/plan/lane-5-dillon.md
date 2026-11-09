@@ -1,16 +1,18 @@
-# Lane 5 — Dillon: Front End & Battle Stage
+# Lane 5 — Dillon Smart: Front End, Battle Stage & User Experience
 
-**Total effort: 13 points.** Dillon owns what people see and hear: the onboarding experience for the team, the app shell, the intake screen, the broadcast-style battle page, the Phaser animation, and the fighter images. The front end works against contract fixtures, so this lane never waits on the backend.
+**Total effort: 14 points.** Dillon owns what people see and how they experience it: team onboarding, the app shell, the intake screen and its clarifying question (front and back), the broadcast-style battle page, the Phaser animation, the user guide, and usability testing with outside users. The front end works against contract fixtures, so this lane never waits on the backend.
 
 | ID | Task | Size | Depends on | Blocks | Wave |
 |---|---|---|---|---|---|
 | D01 | Onboarding guide + setup check script | M | M08 | everyone's first run | 1 |
 | D02 | App shell, broadcast theme, typed API client | M | M04, M05 | D03–D07 | 2 |
-| D03 | Intake page + clarification UI | S | D02 (+ A03 for live) | — | 2 |
+| D03 | Intake page + clarification UI | S | D02 (+ D08 for live) | — | 2 |
 | D04 | Results page: stat sheet cards with sources | M | D02 | — | 3 |
 | D05 | Phaser battle scene that replays the event log | M | D02, M05 | D07 | 3 |
-| D06 | Fighter sprites + battlefield images (step 6 backend) | M | M06, M05 | D05 (real art) | 4 |
 | D07 | Broadcast page: intro, captions, audio, controls | M | D05, A05 | demo | 4 |
+| D08 | Clarifying question flow + intake API (backend) | S | A02 | D03 (live) | 3 |
+| D09 | User guide for a first-time user | S | D07 | instructor | 4 |
+| D10 | Usability sessions with 3–5 outside users | S | MS-3 | bug fixes | 4–5 |
 
 ---
 
@@ -122,31 +124,6 @@ Task D05 from docs/plan/lane-5-dillon.md. In frontend/src/game/:
 
 ---
 
-## D06 · Fighter sprites + battlefield images (step 6 backend) · M (2)
-
-**Goal:** Generate crude, consistent fighter sprites and a battlefield, cached per fighter.
-**Read first:** ARCHITECTURE §7 (ImageGen), §11 (no copyrighted characters); `docs/providers.md`.
-
-**Prompt for Claude Code:**
-```text
-Task D06 from docs/plan/lane-5-dillon.md. This one is backend (Python) work.
-1. Live ImageGen adapter backend/app/providers/live/image.py for the image endpoint (port 9006) with generate and edit, per docs/providers.md. If unknown, stop and ask Mike to run the smoke script.
-2. backend/app/media/images.py:
-   - make_sprite(stat_sheet) -> Asset: prompt built in code from a style template ("crude 16-bit side-view sprite of a <display_name>, plain background, facing right, game asset") — never names a franchise, artist, or character. Then use the edit mode to remove the background (transparent PNG). Cache per fighter_id + style version so each fighter is drawn once.
-   - make_battlefield(terrain) -> Asset: one per terrain, cached.
-   - make_images(record) -> list[Asset] for the orchestrator.
-3. Fallback: on failure return an Asset with fallback=True and no URL; the front end draws placeholders.
-4. A small "style lock": the same seed/params every time so sprites look like one set.
-5. Pre-generate sprites for all seed fighters with a script (backend/scripts/pregen_sprites.py) so the demo is fast.
-6. Tests with the mock provider for caching and fallback.
-```
-
-**Acceptance criteria**
-- [ ] Sprites for the seed fighters generated live and cached (thumbnails in the PR)
-- [ ] Transparent backgrounds; consistent style
-- [ ] Fallback path works with no image endpoint
-
----
 
 ## D07 · Broadcast page: intro, captions, audio, controls · M (2)
 
@@ -165,3 +142,68 @@ Task D07 from docs/plan/lane-5-dillon.md. Build the Battle page (/battle/:id):
 **Acceptance criteria**
 - [ ] Full broadcast plays in fixtures mode and against the live backend
 - [ ] Captions sync with the animation; every degraded mode tested
+
+---
+
+## D08 · Clarifying question flow + intake API (backend) · S (1)
+
+**Goal:** When a fighter is vague, ask one question and continue.
+**Read first:** ARCHITECTURE §6 (`/api/intake` routes).
+
+**Prompt for Claude Code:**
+```text
+Task D08 from docs/plan/lane-5-dillon.md. This one is backend (Python) work; it pairs with your intake page (D03), so you own the clarifying question end to end.
+1. Add POST /api/intake {text} and POST /api/intake/{pending_id}/answer {answer} in backend/app/api/intake.py, both returning IntakeResult.
+2. Store pending clarifications in SQLite (table intake_pending: pending_id, original_text, question, options, created_at) via backend/app/db; expire after 30 minutes.
+3. Answer handling: combine original text + answer, re-parse once. If it is still vague, pick the most common variant, add it to assumptions, and return status "ok". Never ask more than one question per matchup.
+4. Tests for: ok on first try; one clarification then ok; still vague after the answer (assumption added); expired pending_id (404 with a plain message).
+```
+
+**Acceptance criteria**
+- [ ] Both endpoints in OpenAPI and typed in the front end after `npm run gen:api`
+- [ ] Never more than one clarifying question
+- [ ] Expired or unknown `pending_id` handled cleanly
+
+---
+
+---
+
+## D09 · User guide for a first-time user · S (1)
+
+**Goal:** The overview requires documentation "for a naïve user." This is it.
+**Read first:** README; PRODUCT_SPEC §2–5.
+
+**Prompt for Claude Code:**
+```text
+Task D09 from docs/plan/lane-5-dillon.md. Write docs/user-guide.md for someone who has never seen the app or a terminal:
+1. What the app does in three sentences, and what "science-backed" means here (sourced stats, estimates labeled, a simulation decides).
+2. How to run it on Windows and Mac: install Node 24 and uv, copy .env.example to .env and fill it in (or leave PROVIDER_MODE=mock to try it without endpoints), npm run setup, npm start, open http://localhost:8000. Screenshots of each step.
+3. How to use it: typing a matchup, answering the clarifying question, choosing terrain, watching the broadcast, reading the results page (win % and the range, deciding factor, fair fight, next challenger, source links, the "estimate" and "assumption" tags), and the five showcase battles.
+4. What it won't do (real people, more than two sides, etc.) and why.
+5. Troubleshooting: the five most likely problems and their fixes (from the bug bash and usability sessions).
+Link it from README. Ask a teammate who hasn't run the app recently to follow it start to finish in their review.
+```
+
+**Acceptance criteria**
+- [ ] `docs/user-guide.md` with screenshots, linked from README
+- [ ] A teammate followed it start to finish without help (noted in the PR)
+
+---
+
+## D10 · Usability sessions with 3–5 outside users · S (1)
+
+**Goal:** Test the UI/UX with people outside the team — one of the overview's three stated purposes — and turn what they hit into fixes.
+**When:** Nov 21–22, after MS-3 (the full show works).
+
+**Prompt for Claude Code:**
+```text
+Task D10 from docs/plan/lane-5-dillon.md. Help me run usability sessions.
+1. Write docs/usability/plan.md: 5 tasks for a tester (start a battle from the examples, type your own matchup, answer a clarifying question, find where a stat came from, start the next challenger battle), what to observe, and 5 short questions afterwards (what confused you, what made you laugh, would you trust the verdict, would you share it, what's missing). Each session about 15 minutes; no personal data recorded.
+2. After I run 3–5 sessions (friends, family, classmates outside our group), help me write docs/usability/findings.md: a table of each problem, how many testers hit it, severity, and a suggested fix.
+3. Create one issue per problem with /new-issue (type: bug or feature, label usability), and tell Mike which ones you think must be fixed before the freeze.
+```
+
+**Acceptance criteria**
+- [ ] Plan and findings committed (no names or personal data)
+- [ ] One issue per finding, labeled `usability`; top fixes flagged to Mike
+

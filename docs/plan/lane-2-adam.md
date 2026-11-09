@@ -1,16 +1,16 @@
-# Lane 2 — Adam: Intake, Safety & Orchestration
+# Lane 2 — Adam Fondale: Intake, Safety, Orchestration & Media
 
-**Total effort: 13 points.** Adam owns everything between the user's words and a finished battle record: understanding the request, keeping it safe, running the pipeline, and the announcer's words and voice.
+**Total effort: 14 points.** Adam owns everything between the user's words and a finished battle record: understanding the request, keeping it safe, running the pipeline, and all generated media — the announcer's words and voice, the soundtrack, and the fighter sprites.
 
 | ID | Task | Size | Depends on | Blocks | Wave |
 |---|---|---|---|---|---|
 | A01 | Issue forms, `/new-issue` command, issue guide | M | M08 | — | 1 |
-| A02 | Matchup parser (step 1) | M | M05, M06 | A03, A05, D03 | 2 |
-| A03 | Clarifying question flow + intake API | S | A02 | D03 | 3 |
+| A02 | Matchup parser (step 1) | M | M05, M06 | D08, A05, D03 | 2 |
 | A04 | Safety and moderation | M | A02 | A05 | 2–3 |
 | A05 | Pipeline orchestrator + battle API + live progress | M | A02, M05, M06 | D07, integration | 3 |
 | A06 | Announcer intro + play-by-play scripts (steps 4–5) | M | M05, M06 | A07, D07 | 4 |
 | A07 | Announcer voice (TTS) + soundtrack (music) | M | A06 | D07 | 4 |
+| A08 | Fighter sprites + battlefield images (step 6 backend) | M | M06, M05 | D05 (real art) | 4 |
 
 **How to start any task:** in Claude Code, say *"Start work on issue #<number>"* and then paste the prompt below. Claude makes the branch, explains its plan, and waits for your OK.
 
@@ -53,11 +53,12 @@ Task A02 from docs/plan/lane-2-adam.md. Build backend/app/intake/parser.py.
    - number words and digits to integers ("a dozen" = 12, "a pair" = 2, "100" = 100); fractions or zero are rejected with a friendly message;
    - counts above settings.sim_max_count (10,000) are clamped and an assumption is added;
    - entity names normalized to lowercase singular ("Wolves" -> "wolf"); variant kept separately;
+   - size phrases: "horse-sized duck" -> entity "duck", size_reference "horse"; "duck-sized horses" -> entity "horse", size_reference "duck". The model only names the reference entity; the scale factor is computed later by code from both stat sheets (Felipe, F03). Never accept a number for size from the model;
    - more than two sides -> status "clarify" explaining the MVP supports two sides and offering to group;
    - terrain mapped to the Terrain enum; unknown terrain -> arena plus an assumption;
    - invalid or unparseable LLM output -> retry once with the validation error, then status "clarify" asking the user to rephrase.
 3. Tests with the mock provider (add canned responses to backend/tests/fixtures/providers/): at least 25 cases covering the edge cases in ARCHITECTURE section 14 that belong to A02, including "100 duck-sized horses vs 1 horse-sized duck", "3 wolves vs a moose in the forest", "ant vs whale", "bear", "a million ants vs a lion", "half a horse vs a goat".
-Do not build the HTTP endpoint (A03) or safety checks (A04).
+Do not build the HTTP endpoint (Dillon's D08) or safety checks (A04).
 ```
 
 **Acceptance criteria**
@@ -68,26 +69,6 @@ Do not build the HTTP endpoint (A03) or safety checks (A04).
 
 ---
 
-## A03 · Clarifying question flow + intake API · S (1)
-
-**Goal:** When a fighter is vague, ask one question and continue.
-**Read first:** ARCHITECTURE §6 (`/api/intake` routes).
-
-**Prompt for Claude Code:**
-```text
-Task A03 from docs/plan/lane-2-adam.md.
-1. Add POST /api/intake {text} and POST /api/intake/{pending_id}/answer {answer} in backend/app/api/intake.py, both returning IntakeResult.
-2. Store pending clarifications in SQLite (table intake_pending: pending_id, original_text, question, options, created_at) via backend/app/db; expire after 30 minutes.
-3. Answer handling: combine original text + answer, re-parse once. If it is still vague, pick the most common variant, add it to assumptions, and return status "ok". Never ask more than one question per matchup.
-4. Tests for: ok on first try; one clarification then ok; still vague after the answer (assumption added); expired pending_id (404 with a plain message).
-```
-
-**Acceptance criteria**
-- [ ] Both endpoints in OpenAPI and typed in the front end after `npm run gen:api`
-- [ ] Never more than one clarifying question
-- [ ] Expired or unknown `pending_id` handled cleanly
-
----
 
 ## A04 · Safety and moderation · M (2)
 
@@ -124,8 +105,8 @@ Task A04 from docs/plan/lane-2-adam.md. Build backend/app/safety/.
 ```text
 Task A05 from docs/plan/lane-2-adam.md. Build backend/app/pipeline/ and the battle routes.
 1. orchestrator.run_battle(matchup) creates a BattleRecord with every stage "pending", saves it, then runs stages as an asyncio background task:
-   research (both fighters in parallel) -> simulate -> then in parallel: summary, challenger, script -> then in parallel: audio, music, images.
-   Each stage is a function in pipeline/stages.py that calls the owning module's public function (research.get_stat_sheet, simulation.run, simulation.fair_fight, narration.write_scripts, media.make_audio, media.make_music, media.make_images). The challenger stage is yours: a prompt backend/prompts/challenger.md asks the chat LLM for 5 candidate opponents from the seed list (plus up to 2 new ones), research builds their sheets, and simulation.test_challengers ranks them; keep the closest to 50/50. Where a module isn't built yet, call a stub that returns the matching contract fixture and mark the stage detail "stub".
+   research (both fighters, plus any size_reference entities, in parallel) -> simulate -> then in parallel: summary, challenger, script -> then in parallel: audio, music, images.
+   Each stage is a function in pipeline/stages.py that calls the owning module's public function (research.get_stat_sheet, simulation.run, simulation.fair_fight, narration.write_scripts, media.make_audio, media.make_music, media.make_images). The challenger stage is yours: as the proposal specifies, the Structured Decisions model (prompt backend/prompts/challenger.md, JSON schema output) picks 5 candidate opponents from the list of seed and already-cached fighters only (no new research, so the 10-second budget holds); simulation.test_challengers ranks them; keep the closest to 50/50. Where a module isn't built yet, call a stub that returns the matching contract fixture and mark the stage detail "stub".
 2. Every stage has a timeout from the stage budget in ARCHITECTURE section 4. On error or timeout: mark the stage "fallback" (media, scripts, challenger) or "failed" (research/simulate), save, and continue whatever can continue. The battle status is "done" if simulate succeeded, else "failed".
 3. Save the BattleRecord after every stage change. Cache: if the same matchup with the same sheet hashes was simulated before, reuse the stored result.
 4. Routes: POST /api/battles (Matchup) -> 202 {battle_id}; GET /api/battles/{id}; GET /api/battles/{id}/events as Server-Sent Events streaming StageStatus changes, ending with an "end" event.
@@ -153,7 +134,8 @@ Task A06 from docs/plan/lane-2-adam.md. Build backend/app/narration/.
    - intro: 4–8 lines grounded only in the stat sheets (the prompt receives a compact fact list; estimates must be called estimates);
    - play_by_play: compress representative_log into 8–20 beats; each ScriptLine sets at_event to the event index it describes, so captions sync with the animation;
    - outro: verdict, win probability, deciding factor, fair-fight line — these numbers are inserted by code into placeholders like {win_pct}, never written by the model.
-3. A number guard in code: every number in generated text must appear in the stat sheets, the simulation result, or the fair-fight result (after rounding); otherwise regenerate once, then fall back to a template script (fallback=True).
+3. A number guard in code: every number in generated text — digits, number words ("four hundred", "a dozen"), percentages, and ratios ("eight to one") — must match a value in the stat sheets, the simulation result, or the fair-fight result (after rounding and unit conversion); otherwise regenerate once, then fall back to a template script (fallback=True). Test it with word-form and ratio cases.
+   Prompts receive the resolved display_name from the stat sheet, never the user's raw text.
 4. Template fallback scripts in narration/templates.py that work with no LLM at all.
 5. Golden tests on mocks: three matchups, guard catches an invented number, fallback produces valid Scripts, all lines under 200 characters.
 ```
@@ -178,7 +160,7 @@ Task A07 from docs/plan/lane-2-adam.md.
 2. backend/app/media/audio.py:
    - Voice audition first: backend/scripts/audition_voices.py lists the endpoint's stock voices and renders the same test line ("Ladies and gentlemen... in this corner... weighing in at four hundred kilos... THE GRIZZLY!") with each into data/media/auditions/. I pick the deepest, gruffest one; put its id as the default ANNOUNCER_VOICE_ID in .env.example (it's not a secret). If the endpoint supports pitch, rate, or style settings, lower pitch slightly, slow the rate a little, and pass ANNOUNCER_VOICE_STYLE.
    - make_audio(scripts) -> list[Asset]: one audio file per script (intro, play-by-play, outro), lines joined with short pauses, using settings.announcer_voice_id. Cache by prompt_hash so the same script never regenerates.
-   - make_music(matchup, result) -> Asset: build a mood prompt in code from the matchup (e.g. "upbeat retro sports-broadcast theme, brass and synth, 30 seconds") — never name a real artist, song, or franchise.
+   - make_music(matchup, result) -> Asset: build a mood prompt in code from the resolved fighter names (allowlisted characters only) and the matchup (e.g. "upbeat retro sports-broadcast theme, brass and synth, 30 seconds") — never name a real artist, song, or franchise.
    - Save files under data/media/ (gitignored) and serve them at GET /media/{asset_id}.
 3. Fallbacks: if TTS fails, return no audio asset and mark the stage fallback (captions still show); if music fails, return none.
 4. Voice consent: if settings.announcer_voice_source is "cloned", require settings.announcer_voice_consent_file to point to a file that exists; otherwise refuse to clone and use the default voice.
@@ -190,3 +172,31 @@ Task A07 from docs/plan/lane-2-adam.md.
 - [ ] Three narration files + one music file generated live for a sample battle (links in the PR)
 - [ ] Re-running the same battle reuses cached audio
 - [ ] Failures fall back cleanly; consent rule enforced
+
+---
+
+## A08 · Fighter sprites + battlefield images (step 6 backend) · M (2)
+
+**Goal:** Generate crude, consistent fighter sprites and a battlefield, cached per fighter.
+**Read first:** ARCHITECTURE §7 (ImageGen), §11 (no copyrighted characters); `docs/providers.md`.
+
+**Prompt for Claude Code:**
+```text
+Task A08 from docs/plan/lane-2-adam.md. This sits next to your audio work (A07): all generated media lives in backend/app/media/.
+1. Live ImageGen adapter backend/app/providers/live/image.py for the image endpoint (port 9006) with generate and edit, per docs/providers.md. If unknown, stop and ask Mike to run the smoke script.
+2. backend/app/media/images.py:
+   - make_sprite(stat_sheet) -> Asset: prompt built in code from the stat sheet's resolved display_name (allowlisted characters only, never raw user text) and a style template ("crude 16-bit side-view sprite of a <display_name>, plain background, facing right, game asset") — never names a franchise, artist, or character. Then use the edit mode to remove the background (transparent PNG). Cache per fighter_id + style version so each fighter is drawn once.
+   - make_battlefield(terrain) -> Asset: one per terrain, cached.
+   - make_images(record) -> list[Asset] for the orchestrator.
+3. Fallback: on failure return an Asset with fallback=True and no URL; the front end draws placeholders.
+4. A small "style lock": the same seed/params every time so sprites look like one set.
+5. Pre-generate sprites for all seed fighters with a script (backend/scripts/pregen_sprites.py) so the demo is fast.
+6. Tests with the mock provider for caching and fallback.
+```
+
+**Acceptance criteria**
+- [ ] Sprites for the seed fighters generated live and cached (thumbnails in the PR)
+- [ ] Transparent backgrounds; consistent style
+- [ ] Fallback path works with no image endpoint
+
+---

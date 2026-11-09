@@ -36,7 +36,7 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 
 ## For the instructor
 
-Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 24 and uv; copy `.env.example` to `.env` and fill in the course endpoints (`node scripts/check-env.mjs` confirms); `npm run setup`; `npm start`; open http://localhost:8000. With `PROVIDER_MODE=mock` the app runs without any endpoints. A naïve-user guide will be in `docs/user-guide.md`.
+Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 24 and uv; copy `.env.example` to `.env` and fill in the course endpoints (`node scripts/check-env.mjs` confirms); `npm run setup`; `npm run ingest` (builds the knowledge base, once); `npm start`; open http://localhost:8000. Five showcase battles load automatically. A full first-time guide is in `docs/user-guide.md`. With `PROVIDER_MODE=mock` the app runs without any endpoints. A naïve-user guide will be in `docs/user-guide.md`.
 
 ## Stack
 

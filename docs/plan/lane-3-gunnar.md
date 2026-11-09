@@ -26,7 +26,7 @@ G07 pairs with Felipe's F07: Gunnar builds the benchmark data, Felipe builds the
 ```text
 Task G01 from docs/plan/lane-3-gunnar.md. Help me write docs/research.md. Do not write code.
 1. Propose 25 seed fighters across categories (big predators, small animals good for swarms, herbivores, birds, reptiles, aquatic, insects, 2–3 dinosaurs, 3 generic historical human archetypes). For each: fighter_id slug, display name, default variant, category, habitat, and the Wikipedia article title. Include classics: house cat, golden retriever, grizzly bear, gray wolf, African elephant, honey badger, chimpanzee, bald eagle, saltwater crocodile, great white shark, army ant, Tyrannosaurus rex, Roman legionary.
-2. For each StatName, explain in plain English what it means, its unit, where it usually appears in Wikipedia/Wikidata (e.g. Wikidata property for mass), and what we do when it's missing (category default).
+2. For each StatName, explain in plain English what it means, its unit, where it usually appears in Wikipedia/Wikidata or the trait datasets, and what we do when it's missing (category default). Separate the seven physical stats (sourced or estimated) from the three behavioral stats (aggression_0_1, group_tactics_0_1, armor_0_1), which no source measures: write a rubric for each with 5 levels and one-line descriptions plus example animals (e.g. aggression 1 = flees from almost everything, 5 = attacks animals larger than itself), so every "assumption" value cites a rubric level.
 3. The source policy, starting from the recommended datasets in docs/DECISIONS.md (D-20): Wikipedia Structured Contents (wikimedia/structured-wikipedia on Hugging Face) as the main text source, FineWiki as backup, Wikidata for referenced numbers, PanTHERIA and AnimalTraits for body mass and size, and optionally the TreeOfLife taxonomy metadata for name normalization. For each: what we take, license, and how we attribute. Not allowed: forums, fan wikis, AI-generated pages, and any dataset whose card says values were AI-generated or unsourced.
 4. A short "variants" rule: what default we pick when a user says just "bear" or "shark".
 Show me the draft, I'll edit it, then commit.
@@ -48,8 +48,8 @@ Show me the draft, I'll edit it, then commit.
 **Prompt for Claude Code:**
 ```text
 Task G02 from docs/plan/lane-3-gunnar.md. Build backend/app/research/ingest.py and backend/scripts/ingest_seed.py.
-1. For each seed fighter in docs/research.md (store the list as data/seed/fighters.yaml so code can read it): get the article from the Hugging Face dataset wikimedia/structured-wikipedia by streaming and filtering on the fighter's Wikidata QID (never download the whole dataset; fall back to the Wikipedia REST API if missing), and fetch the Wikidata entity JSON (no key needed; send a descriptive User-Agent with the project name, not a personal email). Save raw files under data/kb/ (gitignored) with title, URL, license, retrieved_at.
-2. Parse HTML/PDF through the DocParser provider (port 9005) when it is HTML or PDF; plain text skips parsing.
+1. For each seed fighter in docs/research.md (store the list as data/seed/fighters.yaml so code can read it): fetch the article HTML from the Wikipedia REST API (fast; same CC BY-SA text as the Hugging Face dumps) and the Wikidata entity JSON. For the Hugging Face part, try the Hugging Face Dataset Viewer API to look up the fighter's row in wikimedia/structured-wikipedia (parsed infobox) without downloading the dataset; if that's slow or unavailable, instead upload our small PanTHERIA/AnimalTraits subset as a team dataset on Hugging Face and load it from there, so the proposal's Hugging Face claim holds. Never stream or download a full Wikipedia dump (no key needed; send a descriptive User-Agent with the project name, not a personal email). Save raw files under data/kb/ (gitignored) with title, URL, license, retrieved_at.
+2. Parse every fetched HTML article (and any PDF source) through the DocParser provider (port 9005) — this is the course Document Parsing endpoint's real job in our app; plain text skips parsing.
 3. Chunk text (~800 characters, 100 overlap, keep section headings as chunk metadata), embed with the Embedder provider (port 9002) in batches, and store in SQLite: documents, chunks, and a sqlite-vec virtual table chunks_vec. Add the migration file in backend/app/db/migrations/.
 4. Pull structured facts into a facts table with source, field, value, unit, and reference: Wikidata (mass, length, speed where present, with property IDs), PanTHERIA (adult body mass, head-body length) and AnimalTraits (body mass) matched by scientific name. Download the trait files once into data/kb/ by script; they are high-confidence sources for G04. Ask me before adding the datasets library.
 5. Live adapters for DocParser and Embedder in backend/app/providers/live/ following docs/providers.md.
@@ -118,26 +118,28 @@ Task G04 from docs/plan/lane-3-gunnar.md. Build backend/app/research/statsheet.p
 
 ## G05 · Hand-verified seed stat sheets · M (2)
 
-**Goal:** Fifteen gold-standard stat sheets the demo and the benchmark can trust. Mostly careful reading, little code.
+**Goal:** Fifteen gold-standard stat sheets the demo, the benchmark, and Mike's AI evaluation (M09) can trust. Mostly careful reading, little code.
+**Order and timing:** the five showcase fighters first (by Sat Nov 14, before your research pipeline exists, so these answers are independent of it), then the other ten by Wed Nov 18.
 **Read first:** `docs/research.md`; ARCHITECTURE §5 (`StatSheet`).
 
 **Prompt for Claude Code:**
 ```text
 Task G05 from docs/plan/lane-3-gunnar.md. Help me create hand-verified stat sheets for the first 15 seed fighters in docs/research.md, as data/seed/fighters/<fighter_id>.json, valid against the StatSheet model.
-For each fighter, work one stat at a time: open the source (Wikipedia, Wikidata, or the paper it cites), show me the exact sentence and the number, convert units, and wait for me to confirm before writing it. Use method "hand_verified" and the real URL and quote. If no reliable source exists for a stat, use the category default with is_estimate=true and explain why in note.
+Start with the five showcase fighters (docs/PRODUCT_SPEC.md section 9), then the rest. For each fighter, work one physical stat at a time (mass, size, speed, attack force, attack rate, reach, endurance): open the source (Wikipedia, Wikidata, a trait dataset, or the paper it cites), show me the exact sentence and the number, convert units, and wait for me to confirm before writing it. Use method "hand_verified" with the real URL and quote, and a low/high range if the source gives one. If no reliable source exists, use the category default with is_estimate=true and explain why in note. For the three behavioral stats, use method "assumption" with the rubric level from docs/research.md in note — never "hand_verified".
 Add a test that every file validates and that no hand_verified value lacks a source. At the end, show me a table of fighters x stats with H (hand-verified) or E (estimate).
 ```
 
 **Acceptance criteria**
-- [ ] 15 sheets, all validate, every non-estimate value has URL + quote
-- [ ] Coverage table in the PR; at most 2 estimates per fighter
+- [ ] Five showcase sheets merged by Nov 14; all 15 by Nov 18; all validate
+- [ ] Every hand_verified value has URL + quote; behavioral stats are "assumption" with a rubric level
+- [ ] At most 2 of the 7 physical stats are estimates per fighter; coverage table in the PR
 
 ---
 
 ## G06 · Traceability checker · S (1)
 
 **Goal:** Prove the promise "every stat on screen links to its source."
-**Hermes task (DECISIONS D-02):** build this one with the course's Hermes Agent (port 9000) instead of Claude Code, with Mike pairing. Keep screenshots of the session for the final report. Same branch, PR, and review rules apply.
+**Hermes task (DECISIONS D-02):** build this one with the course's Hermes Agent (port 9000) instead of Claude Code, with Mike pairing. Treat it as a comparison: note in docs/build-log.md how long it took, what went well or badly, and how it compared with Claude Code, with screenshots. Same branch, PR, and review rules apply.
 **Prompt for Claude Code:**
 ```text
 Task G06 from docs/plan/lane-3-gunnar.md. Build backend/app/research/trace.py and a test.
@@ -159,7 +161,7 @@ Add backend/scripts/trace_report.py that runs the check on every stored battle a
 **Prompt for Claude Code:**
 ```text
 Task G07 from docs/plan/lane-3-gunnar.md. Help me build data/benchmark/matchups.yaml. No app code.
-1. 30 matchups using seed fighters: 15 "obvious" (outcome follows from size/biology, e.g. house cat vs gray wolf), 10 "documented" (a zoologist, museum, or published source states a view — record the citation), 5 "count" cases where the expected fair-fight count range is known roughly (e.g. how many house cats to match one wolf).
+1. 30 matchups using seed fighters (then move 10 of them, a mix of all three groups, into data/benchmark/heldout.yaml and don't look at their results while anyone tunes the engine — they're our honest test): 15 "obvious" (outcome follows from size/biology, e.g. house cat vs gray wolf), 10 "documented" (a zoologist, museum, or published source states a view — record the citation), 5 "count" cases where the expected fair-fight count range is known roughly (e.g. how many house cats to match one wolf).
 2. Each entry: id, fighters (entity, count, variant), terrain, expected_winner (0, 1, or draw), confidence (high/medium), expected_fair_count range if any, source URL or "obvious: <one-line reason>".
 3. Write docs/benchmark.md: how the set was built, what counts as a pass (favorite matches expected_winner; for high-confidence cases the favorite's probability ≥ 0.7), and known weaknesses.
 Show me the draft before committing.
@@ -168,6 +170,7 @@ Show me the draft before committing.
 **Acceptance criteria**
 - [ ] 30 entries, each with a reason or citation
 - [ ] Pass rules written down before we run the simulator against it
+- [ ] 10 matchups sealed in `data/benchmark/heldout.yaml` (held out from tuning)
 
 ---
 
@@ -181,6 +184,7 @@ Show me the draft before committing.
 Task G08 from docs/plan/lane-3-gunnar.md.
 1. backend/scripts/export_showcase.py: export the five showcase battles named in docs/PRODUCT_SPEC.md section 9 (BattleRecords plus their sprites, narration audio, and music) from the local database and data/media/ into data/showcase/ (committed). Keep the total under 20 MB; if it's bigger, drop music first, then audio, and say what was dropped.
 2. backend/scripts/import_showcase.py, called automatically at backend startup: if the database has no battles, load data/showcase/ into it so the battles and their media appear without any endpoint calls.
+   Also: in live mode, if the knowledge base is empty, the backend tells the user on startup to run `npm run ingest` (add that root script; it runs ingest_seed). Add the step to README "For the instructor".
 3. A "Showcase" row on the Home page is Dillon's; give him a GET /api/battles?showcase=true route (list of battle_id and title) and tell him in the PR.
 4. Fresh-clone check on my Windows machine: clone the repo into a new folder, follow README "For the instructor" exactly (copy .env.example to .env, fill it, node scripts/check-env.mjs, npm run setup, npm start), open http://localhost:8000, and confirm the showcase battles play. Then repeat with PROVIDER_MODE=mock and an empty .env to confirm the app still opens. Write down every step that was unclear and fix the README.
 5. Tests: export then import round-trips identical records; import skips when battles already exist.

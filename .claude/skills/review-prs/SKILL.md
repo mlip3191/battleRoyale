@@ -41,7 +41,7 @@ For each PR, work out:
 Then show **one table per group**, in this order, skipping empty groups:
 
 1. **Needs your review** — not authored by `ME`, not draft, and either review requested from `ME` or fewer than 1 approval.
-2. **Needs the PM** — touches critical files and the author isn't the PM; only the PM's approval satisfies the critical-files check (anyone can still review and comment).
+2. **Needs the PM** — touches critical files and the author isn't the PM; only the PM's approval (or the backup approver Gunnar's, when Mike is unavailable) satisfies the critical-files check (anyone can still review and comment).
 3. **Blocked** — a failing required check or merge conflicts (`mergeable` = CONFLICTING). Reviewing is still useful; approving isn't yet. (A QA bot verdict alone never makes a PR blocked.)
 4. **Approved, ready to merge** — the author should merge it.
 5. **Your PRs** — authored by `ME`. You can't review these; show their status so you know what to fix.
@@ -150,8 +150,8 @@ gh pr review <n> --approve --body "Approved after review (see my review above)."
 ```
 
 If the PR touches critical files:
-- `ME` isn't the PM: say "Mike's approval is still required by the critical-files check."
-- `ME` is the PM (`mlip3191`): approvals don't re-trigger that check, so re-run it now. Find its run: `gh pr checks <n> --json name,link --jq '.[] | select(.name=="Critical files approval") | .link'`, take the number after `/runs/`, and (after a yes) run `gh run rerun <run id>`. Tell Mike it should turn green in about a minute.
+- `ME` isn't the PM or the backup: say "Mike's approval (or Gunnar's, as backup) is still required by the critical-files check."
+- `ME` is the PM (`mlip3191`), or the backup approver (`gunnaroc`) on a PR he didn't write: approvals don't re-trigger that check, so re-run it now. Find its run: `gh pr checks <n> --json name,link --jq '.[] | select(.name=="Critical files approval") | .link'`, take the number after `/runs/`, and (after a yes) run `gh run rerun <run id>`. Tell Mike it should turn green in about a minute.
 
 ## Step 7 — Follow-up issues (optional)
 
