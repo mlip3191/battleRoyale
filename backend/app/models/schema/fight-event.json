@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "EventType": {
+      "description": "What happened at one moment of the fight.",
+      "enum": [
+        "approach",
+        "attack",
+        "hit",
+        "miss",
+        "ko",
+        "retreat",
+        "flee",
+        "stalemate",
+        "end"
+      ],
+      "title": "EventType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One moment in a simulated fight, replayed by the game and narrated.",
+  "properties": {
+    "t": {
+      "description": "Seconds since the start of the fight.",
+      "title": "T",
+      "type": "number"
+    },
+    "type": {
+      "$ref": "#/$defs/EventType",
+      "description": "What happened."
+    },
+    "side": {
+      "description": "Which side acted (0 = first fighter, 1 = second).",
+      "enum": [
+        0,
+        1
+      ],
+      "title": "Side",
+      "type": "integer"
+    },
+    "actor": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Index of the acting fighter within its side, or None for a group event.",
+      "title": "Actor"
+    },
+    "target": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Index of the fighter on the other side that was targeted, if any.",
+      "title": "Target"
+    },
+    "group_size": {
+      "default": 1,
+      "description": "How many fighters acted together (more than 1 for swarm events).",
+      "title": "Group Size",
+      "type": "integer"
+    },
+    "damage": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Damage dealt, when the event is a hit.",
+      "title": "Damage"
+    },
+    "text_hint": {
+      "description": "Short neutral description for narration, e.g. \"bite lands\".",
+      "title": "Text Hint",
+      "type": "string"
+    }
+  },
+  "required": [
+    "t",
+    "type",
+    "side",
+    "text_hint"
+  ],
+  "title": "FightEvent",
+  "type": "object"
+}

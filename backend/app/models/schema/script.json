@@ -1,0 +1,77 @@
+{
+  "$defs": {
+    "ScriptLine": {
+      "additionalProperties": false,
+      "description": "One line spoken by an announcer.",
+      "properties": {
+        "speaker": {
+          "description": "Who says it.",
+          "enum": [
+            "announcer",
+            "color_commentator"
+          ],
+          "title": "Speaker",
+          "type": "string"
+        },
+        "text": {
+          "description": "What they say; it may only contain numbers from the stat sheets or results.",
+          "title": "Text",
+          "type": "string"
+        },
+        "at_event": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Index into representative_log, to sync captions with the fight.",
+          "title": "At Event"
+        }
+      },
+      "required": [
+        "speaker",
+        "text"
+      ],
+      "title": "ScriptLine",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A block of the broadcast: intro, play-by-play, or outro.",
+  "properties": {
+    "kind": {
+      "description": "Which part of the broadcast it is.",
+      "enum": [
+        "intro",
+        "play_by_play",
+        "outro"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "lines": {
+      "description": "The lines in order.",
+      "items": {
+        "$ref": "#/$defs/ScriptLine"
+      },
+      "title": "Lines",
+      "type": "array"
+    },
+    "fallback": {
+      "default": false,
+      "description": "True when a template was used because the model was unavailable.",
+      "title": "Fallback",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "kind",
+    "lines"
+  ],
+  "title": "Script",
+  "type": "object"
+}

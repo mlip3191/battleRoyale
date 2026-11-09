@@ -1,0 +1,39 @@
+{
+  "additionalProperties": false,
+  "description": "One line spoken by an announcer.",
+  "properties": {
+    "speaker": {
+      "description": "Who says it.",
+      "enum": [
+        "announcer",
+        "color_commentator"
+      ],
+      "title": "Speaker",
+      "type": "string"
+    },
+    "text": {
+      "description": "What they say; it may only contain numbers from the stat sheets or results.",
+      "title": "Text",
+      "type": "string"
+    },
+    "at_event": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Index into representative_log, to sync captions with the fight.",
+      "title": "At Event"
+    }
+  },
+  "required": [
+    "speaker",
+    "text"
+  ],
+  "title": "ScriptLine",
+  "type": "object"
+}

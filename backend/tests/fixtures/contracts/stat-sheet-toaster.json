@@ -1,0 +1,126 @@
+{
+  "fighter_id": "toaster",
+  "display_name": "Toaster",
+  "media_name": "kitchen toaster",
+  "category": "object",
+  "body": "inert",
+  "habitat": "land",
+  "weapons": [
+    "none"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 1.5,
+      "unit": "kg",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.75,
+      "high": 2.25,
+      "note": null
+    },
+    "size_m": {
+      "value": 0.3,
+      "unit": "m",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.15,
+      "high": 0.45,
+      "note": null
+    },
+    "top_speed_mps": {
+      "value": 0.0,
+      "unit": "m/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.0,
+      "high": 0.0,
+      "note": null
+    },
+    "attack_force_n": {
+      "value": 0.0,
+      "unit": "N",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.0,
+      "high": 0.0,
+      "note": "Inert object: cannot attack."
+    },
+    "attacks_per_s": {
+      "value": 0.0,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.0,
+      "high": 0.0,
+      "note": "Inert object: cannot attack."
+    },
+    "reach_m": {
+      "value": 0.0,
+      "unit": "m",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.0,
+      "high": 0.0,
+      "note": "Inert object: cannot attack."
+    },
+    "armor_0_1": {
+      "value": 0.4,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.2,
+      "high": 0.6,
+      "note": "armor level 2: thin sheet-metal shell."
+    },
+    "endurance_s": {
+      "value": 600.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 300.0,
+      "high": 900.0,
+      "note": "Inert objects last the full 600 s fight limit."
+    },
+    "aggression_0_1": {
+      "value": 0.0,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.0,
+      "high": 0.0,
+      "note": "aggression level 0: inanimate."
+    },
+    "group_tactics_0_1": {
+      "value": 0.0,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.0,
+      "high": 0.0,
+      "note": "group tactics level 0: inanimate."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "d3fc9daf95c8fc572464e0da7f95dea7d9a8b8c6935e2c250a2ace13b12a12d5"
+}

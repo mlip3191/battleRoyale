@@ -1,0 +1,17 @@
+{
+  "value": 389.0,
+  "unit": "kg",
+  "source": {
+    "title": "Grizzly bear",
+    "url": "https://en.wikipedia.org/wiki/Grizzly_bear",
+    "quote": "The largest populations are the coastal grizzlies in the Alaskan peninsula, with males weighing 389 kilograms (858 lb) and females weighing 207 kilograms (456 lb).",
+    "retrieved_at": "2026-11-09T07:00:00Z",
+    "license": "CC BY-SA 4.0"
+  },
+  "confidence": "high",
+  "is_estimate": false,
+  "method": "extracted",
+  "low": 350.1,
+  "high": 427.9,
+  "note": null
+}

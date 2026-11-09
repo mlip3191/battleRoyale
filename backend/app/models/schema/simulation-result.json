@@ -1,0 +1,266 @@
+{
+  "$defs": {
+    "EventType": {
+      "description": "What happened at one moment of the fight.",
+      "enum": [
+        "approach",
+        "attack",
+        "hit",
+        "miss",
+        "ko",
+        "retreat",
+        "flee",
+        "stalemate",
+        "end"
+      ],
+      "title": "EventType",
+      "type": "string"
+    },
+    "FightEvent": {
+      "additionalProperties": false,
+      "description": "One moment in a simulated fight, replayed by the game and narrated.",
+      "properties": {
+        "t": {
+          "description": "Seconds since the start of the fight.",
+          "title": "T",
+          "type": "number"
+        },
+        "type": {
+          "$ref": "#/$defs/EventType",
+          "description": "What happened."
+        },
+        "side": {
+          "description": "Which side acted (0 = first fighter, 1 = second).",
+          "enum": [
+            0,
+            1
+          ],
+          "title": "Side",
+          "type": "integer"
+        },
+        "actor": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Index of the acting fighter within its side, or None for a group event.",
+          "title": "Actor"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Index of the fighter on the other side that was targeted, if any.",
+          "title": "Target"
+        },
+        "group_size": {
+          "default": 1,
+          "description": "How many fighters acted together (more than 1 for swarm events).",
+          "title": "Group Size",
+          "type": "integer"
+        },
+        "damage": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Damage dealt, when the event is a hit.",
+          "title": "Damage"
+        },
+        "text_hint": {
+          "description": "Short neutral description for narration, e.g. \"bite lands\".",
+          "title": "Text Hint",
+          "type": "string"
+        }
+      },
+      "required": [
+        "t",
+        "type",
+        "side",
+        "text_hint"
+      ],
+      "title": "FightEvent",
+      "type": "object"
+    },
+    "StatName": {
+      "description": "The ten stats every fighter has.",
+      "enum": [
+        "mass_kg",
+        "size_m",
+        "top_speed_mps",
+        "attack_force_n",
+        "attacks_per_s",
+        "reach_m",
+        "armor_0_1",
+        "endurance_s",
+        "aggression_0_1",
+        "group_tactics_0_1"
+      ],
+      "title": "StatName",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The Monte Carlo verdict: who wins how often, and one representative fight.",
+  "properties": {
+    "seed": {
+      "description": "Seed of the random generator, so the result can be reproduced.",
+      "title": "Seed",
+      "type": "integer"
+    },
+    "runs": {
+      "description": "How many fights were simulated.",
+      "title": "Runs",
+      "type": "integer"
+    },
+    "win_prob": {
+      "description": "Share of fights won by side 0 and by side 1.",
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Win Prob",
+      "type": "array"
+    },
+    "draw_prob": {
+      "description": "Share of fights that ended in a draw.",
+      "title": "Draw Prob",
+      "type": "number"
+    },
+    "win_prob_ci95": {
+      "description": "95% interval (low, high) for each side's win probability.",
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        },
+        {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "type": "array"
+        }
+      ],
+      "title": "Win Prob Ci95",
+      "type": "array"
+    },
+    "mean_survivors": {
+      "description": "Average number of fighters left standing on each side.",
+      "maxItems": 2,
+      "minItems": 2,
+      "prefixItems": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "number"
+        }
+      ],
+      "title": "Mean Survivors",
+      "type": "array"
+    },
+    "mean_duration_s": {
+      "description": "Average fight length in seconds.",
+      "title": "Mean Duration S",
+      "type": "number"
+    },
+    "outcome": {
+      "description": "Most likely result; no_contest means the two sides cannot engage.",
+      "enum": [
+        "win_0",
+        "win_1",
+        "draw",
+        "no_contest"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "deciding_factor": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StatName"
+        },
+        {
+          "enum": [
+            "numbers",
+            "terrain",
+            "habitat",
+            "abilities"
+          ],
+          "type": "string"
+        }
+      ],
+      "description": "The stat or circumstance that mattered most.",
+      "title": "Deciding Factor"
+    },
+    "deciding_factor_explainer": {
+      "description": "Plain-language explanation of the deciding factor, written by a code template.",
+      "title": "Deciding Factor Explainer",
+      "type": "string"
+    },
+    "representative_log": {
+      "description": "Events of one typical fight, capped at 300.",
+      "items": {
+        "$ref": "#/$defs/FightEvent"
+      },
+      "maxItems": 300,
+      "title": "Representative Log",
+      "type": "array"
+    }
+  },
+  "required": [
+    "seed",
+    "runs",
+    "win_prob",
+    "draw_prob",
+    "win_prob_ci95",
+    "mean_survivors",
+    "mean_duration_s",
+    "outcome",
+    "deciding_factor",
+    "deciding_factor_explainer",
+    "representative_log"
+  ],
+  "title": "SimulationResult",
+  "type": "object"
+}

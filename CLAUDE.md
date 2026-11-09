@@ -39,7 +39,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `docs/PRODU
 
 ## 6. Battle Royale rules
 - **Number rule:** a model may only copy a number together with the exact quote it came from, and code verifies it. Estimates come from code and are labeled `is_estimate`. Scripts may only contain numbers present in the stat sheets or results.
-- **Contracts:** shapes in `backend/app/models/` are shared by all lanes. Don't change them without an issue labeled `contract-change` and PM approval. Until a module exists, use its fixture in `backend/tests/fixtures/contracts/`.
+- **Contracts:** shapes in `backend/app/models/` are shared by all lanes. Don't change them without an issue labeled `contract-change` and PM approval. Until a module exists, use its fixture in `backend/tests/fixtures/contracts/` (front end: `frontend/src/fixtures/`). After any model or fixture change, run `npm run gen:api` and `npm run fixtures:sync` and commit the results; CI fails if they're stale.
 - **Mocks:** every provider has a mock; tests and CI run with `PROVIDER_MODE=mock`. Live calls have timeouts, retries, and a fallback.
 - **Simulation:** all randomness from the seeded generator; bump `ENGINE_VERSION` when results change.
 - **Safety and tone:** no real people, minors, groups of people, named fictional characters, deities, firearms/explosives, or abstract ideas, places, landforms, or celestial bodies as fighters (objects, machines, and mythical creature types are fine — DECISIONS D-38); PG — no gore; no real artists, songs, franchises, or characters in media prompts; voice cloning only with written consent.

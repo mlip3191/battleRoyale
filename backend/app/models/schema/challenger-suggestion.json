@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "The next challenger to try against the winner.",
+  "properties": {
+    "entity": {
+      "description": "Name of the suggested fighter.",
+      "title": "Entity",
+      "type": "string"
+    },
+    "tested_win_prob": {
+      "description": "Its simulated win probability against the winner.",
+      "title": "Tested Win Prob",
+      "type": "number"
+    },
+    "reason": {
+      "description": "Why it makes a good next fight.",
+      "title": "Reason",
+      "type": "string"
+    }
+  },
+  "required": [
+    "entity",
+    "tested_win_prob",
+    "reason"
+  ],
+  "title": "ChallengerSuggestion",
+  "type": "object"
+}

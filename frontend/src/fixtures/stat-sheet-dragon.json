@@ -1,0 +1,143 @@
+{
+  "fighter_id": "dragon",
+  "display_name": "Dragon",
+  "media_name": "winged fire-breathing dragon",
+  "category": "mythical",
+  "body": "living",
+  "habitat": "air",
+  "weapons": [
+    "teeth",
+    "claws",
+    "breath_weapon"
+  ],
+  "lore": {
+    "body_analog": "saltwater crocodile",
+    "size_analog": "African elephant",
+    "abilities": [
+      "flight",
+      "breath_weapon"
+    ],
+    "heads": null,
+    "source": {
+      "title": "Dragon",
+      "url": "https://en.wikipedia.org/wiki/Dragon",
+      "quote": "In other Greek sources, Typhon is often depicted as a winged, fire-breathing serpent-like dragon.",
+      "retrieved_at": "2026-11-09T07:00:00Z",
+      "license": "CC BY-SA 4.0"
+    }
+  },
+  "stats": {
+    "mass_kg": {
+      "value": 6000.0,
+      "unit": "kg",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 3000.0,
+      "high": 9000.0,
+      "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules)."
+    },
+    "size_m": {
+      "value": 10.9,
+      "unit": "m",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 5.45,
+      "high": 16.35,
+      "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules)."
+    },
+    "top_speed_mps": {
+      "value": 12.0,
+      "unit": "m/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 6.0,
+      "high": 18.0,
+      "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules). Flight speed from the rubric."
+    },
+    "attack_force_n": {
+      "value": 60000.0,
+      "unit": "N",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 30000.0,
+      "high": 90000.0,
+      "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules)."
+    },
+    "attacks_per_s": {
+      "value": 0.5,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.25,
+      "high": 0.75,
+      "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules)."
+    },
+    "reach_m": {
+      "value": 4.0,
+      "unit": "m",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 2.0,
+      "high": 6.0,
+      "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules)."
+    },
+    "armor_0_1": {
+      "value": 0.7,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.35,
+      "high": 1.0,
+      "note": "armor level 4: scaled hide, per legend."
+    },
+    "endurance_s": {
+      "value": 300.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules)."
+    },
+    "aggression_0_1": {
+      "value": 0.9,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.45,
+      "high": 1.0,
+      "note": "aggression level 5: legendary hoard guardian."
+    },
+    "group_tactics_0_1": {
+      "value": 0.1,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.05,
+      "high": 0.15,
+      "note": "group tactics level 1: solitary."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "eeb3ade3e633d822541c216b993bf254b8f595fb12b3c0382f255c6ff99cd6e6"
+}

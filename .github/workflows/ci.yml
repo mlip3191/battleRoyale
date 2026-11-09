@@ -66,6 +66,18 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install (from package-lock.json)
         run: npm ci --prefix frontend
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Generated files are current (run npm run gen:api and npm run fixtures:sync, then commit)
+        shell: bash
+        run: |
+          npm run gen:api
+          npm run fixtures:sync
+          git status --porcelain
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
       - name: Lint
         run: npm run lint --prefix frontend
       - name: Typecheck
