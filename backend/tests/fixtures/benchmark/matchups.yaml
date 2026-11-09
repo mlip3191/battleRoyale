@@ -1,0 +1,18 @@
+# Mock benchmark set for CI (--mock). The real set is data/benchmark/matchups.yaml (task G07).
+matchups:
+  - id: mock-bear-vs-wolf
+    fighters:
+      - {entity: grizzly bear, count: 1, variant: adult male}
+      - {entity: gray wolf, count: 1}
+    terrain: open_field
+    expected_winner: 0
+    confidence: high
+    source: "obvious: a grizzly outweighs a wolf nearly ten to one"
+  - id: mock-toaster-vs-wolf
+    fighters:
+      - {entity: toaster, count: 1}
+      - {entity: gray wolf, count: 1}
+    terrain: arena
+    expected_winner: 1
+    confidence: high
+    source: "obvious: a toaster cannot fight"
