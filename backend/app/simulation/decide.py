@@ -149,7 +149,7 @@ def decide(
     if len(base) - wins[0] - wins[1] > max(wins):
         return Decision(shown, _explain_stalemate())  # most runs were draws: nobody "won"
     if size < c.MIN_EFFECT:
-        return Decision(key, _explain_even())
+        return Decision(shown, _explain_even())
     return Decision(shown, _explain(key, matchup, sheets, fav, signed >= 0))
 
 
