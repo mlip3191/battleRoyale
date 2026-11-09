@@ -14,6 +14,8 @@ from app.simulation.summary import summary
 from tests.property.sim_helpers import (
     FIXTURES,
     ant,
+    duck,
+    horse,
     lion,
     load_sheet,
     make_sheet,
@@ -109,6 +111,25 @@ def test_terrain_can_be_the_deciding_factor():
     result = run(matchup_of(1, 1, terrain=Terrain.WATER), [shark, cat], runs=300)
     assert result.deciding_factor == "terrain"
     assert "water" in result.deciding_factor_explainer
+
+
+def test_a_size_reference_battle_credits_the_scaling_not_a_raw_stat():
+    """100 duck-sized horses vs a horse-sized duck: size decided it, because of the scaling."""
+    matchup = matchup_of(100, 1, ref_0="duck", ref_1="horse", terrain=Terrain.OPEN_FIELD)
+    sheets = [horse(), duck()]
+    result = run(matchup, sheets, runs=300, reference_sheets=[duck(), horse()])
+    text = result.deciding_factor_explainer
+    assert result.deciding_factor == StatName.MASS
+    assert "after scaling" in text
+    assert "scaled to duck size" in text and "scaled to horse size" in text
+    assert_only_input_numbers(result, matchup, sheets)
+
+
+def test_a_battle_without_size_references_never_mentions_scaling():
+    big = make_sheet("big", mass_kg=400, size_m=2.4)
+    small = make_sheet("small", mass_kg=40, size_m=1.0)
+    result = run(matchup_of(1, 1), [big, small], runs=300)
+    assert "scaling" not in result.deciding_factor_explainer.lower()
 
 
 def test_mirror_match_is_too_close_to_call():
