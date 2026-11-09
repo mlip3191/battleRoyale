@@ -1,0 +1,53 @@
+{
+  "additionalProperties": false,
+  "description": "Progress of one pipeline stage.",
+  "properties": {
+    "stage": {
+      "description": "Which stage.",
+      "enum": [
+        "intake",
+        "research",
+        "simulate",
+        "summary",
+        "challenger",
+        "script",
+        "audio",
+        "music",
+        "images"
+      ],
+      "title": "Stage",
+      "type": "string"
+    },
+    "status": {
+      "description": "Where it is; fallback means a stand-in was used and the battle continues.",
+      "enum": [
+        "pending",
+        "running",
+        "done",
+        "failed",
+        "fallback"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "detail": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Short user-facing note, e.g. which fighter is being researched.",
+      "title": "Detail"
+    }
+  },
+  "required": [
+    "stage",
+    "status"
+  ],
+  "title": "StageStatus",
+  "type": "object"
+}

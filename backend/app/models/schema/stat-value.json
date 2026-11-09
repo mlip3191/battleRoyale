@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "Confidence": {
+      "description": "How much we trust a value.",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Confidence",
+      "type": "string"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from: the page and the exact sentence that contains it.",
+      "properties": {
+        "title": {
+          "description": "Title of the source page, e.g. \"Grizzly bear\".",
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "description": "Link to the source page.",
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "quote": {
+          "description": "The exact evidence span the value came from, copied word for word.",
+          "title": "Quote",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "description": "When the page was fetched.",
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "license": {
+          "default": "CC BY-SA 4.0",
+          "description": "License of the quoted text.",
+          "title": "License",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "url",
+        "quote",
+        "retrieved_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One number on a stat sheet, with its unit, origin, and uncertainty range.",
+  "properties": {
+    "value": {
+      "description": "The number itself, in `unit`.",
+      "title": "Value",
+      "type": "number"
+    },
+    "unit": {
+      "description": "Unit of the value, e.g. \"kg\" or \"m/s\".",
+      "title": "Unit",
+      "type": "string"
+    },
+    "source": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Source"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The page and quote it came from; None for estimates."
+    },
+    "confidence": {
+      "$ref": "#/$defs/Confidence",
+      "description": "How much we trust it; always low for estimates."
+    },
+    "is_estimate": {
+      "description": "True when the value is not from a source (method category_default or assumption).",
+      "title": "Is Estimate",
+      "type": "boolean"
+    },
+    "method": {
+      "description": "How it was produced: extracted = copied with a verified quote; derived = computed by code\nfrom other stats; category_default = code default when no evidence was found; hand_verified =\nchecked by a teammate (seed fighters); assumption = from the written rubric.",
+      "enum": [
+        "extracted",
+        "derived",
+        "category_default",
+        "hand_verified",
+        "assumption"
+      ],
+      "title": "Method",
+      "type": "string"
+    },
+    "low": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Bottom of the plausible range used for uncertainty sampling (filled by code).",
+      "title": "Low"
+    },
+    "high": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Top of the plausible range used for uncertainty sampling (filled by code).",
+      "title": "High"
+    },
+    "note": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Required for derived (which formula) and assumption (the rubric level and why).",
+      "title": "Note"
+    }
+  },
+  "required": [
+    "value",
+    "unit",
+    "confidence",
+    "is_estimate",
+    "method"
+  ],
+  "title": "StatValue",
+  "type": "object"
+}

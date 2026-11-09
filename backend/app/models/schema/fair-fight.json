@@ -1,0 +1,52 @@
+{
+  "additionalProperties": false,
+  "description": "How many of one fighter would make the battle a coin flip.",
+  "properties": {
+    "varied_side": {
+      "description": "The side whose count was changed.",
+      "enum": [
+        0,
+        1
+      ],
+      "title": "Varied Side",
+      "type": "integer"
+    },
+    "count": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The count that gives about 50/50, or None when no fair fight exists within the limits.",
+      "title": "Count"
+    },
+    "win_prob_at_count": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "That side's win probability at the count.",
+      "title": "Win Prob At Count"
+    },
+    "message": {
+      "description": "Plain-language summary for the results page.",
+      "title": "Message",
+      "type": "string"
+    }
+  },
+  "required": [
+    "varied_side",
+    "count",
+    "win_prob_at_count",
+    "message"
+  ],
+  "title": "FairFight",
+  "type": "object"
+}

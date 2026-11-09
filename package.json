@@ -22,8 +22,8 @@
     "typecheck": "npm run typecheck --prefix frontend",
     "build": "npm run build --prefix frontend",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "gen:api": "node -e \"console.log('gen:api: placeholder until M05 adds API type generation')\"",
-    "fixtures:sync": "node -e \"console.log('fixtures:sync: placeholder until M05 adds fixture syncing')\"",
+    "gen:api": "uv run --directory backend python scripts/export_schema.py && uv run --directory backend python scripts/export_openapi.py && npm run gen:api --prefix frontend",
+    "fixtures:sync": "node scripts/sync-fixtures.mjs",
     "env:check": "node scripts/check-env.mjs"
   },
   "devDependencies": {

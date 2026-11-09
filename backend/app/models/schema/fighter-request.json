@@ -1,0 +1,56 @@
+{
+  "additionalProperties": false,
+  "description": "One side of the matchup, as understood from the user's words.",
+  "properties": {
+    "entity": {
+      "description": "Normalized name of the fighter, e.g. \"grizzly bear\".",
+      "title": "Entity",
+      "type": "string"
+    },
+    "count": {
+      "default": 1,
+      "description": "How many of them fight on this side (1 to 10,000).",
+      "maximum": 10000,
+      "minimum": 1,
+      "title": "Count",
+      "type": "integer"
+    },
+    "variant": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Which kind, e.g. \"adult male\" or \"polar\"; empty when not specified.",
+      "title": "Variant"
+    },
+    "size_reference": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Another entity this fighter is sized like (\"horse-sized duck\" -> \"horse\"). Only a name,\nnever a number: code computes the scale factor from both stat sheets' mass_kg.",
+      "title": "Size Reference"
+    },
+    "raw": {
+      "description": "The user's own words for this fighter.",
+      "title": "Raw",
+      "type": "string"
+    }
+  },
+  "required": [
+    "entity",
+    "raw"
+  ],
+  "title": "FighterRequest",
+  "type": "object"
+}

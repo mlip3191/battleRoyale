@@ -2,12 +2,15 @@
 
 import logging
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse
 
 from app.config import REPO_ROOT, Settings, get_settings
+from app.models import contract_schemas
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 
@@ -34,7 +37,17 @@ def create_app(settings: Settings | None = None, frontend_dist: Path = FRONTEND_
 
     if frontend_dist.is_dir():
         _serve_frontend(app, frontend_dist.resolve())
+    app.openapi = lambda: _openapi_with_contracts(app)
     return app
+
+
+# OpenAPI lists only models used by routes; add every contract so the front end gets all types.
+def _openapi_with_contracts(app: FastAPI) -> dict[str, Any]:
+    if app.openapi_schema is None:
+        schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
+        schema.setdefault("components", {}).setdefault("schemas", {}).update(contract_schemas())
+        app.openapi_schema = schema
+    return app.openapi_schema
 
 
 # Serve built files, falling back to index.html for front-end routes like /battle/42.

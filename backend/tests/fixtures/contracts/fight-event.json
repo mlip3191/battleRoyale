@@ -1,0 +1,10 @@
+{
+  "t": 4.3,
+  "type": "hit",
+  "side": 1,
+  "actor": 2,
+  "target": 0,
+  "group_size": 1,
+  "damage": 6.5,
+  "text_hint": "bite lands on the hind leg"
+}

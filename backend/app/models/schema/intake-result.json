@@ -1,0 +1,220 @@
+{
+  "$defs": {
+    "FighterRequest": {
+      "additionalProperties": false,
+      "description": "One side of the matchup, as understood from the user's words.",
+      "properties": {
+        "entity": {
+          "description": "Normalized name of the fighter, e.g. \"grizzly bear\".",
+          "title": "Entity",
+          "type": "string"
+        },
+        "count": {
+          "default": 1,
+          "description": "How many of them fight on this side (1 to 10,000).",
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Count",
+          "type": "integer"
+        },
+        "variant": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Which kind, e.g. \"adult male\" or \"polar\"; empty when not specified.",
+          "title": "Variant"
+        },
+        "size_reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Another entity this fighter is sized like (\"horse-sized duck\" -> \"horse\"). Only a name,\nnever a number: code computes the scale factor from both stat sheets' mass_kg.",
+          "title": "Size Reference"
+        },
+        "raw": {
+          "description": "The user's own words for this fighter.",
+          "title": "Raw",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity",
+        "raw"
+      ],
+      "title": "FighterRequest",
+      "type": "object"
+    },
+    "Matchup": {
+      "additionalProperties": false,
+      "description": "A parsed battle request: exactly two sides on one terrain.",
+      "properties": {
+        "fighters": {
+          "description": "The two sides (the MVP supports exactly two).",
+          "items": {
+            "$ref": "#/$defs/FighterRequest"
+          },
+          "maxItems": 2,
+          "minItems": 2,
+          "title": "Fighters",
+          "type": "array"
+        },
+        "terrain": {
+          "$ref": "#/$defs/Terrain",
+          "default": "arena",
+          "description": "Where they fight; the arena when the user didn't say."
+        },
+        "raw_text": {
+          "description": "The user's full request, word for word.",
+          "title": "Raw Text",
+          "type": "string"
+        },
+        "assumptions": {
+          "default": [],
+          "description": "Choices intake made for the user, e.g. \"Assumed adult male grizzly\".",
+          "items": {
+            "type": "string"
+          },
+          "title": "Assumptions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "fighters",
+        "raw_text"
+      ],
+      "title": "Matchup",
+      "type": "object"
+    },
+    "Terrain": {
+      "description": "The battlefield; it changes who can reach whom and how fast they move.",
+      "enum": [
+        "arena",
+        "open_field",
+        "forest",
+        "water",
+        "shoreline",
+        "urban",
+        "mountain"
+      ],
+      "title": "Terrain",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Intake's answer: a matchup, a clarifying question, or a block.",
+  "properties": {
+    "status": {
+      "description": "ok = ready to research; clarify = ask the user first; blocked = refused.",
+      "enum": [
+        "ok",
+        "clarify",
+        "blocked"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "matchup": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Matchup"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The parsed matchup when status is ok."
+    },
+    "question": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The clarifying question when status is clarify.",
+      "title": "Question"
+    },
+    "options": {
+      "default": [],
+      "description": "Two to four suggested answers to the question.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Options",
+      "type": "array"
+    },
+    "pending_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Id to send back with the user's answer to a clarifying question.",
+      "title": "Pending Id"
+    },
+    "blocked_reason": {
+      "anyOf": [
+        {
+          "enum": [
+            "real_person",
+            "minor",
+            "sexual",
+            "hate",
+            "self_harm",
+            "copyrighted_character",
+            "deity",
+            "weapon",
+            "out_of_scope",
+            "nonsense",
+            "other"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Why the request was refused. deity = named gods or religious figures; weapon = modern\nfirearms, explosives, WMD; out_of_scope = abstract ideas, places, landforms,\ncelestial bodies.",
+      "title": "Blocked Reason"
+    },
+    "message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Friendly text shown to the user.",
+      "title": "Message"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "IntakeResult",
+  "type": "object"
+}

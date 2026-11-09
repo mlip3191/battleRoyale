@@ -1,0 +1,4 @@
+# Generated files: npm run gen:api and npm run fixtures:sync write these.
+src/api/openapi.json
+src/api/schema.d.ts
+src/fixtures/

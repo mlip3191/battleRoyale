@@ -1,0 +1,26 @@
+{
+  "kind": "play_by_play",
+  "lines": [
+    {
+      "speaker": "announcer",
+      "text": "The pack fans out. This is textbook teamwork!",
+      "at_event": 0
+    },
+    {
+      "speaker": "color_commentator",
+      "text": "Big paw swipe! One wolf is out of the game!",
+      "at_event": 5
+    },
+    {
+      "speaker": "announcer",
+      "text": "They are coming from every side now!",
+      "at_event": 7
+    },
+    {
+      "speaker": "announcer",
+      "text": "The bear goes down! The pack takes it!",
+      "at_event": 10
+    }
+  ],
+  "fallback": false
+}

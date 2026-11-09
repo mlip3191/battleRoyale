@@ -1,0 +1,145 @@
+{
+  "fighter_id": "grizzly-bear--adult-male",
+  "display_name": "Grizzly bear - adult male",
+  "media_name": "grizzly bear",
+  "category": "mammal",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "teeth",
+    "claws"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 389.0,
+      "unit": "kg",
+      "source": {
+        "title": "Grizzly bear",
+        "url": "https://en.wikipedia.org/wiki/Grizzly_bear",
+        "quote": "The largest populations are the coastal grizzlies in the Alaskan peninsula, with males weighing 389 kilograms (858 lb) and females weighing 207 kilograms (456 lb).",
+        "retrieved_at": "2026-11-09T07:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "extracted",
+      "low": 350.1,
+      "high": 427.9,
+      "note": null
+    },
+    "size_m": {
+      "value": 2.4,
+      "unit": "m",
+      "source": {
+        "title": "Grizzly bear",
+        "url": "https://en.wikipedia.org/wiki/Grizzly_bear",
+        "quote": "Average total length in this subspecies is between 198 cm (78 in) and 240 cm (94 in), with an average shoulder height of 102 cm (40 in) and hindfoot length of 28 cm (11 in).",
+        "retrieved_at": "2026-11-09T07:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "extracted",
+      "low": 1.98,
+      "high": 2.4,
+      "note": null
+    },
+    "top_speed_mps": {
+      "value": 13.33,
+      "unit": "m/s",
+      "source": {
+        "title": "Grizzly bear",
+        "url": "https://en.wikipedia.org/wiki/Grizzly_bear",
+        "quote": "They tend to chase fleeing animals, and although it has been said anecdotally that grizzly bears (Ursus arctos horribilis) can run at 56 km/h (35 mph), the maximum speed reliably recorded at Yellowstone is 48 km/h (30 mph).",
+        "retrieved_at": "2026-11-09T07:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "extracted",
+      "low": 11.997,
+      "high": 14.663,
+      "note": null
+    },
+    "attack_force_n": {
+      "value": 4000.0,
+      "unit": "N",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 2000.0,
+      "high": 6000.0,
+      "note": "Category default for a large carnivore (no sourced value)."
+    },
+    "attacks_per_s": {
+      "value": 1.0,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.5,
+      "high": 1.5,
+      "note": null
+    },
+    "reach_m": {
+      "value": 1.0,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.75,
+      "high": 1.25,
+      "note": "reach = 0.42 x size_m (forelimb swipe), from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.3,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.15,
+      "high": 0.45,
+      "note": "armor level 2: thick fur and fat layer, no plates or shell."
+    },
+    "endurance_s": {
+      "value": 120.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 60.0,
+      "high": 180.0,
+      "note": null
+    },
+    "aggression_0_1": {
+      "value": 0.7,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.35,
+      "high": 1.0,
+      "note": "aggression level 4: territorial apex predator."
+    },
+    "group_tactics_0_1": {
+      "value": 0.1,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.05,
+      "high": 0.15,
+      "note": "group tactics level 1: solitary hunter."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "63ec18aaaa4ad04c0dc7649b187d869c6459455cf5c9be2b000185ee09b4fb9f"
+}

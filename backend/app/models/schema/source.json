@@ -1,0 +1,44 @@
+{
+  "additionalProperties": false,
+  "description": "Where a number came from: the page and the exact sentence that contains it.",
+  "properties": {
+    "title": {
+      "description": "Title of the source page, e.g. \"Grizzly bear\".",
+      "title": "Title",
+      "type": "string"
+    },
+    "url": {
+      "description": "Link to the source page.",
+      "format": "uri",
+      "maxLength": 2083,
+      "minLength": 1,
+      "title": "Url",
+      "type": "string"
+    },
+    "quote": {
+      "description": "The exact evidence span the value came from, copied word for word.",
+      "title": "Quote",
+      "type": "string"
+    },
+    "retrieved_at": {
+      "description": "When the page was fetched.",
+      "format": "date-time",
+      "title": "Retrieved At",
+      "type": "string"
+    },
+    "license": {
+      "default": "CC BY-SA 4.0",
+      "description": "License of the quoted text.",
+      "title": "License",
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "url",
+    "quote",
+    "retrieved_at"
+  ],
+  "title": "Source",
+  "type": "object"
+}

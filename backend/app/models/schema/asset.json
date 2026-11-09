@@ -1,0 +1,46 @@
+{
+  "additionalProperties": false,
+  "description": "One generated media file served from /media.",
+  "properties": {
+    "asset_id": {
+      "description": "Stable id of the file.",
+      "title": "Asset Id",
+      "type": "string"
+    },
+    "kind": {
+      "description": "What the file is.",
+      "enum": [
+        "sprite",
+        "battlefield",
+        "narration_audio",
+        "music"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "url": {
+      "description": "Where the front end loads it, e.g. \"/media/sprites/grizzly-bear--adult-male.png\".",
+      "title": "Url",
+      "type": "string"
+    },
+    "prompt_hash": {
+      "description": "Hash of the prompt that made it, used for caching.",
+      "title": "Prompt Hash",
+      "type": "string"
+    },
+    "fallback": {
+      "default": false,
+      "description": "True when a stock file was used because generation failed.",
+      "title": "Fallback",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "asset_id",
+    "kind",
+    "url",
+    "prompt_hash"
+  ],
+  "title": "Asset",
+  "type": "object"
+}

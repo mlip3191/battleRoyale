@@ -1,0 +1,385 @@
+{
+  "$defs": {
+    "Ability": {
+      "description": "Special powers of mythical creatures; each has one documented engine effect.",
+      "enum": [
+        "flight",
+        "breath_weapon",
+        "regeneration",
+        "extra_heads"
+      ],
+      "title": "Ability",
+      "type": "string"
+    },
+    "Body": {
+      "description": "How it fights, not its biology.",
+      "enum": [
+        "living",
+        "machine",
+        "inert"
+      ],
+      "title": "Body",
+      "type": "string"
+    },
+    "Confidence": {
+      "description": "How much we trust a value.",
+      "enum": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "title": "Confidence",
+      "type": "string"
+    },
+    "Habitat": {
+      "description": "Where the fighter can move.",
+      "enum": [
+        "land",
+        "water",
+        "air",
+        "amphibious"
+      ],
+      "title": "Habitat",
+      "type": "string"
+    },
+    "LoreProfile": {
+      "additionalProperties": false,
+      "description": "How a mythical creature is modeled on real animals, according to legend.",
+      "properties": {
+        "body_analog": {
+          "description": "Real fighter whose sourced stats are the base, e.g. \"saltwater crocodile\".",
+          "title": "Body Analog",
+          "type": "string"
+        },
+        "size_analog": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Real fighter it is scaled to, e.g. \"African elephant\"; code computes the scale factor.",
+          "title": "Size Analog"
+        },
+        "abilities": {
+          "default": [],
+          "description": "Its legendary powers.",
+          "items": {
+            "$ref": "#/$defs/Ability"
+          },
+          "title": "Abilities",
+          "type": "array"
+        },
+        "heads": {
+          "anyOf": [
+            {
+              "maximum": 9,
+              "minimum": 2,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Number of heads (2-9), only with the extra_heads ability and a quote that says so.",
+          "title": "Heads"
+        },
+        "source": {
+          "$ref": "#/$defs/Source",
+          "description": "The sentence in the myth's article that justifies the analogs and abilities."
+        }
+      },
+      "required": [
+        "body_analog",
+        "source"
+      ],
+      "title": "LoreProfile",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "Where a number came from: the page and the exact sentence that contains it.",
+      "properties": {
+        "title": {
+          "description": "Title of the source page, e.g. \"Grizzly bear\".",
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "description": "Link to the source page.",
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "quote": {
+          "description": "The exact evidence span the value came from, copied word for word.",
+          "title": "Quote",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "description": "When the page was fetched.",
+          "format": "date-time",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "license": {
+          "default": "CC BY-SA 4.0",
+          "description": "License of the quoted text.",
+          "title": "License",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "url",
+        "quote",
+        "retrieved_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "StatName": {
+      "description": "The ten stats every fighter has.",
+      "enum": [
+        "mass_kg",
+        "size_m",
+        "top_speed_mps",
+        "attack_force_n",
+        "attacks_per_s",
+        "reach_m",
+        "armor_0_1",
+        "endurance_s",
+        "aggression_0_1",
+        "group_tactics_0_1"
+      ],
+      "title": "StatName",
+      "type": "string"
+    },
+    "StatValue": {
+      "additionalProperties": false,
+      "description": "One number on a stat sheet, with its unit, origin, and uncertainty range.",
+      "properties": {
+        "value": {
+          "description": "The number itself, in `unit`.",
+          "title": "Value",
+          "type": "number"
+        },
+        "unit": {
+          "description": "Unit of the value, e.g. \"kg\" or \"m/s\".",
+          "title": "Unit",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Source"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The page and quote it came from; None for estimates."
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence",
+          "description": "How much we trust it; always low for estimates."
+        },
+        "is_estimate": {
+          "description": "True when the value is not from a source (method category_default or assumption).",
+          "title": "Is Estimate",
+          "type": "boolean"
+        },
+        "method": {
+          "description": "How it was produced: extracted = copied with a verified quote; derived = computed by code\nfrom other stats; category_default = code default when no evidence was found; hand_verified =\nchecked by a teammate (seed fighters); assumption = from the written rubric.",
+          "enum": [
+            "extracted",
+            "derived",
+            "category_default",
+            "hand_verified",
+            "assumption"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "low": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Bottom of the plausible range used for uncertainty sampling (filled by code).",
+          "title": "Low"
+        },
+        "high": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Top of the plausible range used for uncertainty sampling (filled by code).",
+          "title": "High"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Required for derived (which formula) and assumption (the rubric level and why).",
+          "title": "Note"
+        }
+      },
+      "required": [
+        "value",
+        "unit",
+        "confidence",
+        "is_estimate",
+        "method"
+      ],
+      "title": "StatValue",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Everything the simulation knows about one fighter, with a source for every number.",
+  "properties": {
+    "fighter_id": {
+      "description": "Stable slug, e.g. \"grizzly-bear--adult-male\".",
+      "title": "Fighter Id",
+      "type": "string"
+    },
+    "display_name": {
+      "description": "Name shown to users and used in narration (letters, digits, spaces, hyphens).",
+      "title": "Display Name",
+      "type": "string"
+    },
+    "media_name": {
+      "description": "Generic, brand-free name used in image and music prompts, e.g. \"electric pickup truck\"\n(letters, digits, spaces, hyphens).",
+      "title": "Media Name",
+      "type": "string"
+    },
+    "category": {
+      "description": "What kind of thing it is.",
+      "enum": [
+        "mammal",
+        "bird",
+        "reptile",
+        "amphibian",
+        "fish",
+        "insect",
+        "arachnid",
+        "mollusk",
+        "dinosaur",
+        "human_archetype",
+        "mythical",
+        "plant",
+        "vehicle",
+        "machine",
+        "object",
+        "other"
+      ],
+      "title": "Category",
+      "type": "string"
+    },
+    "body": {
+      "$ref": "#/$defs/Body",
+      "description": "How it fights: living, machine, or inert."
+    },
+    "habitat": {
+      "$ref": "#/$defs/Habitat",
+      "description": "Where it can move."
+    },
+    "weapons": {
+      "description": "How it attacks.",
+      "items": {
+        "enum": [
+          "teeth",
+          "claws",
+          "horns",
+          "hooves",
+          "venom",
+          "constriction",
+          "tusks",
+          "beak",
+          "sting",
+          "weapon_melee",
+          "weapon_ranged",
+          "ramming",
+          "crushing",
+          "spines",
+          "breath_weapon",
+          "none"
+        ],
+        "type": "string"
+      },
+      "title": "Weapons",
+      "type": "array"
+    },
+    "lore": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LoreProfile"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Required when category is mythical, otherwise None."
+    },
+    "stats": {
+      "additionalProperties": {
+        "$ref": "#/$defs/StatValue"
+      },
+      "description": "Every StatName with its value.",
+      "propertyNames": {
+        "$ref": "#/$defs/StatName"
+      },
+      "title": "Stats",
+      "type": "object"
+    },
+    "schema_version": {
+      "default": 1,
+      "description": "Version of this shape, for cached sheets.",
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "sheet_hash": {
+      "description": "Hash of the stats, used in the cache key and the simulation seed.",
+      "title": "Sheet Hash",
+      "type": "string"
+    }
+  },
+  "required": [
+    "fighter_id",
+    "display_name",
+    "media_name",
+    "category",
+    "body",
+    "habitat",
+    "weapons",
+    "stats",
+    "sheet_hash"
+  ],
+  "title": "StatSheet",
+  "type": "object"
+}

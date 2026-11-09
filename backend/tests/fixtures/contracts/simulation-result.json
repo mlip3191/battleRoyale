@@ -1,0 +1,149 @@
+{
+  "seed": 4021337,
+  "runs": 1000,
+  "win_prob": [
+    0.38,
+    0.55
+  ],
+  "draw_prob": 0.07,
+  "win_prob_ci95": [
+    [
+      0.35,
+      0.41
+    ],
+    [
+      0.52,
+      0.58
+    ]
+  ],
+  "mean_survivors": [
+    0.38,
+    3.9
+  ],
+  "mean_duration_s": 74.2,
+  "outcome": "win_1",
+  "deciding_factor": "numbers",
+  "deciding_factor_explainer": "Numbers decided it: one bear can only fight one or two wolves at a time while the rest of the pack keeps biting.",
+  "representative_log": [
+    {
+      "t": 0.0,
+      "type": "approach",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 6,
+      "damage": null,
+      "text_hint": "the pack fans out through the trees"
+    },
+    {
+      "t": 2.5,
+      "type": "approach",
+      "side": 0,
+      "actor": 0,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "the bear rises on its hind legs"
+    },
+    {
+      "t": 4.1,
+      "type": "attack",
+      "side": 1,
+      "actor": 2,
+      "target": 0,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "a wolf darts in for the flank"
+    },
+    {
+      "t": 4.3,
+      "type": "hit",
+      "side": 1,
+      "actor": 2,
+      "target": 0,
+      "group_size": 1,
+      "damage": 6.5,
+      "text_hint": "bite lands on the hind leg"
+    },
+    {
+      "t": 5.0,
+      "type": "attack",
+      "side": 0,
+      "actor": 0,
+      "target": 2,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "massive paw swipe"
+    },
+    {
+      "t": 5.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 0,
+      "target": 2,
+      "group_size": 1,
+      "damage": 48.0,
+      "text_hint": "the wolf is knocked out of the fight"
+    },
+    {
+      "t": 9.8,
+      "type": "attack",
+      "side": 1,
+      "actor": null,
+      "target": 0,
+      "group_size": 3,
+      "damage": null,
+      "text_hint": "three wolves rush together"
+    },
+    {
+      "t": 10.1,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": 0,
+      "group_size": 3,
+      "damage": 21.0,
+      "text_hint": "bites land from all sides"
+    },
+    {
+      "t": 14.6,
+      "type": "miss",
+      "side": 0,
+      "actor": 0,
+      "target": 4,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "the swipe catches only air"
+    },
+    {
+      "t": 31.0,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": 0,
+      "group_size": 5,
+      "damage": 30.0,
+      "text_hint": "the pack wears the bear down"
+    },
+    {
+      "t": 52.4,
+      "type": "ko",
+      "side": 1,
+      "actor": null,
+      "target": 0,
+      "group_size": 5,
+      "damage": null,
+      "text_hint": "the bear goes down"
+    },
+    {
+      "t": 52.4,
+      "type": "end",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "the pack wins"
+    }
+  ]
+}
