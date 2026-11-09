@@ -98,7 +98,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 **Abilities** (from the stat sheet's `lore`)
 - **Flight:** the creature uses air-terrain rules (forests hinder it more, open sky does not) and engages air and land targets. A flier cannot reach a swimmer in open water (`no_contest`), as for birds.
 - **Breath weapon:** a ranged attack (square law: every individual can breathe on the same target, so no engagement cap), damage at least `BREATH_DAMAGE_N x DAMAGE_PER_NEWTON`, reaching `BREATH_RANGE_M`, so it attacks before melee fighters close in.
-- **Regeneration:** heals `REGEN_SHARE_PER_S` of max hit points per second, up to full.
+- **Regeneration:** heals `REGEN_SHARE_PER_S` of max hit points per second, up to full. Healing is applied lazily, when a fighter is next hit; the retreat (morale) check uses the same up-to-date totals, but a fighter nobody touches does not count unseen healing toward it. Fine for an assumption-level model.
 - **Extra heads:** attack rate times the number of heads (`DEFAULT_HEADS` if the lore gives none).
 - The deciding-factor check also removes all abilities and re-runs; if that moves the result most, the factor is `abilities` and the explainer says "according to legend".
 
