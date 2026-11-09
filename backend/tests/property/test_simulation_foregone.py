@@ -1,0 +1,174 @@
+"""Certain results are shortcut exactly, and long hopeless fights stay cheap."""
+
+import random
+import time
+
+from app.models.terrain import Terrain
+from app.simulation import constants as c
+from app.simulation.engine import (
+    DRAW,
+    _foregone,
+    _starts,
+    _templates,
+    run,
+    run_once,
+)
+from app.simulation.fair import fair_fight
+from app.simulation.rng import run_rng
+from tests.property.sim_helpers import make_sheet, matchup_of
+
+WEAPONS = [["teeth"], ["claws"], ["weapon_ranged"], ["ramming"], ["crushing"], ["spines"], ["none"]]
+
+
+def random_sheet(rng: random.Random, tag: str):
+    """A fighter that is often feeble, huge, or stopped, so many fights are foregone."""
+    return make_sheet(
+        tag,
+        spread=rng.choice([0.0, 0.2, 0.5]),
+        habitat=rng.choice(["land", "land", "water", "air"]),
+        body=rng.choice(["living", "machine", "inert"]),
+        weapons=rng.choice(WEAPONS),
+        mass_kg=rng.choice([0.2, 5, 80, 5000, 600_000]),
+        size_m=rng.choice([0.05, 0.5, 2.0, 12.0]),
+        top_speed_mps=rng.choice([0.0, 3.0, 15.0]),
+        attack_force_n=rng.choice([0.0, 2.0, 80.0, 3000.0]),
+        attacks_per_s=rng.choice([0.0, 0.5, 3.0]),
+        reach_m=rng.choice([0.0, 0.5, 2.0]),
+        armor_0_1=rng.choice([0.0, 0.5, 0.9]),
+        endurance_s=rng.choice([5.0, 90.0, 400.0, 5000.0]),
+        aggression_0_1=rng.choice([0.0, 0.5, 1.0]),
+        group_tactics_0_1=rng.choice([0.0, 0.8]),
+    )
+
+
+def test_a_foregone_result_matches_the_full_simulation_exactly():
+    """The bound is exact: when it says 'certain', simulating gives the identical result."""
+    rng = random.Random(2026)
+    checked = 0
+    for i in range(400):
+        a, b = random_sheet(rng, f"a{i}"), random_sheet(rng, f"b{i}")
+        matchup = matchup_of(rng.choice([1, 2, 6]), rng.choice([1, 3, 12]), terrain=Terrain.ARENA)
+        stream = run_rng(7, i)
+        sides = _templates(matchup, [a, b], stream, (1.0, 1.0))
+        if _foregone(sides, _starts(sides)) is None:
+            continue
+        checked += 1
+        fast = run_once(sides, matchup.terrain, run_rng(7, i + 10_000))  # shortcut allowed
+        full = run_once(sides, matchup.terrain, run_rng(7, i + 10_000), record_events=True)
+        assert (fast.winner, fast.survivors, fast.duration_s) == (
+            full.winner,
+            full.survivors,
+            full.duration_s,
+        ), f"case {i}: the shortcut and the full simulation disagree"
+    assert checked >= 40  # the generator really does produce foregone fights
+
+
+def test_a_machine_that_stops_in_a_hopeless_fight_loses_at_its_operating_time():
+    tank = make_sheet(
+        "tank",
+        body="machine",
+        weapons=["ramming"],
+        mass_kg=3,
+        endurance_s=100,
+        attack_force_n=0,
+        spread=0.0,
+    )
+    boulder = make_sheet(
+        "boulder",
+        body="inert",
+        weapons=["none"],
+        mass_kg=1_000_000,
+        attack_force_n=0,
+        attacks_per_s=0,
+        top_speed_mps=0,
+        spread=0.0,
+    )
+    matchup = matchup_of(5, 5)
+    sides = _templates(matchup, [tank, boulder], run_rng(1, 0), (1.0, 1.0))
+    assert _foregone(sides, _starts(sides)) == (1, 100.0)
+    result = run(matchup, [tank, boulder], runs=50, explain=False)
+    assert result.outcome == "win_1" and result.mean_duration_s == 100.0
+
+
+def test_spines_that_really_hurt_are_always_simulated():
+    cactus = make_sheet(
+        "cactus",
+        body="inert",
+        weapons=["spines"],
+        mass_kg=1_000_000,
+        attack_force_n=300,
+        attacks_per_s=0.0,
+        top_speed_mps=0,
+        spread=0.0,
+    )
+    wolf = make_sheet("wolf", mass_kg=40, attack_force_n=2.0)
+    sides = _templates(matchup_of(1, 1), [wolf, cactus], run_rng(1, 0), (1.0, 1.0))
+    assert _foregone(sides, _starts(sides)) is None
+
+
+def test_a_hopeless_stalemate_is_cheap_even_with_many_fast_attackers():
+    """150 feeble attackers hitting a huge object for 600 s used to cost millions of events."""
+    gnat = make_sheet("gnat", mass_kg=0.001, attack_force_n=1.0, attacks_per_s=10.0, spread=0.0)
+    mountain = make_sheet(
+        "mountain",
+        body="inert",
+        weapons=["none"],
+        mass_kg=5e9,
+        size_m=500,
+        attack_force_n=0,
+        attacks_per_s=0,
+        top_speed_mps=0,
+        spread=0.0,
+    )
+    start = time.perf_counter()
+    result = run(matchup_of(150, 5), [gnat, mountain], runs=1000, explain=False)
+    assert time.perf_counter() - start < 2.0
+    assert result.outcome == "draw" and result.mean_duration_s == c.MAX_FIGHT_S
+
+
+def test_the_fair_fight_search_stays_cheap_when_attackers_just_run_out_of_time():
+    """Machines that never dent an object used to make each probe cost tens of seconds."""
+    machine = make_sheet(
+        "drone",
+        body="machine",
+        weapons=["crushing"],
+        mass_kg=0.2,
+        size_m=0.01,
+        top_speed_mps=0.1,
+        attack_force_n=800,
+        endurance_s=589,
+        spread=0.3,
+    )
+    rock = make_sheet(
+        "rock",
+        body="inert",
+        weapons=["spines"],
+        mass_kg=500_000,
+        size_m=13,
+        top_speed_mps=0,
+        attack_force_n=0,
+        attacks_per_s=3.4,
+        spread=0.3,
+    )
+    matchup = matchup_of(10, 50, terrain=Terrain.WATER)
+    start = time.perf_counter()
+    result = run(matchup, [machine, rock], runs=100)
+    found = fair_fight(matchup, [machine, rock], result)
+    assert time.perf_counter() - start < 6.0
+    assert found.count is None  # a stalemate or no fair count; the point is the speed
+
+
+def test_draw_constant_is_used_for_certain_stalemates():
+    gnat = make_sheet("gnat", mass_kg=0.001, attack_force_n=1.0, spread=0.0)
+    mountain = make_sheet(
+        "mountain",
+        body="inert",
+        weapons=["none"],
+        mass_kg=5e9,
+        attack_force_n=0,
+        attacks_per_s=0,
+        top_speed_mps=0,
+        spread=0.0,
+    )
+    sides = _templates(matchup_of(1, 1), [gnat, mountain], run_rng(1, 0), (1.0, 1.0))
+    assert _foregone(sides, _starts(sides)) == (DRAW, c.MAX_FIGHT_S)
