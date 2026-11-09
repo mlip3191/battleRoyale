@@ -8,10 +8,11 @@ Stack: Python 3.12 + FastAPI + Pydantic v2 + SQLite/sqlite-vec (`backend/`, uv);
 Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `docs/PRODUCT_SPEC.md` · `docs/ARCHITECTURE.md` · `docs/TEAM_PROCESS.md` · `docs/DECISIONS.md` · `docs/plan/` (tasks and prompts per lane).
 **Phase:** if `backend/` doesn't exist yet, we're in Phase 0 — follow `INIT.md`.
 
-## 2. Commands (from the repo root; work the same on Windows and Mac — available after task M04)
-- Install: `npm run setup` · Develop: `npm run dev` (backend :8000 + frontend :5173 with hot reload) · Run the finished app: `npm start` (builds the front end; backend serves everything at http://localhost:8000)
-- Test + lint everything: `npm run check` · Format: `npm run format` · Regenerate API types: `npm run gen:api`
-- Backend only: `uv run --directory backend pytest` · `.env` check: `npm run env:check` (never shows values) · Full environment check: `npm run doctor` (added by task D01)
+## 2. Commands (from the repo root; work the same on Windows and Mac)
+- Install: `npm run setup` (installs from lockfiles and turns on the git hook) · Develop: `npm run dev` (backend :8000 + frontend :5173 with hot reload) · Run the finished app: `npm start` (builds the front end; backend serves everything at http://localhost:8000)
+- Lint + typecheck + test + build everything: `npm run check` · Separately: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` · Format: `npm run format`
+- Regenerate API types: `npm run gen:api` · Copy contract fixtures to the front end: `npm run fixtures:sync` (both filled in by task M05)
+- Backend only: `npm run test:backend` (= `uv run --directory backend pytest`) · Front end only: `npm run test:frontend` · `.env` check: `npm run env:check` (never shows values) · Full environment check: `npm run doctor` (added by task D01)
 
 ## 3. Folders and protected files
 `backend/app/` modules: models (contracts), providers, safety, intake, research, simulation, narration, media, pipeline, api, db. `backend/prompts/` holds every prompt. `frontend/src/`: api, pages, components, game (Phaser), fixtures. `data/seed/`, `data/benchmark/`, and `data/showcase/` are committed; `data/app.db`, `data/kb/`, `data/media/` are generated and ignored.

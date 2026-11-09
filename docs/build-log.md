@@ -10,8 +10,8 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 
 - M01: done
 - M02: done
-- M03: merged — live checks pending
-- M04: not started
+- M03: done — live checks passed
+- M04: done
 - M05: not started
 - M06: not started
 - M07: not started
@@ -39,3 +39,4 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 - Node changed from 24 to 26 (current LTS) before M04 (DECISIONS D-12).
 - M02: hook test passed with decoys (fake AWS-format key and `hook-test/decoy.env` both blocked, key never printed); light ruleset "main protection" (id 26832578): PR required with 0 approvals, force push and deletion blocked, no bypass; teammates invited with Write.
 - M03: `.claude/settings.json` + hooks (`guard-shell.mjs`, `ensure-hookspath.mjs`, `format-on-edit.mjs`); `node .claude/hooks/test-hooks.mjs` → 119 cases, 0 failed.
+- M04: create-vite 9.3.4 (`react-ts` template). The template now ships oxlint; replaced with ESLint + Prettier as documented (Mike approved adding `@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `globals`). TypeScript pinned to 5.9 because `typescript-eslint` (<6.1) and `openapi-typescript` (^5) don't support TypeScript 7 yet. Phaser pinned to 3.x (npm's latest is 4). `npm audit`: 10 moderate (minimatch, dev tooling only), 0 high.

@@ -1,0 +1,32 @@
+/* Base styles; the broadcast look arrives with the front-end lane's tasks. */
+:root {
+  --text: #1d1b22;
+  --bg: #ffffff;
+  --muted: #6b6375;
+  font:
+    18px/1.45 system-ui,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #f2f0f5;
+    --bg: #16151a;
+    --muted: #a39cad;
+  }
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+}
+
+main {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}

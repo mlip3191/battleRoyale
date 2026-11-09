@@ -5,3 +5,20 @@
 *.mjs text eol=lf
 *.bat text eol=crlf
 *.cmd text eol=crlf
+# Binary files: never convert line endings or diff as text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.m4a binary
+*.flac binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
