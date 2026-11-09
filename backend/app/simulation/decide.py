@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from app.models.matchup import Matchup
 from app.models.stats import ASSUMABLE_STATS, StatName, StatSheet
 from app.simulation import constants as c
+from app.simulation.fighters import effective_habitat
 from app.simulation.terrain import modifier
 
 if TYPE_CHECKING:
@@ -120,9 +121,12 @@ def decide(
             f.count = min(counts)
         effect("numbers", even, sheets, True)
 
-    mods = [modifier(matchup.terrain, s.habitat) for s in sheets]
+    mods = [modifier(matchup.terrain, effective_habitat(s)) for s in sheets]
     if mods[0] != mods[1]:
         effect("terrain", matchup, sheets, False)
+
+    if any(s.lore and s.lore.abilities for s in sheets):
+        effect("abilities", matchup, [_without_abilities(s) for s in sheets], True)
 
     if not cache:
         return Decision(StatName.MASS, _explain_even())
@@ -133,12 +137,26 @@ def decide(
     if len(base) - wins[0] - wins[1] > max(wins):
         return Decision(key, _explain_stalemate())  # most runs were draws: nobody "won"
     if size < c.MIN_EFFECT:
+        if base_won >= 0.9:
+            return Decision(key, _explain_comfortable(sheets[fav].display_name))
         return Decision(key, _explain_even())
     return Decision(key, _explain(key, matchup, sheets, fav, signed >= 0))
 
 
+def _without_abilities(sheet: StatSheet) -> StatSheet:
+    """The same fighter with every legendary power removed (for the sensitivity check)."""
+    if sheet.lore is None or not sheet.lore.abilities:
+        return sheet
+    lore = sheet.lore.model_copy(update={"abilities": [], "heads": None})
+    return sheet.model_copy(update={"lore": lore})
+
+
 def _explain_stalemate() -> str:
     return "A stalemate: neither side could finish the other before the time limit."
+
+
+def _explain_comfortable(fav_name: str) -> str:
+    return f"{fav_name} wins comfortably: no single stat or circumstance was decisive."
 
 
 def _explain_even() -> str:
@@ -159,13 +177,21 @@ def _explain(
             "A crowd can wear down even a tougher fighter, and a lone fighter can only face "
             "so many at once."
         )
+    if key == "abilities":
+        owner = fav if helped else foe
+        powers = sheets[owner].lore.abilities if sheets[owner].lore else []
+        names = ", ".join(p.value.replace("_", " ") for p in powers)
+        if helped:
+            return f"Legendary powers decided it: according to legend, {fav_name} has {names}."
+        return (
+            f"{fav_name} came out ahead in spite of {foe_name}'s legendary powers "
+            f"(according to legend: {names})."
+        )
     if key == "terrain":
         terrain = matchup.terrain.value.replace("_", " ")
         who = fav_name if helped else foe_name
-        return (
-            f"The ground decided it: the {terrain} suits the {who} "
-            f"({sheets[fav if helped else foe].habitat.value} mover) better."
-        )
+        mover = effective_habitat(sheets[fav if helped else foe]).value
+        return f"The ground decided it: the {terrain} suits the {who} ({mover} mover) better."
 
     label, lower, unit = _STAT_TEXT[key]
     vf = fmt(sheets[fav].stats[key].value)
