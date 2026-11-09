@@ -41,14 +41,23 @@ class Template:
     max_hp: float
     damage: float
     weapon_word: str
+    ranged: bool = False
 
     @property
     def can_attack(self) -> bool:
         return self.damage > 0 and self.attacks_per_s > 0
 
 
-def sample_template(sheet: StatSheet, count: int, rng: random.Random) -> Template:
-    """Draw every stat uniformly between its low and high, so input uncertainty shows up."""
+def scale_factor(sheet: StatSheet, reference: StatSheet) -> float:
+    """k = reference mass / own mass, from the sheets' central values (computed in code)."""
+    return reference.stats[StatName.MASS].value / sheet.stats[StatName.MASS].value
+
+
+def sample_template(sheet: StatSheet, count: int, rng: random.Random, k: float = 1.0) -> Template:
+    """Draw every stat uniformly between its low and high, so input uncertainty shows up.
+
+    `k` resizes the fighter to a reference size (square-cube rules, see constants.py).
+    """
 
     def draw(name: StatName) -> float:
         stat = sheet.stats[name]
@@ -56,21 +65,23 @@ def sample_template(sheet: StatSheet, count: int, rng: random.Random) -> Templat
         high = stat.value if stat.high is None else stat.high
         return rng.uniform(low, high) if high > low else stat.value
 
-    mass = max(draw(StatName.MASS), c.MIN_MASS_KG)
-    force = max(draw(StatName.ATTACK_FORCE), 0.0)
+    mass = max(draw(StatName.MASS), c.MIN_MASS_KG) * k
+    force = max(draw(StatName.ATTACK_FORCE), 0.0) * k**c.STRENGTH_SCALE_EXP
+    length = k**c.LENGTH_SCALE_EXP
     weapon = next((w for w in sheet.weapons if w in _WEAPON_WORD), None)
     return Template(
         mass_kg=mass,
-        size_m=max(draw(StatName.SIZE), c.MIN_SIZE_M),
-        speed_mps=max(draw(StatName.SPEED), 0.0),
+        size_m=max(draw(StatName.SIZE), c.MIN_SIZE_M) * length,
+        speed_mps=max(draw(StatName.SPEED), 0.0) * k**c.SPEED_SCALE_EXP,
         attack_force_n=force,
         attacks_per_s=max(draw(StatName.ATTACK_RATE), 0.0),
-        reach_m=max(draw(StatName.REACH), 0.0),
+        reach_m=max(draw(StatName.REACH), 0.0) * length,
         armor=min(max(draw(StatName.ARMOR), 0.0), 1.0),
         count=count,
         max_hp=mass * c.HP_PER_KG,
         damage=force * c.DAMAGE_PER_NEWTON,
         weapon_word=_WEAPON_WORD.get(weapon, "strike"),
+        ranged="weapon_ranged" in sheet.weapons,
     )
 
 
@@ -86,3 +97,9 @@ def hit_chance(attacker: Template, defender: Template) -> float:
 def damage_per_hit(attacker: Template, defender: Template) -> float:
     """Attack damage after the defender's armor."""
     return attacker.damage * (1.0 - defender.armor * c.ARMOR_EFFECT)
+
+
+def max_engagers(attacker: Template, target: Template) -> int:
+    """How many of `attacker`'s kind can attack one `target` at once (melee, Lanchester linear)."""
+    ratio = (target.size_m / attacker.size_m) ** 2
+    return int(min(max(ratio, 1.0), c.MAX_ENGAGERS))
