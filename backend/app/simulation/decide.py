@@ -162,8 +162,8 @@ def _explain_scaling(matchup: Matchup, sheets: list[StatSheet], fav: int, helped
         crowd = f"{fighter.count} " if fighter.count > 1 else ""
         if fighter.size_reference:
             return (
-                f"{crowd}{sheet.display_name} ({mass} kg normally), "
-                f"scaled to {fighter.size_reference} size"
+                f"{crowd}{sheet.display_name} ({mass} kg normally, "
+                f"scaled to {fighter.size_reference} size)"
             )
         return f"{crowd}{sheet.display_name} ({mass} kg)"
 
