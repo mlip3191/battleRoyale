@@ -13,7 +13,7 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 - M03: done — live checks passed
 - M04: done
 - M05: done
-- M06: not started
+- M06: in progress
 - M07: not started
 - M08: not started
 
