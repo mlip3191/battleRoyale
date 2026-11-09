@@ -12,7 +12,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `docs/PRODU
 - Install: `npm run setup` (installs from lockfiles and turns on the git hook) · Develop: `npm run dev` (backend :8000 + frontend :5173 with hot reload) · Run the finished app: `npm start` (builds the front end; backend serves everything at http://localhost:8000)
 - Lint + typecheck + test + build everything: `npm run check` · Separately: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` · Format: `npm run format`
 - Regenerate API types: `npm run gen:api` · Copy contract fixtures to the front end: `npm run fixtures:sync` (both filled in by task M05)
-- Backend only: `npm run test:backend` (= `uv run --directory backend pytest`) · Front end only: `npm run test:frontend` · `.env` check: `npm run env:check` (never shows values) · Full environment check: `npm run doctor` (added by task D01)
+- Backend only: `npm run test:backend` (= `uv run --directory backend pytest`) · Front end only: `npm run test:frontend` · `.env` setup: `npm run env:setup` (in your own terminal; asks for the course host and key) · `.env` check: `npm run env:check` (never shows values) · Full environment check: `npm run doctor` (added by task D01)
 
 ## 3. Folders and protected files
 `backend/app/` modules: models (contracts), providers, safety, intake, research, simulation, narration, media, pipeline, api, db. `backend/prompts/` holds every prompt. `frontend/src/`: api, pages, components, game (Phaser), fixtures. `data/seed/`, `data/benchmark/`, and `data/showcase/` are committed; `data/app.db`, `data/kb/`, `data/media/` are generated and ignored.
@@ -49,6 +49,7 @@ Every feature or fix has at least one test (`backend/tests/{unit,contract,golden
 
 ## 8. Secrets and environment (private repo — but treat every commit as if it were public)
 - All config comes from `.env` (never committed), documented in `.env.example` with a comment and placeholder per variable. New variable → add it to `.env.example` and tell the user how to get the value.
+- **Course key and endpoints:** use `/setup-env`. The user runs `npm run env:setup` in their own terminal; it asks for the host and key (hidden) and writes `.env`. Never ask for a key or host in the chat; if one is pasted, don't repeat it or save it anywhere, and say why.
 - Never put keys **or course endpoint hosts** in code, tests, fixtures, docs, logs, or `.mcp.json` (use `${VAR}` there).
 - Never read, print, or edit `.env`. Never `git add -f`, `--no-verify`, or edit `.gitignore`/`.githooks/` to let a file through. Never print environment variables.
 - If the pre-commit hook or Secret scan blocks a commit, explain why and move the value into `.env`. If you see something that looks like a real key, stop and tell the user to alert the PM — don't copy or move it.

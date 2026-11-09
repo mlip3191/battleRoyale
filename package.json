@@ -12,9 +12,10 @@
     "dev:backend": "uv run --directory backend uvicorn app.main:app --reload --port 8000",
     "dev:frontend": "npm run dev --prefix frontend",
     "start": "npm run build && node -e \"console.log('\\nBattle Royale is starting at http://localhost:8000\\n')\" && uv run --directory backend uvicorn app.main:app --port 8000",
-    "test": "npm run test:backend && npm run test:frontend",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:scripts",
     "test:backend": "uv run --directory backend pytest",
     "test:frontend": "npm test --prefix frontend",
+    "test:scripts": "node --test scripts/",
     "lint": "npm run lint:backend && npm run lint:frontend",
     "lint:backend": "uv run --directory backend ruff check . && uv run --directory backend ruff format --check .",
     "lint:frontend": "npm run lint --prefix frontend",
@@ -24,7 +25,8 @@
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
     "gen:api": "uv run --directory backend python scripts/export_schema.py && uv run --directory backend python scripts/export_openapi.py && npm run gen:api --prefix frontend",
     "fixtures:sync": "node scripts/sync-fixtures.mjs",
-    "env:check": "node scripts/check-env.mjs"
+    "env:check": "node scripts/check-env.mjs",
+    "env:setup": "node scripts/setup-env.mjs"
   },
   "devDependencies": {
     "concurrently": "^10.0.7"

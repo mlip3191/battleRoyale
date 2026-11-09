@@ -84,6 +84,8 @@ jobs:
         run: npm run typecheck --prefix frontend
       - name: Test
         run: npm test --prefix frontend
+      - name: Test root scripts
+        run: node --test scripts/
       - name: Build
         run: npm run build --prefix frontend
       - name: Audit (report only)
