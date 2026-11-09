@@ -54,7 +54,7 @@ Then: bug bash Nov 21, deck and rehearsals Nov 22–23, buffer Nov 24, **due Wed
    - **M01** GitHub settings: confirm Pro, make the repo private, squash-only merges, Dependabot, read-only Actions token, allowed-actions list.
    - **M02** Line-ending rules, test the secret-blocking hook with decoys, build log, a light ruleset on `main`, and early invites so teammates can install while you finish.
    - **M03** Claude Code permissions and hooks (`.claude/settings.json`); needs one Claude Code restart.
-   - **M04** Backend + front-end skeleton, `npm start`, cross-platform files, CI (Linux + Windows on PRs, Mac on merges).
+   - **M04** Backend + front-end skeleton, `npm start`, cross-platform files, CI (Linux + Windows on PRs, Mac on demand).
    - **M05** Shared contracts — the shapes all lanes build against.
    - **M06** Provider layer with mocks; smoke-test the course endpoints; `docs/providers.md`.
    - **M07** Advisory QA bot, Secret scan, critical-files check, CODEOWNERS, PR template.
@@ -124,7 +124,7 @@ Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → buil
 | 15 | Setup guide said "PM does everything first"; lanes need balance | Each teammate's first task is a setup task; Mike's lane is Phase 0 | LANES.md |
 | 16 | Setup guide's review tool posted and set status automatically | review-prs skill: draft → confirm send → separate confirm approve | Step 3, D-23 |
 | 17 | Fork PRs could run code on a reviewer's machine or slip past the QA bot | Private repo (only collaborators can fork); skill refuses to run fork code; QA bot skips fork PRs and is advisory only | SKILL.md, M01 |
-| 18 | QA bot cost and Actions minutes on a private repo | Bot advisory, runs only when a PR opens or on a `re-review` label; PR CI on Linux + Windows, macOS on merges and nightly; no "up to date" rule | D-01, D-04, D-26 |
+| 18 | QA bot cost and Actions minutes on a private repo | Bot advisory, runs only when a PR opens or on a `re-review` label; PR CI on Linux + Windows, macOS on demand before milestones; no "up to date" rule | D-01, D-04, D-26 |
 
 The full list of edge cases the app must handle is in [ARCHITECTURE §14](ARCHITECTURE.md#14-edge-cases-the-design-must-handle). Outstanding questions are the **Open** rows in [DECISIONS.md](DECISIONS.md).
 

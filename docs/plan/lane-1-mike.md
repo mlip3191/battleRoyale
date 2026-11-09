@@ -5,7 +5,7 @@
 | ID | Task | Size |
 |---|---|---|
 | M01 | GitHub repo settings, security, and Actions permissions | S |
-| M02 | Line endings, guardrail tests, build log, light ruleset, early invites | S |
+| M02 | Line endings, build log, guardrail tests, light ruleset, early invites | S |
 | M03 | Claude Code settings, permissions, and hooks (needs one restart) | M |
 | M04 | Monorepo skeleton, one-command start, cross-platform files, CI | M |
 | M05 | Shared contracts: Pydantic models, JSON Schema, fixtures, TS types | M |

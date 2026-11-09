@@ -25,7 +25,7 @@
 
 ## Step 0: Before You Start
 
-The PM sets up the repo and runs Steps 1 to 10 alone, in order, before inviting anyone. Teammates join only after the scaffold is merged.
+The PM sets up the repo and runs Phase 0 alone, in order (INIT.md). Teammates are invited early (task M02) so they can install and read, but start no task and merge nothing until M08 assigns their first issue.
 
 ### Order of operations
 
@@ -40,7 +40,7 @@ The repo exists: **github.com/mlip3191/battleRoyale**, owned by Mike's personal 
 - [ ] Settings, Actions, General: only GitHub-made actions plus anthropics/claude-code-action, oven-sh/setup-bun (used inside the Claude action), gitleaks/gitleaks-action, astral-sh/setup-uv; workflow permissions "Read repository contents"; "Allow GitHub Actions to create and approve pull requests" off.
 - [ ] A pinned "Team board" issue for announcements and weekly check-ins; review requests go through GitHub's reviewer request (DECISIONS D-21).
 
-Personal-account repos give every collaborator the same Write role, which matches this process. Branch protection on a private personal repo needs **GitHub Pro** (free with the GitHub Student Developer Pack) — turn Pro on before making the repo private, or protection silently stops being enforced. Private repos also use GitHub Actions minutes (Pro: 3,000 a month; Windows minutes count double and macOS ten times), so CI runs the full three-OS matrix on pull requests and Linux only on pushes to main.
+Personal-account repos give every collaborator the same Write role, which matches this process. Branch protection on a private personal repo needs **GitHub Pro** (free with the GitHub Student Developer Pack) — turn Pro on before making the repo private, or protection silently stops being enforced. Private repos also use GitHub Actions minutes (Pro: 3,000 a month; Windows minutes count double and macOS ten times), so PR checks run on Linux and Windows, and macOS runs only on demand (before milestones).
 
 ### PM prerequisites
 
@@ -110,7 +110,7 @@ Also set up:
 
 ### Protect critical files
 
-Critical files are exactly the paths in .github/CODEOWNERS (M07): CLAUDE.md, INIT.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, .mcp.json, .gitleaks.toml, scripts/, all package.json/package-lock.json files, backend/pyproject.toml, backend/uv.lock, backend/app/config.py, backend/app/models/, and docs/ARCHITECTURE.md. Two matter most: one changed line in .gitignore or .githooks/ can let a .env file into the repo, and most workflows in .github/ run the PR's own copy, so a teammate's PR could weaken CI or Secret scan for itself. The approval rule depends on who made the change:
+Critical files are exactly the root-anchored paths in .github/CODEOWNERS (M07): CLAUDE.md, INIT.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, .mcp.json, .gitleaks.toml, .gitleaksignore (it can silence the secret scan), the root scripts/ folder (not backend/scripts/), all package.json/package-lock.json files, backend/pyproject.toml, backend/uv.lock, backend/app/config.py, backend/app/models/, and docs/ARCHITECTURE.md. Two matter most: one changed line in .gitignore or .githooks/ can let a .env file into the repo, and most workflows in .github/ run the PR's own copy, so a teammate's PR could weaken CI or Secret scan for itself. The approval rule depends on who made the change:
 
 | Who changed a critical file | Who must approve                       |
 |-----------------------------|----------------------------------------|
@@ -139,11 +139,11 @@ GitHub's built-in CODEOWNERS rule can't do this. If the PM were the only code ow
 | Lost work or a confusing git state                    | Stop. Do not run more commands. Comment on your issue and @mention the PM (`@mlip3191`).                                                                                                                                                                              |
 | A key, password, or .env file was committed or pushed | Tell the PM right away by direct message, and say where it is without pasting it. The PM revokes and replaces the key first: deleting the file is not enough, because it stays in git history and in the PR. Then follow "If a key leaks" in Step 8. |
 | The pre-commit hook or Secret scan blocked you        | Ask Claude: "Explain what the secret check found and move the value into .env." Never use --no-verify. If it is a false alarm, ask the PM to allow-list it.                                                                                          |
-| The QA bot flagged problems                           | It's advisory. Read its comment, fix what makes sense on the same branch, push, and add the `re-review` label if you want it to look again. Your reviewer decides; the bot doesn't block merging. Itsvery push. If it failed without a comment, re-run the job from the Checks tab or ask the PM.                                              |
+| The QA bot flagged problems                           | It's advisory. Read its comment, fix what makes sense on the same branch, push, and add the `re-review` label if you want it to look again. Your reviewer decides; the bot doesn't block merging. If it didn't comment at all, add the `re-review` label or ask the PM.                                              |
 
 ## Step 3: Reviewer Agent and the review-prs Skill
 
-Every human review runs through the **review-prs skill** (`.claude/skills/review-prs/SKILL.md`) and the **code-reviewer agent** (`.claude/agents/code-reviewer.md`). A teammate asks Claude Code *"What can I review?"* (or types `/review`, or `/review 42`). No PR can be merged until the QA bot (Step 9) has passed on its latest commit and a teammate has approved after reviewing.
+Every human review runs through the **review-prs skill** (`.claude/skills/review-prs/SKILL.md`) and the **code-reviewer agent** (`.claude/agents/code-reviewer.md`). A teammate asks Claude Code *"What can I review?"* (or types `/review`, or `/review 42`). No PR can be merged until a teammate has approved after reviewing and the required checks (CI, Secret scan, Critical files approval) pass. The QA bot (Step 9) adds advisory comments.
 
 ### How it works
 
@@ -203,7 +203,7 @@ Every human review runs through the **review-prs skill** (`.claude/skills/review
 
 - If the reviewer edits the draft, the agent submits the edited version.
 
-Two layers: /review is the human reviewer's tool, run on their own machine, to understand the change and decide whether to approve; it is the gate. The QA bot in Step 9 runs the same QA process on GitHub on every push and posts advisory findings for the author and reviewer.
+Two layers: /review is the human reviewer's tool, run on their own machine, to understand the change and decide whether to approve; it is the gate. The QA bot in Step 9 runs the same QA process on GitHub when a PR opens (or on the `re-review` label) and posts advisory findings for the author and reviewer.
 
 ## Step 4: GitHub Issues Scaffold
 
@@ -343,15 +343,15 @@ People on two computers repeat the installs on both, log in to GitHub and Claude
 
 ## Step 6: CI and Cross-Platform Consistency
 
-Every PR is tested automatically on Windows and Linux (macOS runs on every merge to main and nightly, to save Actions minutes; Mike tests Mac by hand), and the repo is set up so the same code and commands work on any machine, including one person switching between a Windows PC and a Mac.
+Every PR is tested automatically on Windows and Linux (macOS runs only on demand — Mike triggers it before each milestone — to save Actions minutes; Mike also tests Mac by hand), and the repo is set up so the same code and commands work on any machine, including one person switching between a Windows PC and a Mac.
 
 ### CI with GitHub Actions
 
-- A workflow runs on every PR and every push to main.
+- A workflow runs on every PR and every push to main (Linux + Windows), plus macOS on demand.
 
-- On PRs it runs install, lint, typecheck, tests, and the production build on windows-latest and ubuntu-latest (4 required checks). On pushes to main, nightly, and on demand it runs the same on macos-latest. It also fails if generated API types or synced fixtures are stale.
+- On PRs it runs install, lint, typecheck, tests, and the production build on windows-latest and ubuntu-latest (4 required checks). On pushes to main it runs the same on Linux and Windows; macOS runs only when triggered by hand (`gh workflow run ci.yml --ref main`), before each milestone. It also fails if generated API types or synced fixtures are stale.
 
-- Each OS is a required status check, so a PR that breaks on any OS cannot merge.
+- Linux and Windows are required status checks, so a PR that breaks on either cannot merge. No `paths:` filters on required workflows: a skipped required check waits forever and blocks the merge.
 
 - Runtime version comes from the repo's version file, so CI matches local machines.
 
@@ -434,7 +434,7 @@ A leaked key can't be un-leaked. Once it is pushed, assume someone has it, even 
 
 - **.env.example** is committed. It has the same variable names, placeholder values, and a comment for each.
 
-- The PM keeps the real values in a shared password-manager vault and shares them there. Never in Slack, Teams, Discord, issues, PRs, email, or Claude chats.
+- Everyone already has the course endpoint values (DECISIONS D-21) and keeps them only in their own `.env`. Never in issues, PRs, commits, email, or Claude chats.
 
 - Where the provider allows it, each person gets their own key, so a leak means one key to replace and usage is traceable.
 
@@ -483,7 +483,7 @@ A git hook runs on every commit however it is made: Claude Code, VS Code, GitHub
 
 - Names the file but never prints the key, so the key doesn't end up in a terminal log or a Claude chat.
 
-- For a false alarm, the PM adds "gitleaks:allow" in a comment at the end of that line, or adds it to .gitleaksignore.
+- For a false alarm, the PM adds "gitleaks:allow" in a comment at the end of that line, or adds it to .gitleaksignore. Only the PM may add these: `.gitleaksignore` is a critical file, and the QA bot and reviewers flag any new `gitleaks:allow` marker as must-fix unless the PR says the PM approved it.
 
 - Mark the hook as executable in git (git update-index --chmod=+x .githooks/pre-commit) so it runs on a Mac even when it was committed from Windows.
 
@@ -569,7 +569,7 @@ Smaller rules that close the remaining gaps. Each takes a few minutes.
 
 - AI tools sometimes suggest packages that don't exist, or lookalikes of popular ones, and attackers register those names. The QA bot and /review check that every new package is real, widely used, and spelled correctly.
 
-- CI runs the stack's audit command (e.g. npm audit --audit-level=high, or pip-audit) and fails on high-severity problems.
+- CI runs `npm audit --audit-level=high` as a report-only step (M04); it warns rather than blocks, so a new advisory in some deep dependency can't freeze merges in crunch week. Mike reviews the warnings weekly.
 
 - Dependabot stays on; its PRs go through CI and Secret scan (the QA bot skips them), and lockfile changes need Mike's approval through the critical-files check.
 
@@ -579,7 +579,7 @@ Smaller rules that close the remaining gaps. Each takes a few minutes.
 
 - Only actions made by GitHub plus the ones this guide uses are allowed (Step 0).
 
-- No workflow uses pull_request_target: it gives PR code access to repository secrets.
+- Only one workflow uses `pull_request_target`: the critical-files check, which never checks out PR code and only reads the PR through the API. No other workflow may use it, because combined with checking out PR code it would give that code access to repository secrets.
 
 - If the app is deployed from GitHub, deploy secrets live in a GitHub Environment named production, with the PM as required reviewer.
 

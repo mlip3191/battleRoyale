@@ -370,7 +370,7 @@ Pure Python, no I/O, no providers. Lane owner: Felipe.
 
 ## 13. Configuration (.env)
 
-See `.env.example` for the full list with comments. Groups: app (`APP_ENV`, `PORT`, `FRONTEND_ORIGIN`), provider mode, one `*_URL` per course service, optional `COURSE_API_KEY`, simulation defaults (`SIM_RUNS`, `SIM_MAX_COUNT`), storage paths.
+See `.env.example` for the full list with comments. Groups: app (`APP_ENV`, `PORT`, `FRONTEND_ORIGIN`), provider mode, one `*_URL` and `*_MODEL` per course service, the required `COURSE_API_KEY` plus optional per-service `<SERVICE>_API_KEY` overrides, simulation defaults (`SIM_RUNS`, `SIM_MAX_COUNT`), storage paths, and `VITE_*` front-end settings. `config.py` reads the **root** `.env` (resolved from the repo root, whatever the working folder), ignores keys it doesn't know, resolves relative paths against the repo root, and holds every key as a `SecretStr`. Vite reads the same root `.env` (`envDir: '..'`).
 
 ## 14. Edge cases the design must handle
 

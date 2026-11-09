@@ -11,11 +11,11 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SP
 ## 2. Commands (from the repo root; work the same on Windows and Mac — available after task M04)
 - Install: `npm run setup` · Develop: `npm run dev` (backend :8000 + frontend :5173 with hot reload) · Run the finished app: `npm start` (builds the front end; backend serves everything at http://localhost:8000)
 - Test + lint everything: `npm run check` · Format: `npm run format` · Regenerate API types: `npm run gen:api`
-- Backend only: `uv run --directory backend pytest` · Environment check: `npm run doctor`
+- Backend only: `uv run --directory backend pytest` · `.env` check: `npm run env:check` (never shows values) · Full environment check: `npm run doctor` (added by task D01)
 
 ## 3. Folders and protected files
 `backend/app/` modules: models (contracts), providers, safety, intake, research, simulation, narration, media, pipeline, api, db. `backend/prompts/` holds every prompt. `frontend/src/`: api, pages, components, game (Phaser), fixtures. `data/seed/` and `data/benchmark/` are committed; `data/app.db`, `data/kb/`, `data/media/` are generated and ignored.
-**Protected (PM approval; the list in `.github/CODEOWNERS` is authoritative):** CLAUDE.md, INIT.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, .mcp.json, .gitleaks.toml, scripts/, all package.json / lockfiles / pyproject.toml / uv.lock, `backend/app/config.py`, `backend/app/models/`, `docs/ARCHITECTURE.md`.
+**Protected (PM approval; the list in `.github/CODEOWNERS` is authoritative):** CLAUDE.md, INIT.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, .mcp.json, .gitleaks.toml, .gitleaksignore, root `scripts/` (not `backend/scripts/`), all package.json / lockfiles / pyproject.toml / uv.lock, `backend/app/config.py`, `backend/app/models/`, `docs/ARCHITECTURE.md`.
 
 ## 4. Conventions
 - Python: ruff format + ruff check, type hints everywhere, snake_case. TypeScript: ESLint + Prettier, camelCase, components PascalCase. Files: lowercase-with-dashes (Python modules snake_case).
@@ -33,6 +33,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SP
 - If a git command fails or conflicts, stop, explain in plain English, propose a fix.
 - Before switching tasks or branches, make sure work is committed or stashed, and say so.
 - Commit messages: imperative summary + issue, e.g. `Add matchup count clamping (#12)`. PRs under ~300 changed lines, using the PR template, with `Closes #<n>`. Merge only after a teammate approves and all checks pass.
+- Write long text (commit messages, PR/issue bodies, comments) to a file in `.claude/tmp/` and pass it with `git commit -F` / `--body-file`; the shell guard ignores message text only when it isn't on the command line as a path-like word.
 - If unsure, stop and ask.
 
 ## 6. Battle Royale rules

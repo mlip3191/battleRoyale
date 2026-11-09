@@ -35,7 +35,7 @@ For each PR, work out:
 - **Size:** additions + deletions; flag over 300.
 - **Checks:** from `statusCheckRollup` — required checks (CI, Secret scan, Critical files approval) all passed / some pending / some failed. Report the **AI QA Review** separately as advisory (its verdict from the bot's PR comment, or "not run").
 - **Approvals:** count of `APPROVED` in `latestReviews`, and whether `ME` already reviewed (and on which commit).
-- **Critical files:** `gh pr view <n> --json files --jq '.files[].path'`, compared with the paths in `.github/CODEOWNERS` (if it doesn't exist yet, use: CLAUDE.md, .claude/, .github/, .githooks/, .gitignore, .env.example, package.json, package-lock.json, backend/pyproject.toml, backend/uv.lock, backend/app/models/, docs/ARCHITECTURE.md).
+- **Critical files:** `gh pr view <n> --json files --jq '.files[].path'`, compared with the paths in `.github/CODEOWNERS` (if it doesn't exist yet, use these root-anchored paths: CLAUDE.md, INIT.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, .mcp.json, .gitleaks.toml, .gitleaksignore, scripts/ (root only, not backend/scripts/), package.json, package-lock.json, frontend/package.json, frontend/package-lock.json, backend/pyproject.toml, backend/uv.lock, backend/app/config.py, backend/app/models/, docs/ARCHITECTURE.md).
 - **From a fork?** `headRepositoryOwner` differs from the repo owner.
 
 Then show **one table per group**, in this order, skipping empty groups:
@@ -100,7 +100,7 @@ Then ask (AskUserQuestion if available):
 
 ## Step 5 — Post the review (only after "Send")
 
-1. Write the payload to `.claude/tmp/review-<n>.json` (create the folder; it is gitignored):
+1. Write the payload to `.claude/tmp/review-<n>.json` (create the folder; it is gitignored). All other text you post (comments, issue bodies) also goes through files in `.claude/tmp/` with `--body-file`:
 
 ```json
 {
@@ -158,7 +158,7 @@ If the PR touches critical files:
 For each proposed additional fix marked *follow-up issue*, offer to create it. Show the full title, body (with "Found while reviewing #<n>"), and labels, and create it only after a yes:
 
 ```
-gh issue create --title "<title>" --body "<body>" --label "type: chore"
+gh issue create --title "<title>" --body-file .claude/tmp/issue-<n>.md --label "type: chore"
 ```
 
 ## Step 8 — Wrap up
