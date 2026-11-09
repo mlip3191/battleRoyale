@@ -25,6 +25,8 @@ Install each one, then **open a new terminal** and run its check. Windows: use P
 
 On the Node installer's "Tools for Native Modules" screen, leave the box **unchecked**; this project doesn't need those tools.
 
+**Windows: "running scripts is disabled on this system"?** PowerShell blocks npm's script shortcut by default. Type `npm.cmd` instead of `npm` (for example `npm.cmd run doctor`). To make plain `npm` work, you can allow scripts for your account only: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
 Once, on any computer:
 
 ```
