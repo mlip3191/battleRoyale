@@ -4,7 +4,7 @@
 
 MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM), Adam Fondale, Gunnar O'Connor, Felipe Cervino, Dillon Smart.
 
-> **Status: Phase 0 done.** The skeleton runs (`npm start`), every task is an issue on the [project board](https://github.com/users/mlip3191/projects/2), and Wave 1 starts Wed Nov 11.
+> **Status: Phase 0 done.** The skeleton runs (`npm start`), every task is an issue on the [project board](https://github.com/users/mlip3191/projects/2), and Wave 1 tasks are in its Ready column.
 
 ## Start here
 
