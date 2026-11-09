@@ -1,4 +1,4 @@
-"""Mock text providers: canned chat and structured replies, hash vectors, keyword reranking."""
+"""Mock text providers: canned chat replies, default decisions, hash vectors, keyword reranking."""
 
 import hashlib
 import json
@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from app.config import REPO_ROOT
-from app.providers.base import ChatMessage
+from app.providers.base import ChatMessage, DecisionAnswer, DecisionQuestion
 
 # Canned replies live with the test fixtures (ARCHITECTURE §7), one JSON file per prompt name.
 FIXTURE_DIR = REPO_ROOT / "backend" / "tests" / "fixtures" / "providers"
@@ -54,17 +54,40 @@ class MockChatLLM:
 
 
 class MockStructuredLLM:
-    """Replies from tests/fixtures/providers/structured/<prompt_name>.json."""
+    """Picks each question's first option with equal odds, unless a fixture overrides it.
+
+    Overrides live in tests/fixtures/providers/structured/<prompt_name>.json.
+    """
 
     def __init__(self, fixture_dir: Path = FIXTURE_DIR) -> None:
         self.fixture_dir = fixture_dir
 
-    # Return a copy so callers can't change the fixture for later calls.
-    async def extract(
-        self, prompt: str, schema: dict[str, Any], *, prompt_name: str
-    ) -> dict[str, Any]:
-        reply = canned_reply("structured", prompt_name, prompt, self.fixture_dir)
-        return json.loads(json.dumps(reply))
+    # Fixture reply if there is one (copied so callers can't change it), else the default.
+    async def decide(
+        self,
+        state: dict[str, str],
+        questions: dict[str, DecisionQuestion],
+        *,
+        prompt_name: str,
+    ) -> dict[str, DecisionAnswer]:
+        if (self.fixture_dir / "structured" / f"{prompt_name}.json").is_file():
+            value = {"state": state, "questions": questions}
+            reply = canned_reply("structured", prompt_name, value, self.fixture_dir)
+            return json.loads(json.dumps(reply))
+        return {name: first_option(question) for name, question in questions.items()}
+
+
+# The default mock answer: the first option, with every option equally likely.
+def first_option(question: DecisionQuestion) -> DecisionAnswer:
+    options = list(question["criteria"])
+    if not options:
+        raise ValueError("Decision question has no options in its criteria.")
+    share = 1 / len(options)
+    return {
+        "choice": options[0],
+        "probabilities": {option: share for option in options},
+        "confidence": share,
+    }
 
 
 class MockEmbedder:
