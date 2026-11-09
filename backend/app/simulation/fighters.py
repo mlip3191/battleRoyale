@@ -28,6 +28,11 @@ _WEAPON_WORD = {
 }
 
 
+def plural_word(word: str) -> str:
+    """ "bite" -> "bites", "crush" -> "crushes" (for swarm hints like "bites land")."""
+    return word + ("es" if word.endswith(("s", "x", "z", "sh", "ch")) else "s")
+
+
 @dataclass(frozen=True)
 class Template:
     """One side's stats for one run, each sampled from its low-high range."""
