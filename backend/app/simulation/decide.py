@@ -19,8 +19,11 @@ from app.simulation.terrain import modifier
 if TYPE_CHECKING:
     from app.simulation.engine import RunOutcome
 
-Simulate = Callable[[Matchup, list[StatSheet], bool, int], "list[RunOutcome]"]
-"""simulate(matchup, sheets, use_terrain, runs) -> outcomes, with the seed fixed by the caller."""
+Simulate = Callable[..., "list[RunOutcome]"]
+"""simulate(matchup, sheets, use_terrain, runs, scaled=True) -> outcomes.
+
+The seed is fixed by the caller; `scaled=False` drops any size-reference scaling.
+"""
 
 # How each stat reads in the explanation: (label, lower-case label, unit).
 _STAT_TEXT: dict[StatName, tuple[str, str, str]] = {
@@ -93,6 +96,7 @@ def decide(
     sheets: list[StatSheet],
     base: "list[RunOutcome]",
     simulate: Simulate,
+    scales: tuple[float, float] = (1.0, 1.0),
 ) -> Decision:
     """Find the deciding factor of a fight whose baseline outcomes are `base`."""
     n = min(c.DECIDING_RUNS, len(base))
@@ -101,9 +105,15 @@ def decide(
     base_won, base_left = _score(base, fav, matchup.fighters[fav].count)
     cache: dict[str, tuple[float, float]] = {}  # factor -> (signed effect, size of effect)
 
-    def effect(factor: str, variant: Matchup, variant_sheets: list[StatSheet], terrain: bool):
+    def effect(
+        factor: str,
+        variant: Matchup,
+        variant_sheets: list[StatSheet],
+        terrain: bool,
+        scaled: bool = True,
+    ):
         if factor not in cache:
-            outcomes = simulate(variant, variant_sheets, terrain, n)
+            outcomes = simulate(variant, variant_sheets, terrain, n, scaled)
             won, left = _score(outcomes, fav, variant.fighters[fav].count)
             signed = (base_won - won) + c.SURVIVOR_WEIGHT * (base_left - left)
             cache[factor] = (signed, abs(signed))
@@ -121,6 +131,10 @@ def decide(
             f.count = min(counts)
         effect("numbers", even, sheets, True)
 
+    if scales != (1.0, 1.0):
+        # A size reference ('horse-sized duck') matters on its own: drop the scaling and re-run.
+        effect("scaling", matchup, sheets, True, scaled=False)
+
     mods = [modifier(matchup.terrain, effective_habitat(s)) for s in sheets]
     if mods[0] != mods[1]:
         effect("terrain", matchup, sheets, False)
@@ -132,15 +146,37 @@ def decide(
         return Decision(StatName.MASS, _explain_even())
     factor = max(cache, key=lambda k: cache[k][1])
     signed, size = cache[factor]
-    key: StatName | str = StatName(factor) if factor in {s.value for s in StatName} else factor
+    stat_names = {s.value for s in StatName}
+    key: StatName | str = StatName(factor) if factor in stat_names else factor
+    shown = StatName.MASS if factor == "scaling" else key  # scaling is reported as size
     wins = [sum(o.winner == side for o in base) for side in (0, 1)]
     if len(base) - wins[0] - wins[1] > max(wins):
-        return Decision(key, _explain_stalemate())  # most runs were draws: nobody "won"
+        return Decision(shown, _explain_stalemate())  # most runs were draws: nobody "won"
     if size < c.MIN_EFFECT:
         if base_won >= 0.9:
             return Decision(key, _explain_comfortable(sheets[fav].display_name))
         return Decision(key, _explain_even())
-    return Decision(key, _explain(key, matchup, sheets, fav, signed >= 0))
+    return Decision(shown, _explain(key, matchup, sheets, fav, signed >= 0))
+
+
+def _explain_scaling(matchup: Matchup, sheets: list[StatSheet], fav: int, helped: bool) -> str:
+    """Size decided it because of the size references; quotes only sheet values and counts."""
+
+    def side(i: int) -> str:
+        fighter, sheet = matchup.fighters[i], sheets[i]
+        mass = fmt(sheet.stats[StatName.MASS].value)
+        crowd = f"{fighter.count} " if fighter.count > 1 else ""
+        if fighter.size_reference:
+            return (
+                f"{crowd}{sheet.display_name} ({mass} kg normally, "
+                f"scaled to {fighter.size_reference} size)"
+            )
+        return f"{crowd}{sheet.display_name} ({mass} kg)"
+
+    pair = f"{side(fav)} against {side(1 - fav)}"
+    if helped:
+        return f"Size decided it: after scaling, {pair}."
+    return f"{sheets[fav].display_name} came out ahead in spite of the scaling: {pair}."
 
 
 def _without_abilities(sheet: StatSheet) -> StatSheet:
@@ -187,6 +223,8 @@ def _explain(
             f"{fav_name} came out ahead in spite of {foe_name}'s legendary powers "
             f"(according to legend: {names})."
         )
+    if key == "scaling":
+        return _explain_scaling(matchup, sheets, fav, helped)
     if key == "terrain":
         terrain = matchup.terrain.value.replace("_", " ")
         who = fav_name if helped else foe_name
