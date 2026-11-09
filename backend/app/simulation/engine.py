@@ -17,6 +17,7 @@ from app.simulation.fighters import (
     damage_per_hit,
     hit_chance,
     max_engagers,
+    plural_word,
     sample_template,
     scale_factor,
 )
@@ -306,7 +307,7 @@ def _run_swarm(
                     side=s,
                     group_size=hits,
                     damage=round(hits * dmg[s], 1),
-                    text_hint=f"{me.weapon_word}s land",
+                    text_hint=f"{plural_word(me.weapon_word)} land",
                 )
             )
             kills, n[foe], front[foe] = _apply_hits(
