@@ -50,8 +50,9 @@ battleRoyale/
 ├── scripts/                      # check-env.mjs (checks .env without showing values), setup-check.mjs (D01)
 ├── .claude/                      # shared Claude Code config                      (critical)
 │   ├── settings.json             # permissions + hooks (task M03)
-│   ├── agents/code-reviewer.md   # QA reviewer subagent
-│   ├── commands/review.md, new-issue.md
+│   ├── agents/code-reviewer.md   # QA reviewer subagent (review and self-check modes)
+│   ├── qa/checklist.md           # the one QA rulebook: bot, /review, and /qa
+│   ├── commands/review.md, qa.md, new-issue.md
 │   └── skills/review-prs/        # "what can I review?" skill
 ├── .github/                      # workflows, templates, CODEOWNERS               (critical)
 ├── backend/

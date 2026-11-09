@@ -57,7 +57,7 @@ Ask which PR to review (use the AskUserQuestion tool if available; offer the top
 
 Stop and explain if any is true:
 
-- **`ME` is the author.** "A different teammate has to review this — GitHub won't count your own approval."
+- **`ME` is the author.** "A different teammate has to review this — GitHub won't count your own approval. You can run the same check on your own work with `/qa <n>`; it uses the same rulebook as the QA bot and posts nothing."
 - **Uncommitted work** (`git status --porcelain` not empty). Offer to commit or stash it first; don't touch it without a yes.
 - **PR is from a fork / outside contributor.** Do a read-only review: **do not check out or run its code** on this machine (it could run anything). Say why.
 
@@ -68,7 +68,7 @@ Note but continue:
 
 ## Step 3 — Agent review
 
-Delegate to the **code-reviewer** subagent (`.claude/agents/code-reviewer.md`) with: the PR number, `REPO`, `ME`, `START_BRANCH`, whether it's a re-review (and the last reviewed commit), and whether running code is allowed (not for forks). If subagents aren't available, follow `.claude/agents/code-reviewer.md` yourself.
+Delegate to the **code-reviewer** subagent (`.claude/agents/code-reviewer.md`) in **MODE: review** with: the PR number, `REPO`, `ME`, `START_BRANCH`, whether it's a re-review (and the last reviewed commit), and whether running code is allowed (not for forks). If subagents aren't available, follow `.claude/agents/code-reviewer.md` yourself.
 
 The agent returns:
 

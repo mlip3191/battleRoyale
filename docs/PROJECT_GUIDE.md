@@ -85,8 +85,8 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 
 9. Open the project board → **Ready** → your Wave 1 issue (A01, G01, F01, or D01). Assign yourself; move it to **In progress**.
 10. In Claude Code: *"Start work on issue #<n>. Read the task in docs/plan/<your lane file> under its ID, follow its prompt, and check off its acceptance criteria before opening the PR."*
-11. Claude explains its plan → you say yes → it builds, runs tests, commits, pushes, and opens the PR.
-12. Request a reviewer on the PR (GitHub notifies them). The advisory QA bot comments within a few minutes; a teammate's review and approval are what count. Fix anything requested on the same branch.
+11. Claude explains its plan → you say yes → it builds, runs tests, and commits. **Before opening the PR, type `/qa`**: it runs the exact check the QA bot and your reviewer will run, and offers to fix anything must-fix. Then Claude pushes and opens the PR.
+12. Request a reviewer on the PR (GitHub notifies them). The advisory QA bot comments within a few minutes; a teammate's review and approval are what count. Fix anything requested on the same branch, run `/qa` again, then add the `re-review` label if you want the bot to look again.
 13. When it's approved and all checks are green, click **Squash and merge**.
 
 **Every day after**
@@ -158,6 +158,7 @@ The full list of edge cases the app must handle is in [ARCHITECTURE §14](ARCHIT
 - Shared git hook that blocks keys, `.env` files, and large files on every commit
 - Setup-check (`npm run doctor`) for Windows and Mac
 - `/new-issue` command that scopes and splits work
+- `/qa` self-check: anyone can run the QA bot's exact review on their own branch before opening a PR; the bot, /review, and /qa share one checklist and model
 - Live AI evaluation (`docs/evaluation.md`): extraction accuracy vs hand-verified sheets, sourced share, retrieval, live intake and safety accuracy, cost per battle
 - Held-out benchmark set, run with hand-verified and research-only stat sheets
 - Behavioral stats labeled as rubric-based assumptions; stat ranges with uncertainty sampling; engine constants documented

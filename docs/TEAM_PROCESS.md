@@ -189,7 +189,7 @@ Every human review runs through the **review-prs skill** (`.claude/skills/review
 
 ### Reviewer agent rules
 
-- If the person running /review is the PR's author, the agent stops and says a different teammate must review.
+- If the person running /review is the PR's author, the agent stops and says a different teammate must review. Authors use /qa instead (below).
 
 - The agent checks out the PR branch with gh pr checkout to run tests, and switches back to the reviewer's original branch afterwards. If the reviewer has uncommitted work, it stops and asks first.
 
@@ -203,7 +203,11 @@ Every human review runs through the **review-prs skill** (`.claude/skills/review
 
 - If the reviewer edits the draft, the agent submits the edited version.
 
-Two layers: /review is the human reviewer's tool, run on their own machine, to understand the change and decide whether to approve; it is the gate. The QA bot in Step 9 runs the same QA process on GitHub when a PR opens (or on the `re-review` label) and posts advisory findings for the author and reviewer.
+### /qa — check your own work first
+
+Anyone can run `/qa` on their own branch (before a PR exists) or on any PR number, including their own. It runs the same code-reviewer agent in self-check mode, against the same rulebook (`.claude/qa/checklist.md`) and on the same model as the QA bot, so what it finds is what the bot and your reviewer will find. It runs the tests locally, shows the report, and posts nothing. Then it offers to fix the must-fix items on your branch (with the usual explain-then-yes). Habit: **run /qa before you open a PR, and again before asking for a re-review.**
+
+Three layers, one rulebook: /qa is the author's self-check; /review is the human reviewer's tool and the gate; the QA bot in Step 9 runs the same checklist on GitHub when a PR opens (or on the `re-review` label, which anyone can add) and posts advisory findings.
 
 ## Step 4: GitHub Issues Scaffold
 
@@ -337,6 +341,7 @@ People on two computers repeat the installs on both, log in to GitHub and Claude
 | Start a task       | "Start work on issue \#\<number\>"                 |
 | Create a new issue | /new-issue                                         |
 | Review a PR        | "What can I review?" or /review \<PR number\>|
+| Check my own work  | /qa (current branch) or /qa \<PR number\>     |
 | Get latest code    | "Pull the latest main"                             |
 | Undo something     | "Undo your last change and explain what you undid" |
 | Ask for help       | "Explain what this does in plain English"          |
@@ -389,7 +394,7 @@ CLAUDE.md tells Claude the rules; settings and hooks enforce them, so a non-code
 | CLAUDE.md                   | Yes             | Project rules for every session            |
 | .claude/settings.json       | Yes             | Team-wide permissions and hooks            |
 | .claude/agents/             | Yes             | Shared agents, e.g. code-reviewer          |
-| .claude/commands/           | Yes             | Shared slash commands: /review, /new-issue |
+| .claude/commands/           | Yes             | Shared slash commands: /review, /qa, /new-issue |
 | .claude/settings.local.json | No (gitignored) | Personal overrides on one machine          |
 | CLAUDE.local.md             | No (gitignored) | Personal notes for Claude                  |
 
@@ -519,7 +524,7 @@ The QA bot runs the reviewer agent's QA process on GitHub and posts its findings
 
 2.  GitHub runs .github/workflows/ai-qa-review.yml (installed from setup/templates/ in M07), which starts Claude Code on GitHub's servers using the official Claude Code GitHub Action.
 
-3.  The bot follows .claude/agents/code-reviewer.md and CLAUDE.md: it reads the linked issue and checks each acceptance criterion, reads the diff and the files it touches, and looks for bugs, secrets, scope creep, deleted or skipped tests, and weakened guardrails. New dependencies, contract changes, and critical files are "Needs PM" notes, not must-fix items.
+3.  The bot follows .claude/qa/checklist.md (the same rulebook as /review and /qa, on the same model) plus CLAUDE.md: it reads the linked issue and checks each acceptance criterion, reads the diff and the files it touches, and looks for bugs, secrets, scope creep, deleted or skipped tests, and weakened guardrails. New dependencies, contract changes, and critical files are "Needs PM" notes, not must-fix items.
 
 4.  It posts inline comments with one-click suggested fixes, and the full report as one PR comment.
 
