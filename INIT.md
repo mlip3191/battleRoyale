@@ -13,7 +13,7 @@ This document takes the project from "plan only" to a protected repo with a runn
 ## Part 1 — For Mike, before starting (about 15 minutes, by hand, on the Mac)
 
 1. **Install and sign in:** Git, GitHub CLI, Claude Code (`claude`), Node 24, uv. Optional: `brew install gitleaks` (the git hook uses it when present; otherwise a built-in checker runs).
-2. **GitHub CLI scopes:** `gh auth login` as `mlip3191`, then `gh auth refresh -s workflow,project,read:user`. Check with `gh auth status`: the token scopes must include `workflow` (needed to push workflow files in M04/M07), `project` (board in M08), and `read:user` (Pro check in M01).
+2. **GitHub CLI scopes:** `gh auth login` as `mlip3191`, then `gh auth refresh -s workflow,project,read:user`, then `gh auth setup-git` (so `git push` uses the same login). Check with `gh auth status`: the token scopes must include `workflow` (needed to push workflow files in M04/M07), `project` (board in M08), and `read:user` (Pro check in M01).
 3. **GitHub Pro** is active (confirmed). M01 double-checks it.
 4. **Clone:** `git clone https://github.com/mlip3191/battleRoyale.git` then `cd battleRoyale`.
 5. **Create your `.env` with the course endpoints:**
@@ -330,7 +330,7 @@ Run the smoke script; show Mike `docs/providers.md` and confirm with him that it
 3. **Project board** (D-28): `gh project create --owner mlip3191 --title "Battle Royale"`; `gh project link <number> --owner mlip3191 --repo mlip3191/battleRoyale`; add all issues. Then give Mike the web-UI click paths for what the CLI can't do: (a) Status field values Backlog, Ready, In progress, In review, Done; (b) Workflows → turn on "Auto-add to project" (filter `is:issue,pr is:open` for this repo), "Item added to project → Backlog", and "Pull request merged → Done"; (c) Settings → Manage access → add `afondale`, `gunnaroc`, `felcervino`, `dilloncsmart` with Write. Then set Wave 1 issues to Ready.
 4. **Invites accepted?** `gh api repos/mlip3191/battleRoyale/invitations --jq '.[].invitee.login'` must print nothing. GitHub won't let you assign people who haven't accepted, and invitations expire after 7 days; if anyone is pending, give Mike their handle to nudge (or re-invite), and wait.
 5. **Assign** every issue to its lane owner (A→`afondale`, G→`gunnaroc`, F→`felcervino`, D→`dilloncsmart`, M09→`mlip3191`).
-6. **Dry run** (before tightening the ruleset): issue "Dry run"; branch `issue-<n>-dry-run`; change one line in README.md and set `M08: done` in `docs/build-log.md`; push; open a PR with the template. Wait for CI (4), Secret scan, Critical files approval, and the advisory QA bot to report. Run the review-prs skill as if Mike were the reviewer and show that it refuses (he's the author). Leave the PR open for Felipe's first review (F01).
+6. **Dry run** (before tightening the ruleset): issue "Dry run"; branch `issue-<n>-dry-run`; change one line in README.md and set `M08: done` in `docs/build-log.md`; push; open a PR with the template. Wait for CI (4), Secret scan, Critical files approval, and the advisory QA bot to report. Run the review-prs skill as if Mike were the reviewer and show that it refuses (he's the author) and points to `/qa`; then run `/qa <n>` and show it produces a report and posts nothing. Leave the PR open for Felipe's first review (F01).
 7. **Full ruleset:** update the M02 ruleset: require a pull request with **1 approval**; required status checks with source GitHub Actions — the 4 CI check names confirmed in M04, `Secret scan`, `Critical files approval`; block force pushes and deletions; no bypass actors. **Don't** turn on "branches up to date", "dismiss stale approvals", "approval of the most recent push", or "conversation resolution" (D-26). The QA bot is **not** a required check.
 8. **Team board issue:** create and pin "Team board" (no chat channel): @mention all four with links to README "Teammate quick start", their lane file, their first issue, the board, the dry-run PR to review, and the rule: once a week comment here with done / doing / blocked.
 
@@ -362,9 +362,10 @@ Run the smoke script; show Mike `docs/providers.md` and confirm with him that it
 2. **Wave 1 (Wed Nov 11):** each teammate's setup task — A01 (Adam), G01 (Gunnar), F01 (Felipe, includes reviewing the dry-run PR with the review-prs skill), D01 (Dillon).
 3. **Waves 2–4 (Nov 12–20):** teammates pick their next issue from **Ready**; every task's prompt is in their lane file. Mike moves issues to Ready as dependencies merge. Scope checks at MS-1 (Nov 14) and MS-2 (Nov 17) against the cut order in `docs/plan/LANES.md`.
 4. **Weekly:** Monday triage; mid-week check-in on the pinned Team board issue; Friday benchmark review once F07 exists.
-5. **Then:** feature freeze Nov 20, bug bash Nov 21, deck and rehearsals Nov 22–23, buffer Nov 24, due Nov 25 — see `docs/plan/DELIVERABLES.md`.
+5. **Then:** Wave 5 (Sat Nov 21 – Sun Nov 22) bug bash, usability sessions (D10), and the user guide (D09); **feature freeze at the end of Sun Nov 22**; fixes Mon Nov 23 – Tue Nov 24; **code complete Wed Nov 25** (tag `v1.0`, export). The slide deck and presentation are prepared outside the repo, starting Nov 25 (D-05). See `docs/plan/LANES.md` and `docs/plan/DELIVERABLES.md`.
 6. **Prompts teammates use:**
    - Start a task: *"Start work on issue #<n>. Read the task in docs/plan/<my lane file> under its ID, follow its prompt, and check off its acceptance criteria before opening the PR."*
+   - Check your own work before opening a PR: `/qa` (same rulebook as the QA bot)
    - Review: *"What can I review?"*
    - Ask the QA bot to look again after fixes: add the `re-review` label to the PR.
    - New work: `/new-issue` (after A01)
