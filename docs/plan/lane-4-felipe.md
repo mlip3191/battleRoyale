@@ -12,6 +12,8 @@
 | F06 | Fair-fight search + next-challenger testing | M | F05 | A05 | 4 |
 | F07 | Benchmark runner + report | M | F05, G07, G06 | — | 4 |
 
+**Definition of Done for every task (CLAUDE.md §7), on top of its own acceptance criteria:** at least one test for every code change (docs-only tasks such as G01, G07, F01, D09, and D10 are checked by the reviewer instead); `npm run check` passes; the app still starts with `npm start`; the PR uses the template with `Closes #<n>`, explains the change in plain English, and ticks each criterion with its evidence (test name, command output, link, or screenshot); docs updated if behavior changed; a teammate approved and all required checks passed before merging. Criteria marked "live" are run by the task owner on their own machine (never in CI), and the pasted results never include endpoint hosts or keys.
+
 ---
 
 ## F01 · How-to-review guide + review practice · S (1)
@@ -33,8 +35,9 @@ Then use the review-prs skill to review the open dry-run PR from Mike's task M08
 ```
 
 **Acceptance criteria**
-- [ ] `docs/reviewing.md` with a one-screen checklist at the top
-- [ ] Felipe completed the dry-run review with the skill (link in PR)
+- [ ] `docs/reviewing.md` covers all 7 points in the task, with a one-screen checklist at the top
+- [ ] Felipe reviewed the dry-run PR with the skill: comments were posted only after he said send, and approval was asked as a separate question (review link in the PR)
+- [ ] A teammate confirms in review that they could follow the checklist
 
 ---
 
@@ -46,17 +49,20 @@ Then use the review-prs skill to review the open dry-run PR from Mike's task M08
 **Prompt for Claude Code:**
 ```text
 Task F02 from docs/plan/lane-4-felipe.md. Build backend/app/simulation/ with no I/O and no providers.
-1. rng.py: make_seed(matchup, sheet_hash_0, sheet_hash_1) using a stable hash (hashlib) plus ENGINE_VERSION; all randomness comes from numpy.random.Generator or random.Random created from that seed (ask me before adding numpy).
+1. rng.py: make_seed(matchup, sheet_hash_0, sheet_hash_1) using a stable hash (hashlib) plus ENGINE_VERSION; all randomness comes from numpy.random.Generator or random.Random created from that seed (numpy is already installed by M04).
 2. fighters.py: build combatant instances from a StatSheet: hp proportional to mass_kg, damage per hit from attack_force_n, hit chance from top_speed_mps and size_m ratio, armor_0_1 reduces damage, attacks_per_s sets the tick rate. On every run, sample each stat from its low–high range (seeded) so input uncertainty shows up in the results. Put every constant in simulation/constants.py, and write docs/simulation-model.md explaining each constant with a source (e.g. Lanchester's laws, Kleiber/allometric scaling, published bite-force or running-speed studies) or, where none exists, the reasoning and a note that it's an assumption. This document is what we show when someone asks "where do your numbers come from?"
 3. engine.py: run_once(sides, terrain, rng, record_events) runs a time-stepped fight (0.1 s ticks, max 600 s) and returns the winner (0, 1, draw), survivors, duration, and optionally the event log using FightEvent with short neutral text_hint values.
 4. run(matchup, stat_sheets, runs=settings.sim_runs) -> SimulationResult: runs N times, computes win/draw probabilities with 95% Wilson intervals, mean survivors, mean duration, picks the representative run (closest to the median duration among the most common outcome), re-runs it with events on, and caps the log at 300 events. deciding_factor can be a placeholder until F05.
-5. Property tests (hypothesis) in backend/tests/property/: same inputs give identical results; probabilities sum to 1; mirror match is within 0.45–0.55 at 1,000 runs. A timing test: 1,000 runs of 1 v 1 under 1 second.
+5. Property tests (hypothesis) in backend/tests/property/: same inputs give identical results; probabilities sum to 1; mirror match is within 0.45–0.55 at 1,000 runs. Also test: narrower stat ranges give a narrower win-probability interval; a fight still going at 600 s is a draw; the log never exceeds 300 events. A timing test: 1,000 runs of 1 v 1 under 1 second.
 ```
 
 **Acceptance criteria**
-- [ ] `simulation.run` returns a valid `SimulationResult` on the contract fixture
-- [ ] Deterministic; mirror ≈ 50/50; 1,000 runs < 1 s
-- [ ] All constants named and explained in one file
+- [ ] `simulation.run` returns a valid `SimulationResult` for the contract fixture
+- [ ] Property tests: same inputs give an identical result; probabilities sum to 1; a mirror match lands between 0.45 and 0.55 at 1,000 runs
+- [ ] Each run samples stats within their `low`–`high` range (test: narrower ranges give a narrower win-probability interval)
+- [ ] A fight still going at 600 simulated seconds ends as a draw (test); the event log never exceeds 300 events (test)
+- [ ] 1,000 runs of a 1 v 1 finish in under 1 s on the ubuntu CI runner (timing test)
+- [ ] Every constant lives in `simulation/constants.py` with a comment, and `docs/simulation-model.md` gives each one a source or labels it an assumption
 
 ---
 
@@ -71,13 +77,14 @@ Task F03 from docs/plan/lane-4-felipe.md. Extend backend/app/simulation/.
 1. Engagement limits (Lanchester linear law for melee): each target can be attacked by at most max_engagers = clamp((size_target / size_attacker)^2, 1, 8) attackers at once; idle attackers queue. Fighters with weapon_ranged use the square law (everyone can engage).
 2. Square-cube scaling for FighterRequest.size_reference ("horse-sized duck" = entity duck, size_reference horse): the orchestrator gives you both stat sheets; scale factor k = reference mass_kg / entity mass_kg, computed here in code. Scaled mass = mass × k; hp scales with mass; strength and damage with k^(2/3); size with k^(1/3); speed per a documented allometric rule (cite it in docs/simulation-model.md). Record the scaling in the result so the UI and announcer can say "scaled to horse size". This powers showcase battle #1 (100 duck-sized horses vs 1 horse-sized duck), so test it explicitly.
 3. Swarm mode: when a side has more than 200 individuals, simulate in groups (bins of identical fighters with a count) so 10,000 ants run in under 3 seconds; events become group events with group_size.
-4. Tests: more fighters on a side never lowers its win probability (monotonic, within noise); 100 v 1,000 runs under 3 seconds; "100 duck-sized horses vs 1 horse-sized duck" produces a sensible, explainable result (write the explanation in the PR).
+4. Tests: adding fighters to a side never lowers its win probability by more than 0.02 (noise); max_engagers caps attackers on a much larger target; a scaling unit test with known masses; 100 v 1,000 and 10,000 ants vs 1 lion each run under 3 seconds; "100 duck-sized horses vs 1 horse-sized duck" produces a sensible, explainable result (write the explanation in the PR).
 ```
 
 **Acceptance criteria**
-- [ ] Engagement limits and ranged square law implemented and tested
-- [ ] Monotonic-numbers property test passes
-- [ ] 10,000-individual swarm runs within the time budget
+- [ ] Tests: an attacker much smaller than its target is capped at `max_engagers`; a ranged side uses the square law
+- [ ] Property test: adding fighters to a side never lowers its win probability by more than 0.02 (noise)
+- [ ] Size-reference scaling has a unit test with known numbers (mass scaled to the reference's mass; strength by k^(2/3)); "100 duck-sized horses vs 1 horse-sized duck" runs, and the PR explains the result in plain English
+- [ ] 100 v 1,000 and 10,000 ants vs 1 lion each finish in under 3 s on the ubuntu CI runner (timing tests); swarm events carry `group_size`
 
 ---
 
@@ -93,12 +100,14 @@ Task F04 from docs/plan/lane-4-felipe.md.
 2. no_contest: if neither side can reach the other (e.g. eagle vs shark in open water, air vs water), end immediately with outcome no_contest and a clear text_hint.
 3. Behavior: each side retreats when its losses pass a morale threshold derived from aggression_0_1 (more aggressive = fights longer); a fleeing fighter that is faster than its pursuers escapes (counts as a loss for its side but a survivor). Add RETREAT and FLEE events.
 4. Group tactics: group_tactics_0_1 boosts coordinated attacks for pack animals.
-5. Tests: shark vs lion on land vs in water flips the favorite; eagle vs shark in water is no_contest; a timid side retreats earlier than an aggressive one.
+5. Tests: shark vs lion on open_field vs in water flips the favorite; eagle vs shark in water is no_contest; a timid side retreats earlier (median retreat time) than an aggressive one; RETREAT and FLEE events appear in representative logs; higher group_tactics_0_1 raises a pack's win probability.
 ```
 
 **Acceptance criteria**
-- [ ] Terrain table documented in code; habitat flips covered by tests
-- [ ] `no_contest`, retreat, and flee behaviors visible in event logs
+- [ ] `terrain.py` covers every Terrain × Habitat pair, with a comment per row
+- [ ] Tests: shark vs lion flips the favorite between `open_field` and `water`; eagle vs shark in water → `no_contest`; a low-aggression side retreats earlier (median retreat time) than a high-aggression one
+- [ ] RETREAT and FLEE events each appear in the representative log of at least one test matchup
+- [ ] A test shows `group_tactics_0_1` raises a pack's win probability against the same opponent
 
 ---
 
@@ -111,13 +120,15 @@ Task F05 from docs/plan/lane-4-felipe.md.
 1. deciding_factor: one-at-a-time sensitivity — for each StatName plus "numbers" and "terrain", equalize that factor between the sides, re-run 200 times, and measure the change in the favorite's win probability. The biggest change wins. Cache within a run.
 2. deciding_factor_explainer: a code template (no LLM), e.g. "Size did it: the grizzly outweighs each wolf about 8 to 1, and the pack couldn't surround it in the trees." Use values from the stat sheets; round sensibly. If the deciding factor is a behavioral stat (aggression, group tactics, armor), say it rests on an assumption.
 3. A summary() helper that returns the numbers the UI and the announcer need: win % per side, survivors, duration in seconds, favorite, and the deciding factor text.
-4. Tests: a size-dominated matchup reports SIZE or MASS; a swarm matchup reports numbers; the explainer contains no number that isn't in the inputs.
+4. Tests: a size-dominated matchup reports mass_kg or size_m; a swarm matchup reports numbers; a behavioral deciding factor mentions the assumption; the explainer contains no number that isn't in the inputs; a timing test for the 5-second budget.
 Keep total time for simulate + deciding factor under 5 seconds for 1 v 1.
 ```
 
 **Acceptance criteria**
-- [ ] Deciding factor + explainer filled in `SimulationResult`
-- [ ] Tests for size-driven and numbers-driven outcomes; time budget met
+- [ ] Every `SimulationResult` has a `deciding_factor` and an explainer string
+- [ ] Tests: a size-dominated matchup reports `mass_kg` or `size_m`; a swarm matchup reports `numbers`; when a behavioral stat decides it, the explainer says it rests on an assumption
+- [ ] The explainer contains no number that isn't in the inputs (test)
+- [ ] Simulate + deciding factor finishes in under 5 s for a 1 v 1 (timing test)
 
 ---
 
@@ -136,8 +147,9 @@ Task F06 from docs/plan/lane-4-felipe.md.
 ```
 
 **Acceptance criteria**
-- [ ] Fair-fight count found within 20 probes or "no fair fight" message
-- [ ] Challenger testing returns sorted suggestions; deterministic
+- [ ] Wolf vs house cats finds a count with |p − 0.5| ≤ 0.05 in at most 20 probes; ant vs elephant returns `count=None` with the "no fair fight within 10,000" message (tests)
+- [ ] A draw or `no_contest` main result gives `fair_fight` = None with an explanation (test)
+- [ ] `test_challengers` returns suggestions sorted by |p − 0.5|, identical across two runs (test)
 
 ---
 
@@ -158,6 +170,7 @@ Run it live once and paste the headline numbers in the PR.
 ```
 
 **Acceptance criteria**
-- [ ] `run_benchmark.py --live` produces `docs/benchmark-results.md`
-- [ ] Traceability included; mock mode runs in CI
-- [ ] First baseline committed (target: ≥ 80% pass on "obvious")
+- [ ] `run_benchmark.py --live --sheets seed` and `--sheets research` both write to `docs/benchmark-results.md`, each reporting the tuning and held-out sets separately, plus traceability %, runtime, and commit hash
+- [ ] Earlier runs are kept below the newest one (last 5)
+- [ ] `--mock` runs 3 matchups in CI
+- [ ] The baseline is committed and its headline numbers pasted in the PR (target: at least 80% on held-out "obvious"; report the real result whatever it is)

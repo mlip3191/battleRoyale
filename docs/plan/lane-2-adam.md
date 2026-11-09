@@ -14,6 +14,8 @@
 
 **How to start any task:** in Claude Code, say *"Start work on issue #<number>"* and then paste the prompt below. Claude makes the branch, explains its plan, and waits for your OK.
 
+**Definition of Done for every task (CLAUDE.md §7), on top of its own acceptance criteria:** at least one test for every code change (docs-only tasks such as G01, G07, F01, D09, and D10 are checked by the reviewer instead); `npm run check` passes; the app still starts with `npm start`; the PR uses the template with `Closes #<n>`, explains the change in plain English, and ticks each criterion with its evidence (test name, command output, link, or screenshot); docs updated if behavior changed; a teammate approved and all required checks passed before merging. Criteria marked "live" are run by the task owner on their own machine (never in CI), and the pasted results never include endpoint hosts or keys.
+
 ---
 
 ## A01 · Issue forms, `/new-issue` command, issue guide · M (2)
@@ -32,10 +34,10 @@ These files are critical files, so the PR needs Mike's approval.
 ```
 
 **Acceptance criteria**
-- [ ] Three issue forms + config.yml; blank issues disabled; acceptance criteria required
-- [ ] `/new-issue` drafts, splits oversized work, and only creates after confirmation
-- [ ] `docs/issues.md` readable by a non-coder
-- [ ] Tested: create one real issue with `/new-issue` and link it in the PR
+- [ ] `.github/ISSUE_TEMPLATE/` has `feature.yml`, `bug.yml`, `chore.yml`, and `config.yml` with `blank_issues_enabled: false`; acceptance criteria is a required field in all three forms; each form applies its type label
+- [ ] `/new-issue` tested on three requests, recorded in the PR: a small one (creates one issue only after confirmation), an oversized one (proposes a split into several issues), and a cancel (creates nothing)
+- [ ] `docs/issues.md` covers using `/new-issue`, the good-vs-weak acceptance criteria table, every label, and the board columns; a teammate other than Adam confirms in review that they could follow it
+- [ ] One real issue created with `/new-issue` is linked in the PR
 
 ---
 
@@ -62,10 +64,11 @@ Do not build the HTTP endpoint (Dillon's D08) or safety checks (A04).
 ```
 
 **Acceptance criteria**
-- [ ] `parse_matchup` returns a valid `IntakeResult` for all 25+ test inputs
-- [ ] Counts, normalization, terrain, and clamping are done in code, not by the model
-- [ ] Prompt lives in `backend/prompts/`; user text is delimited as data
-- [ ] Runs in CI with mocks; one manual live test noted in the PR
+- [ ] At least 25 test inputs pass on mocks, covering every A02 edge case in ARCHITECTURE §14, including: "100 duck-sized horses vs 1 horse-sized duck" (entity and `size_reference` correct on both sides), "a million ants vs a lion" (clamped to 10,000 with an assumption), "half a horse vs a goat" (rejected with a plain-English message, not an error), "bear" (clarify with 2–4 options), and a three-sided matchup (clarify)
+- [ ] One test feeds deliberately wrong model output (a wrong count, a plural entity, an unknown terrain, a numeric size) and shows code overrides each one
+- [ ] Invalid model output → one retry with the validation error → "clarify" (tested)
+- [ ] The prompt is `backend/prompts/intake_parse.md`, and a golden test shows user text appears only inside the data delimiters
+- [ ] A live run of 5 inputs is pasted in the PR
 
 ---
 
@@ -89,10 +92,11 @@ Task A04 from docs/plan/lane-2-adam.md. Build backend/app/safety/.
 ```
 
 **Acceptance criteria**
-- [ ] Real named people, minors, groups of people, sexual content blocked; animals and generic archetypes allowed
-- [ ] Blocked inputs never trigger research, images, or audio
-- [ ] 40-case labeled set; all pass on mocks; live run results noted in the PR
-- [ ] Injection attempts can't change the parsed matchup
+- [ ] `backend/tests/fixtures/safety_cases.yaml` has at least 40 labeled cases: at least 20 allowed and 20 blocked, every `blocked_reason` represented, and at least 5 injection attempts. On mocks: 100% of blocked cases blocked, 0 allowed cases blocked
+- [ ] Wikidata check: a named real person is blocked as `real_person`; a generic role ("Roman legionary") is allowed; a repeat lookup makes no network request (cache test)
+- [ ] A blocked input makes zero calls to research, image, or audio providers (test with call-counting mocks)
+- [ ] Each injection input produces a parsed matchup identical to its clean version (golden test)
+- [ ] `docs/safety.md` explains what's blocked, why, and how to appeal; live precision and recall are pasted in the PR
 
 ---
 
@@ -110,14 +114,17 @@ Task A05 from docs/plan/lane-2-adam.md. Build backend/app/pipeline/ and the batt
 2. Every stage has a timeout from the stage budget in ARCHITECTURE section 4. On error or timeout: mark the stage "fallback" (media, scripts, challenger) or "failed" (research/simulate), save, and continue whatever can continue. The battle status is "done" if simulate succeeded, else "failed".
 3. Save the BattleRecord after every stage change. Cache: if the same matchup with the same sheet hashes was simulated before, reuse the stored result.
 4. Routes: POST /api/battles (Matchup) -> 202 {battle_id}; GET /api/battles/{id}; GET /api/battles/{id}/events as Server-Sent Events streaming StageStatus changes, ending with an "end" event.
-5. Tests with mock providers and stubs: happy path; one media stage failing -> fallback and battle still done; simulate failing -> battle failed; two battles running at once don't mix records; repeat battle served from cache.
+5. Tests with mock providers and stubs: happy path (each stage goes pending -> running -> done); a stub that sleeps past its budget ends fallback or failed; size_reference entities researched; challenger picks only seed or cached fighters; one media stage failing -> fallback and battle still done; simulate failing -> battle failed; two battles running at once don't mix records; repeat battle served from cache.
 ```
 
 **Acceptance criteria**
-- [ ] A battle runs end-to-end on mocks/stubs and reaches `done`
-- [ ] SSE stream shows each stage changing; polling `GET /api/battles/{id}` works too
-- [ ] Media failure never blocks the verdict
-- [ ] Stubs clearly marked so they get replaced as lanes land
+- [ ] With mocks and stubs, `POST /api/battles` produces a `BattleRecord` that reaches `done`, and a test asserts each stage moves pending → running → done (or fallback)
+- [ ] The SSE stream emits a `StageStatus` event for every change and ends with `end`; polling `GET /api/battles/{id}` returns the same final record
+- [ ] Each stage enforces its time budget from ARCHITECTURE §4 (test: a stub that sleeps past the budget ends `fallback` or `failed`)
+- [ ] Tests: a media stage fails → battle still `done` with that stage `fallback`; simulate fails → battle `failed`; two concurrent battles never mix records; a repeat battle is served from cache without re-simulating
+- [ ] `size_reference` entities are researched alongside the fighters (test)
+- [ ] The challenger stage uses StructuredLLM, picks only seed or cached fighters, and finishes within 10 s on mocks (test)
+- [ ] Every stub marks its stage detail "stub"; the PR lists the stubs that remain
 
 ---
 
@@ -137,13 +144,16 @@ Task A06 from docs/plan/lane-2-adam.md. Build backend/app/narration/.
 3. A number guard in code: every number in generated text — digits, number words ("four hundred", "a dozen"), percentages, and ratios ("eight to one") — must match a value in the stat sheets, the simulation result, or the fair-fight result (after rounding and unit conversion); otherwise regenerate once, then fall back to a template script (fallback=True). Test it with word-form and ratio cases.
    Prompts receive the resolved display_name from the stat sheet, never the user's raw text.
 4. Template fallback scripts in narration/templates.py that work with no LLM at all.
-5. Golden tests on mocks: three matchups, guard catches an invented number, fallback produces valid Scripts, all lines under 200 characters.
+5. Golden tests on mocks: three matchups; the guard catches an invented digit, a number word, a percentage, and a ratio; fallback produces valid Scripts; every at_event exists in the log; all lines at most 200 characters; intro 4–8 lines; play-by-play 8–20 beats; prompts get display_name, not raw text.
 ```
 
 **Acceptance criteria**
-- [ ] Scripts validate against the `Script` contract; captions link to events
-- [ ] Number guard proven by a test; template fallback works offline
-- [ ] Tone checklist in PRODUCT_SPEC met on three sample battles (pasted in the PR)
+- [ ] Every generated script validates against `Script`; every play-by-play `at_event` points to an event that exists in the log (test)
+- [ ] Number-guard tests: an invented digit, a number word ("four hundred"), a percentage, and a ratio ("eight to one") are each caught; numbers present in the inputs pass
+- [ ] With the LLM mocked to fail, template scripts come back with `fallback=True`, with no network
+- [ ] Every line is at most 200 characters; the intro has 4–8 lines; the play-by-play has 8–20 beats (tests)
+- [ ] Prompts receive the stat sheet's `display_name`, never the user's raw text (test)
+- [ ] Scripts for three sample battles are pasted in the PR with the PRODUCT_SPEC §5 tone checklist ticked for each
 
 ---
 
@@ -164,14 +174,16 @@ Task A07 from docs/plan/lane-2-adam.md.
    - Save files under data/media/ (gitignored) and serve them at GET /media/{asset_id}.
 3. Fallbacks: if TTS fails, return no audio asset and mark the stage fallback (captions still show); if music fails, return none.
 4. Voice consent: if settings.announcer_voice_source is "cloned", require settings.announcer_voice_consent_file to point to a file that exists; otherwise refuse to clone and use the default voice.
-5. Tests with mocks for caching, fallbacks, and the consent check.
+5. Tests with mocks for caching (a repeat run makes 0 TTS and 0 music calls), fallbacks, the consent check, and a music prompt built from a name containing a blocklisted artist or franchise word (reuse the safety blocklist) coming out without it.
 ```
 
 **Acceptance criteria**
-- [ ] Voice auditions done; the chosen gruff, deep stock voice is the default
-- [ ] Three narration files + one music file generated live for a sample battle (links in the PR)
-- [ ] Re-running the same battle reuses cached audio
-- [ ] Failures fall back cleanly; consent rule enforced
+- [ ] `audition_voices.py` renders the test line in every stock voice; Mike picks one, and its id is the default `ANNOUNCER_VOICE_ID` in `.env.example`
+- [ ] Live: one sample battle produces 3 narration files and 1 music file, served at `/media/{asset_id}` (links in the PR)
+- [ ] A second run of the same battle makes 0 TTS and 0 music calls (cache test)
+- [ ] TTS failure → no audio asset, stage `fallback`, battle still `done`; music failure → no music asset (tests)
+- [ ] `ANNOUNCER_VOICE_SOURCE=cloned` without an existing consent file refuses to clone and uses the stock voice (test)
+- [ ] A music prompt built from a fighter name that contains a blocklisted artist or franchise word comes out without it (test)
 
 ---
 
@@ -190,13 +202,15 @@ Task A08 from docs/plan/lane-2-adam.md. This sits next to your audio work (A07):
    - make_images(record) -> list[Asset] for the orchestrator.
 3. Fallback: on failure return an Asset with fallback=True and no URL; the front end draws placeholders.
 4. A small "style lock": the same seed/params every time so sprites look like one set.
-5. Pre-generate sprites for all seed fighters with a script (backend/scripts/pregen_sprites.py) so the demo is fast.
+5. Pre-generate sprites for all seed fighters with a script (backend/scripts/pregen_sprites.py) so the demo is fast. The script checks each sprite is a PNG with transparent corner pixels and lists any that fail.
 6. Tests with the mock provider for caching and fallback.
 ```
 
 **Acceptance criteria**
-- [ ] Sprites for the seed fighters generated live and cached (thumbnails in the PR)
-- [ ] Transparent backgrounds; consistent style
-- [ ] Fallback path works with no image endpoint
+- [ ] `pregen_sprites.py` generates sprites for every seed fighter live, cached per fighter_id + style version; thumbnails are in the PR
+- [ ] `pregen_sprites.py` checks that every sprite is a PNG whose four corner pixels are transparent and lists any that fail (expected: none)
+- [ ] Every sprite request uses the same style template, seed, and parameters (test); Dillon confirms in review that the thumbnails look like one set
+- [ ] With the image provider failing, `make_images` returns assets with `fallback=True` and the battle still completes (test)
+- [ ] Image prompts use the allowlisted `display_name`, never raw user text (test)
 
 ---

@@ -16,6 +16,8 @@
 | M08 | Labels, issues, project board, full branch protection, dry run, assignments | M |
 | M09 | Live AI evaluation: does the GenAI actually work? | M |
 
+**Definition of Done for every task (CLAUDE.md §7), on top of its own acceptance criteria:** at least one test for every code change (docs-only tasks such as G01, G07, F01, D09, and D10 are checked by the reviewer instead); `npm run check` passes; the app still starts with `npm start`; the PR uses the template with `Closes #<n>`, explains the change in plain English, and ticks each criterion with its evidence (test name, command output, link, or screenshot); docs updated if behavior changed; a teammate approved and all required checks passed before merging. Criteria marked "live" are run by the task owner on their own machine (never in CI), and the pasted results never include endpoint hosts or keys. (Phase 0 tasks M01–M08 follow INIT.md's own merge flow instead.)
+
 ## M09 · Live AI evaluation: does the GenAI actually work? · M (2)
 
 **When:** Wave 4 (Nov 18–21), after G04, G06, F07, and A04 have landed. Results feed the Limitations and Build Process material for the deck.
@@ -36,9 +38,13 @@ Write docs/evaluation.md with a one-paragraph summary, a table per section, the 
 ```
 
 **Acceptance criteria**
-- [ ] `docs/evaluation.md` with all seven sections, run against live endpoints
-- [ ] Held-out benchmark reported both ways (seed vs research-only)
-- [ ] Limitations stated plainly (estimates, behavioral assumptions, two-sided only)
+- [ ] `docs/evaluation.md` has all seven sections and a one-paragraph summary, with numbers from live endpoints, the run date, and the commit hash
+- [ ] Extraction: a per-stat comparison for every hand-verified fighter (within 10% / within 25% / wrong / returned as estimate) and the count of quote-verification failures
+- [ ] Intake exact-match rate on the A02 phrasings; safety precision and recall on the 40-case set plus the injection results
+- [ ] The held-out benchmark is reported for both seed and research-only sheets
+- [ ] Cost and speed: endpoint calls per battle by service, the cache hit rate on a repeat run, and median and 90th-percentile time to verdict and to full show
+- [ ] The Limitations section names at least: estimates, behavioral assumptions, two-sided matchups only, and dependence on the course endpoints
+- [ ] The redaction scan finds no host or key in the file
 
 ---
 

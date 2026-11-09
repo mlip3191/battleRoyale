@@ -97,11 +97,11 @@ You are the build assistant for **Battle Royale: The Science-Backed Fight Simula
 7. Print a table of every setting with its current value, read back from the API. Keep it for `docs/build-log.md` (M02).
 
 **Acceptance criteria**
-- [ ] `plan.name` is `pro` (or Pro confirmed in Billing); repo is private
-- [ ] Squash-only merging, auto-delete head branches, update-branch suggestion on
-- [ ] Dependabot alerts + security updates on
-- [ ] Read-only `GITHUB_TOKEN`; Actions can't approve PRs; allowed-actions list set (incl. `oven-sh/setup-bun@*`)
-- [ ] Settings table ready for the build log
+- [ ] `gh api user --jq .plan.name` prints `pro` (or Mike confirms Pro in Billing), and `gh repo view mlip3191/battleRoyale --json visibility` shows `PRIVATE`
+- [ ] `gh repo view --json squashMergeAllowed,mergeCommitAllowed,rebaseMergeAllowed,deleteBranchOnMerge` shows `true`, `false`, `false`, `true`, and `gh api repos/mlip3191/battleRoyale --jq .allow_update_branch` shows `true`
+- [ ] Dependabot alerts and Dependabot security updates read back as enabled
+- [ ] `gh api repos/mlip3191/battleRoyale/actions/permissions/workflow` shows `default_workflow_permissions: read` and `can_approve_pull_request_reviews: false`; the allowed-actions list is GitHub-made actions plus exactly the four patterns in step 5
+- [ ] The read-back table of every setting is shown to Mike and kept for the build log
 
 ### M02 · Line endings, build log, guardrail tests, light ruleset, early invites · S (1)
 
@@ -134,11 +134,14 @@ You are the build assistant for **Battle Royale: The Science-Backed Fight Simula
 14. The `M02: done` line is written in M03's PR (main now requires a PR). If the session stops before then, Step 0 sees `M02: committed — …` and checks the ruleset and invites through the API before moving on.
 
 **Acceptance criteria**
-- [ ] `.gitattributes` and `docs/build-log.md` committed to `main`; hook is `100755` with LF endings
-- [ ] Fake key and decoy `.env` both blocked by the hook's own messages; nothing committed; real `.env` never touched
-- [ ] No tracked file matches an ignore rule; CLAUDE.md reviewed
-- [ ] Light ruleset active (PR required, 0 approvals, no force push/deletion)
-- [ ] Four teammates invited; team message drafted
+- [ ] `git log origin/main -1` shows the M02 commit containing `.gitattributes` and `docs/build-log.md`
+- [ ] `git ls-files -s .githooks/pre-commit` shows mode `100755`, and `git ls-files --eol .githooks/pre-commit` shows `i/lf`
+- [ ] The fake AWS-format key commit is blocked with the hook's own "look like a key" message, and the key string does not appear anywhere in the output
+- [ ] The `hook-test/decoy.env` commit is blocked with the hook's own "secrets file" message
+- [ ] After the test: `git status` is clean, no new commit exists, `hook-test/` and `phase0-hooktest` are gone, and the real `.env` was never opened or changed
+- [ ] `git ls-files --cached --ignored --exclude-standard` prints nothing
+- [ ] `gh api repos/mlip3191/battleRoyale/rules/branches/main` lists the pull-request rule (0 approvals), the force-push block, and the deletion block
+- [ ] `gh api repos/mlip3191/battleRoyale/invitations` lists `afondale`, `gunnaroc`, `felcervino`, `dilloncsmart`; the team message is drafted for Mike
 
 ### M03 · Claude Code settings, permissions, and hooks · M (2) — needs one restart
 
@@ -180,11 +183,12 @@ You are the build assistant for **Battle Royale: The Science-Backed Fight Simula
    - Clean up `hook-test/` (unstage, delete). Record `M03: done — live checks passed` in M04's first commit.
 
 **Acceptance criteria**
-- [ ] `test-hooks.mjs` passes all ≥35 cases, including the bypass spellings and message-text cases
-- [ ] After restart: decoy `.env` blocked with the hook's message; commit on `main` blocked with the hook's message; `.env.example` readable
-- [ ] Hooks cover Bash and PowerShell, use quoted `$CLAUDE_PROJECT_DIR`, and fail closed
-- [ ] `gh api` is under ask; `.env` read/edit/write denied
-- [ ] Plain-English table of the permission rules shown to Mike
+- [ ] `node .claude/hooks/test-hooks.mjs` reports at least 35 cases and 0 failures, including every bypass spelling in step 2, the message-text cases, and malformed input → blocked
+- [ ] After the restart: `cat hook-test/decoy.env` and `echo x > hook-test/decoy.env` are blocked with the hook's "secret files" message; a commit on `main` is blocked with the hook's "commit on main" message; reading `.env.example` succeeds
+- [ ] `.claude/settings.json` registers the hooks for both the Bash and PowerShell tools using quoted `"$CLAUDE_PROJECT_DIR"` paths, and a test shows each guard exits 2 on an internal error
+- [ ] `settings.json`: every `gh api` form is under ask; Read, Edit, and Write of the listed `.env` names, `**/*.pem`, and `**/*.key` are denied; `disableBypassPermissionsMode` is `"disable"`
+- [ ] CLAUDE.md §10 is updated in place (no duplicate section); the plain-English permissions table is shown to Mike
+- [ ] The build log shows `M03: merged — live checks pending`, and then `M03: done — live checks passed` in M04's PR
 
 ### M04 · Monorepo skeleton, one-command start, cross-platform files, CI · M (2)
 
@@ -229,11 +233,13 @@ CI (`.github/workflows/ci.yml`), designed for the Actions-minutes budget (Pro: 3
 Finally: run `npm run setup`, `npm run check`, and `npm start` (open http://localhost:8000); show the output. Tell Mike the exact check names that will appear on PRs (expected: `backend (ubuntu-latest)`, `backend (windows-latest)`, `frontend (ubuntu-latest)`, `frontend (windows-latest)` — confirm from the first run). **Update** CLAUDE.md's existing Commands section. Build log: `M04: done`. Commit "Add monorepo skeleton, npm start, and CI (M04)"; PR; merge after the 4 checks pass and Mike confirms.
 
 **Acceptance criteria**
-- [ ] `npm run setup` (incl. root `npm ci` and hooks path), `npm run dev`, `npm run check` work on the Mac
-- [ ] http://localhost:5173 (dev) and http://localhost:8000 (`npm start`) show "Backend: ok", with Mike's filled root `.env` present
-- [ ] Settings read the root `.env`, ignore extra keys, hide keys (`SecretStr`); tests run in mock mode even with a live `.env`
-- [ ] 4 PR checks green; macOS runs only on demand
-- [ ] CLAUDE.md Commands section updated
+- [ ] On Mike's Mac, with his filled root `.env` present: `npm run setup`, `npm run check`, `npm run dev`, and `npm start` all run without errors
+- [ ] http://localhost:5173 (dev) and http://localhost:8000 (`npm start`) each show "Backend: ok"
+- [ ] After `npm run setup`, `git config core.hooksPath` prints `.githooks`
+- [ ] Tests prove: settings load the root `.env` when run from `backend/`; unknown keys are ignored; `repr(settings)` contains no key value; tests run in mock mode even when `.env` says `PROVIDER_MODE=live`
+- [ ] The PR shows exactly four CI checks — `backend (ubuntu-latest)`, `backend (windows-latest)`, `frontend (ubuntu-latest)`, `frontend (windows-latest)` — all green; one manual `gh workflow run ci.yml --ref main -f os=macos-latest` run passes
+- [ ] numpy, pyyaml, and react-router-dom are in the lockfiles; every empty `backend/tests/*` folder has a `.gitkeep`
+- [ ] CLAUDE.md's Commands section matches the real scripts in `package.json`
 
 ### M05 · Shared contracts: Pydantic models, JSON Schema, fixtures, TS types · M (2)
 
@@ -253,9 +259,12 @@ Finally: run `npm run setup`, `npm run check`, and `npm start` (open http://loca
 Run `npm run check`; build log `M05: done`; commit "Add shared contracts and fixtures (M05)"; PR; merge.
 
 **Acceptance criteria**
-- [ ] All models match ARCHITECTURE §5; schema exported; fixtures validate; negative tests pass
-- [ ] `frontend/src/api/schema.d.ts` contains every contract type; fixtures synced
-- [ ] CI fails if generated types or fixtures are stale
+- [ ] Every model and field in ARCHITECTURE §5 exists with the same name, type, and constraints; Claude lists any deviation (expected: none)
+- [ ] One valid fixture per model, plus the `BattleRecord` "running" and "done" fixtures; all validate
+- [ ] One failing-input test per validator rule in step 2 (at least 8); all pass
+- [ ] `backend/app/models/schema/` has a JSON Schema file for every model
+- [ ] `frontend/src/api/schema.d.ts` has a type for every model in `backend/app/models/` (the list is compared in the PR); `frontend/src/fixtures/` matches the backend fixtures
+- [ ] On a throwaway branch, changing a model without regenerating makes CI fail (shown once, then the branch is discarded)
 
 ### M06 · Provider layer: interfaces, mocks, config, live chat adapter, smoke test · M (2)
 
@@ -275,10 +284,11 @@ Run `npm run check`; build log `M05: done`; commit "Add shared contracts and fix
 Run the smoke script; show Mike `docs/providers.md` and confirm with him that it contains no hosts or keys; `npm run check`; build log `M06: done`; commit "Add provider layer and mocks (M06)"; PR; merge. (If Phase 0 is behind schedule, steps 4–5 may move to a follow-up PR on Nov 11 — mark the log `M06: merged — smoke test + live chat pending`.)
 
 **Acceptance criteria**
-- [ ] Every provider has an interface and a mock; CI runs fully on mocks
-- [ ] `docs/providers.md` documents each endpoint with no host, URL, or key (redaction check passed)
-- [ ] Live chat adapter works from Mike's Mac
-- [ ] `/api/health` shows per-provider status; no keys in any `repr`
+- [ ] `providers/base.py` defines all 8 interfaces; each has a mock that passes an interface test; `npm run check` passes with no network
+- [ ] `docs/providers.md` covers every configured service (URL shape with `<host>`, auth style, request/response format, latency); the redaction scan reports 0 remaining hosts or keys, and Mike confirms by reading it
+- [ ] A live chat call from Mike's Mac returns a valid completion through `providers/live/chat.py` (shown without the host)
+- [ ] `GET /api/health` returns `provider_mode` and a status for all 8 providers
+- [ ] Tests: `repr(settings)` contains no key; the `httpx` and `httpcore` loggers are at WARNING
 
 ### M07 · Review tooling: advisory QA bot, Secret scan, critical-files check, CODEOWNERS, PR template · M (2)
 
@@ -301,11 +311,11 @@ Run the smoke script; show Mike `docs/providers.md` and confirm with him that it
 *If Phase 0 is behind:* the QA bot (step 1, second file) is advisory and can move to a follow-up PR later in the week. Secret scan and the critical-files check can't — they become required in M08.
 
 **Acceptance criteria**
-- [ ] `ci.yml`, `secret-scan.yml`, `critical-files.yml`, `ai-qa-review.yml` in `.github/workflows/`
-- [ ] QA bot secret set; bot advisory, skips drafts/forks/Dependabot, uses `main`'s `.claude/` and `CLAUDE.md`
-- [ ] Critical-files check uses `pull_request_target`, no checkout, root-anchored matching from `main`'s CODEOWNERS
-- [ ] CODEOWNERS (incl. `/.gitleaksignore`, root-only `/scripts/`) and PR template (with "Built with") present
-- [ ] "What can I review?" and `/review` both start the review-prs skill
+- [ ] `.github/workflows/` contains `ci.yml`, `secret-scan.yml`, `critical-files.yml`, and `ai-qa-review.yml`
+- [ ] `gh secret list` shows `CLAUDE_CODE_OAUTH_TOKEN`; the QA bot workflow never fails on its verdict, skips drafts, forks, and Dependabot, restores `main`'s `.claude/` and `CLAUDE.md` before running, and has job-level concurrency
+- [ ] `critical-files.yml` triggers only on `pull_request_target`, never checks out PR code, has read-only permissions, reads CODEOWNERS from `main`, and accepts approval from `mlip3191` or the backup `gunnaroc`
+- [ ] CODEOWNERS uses root-anchored paths, including `/.gitleaksignore` and `/scripts/`; the PR template has a "Built with" section
+- [ ] In a fresh Claude Code session, both "What can I review?" and `/review` start the review-prs skill (shown)
 
 ### M08 · Labels, issues, project board, full branch protection, dry run, assignments · M (2)
 
@@ -324,11 +334,12 @@ Run the smoke script; show Mike `docs/providers.md` and confirm with him that it
 8. **Team board issue:** create and pin "Team board" (no chat channel): @mention all four with links to README "Teammate quick start", their lane file, their first issue, the board, the dry-run PR to review, and the rule: once a week comment here with done / doing / blocked.
 
 **Acceptance criteria**
-- [ ] Labels exist; one issue per task with labels, "Blocked by" links, and assignee
-- [ ] Board linked to the repo, auto-add on, teammates have access, Wave 1 in Ready
-- [ ] Full ruleset active: 1 approval + 6 required checks; QA bot advisory only
-- [ ] Dry-run PR shows all checks reporting; awaiting Felipe's review
-- [ ] All GitHub-user invites accepted; pinned Team board issue posted
+- [ ] `gh label list` shows every label in step 1, including `re-review`, `usability`, and the lane and wave labels
+- [ ] One issue per task in lanes 2–5 plus M09 (32 issues), each with type, size, lane, and wave labels, a "Blocked by #n" line for every dependency in the lane tables, and the right assignee; closed issues M01–M07 and an open M08 exist
+- [ ] The board is linked to the repo and has the five Status columns; auto-add is on; the four teammates have Write access; every Wave 1 issue is in Ready (Mike confirms the web-UI steps)
+- [ ] The ruleset read back from `gh api repos/mlip3191/battleRoyale/rulesets` shows: 1 approval; required checks = the 4 CI names + `Secret scan` + `Critical files approval`; none of the four rules D-26 leaves off; no bypass actors
+- [ ] On the dry-run PR all 6 required checks reported and the QA bot commented; the review-prs skill refused Mike as the author; the PR is left open for Felipe
+- [ ] `gh api repos/mlip3191/battleRoyale/invitations` returns nothing; the pinned "Team board" issue @mentions all four teammates
 
 ### After Phase 0 — Mike's ongoing duties
 

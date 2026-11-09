@@ -14,6 +14,12 @@ Mike's lane is higher because Phase 0 must happen before anyone else can build. 
 
 Each teammate's **first task (Wave 1) is a setup task** that also teaches the workflow: Adam builds the issue system, Gunnar plans the sources and the assumption rubric, Felipe writes the review guide and does the first review, Dillon builds onboarding and the setup checker.
 
+## Acceptance criteria and Definition of Done
+
+Every task has an **Acceptance criteria** checklist in its lane file; M08 copies it into the task's GitHub issue. Each item is observable: a command and its expected output, a named test, a number with a threshold, or a person's confirmation in review. A PR ticks each item and shows the evidence. On top of its own criteria, every task meets the Definition of Done (CLAUDE.md §7): at least one test for every code change (docs-only tasks such as G01, G07, F01, D09, and D10 are checked by the reviewer instead); `npm run check` passes; the app still starts with `npm start`; the PR uses the template with `Closes #<n>`, explains the change in plain English, and ticks each criterion with its evidence (test name, command output, link, or screenshot); docs updated if behavior changed; a teammate approved and all required checks passed before merging. Criteria marked "live" are run by the task owner on their own machine (never in CI), and the pasted results never include endpoint hosts or keys.
+
+If a criterion turns out to be wrong or impossible, don't quietly skip it: say so in the issue, and Mike updates the criterion (or splits the work) before the PR merges.
+
 ## Schedule (code complete Wednesday, November 25)
 
 The slide deck and presentation are prepared outside this repo, starting Nov 25 (DECISIONS D-05).
@@ -22,7 +28,7 @@ The slide deck and presentation are prepared outside this repo, starting Nov 25 
 |---|---|---|---|---|---|---|
 | 0 — Foundation | Mon Nov 9 – Tue Nov 10 | M01 → M08 | install, read | install, read | install, read | install, read |
 | 1 — Onboard + setup | Wed Nov 11 | review, unblock | A01 | G01 | F01 | D01 |
-| 2 — Skeleton | Thu Nov 12 – Sat Nov 14 | review | A02, A04 | G02, G05 (5 showcase fighters), G07 | F02, F03 | D02, D03 |
+| 2 — Skeleton | Thu Nov 12 – Sat Nov 14 | review | A02, A04 | G02, G05 (first 5 sheets: horse, duck, grizzly, wolf, honey badger), G07 | F02, F03 | D02, D03 |
 | 3 — Core | Sun Nov 15 – Tue Nov 17 | review, integration checks | A05, A06 | G03, G04 | F04, F05 | D08, D04, D05 |
 | 4 — Complete | Wed Nov 18 – Fri Nov 20 | M09 evaluation, review | A07, A08 | G05 (remaining 10), G06, G08 | F06, F07 | D07 |
 | 5 — Test + polish | Sat Nov 21 – Sun Nov 22 | bug bash, triage | bug bash, fixes | bug bash, fixes | bug bash, fixes | D10 usability sessions, D09 user guide |
@@ -34,7 +40,7 @@ The slide deck and presentation are prepared outside this repo, starting Nov 25 
 2. A08 generated sprites (placeholders already exist in D05)
 3. A07 voice (captions carry the narration)
 4. F07 benchmark reduced to the held-out set plus the 15 "obvious" matchups
-5. G05 hand-verified sheets reduced from 15 to the 5 showcase fighters (M09's extraction check then uses 5)
+5. G05 hand-verified sheets reduced from 15 to the 10 showcase-battle fighters (M09's extraction check then uses 10)
 
 Never cut: M09's evaluation, D09's user guide, D10's usability sessions, or the fresh-clone check in G08. They're what the course grades beyond "it runs."
 

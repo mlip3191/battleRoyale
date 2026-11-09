@@ -15,6 +15,8 @@
 
 G07 pairs with Felipe's F07: Gunnar builds the benchmark data, Felipe builds the runner that scores it.
 
+**Definition of Done for every task (CLAUDE.md §7), on top of its own acceptance criteria:** at least one test for every code change (docs-only tasks such as G01, G07, F01, D09, and D10 are checked by the reviewer instead); `npm run check` passes; the app still starts with `npm start`; the PR uses the template with `Closes #<n>`, explains the change in plain English, and ticks each criterion with its evidence (test name, command output, link, or screenshot); docs updated if behavior changed; a teammate approved and all required checks passed before merging. Criteria marked "live" are run by the task owner on their own machine (never in CI), and the pasted results never include endpoint hosts or keys.
+
 ---
 
 ## G01 · Seed fighter list + source plan · S (1)
@@ -25,18 +27,19 @@ G07 pairs with Felipe's F07: Gunnar builds the benchmark data, Felipe builds the
 **Prompt for Claude Code:**
 ```text
 Task G01 from docs/plan/lane-3-gunnar.md. Help me write docs/research.md. Do not write code.
-1. Propose 25 seed fighters across categories (big predators, small animals good for swarms, herbivores, birds, reptiles, aquatic, insects, 2–3 dinosaurs, 3 generic historical human archetypes). For each: fighter_id slug, display name, default variant, category, habitat, and the Wikipedia article title. Include classics: house cat, golden retriever, grizzly bear, gray wolf, African elephant, honey badger, chimpanzee, bald eagle, saltwater crocodile, great white shark, army ant, Tyrannosaurus rex, Roman legionary.
+1. Propose 25 seed fighters across categories (big predators, small animals good for swarms, herbivores, birds, reptiles, aquatic, insects, 2–3 dinosaurs, 3 generic historical human archetypes). For each: fighter_id slug, display name, default variant, category, habitat, and the Wikipedia article title. Include classics: house cat, golden retriever, grizzly bear, gray wolf, African elephant, honey badger, chimpanzee, bald eagle, saltwater crocodile, great white shark, army ant, Tyrannosaurus rex, Roman legionary. Also include every fighter in the five showcase battles (docs/PRODUCT_SPEC.md section 9): horse, duck, honey badger, king cobra, Roman legionary, gorilla, great white shark, saltwater crocodile, grizzly bear, gray wolf.
 2. For each StatName, explain in plain English what it means, its unit, where it usually appears in Wikipedia/Wikidata or the trait datasets, and what we do when it's missing (category default). Separate the seven physical stats (sourced or estimated) from the three behavioral stats (aggression_0_1, group_tactics_0_1, armor_0_1), which no source measures: write a rubric for each with 5 levels and one-line descriptions plus example animals (e.g. aggression 1 = flees from almost everything, 5 = attacks animals larger than itself), so every "assumption" value cites a rubric level.
 3. The source policy, starting from the recommended datasets in docs/DECISIONS.md (D-20): Wikipedia Structured Contents (wikimedia/structured-wikipedia on Hugging Face) as the main text source, FineWiki as backup, Wikidata for referenced numbers, PanTHERIA and AnimalTraits for body mass and size, and optionally the TreeOfLife taxonomy metadata for name normalization. For each: what we take, license, and how we attribute. Not allowed: forums, fan wikis, AI-generated pages, and any dataset whose card says values were AI-generated or unsourced.
-4. A short "variants" rule: what default we pick when a user says just "bear" or "shark".
+4. A short "variants" rule: what default we pick when a user says just "bear", "shark", "wolf", or "eagle".
 Show me the draft, I'll edit it, then commit.
 ```
 
 **Acceptance criteria**
-- [ ] 25 seed fighters with slugs, variants, categories, habitats, article titles
-- [ ] Every `StatName` explained with unit, typical source, and fallback
-- [ ] Source policy with licenses named
-- [ ] Mike approves the list (it shapes the benchmark and demo)
+- [ ] `docs/research.md` lists 25 seed fighters, each with slug, display name, default variant, category, habitat, and article title; the list includes the 13 named in step 1 and all 10 fighters in the five showcase battles (PRODUCT_SPEC §9)
+- [ ] Each of the 7 physical stats has its meaning, unit, typical source, and fallback; each of the 3 behavioral stats has a 5-level rubric with a one-line description and an example animal per level
+- [ ] The source-policy table lists every dataset from DECISIONS D-20 with what we take, its license, and how we attribute it, plus the not-allowed list
+- [ ] The default-variant rule covers at least "bear", "shark", "wolf", and "eagle"
+- [ ] Mike approves in review
 
 ---
 
@@ -53,16 +56,18 @@ Task G02 from docs/plan/lane-3-gunnar.md. Build backend/app/research/ingest.py a
 3. Chunk text (~800 characters, 100 overlap, keep section headings as chunk metadata), embed with the Embedder provider (port 9002) in batches, and store in SQLite: documents, chunks, and a sqlite-vec virtual table chunks_vec. Add the migration file in backend/app/db/migrations/.
 4. Pull structured facts into a facts table with source, field, value, unit, and reference: Wikidata (mass, length, speed where present, with property IDs), PanTHERIA (adult body mass, head-body length) and AnimalTraits (body mass) matched by scientific name. Download the trait files once into data/kb/ by script; they are high-confidence sources for G04. Ask me before adding the datasets library.
 5. Live adapters for DocParser and Embedder in backend/app/providers/live/ following docs/providers.md.
-6. The script is idempotent (re-running skips unchanged docs) and prints a summary table: fighters, documents, chunks, facts, failures.
+6. The script is idempotent (re-running skips unchanged docs) and prints a summary table: fighters, documents, parsed (HTML documents sent through DocParser), chunks, facts, failures.
 7. Tests on mocks: chunking, idempotency, a fighter whose article is missing (logged, not fatal).
 Run it live for the 25 seed fighters and paste the summary in the PR. Do not commit anything under data/kb/.
 ```
 
 **Acceptance criteria**
-- [ ] `uv run python -m scripts.ingest_seed` builds the index for all seed fighters
-- [ ] Re-running is fast and changes nothing
-- [ ] Wikidata facts stored with property IDs and references
-- [ ] Nothing under `data/kb/` or `data/app.db` committed
+- [ ] `uv run python -m scripts.ingest_seed` completes live for all 25 seed fighters; the summary table (fighters, documents, parsed, chunks, facts, failures) is pasted in the PR
+- [ ] Every fetched HTML article went through the DocParser endpoint (parsed = HTML documents in the summary)
+- [ ] At least one source is loaded through Hugging Face (Dataset Viewer lookup or the team dataset), and `docs/research.md` says which
+- [ ] A second run finishes in under a minute and changes nothing (row counts identical)
+- [ ] Every facts-table row has source, property ID or field name, unit, and reference
+- [ ] After ingest, `git status` shows nothing under `data/kb/` or `data/app.db`; mock tests cover chunking, idempotency, and a missing article
 
 ---
 
@@ -82,10 +87,10 @@ Task G03 from docs/plan/lane-3-gunnar.md. Build backend/app/research/retrieve.py
 ```
 
 **Acceptance criteria**
-- [ ] `evidence_for` returns ranked passages with URL + exact text
-- [ ] hit@5 ≥ 80% on the 15 live cases (result in the PR)
-- [ ] Reranker outage falls back gracefully
-- [ ] On-demand ingestion works for one non-seed fighter
+- [ ] `evidence_for(fighter_id, stat)` returns at most 5 passages, each with document title, URL, and exact text (test)
+- [ ] Live hit@5 is at least 80% on the 15 cases in `retrieval_cases.yaml` (result pasted in the PR)
+- [ ] With the reranker failing, results fall back to vector order and a note is logged (test)
+- [ ] On-demand ingestion of one non-seed fighter finishes within 30 s live; a failure returns no evidence instead of an error (test)
 
 ---
 
@@ -103,36 +108,44 @@ Task G04 from docs/plan/lane-3-gunnar.md. Build backend/app/research/statsheet.p
    c. Structured Decisions extraction from evidence_for(...) passages (prompt backend/prompts/stat_extract.md): the model must return value, unit, and the exact quote; code converts units (research/units.py) and accepts the value only if the number appears in the quote and the quote appears in the passage;
    d. derived by code from other stats (e.g. size from mass), documented in the note;
    e. category default from research/defaults.py (is_estimate=True, confidence low).
+   The three behavioral stats (aggression_0_1, group_tactics_0_1, armor_0_1) are never extracted: use the hand-verified seed value if there is one, else method "assumption" at the category's rubric level from docs/research.md (defaults.py), with the level in note.
+   Fill low/high on every value per ARCHITECTURE section 5 "Ranges": the source's range if it gives one, else ±10% / ±25% / ±50% for high / medium / low confidence.
 2. Live StructuredLLM adapter in providers/live/structured.py per docs/providers.md.
 3. Cache sheets in the stat_sheets table keyed by fighter_id + sheet_hash; GET /api/fighters?q= and GET /api/fighters/{fighter_id}.
 4. Sanity bounds per stat (e.g. mass 0.000001–100,000 kg); out-of-bounds values are rejected and logged.
-5. Tests on mocks: each preference level, a rejected quote mismatch, unit conversion (lb, km/h, ft), and a fighter with zero evidence (all estimates).
+5. Tests on mocks: each preference level, a rejected quote mismatch, unit conversion (lb, km/h, ft), and a fighter with zero evidence (all estimates and assumptions), ranges filled on every value, behavioral stats always "assumption".
 ```
 
 **Acceptance criteria**
-- [ ] Every value has a source + quote, or is labeled an estimate by code
-- [ ] No model-produced number is accepted without a verified quote
-- [ ] Fighter API returns cached sheets; orchestrator stub can be swapped for the real function
+- [ ] One test per preference level shows the chosen value follows the order hand-verified → Wikidata → extracted → derived → category default
+- [ ] An extracted value whose number isn't in its quote, or whose quote isn't in the passage, is rejected and falls back (test); no model-produced number is accepted without a verified quote
+- [ ] Unit-conversion tests pass for lb→kg, km/h→m/s, and ft→m
+- [ ] A value outside its sanity bounds is rejected and logged (test)
+- [ ] Every `StatValue` has `low`/`high` per ARCHITECTURE §5 "Ranges"; the 3 behavioral stats are `assumption` with a rubric level in `note` (tests)
+- [ ] A fighter with zero evidence gets a valid sheet of estimates and assumptions (test)
+- [ ] `GET /api/fighters?q=` and `GET /api/fighters/{id}` return cached sheets; A05's research stub is replaced by the real function
 
 ---
 
 ## G05 · Hand-verified seed stat sheets · M (2)
 
 **Goal:** Fifteen gold-standard stat sheets the demo, the benchmark, and Mike's AI evaluation (M09) can trust. Mostly careful reading, little code.
-**Order and timing:** the five showcase fighters first (by Sat Nov 14, before your research pipeline exists, so these answers are independent of it), then the other ten by Wed Nov 18.
+**Order and timing:** the 15 sheets are the 10 fighters in the five showcase battles (PRODUCT_SPEC §9) plus 5 more seed fighters. First five by Sat Nov 14 — horse, duck, grizzly bear, gray wolf, honey badger (showcase battles 1 and 2 complete, before your research pipeline exists, so these answers are independent of it); the other ten by Wed Nov 18.
 **Read first:** `docs/research.md`; ARCHITECTURE §5 (`StatSheet`).
 
 **Prompt for Claude Code:**
 ```text
-Task G05 from docs/plan/lane-3-gunnar.md. Help me create hand-verified stat sheets for the first 15 seed fighters in docs/research.md, as data/seed/fighters/<fighter_id>.json, valid against the StatSheet model.
-Start with the five showcase fighters (docs/PRODUCT_SPEC.md section 9), then the rest. For each fighter, work one physical stat at a time (mass, size, speed, attack force, attack rate, reach, endurance): open the source (Wikipedia, Wikidata, a trait dataset, or the paper it cites), show me the exact sentence and the number, convert units, and wait for me to confirm before writing it. Use method "hand_verified" with the real URL and quote, and a low/high range if the source gives one. If no reliable source exists, use the category default with is_estimate=true and explain why in note. For the three behavioral stats, use method "assumption" with the rubric level from docs/research.md in note — never "hand_verified".
-Add a test that every file validates and that no hand_verified value lacks a source. At the end, show me a table of fighters x stats with H (hand-verified) or E (estimate).
+Task G05 from docs/plan/lane-3-gunnar.md. Help me create hand-verified stat sheets for 15 seed fighters, as data/seed/fighters/<fighter_id>.json, valid against the StatSheet model: the 10 fighters in the five showcase battles (docs/PRODUCT_SPEC.md section 9) plus 5 more from docs/research.md that I choose.
+Order: horse, duck, grizzly bear, gray wolf, honey badger first (due Sat Nov 14), then king cobra, Roman legionary, gorilla, great white shark, saltwater crocodile, then my 5. For each fighter, work one physical stat at a time (mass, size, speed, attack force, attack rate, reach, endurance): open the source (Wikipedia, Wikidata, a trait dataset, or the paper it cites), show me the exact sentence and the number, convert units, and wait for me to confirm before writing it. Use method "hand_verified" with the real URL and quote, and a low/high range if the source gives one. If no reliable source exists, use the category default with is_estimate=true and explain why in note. For the three behavioral stats, use method "assumption" with the rubric level from docs/research.md in note — never "hand_verified".
+Add a test that every file validates and that no hand_verified value lacks a source. At the end, show me a table of fighters x stats with H (hand-verified), E (estimate), or A (assumption).
 ```
 
 **Acceptance criteria**
-- [ ] Five showcase sheets merged by Nov 14; all 15 by Nov 18; all validate
-- [ ] Every hand_verified value has URL + quote; behavioral stats are "assumption" with a rubric level
-- [ ] At most 2 of the 7 physical stats are estimates per fighter; coverage table in the PR
+- [ ] Sheets for horse, duck, grizzly bear, gray wolf, and honey badger merged by Sat Nov 14; all 15 (the 10 showcase-battle fighters plus 5 more seed fighters) by Wed Nov 18; all validate against `StatSheet`
+- [ ] Every `hand_verified` value has a working URL and an exact quote that contains the number
+- [ ] The 3 behavioral stats use `assumption` with a rubric level in `note`; none are `hand_verified`
+- [ ] No fighter has more than 2 of its 7 physical stats as estimates; a coverage table (fighters × stats, marked H / E / A) is in each PR
+- [ ] A test fails if any `hand_verified` value lacks a source or quote
 
 ---
 
@@ -143,13 +156,15 @@ Add a test that every file validates and that no hand_verified value lacks a sou
 **Prompt for Claude Code:**
 ```text
 Task G06 from docs/plan/lane-3-gunnar.md. Build backend/app/research/trace.py and a test.
-check_battle(record: BattleRecord) -> TraceReport: for every StatValue in every stat sheet, verify: non-estimates have a source with URL and quote; extracted quotes still appear in the stored document text; estimates have method category_default or derived. Also scan all Script lines for numbers not present in the stat sheets or result (reuse A06's guard if it has landed).
-Add backend/scripts/trace_report.py that runs the check on every stored battle and prints a summary; the benchmark (F07) calls it. Tests on fixtures: a clean battle passes, a tampered quote fails.
+check_battle(record: BattleRecord) -> TraceReport: for every StatValue in every stat sheet, verify: non-estimates have a source with URL and quote; extracted quotes still appear in the stored document text; estimates have method category_default or assumption (assumption only on the three behavioral stats); derived values name their formula in note. Also scan all Script lines for numbers not present in the stat sheets or result (reuse A06's guard if it has landed).
+Add backend/scripts/trace_report.py that runs the check on every stored battle and prints a summary; the benchmark (F07) calls it. Tests on fixtures: a clean battle passes ("0 issues"); each of these fails with a clear message: a non-estimate missing its URL or quote, a tampered quote, an estimate with the wrong method, a script with an invented number.
 ```
 
 **Acceptance criteria**
-- [ ] Clean fixture passes; tampered fixture fails with a clear message
-- [ ] Report reachable from the benchmark runner
+- [ ] One test each shows `check_battle` flags: a non-estimate without URL or quote; an extracted quote no longer present in the stored document; an estimate or assumption with the wrong method; a script number not present in the inputs
+- [ ] The clean fixture battle passes with a "0 issues" report
+- [ ] `trace_report.py` runs on all stored battles and is called by F07's runner
+- [ ] The Hermes comparison (time taken, what worked, what didn't, screenshots) is recorded in `docs/build-log.md`
 
 ---
 
@@ -168,9 +183,10 @@ Show me the draft before committing.
 ```
 
 **Acceptance criteria**
-- [ ] 30 entries, each with a reason or citation
-- [ ] Pass rules written down before we run the simulator against it
-- [ ] 10 matchups sealed in `data/benchmark/heldout.yaml` (held out from tuning)
+- [ ] `matchups.yaml` + `heldout.yaml` hold 30 entries: 15 obvious, 10 documented, 5 count; each has expected winner, confidence, and a citation URL or a one-line "obvious" reason
+- [ ] `heldout.yaml` has 10 entries mixing all three groups and is committed before F07 runs anything; `docs/benchmark.md` says held-out results are never used to change constants
+- [ ] `docs/benchmark.md` states the pass rules (favorite correct; high-confidence favorite ≥ 0.7; fair-fight count within the expected range) and known weaknesses
+- [ ] Mike approves in review
 
 ---
 
@@ -192,7 +208,9 @@ Mike repeats step 4 on his Mac during review.
 ```
 
 **Acceptance criteria**
-- [ ] `data/showcase/` committed, under 20 MB, five battles
-- [ ] A fresh clone + `npm start` shows them at http://localhost:8000 (Windows: Gunnar, Mac: Mike)
-- [ ] Mock mode with an empty `.env` still opens the app
-- [ ] README "For the instructor" steps corrected from the fresh-clone run
+- [ ] `data/showcase/` is committed with the five showcase battles, under 20 MB in total
+- [ ] At startup the backend imports them into an empty database and skips the import when battles exist; an export → import round trip is identical (tests)
+- [ ] `GET /api/battles?showcase=true` returns the five
+- [ ] A fresh clone that follows README "For the instructor" exactly shows the showcase battles playing at http://localhost:8000 — on Windows (Gunnar) and Mac (Mike, in review)
+- [ ] With an empty `.env` in mock mode the app opens; in live mode with an empty knowledge base, startup prints the `npm run ingest` instruction
+- [ ] Every unclear README step found during the fresh-clone run is fixed in the same PR
