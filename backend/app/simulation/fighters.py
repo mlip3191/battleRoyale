@@ -56,12 +56,12 @@ def sample_template(sheet: StatSheet, count: int, rng: random.Random) -> Templat
         high = stat.value if stat.high is None else stat.high
         return rng.uniform(low, high) if high > low else stat.value
 
-    mass = max(draw(StatName.MASS), 1e-6)
+    mass = max(draw(StatName.MASS), c.MIN_MASS_KG)
     force = max(draw(StatName.ATTACK_FORCE), 0.0)
     weapon = next((w for w in sheet.weapons if w in _WEAPON_WORD), None)
     return Template(
         mass_kg=mass,
-        size_m=max(draw(StatName.SIZE), 1e-3),
+        size_m=max(draw(StatName.SIZE), c.MIN_SIZE_M),
         speed_mps=max(draw(StatName.SPEED), 0.0),
         attack_force_n=force,
         attacks_per_s=max(draw(StatName.ATTACK_RATE), 0.0),

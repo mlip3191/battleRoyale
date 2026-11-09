@@ -42,7 +42,7 @@ def run_once(
     """
     events: list[FightEvent] = []
     # Leave room for the closing events so the log never passes the cap.
-    room = c.MAX_LOG_EVENTS - 2
+    room = c.MAX_LOG_EVENTS - c.CLOSING_EVENTS
 
     def log(event: FightEvent) -> None:
         if record_events and len(events) < room:
@@ -142,7 +142,7 @@ def _finish(
             )
             hint = "fight ends in a draw"
         else:
-            hint = f"side {winner} wins"
+            hint = "the fight is over"  # the narration step names the winner
         end_side = 0 if winner == DRAW else winner
         events.append(FightEvent(t=t, type=EventType.END, side=end_side, text_hint=hint))
     return RunOutcome(winner, survivors, t, events)
@@ -168,6 +168,8 @@ def run(
 ) -> SimulationResult:
     """Run the fight many times and summarize it."""
     runs = get_settings().sim_runs if runs is None else runs
+    if runs < 1:
+        raise ValueError("runs must be at least 1")
     seed = make_seed(matchup, stat_sheets[0].sheet_hash, stat_sheets[1].sheet_hash)
 
     outcomes: list[RunOutcome] = []

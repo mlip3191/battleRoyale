@@ -35,6 +35,11 @@ HIT_MIN = 0.05
 HIT_MAX = 0.95
 # Speed floor so a stationary fighter does not divide by zero.
 MIN_SPEED_MPS = 0.1
+# Smallest mass and size a sampled fighter can have (numerical safeguards).
+MIN_MASS_KG = 1e-6
+MIN_SIZE_M = 1e-3
+# Log slots kept free at the end for the closing events (a stalemate and the end).
+CLOSING_EVENTS = 2
 
 # z-score for a 95% Wilson confidence interval.
 WILSON_Z = 1.96

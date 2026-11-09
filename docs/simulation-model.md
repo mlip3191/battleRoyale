@@ -29,6 +29,8 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `HIT_SIZE_EXP` | 0.2 | Exponent on defender/attacker size ratio. | **Assumption** (bigger targets are easier to hit, weakly) |
 | `HIT_MIN`, `HIT_MAX` | 0.05, 0.95 | Clamp on hit chance. | **Assumption**: no fight is a certainty |
 | `MIN_SPEED_MPS` | 0.1 m/s | Floor on speed in ratios. | Numerical safeguard |
+| `MIN_MASS_KG`, `MIN_SIZE_M` | 1e-6 kg, 1e-3 m | Smallest sampled mass and size. | Numerical safeguards |
+| `CLOSING_EVENTS` | 2 | Log slots kept free for the closing events (a stalemate and the end). | Bookkeeping |
 | `WILSON_Z` | 1.96 | z for a 95% interval. | Standard statistics (Wilson 1927) |
 
 ## Why probabilities are shown as "range"

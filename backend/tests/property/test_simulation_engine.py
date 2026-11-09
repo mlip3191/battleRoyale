@@ -5,6 +5,8 @@ import json
 import time
 from pathlib import Path
 
+import pytest
+
 from app.models.matchup import FighterRequest, Matchup
 from app.models.simulation import EventType, SimulationResult
 from app.models.stats import StatName, StatSheet
@@ -74,7 +76,6 @@ def test_narrower_stat_ranges_give_a_narrower_interval():
     """A near-even fight (wolf vs a slightly weaker wolf): wide inputs blur who is favored."""
     wolf = load_sheet("stat-sheet-gray-wolf.json")
     weaker = with_stat(wolf, StatName.ATTACK_FORCE, 1250.0)
-    weaker = scaled_ranges(weaker, 1.0).model_copy()
     data = weaker.model_dump(mode="json")
     data["stats"]["attack_force_n"]["low"], data["stats"]["attack_force_n"]["high"] = 625.0, 1875.0
     weaker = StatSheet.model_validate(data)
@@ -125,6 +126,17 @@ def test_one_v_one_thousand_runs_finish_under_one_second():
     start = time.perf_counter()
     run(matchup(), [bear, wolf], runs=1000)
     assert time.perf_counter() - start < 1.0
+
+
+def test_zero_runs_is_a_clear_error():
+    with pytest.raises(ValueError, match="at least 1"):
+        run(matchup(), [load_sheet("stat-sheet.json")] * 2, runs=0)
+
+
+def test_closing_events_say_who_won_without_a_bare_side_number():
+    bear, wolf = load_sheet("stat-sheet.json"), load_sheet("stat-sheet-gray-wolf.json")
+    last = run(matchup(), [bear, wolf], runs=50).representative_log[-1]
+    assert last.type == EventType.END and not any(ch.isdigit() for ch in last.text_hint)
 
 
 def test_bigger_fighter_usually_wins():
