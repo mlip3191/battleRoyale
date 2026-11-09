@@ -102,6 +102,8 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 - **Extra heads:** attack rate times the number of heads (`DEFAULT_HEADS` if the lore gives none).
 - The deciding-factor check also removes all abilities and re-runs; if that moves the result most, the factor is `abilities` and the explainer says "according to legend".
 
+**Certain results are not simulated.** Before running a fight, the engine asks whether the result is certain: if even the most damage possible (every fighter attacking as often as it can, every attack hitting, no healing) cannot kill a single fighter or push the other side past its morale limit before the fight must end, nothing can change. The fight is then a draw at 600 s, or, if a machine runs out of operating time first, a loss for that machine's side at that moment. This is exact, not an estimate: a test compares the shortcut with the full simulation on thousands of random fights (0 differences). It keeps hopeless stalemates cheap (for example 150 feeble attackers against a mountain, or machines that never dent an object, which used to cost tens of seconds). Objects whose spines really hurt attackers are always simulated, and the replay of a representative fight is always simulated in full so the log shows real events.
+
 **Calibration warning.** With these assumed constants a dragon built from the fixture sheet (6 t) cannot dent a 60 t tank with 80% armor in ten minutes. Showcase battle #5 (dragon vs main battle tank) will need its constants revisited once G09's real dragon sheet and the F07 benchmark exist.
 
 ## Why probabilities are shown as "range"
