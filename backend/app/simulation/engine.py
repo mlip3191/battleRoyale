@@ -683,7 +683,10 @@ def run(
             matchup,
             stat_sheets,
             outcomes,
-            lambda m, sh, terrain, n: _simulate(m, sh, ks, seed, n, terrain),
+            lambda m, sh, terrain, n, scaled=True: _simulate(
+                m, sh, ks if scaled else (1.0, 1.0), seed, n, terrain
+            ),
+            ks,
         )
         factor, explainer = decision.factor, decision.explainer
     else:
