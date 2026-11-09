@@ -120,6 +120,43 @@ def _starts(sides: list[Template]) -> list[float]:
     return out
 
 
+def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] | None:
+    """(winner, end time) when the fight's result is certain without simulating it, else None.
+
+    The certainty is an exact upper bound, not an estimate: every fighter attacks at most once
+    per interval (plus its first strike), every attack hits, and healing is ignored. If even
+    that falls short of the damage needed to kill even one fighter or make the other side
+    retreat before the fight must end, nothing changes. The fight then ends when a machine runs
+    out of operating time (that side loses) or, if none does, in a draw at the time limit.
+    Objects whose spines really hurt their attackers can end a fight by other means, so they are
+    simulated.
+    """
+    if any(side.spiky and side.damage > 0 for side in sides):
+        return None  # spines that hurt can end a fight in ways the bound ignores
+    stops = [
+        side.endurance_s
+        if side.body == Body.MACHINE and side.endurance_s <= c.MAX_FIGHT_S
+        else math.inf
+        for side in sides
+    ]
+    if stops[0] == stops[1] != math.inf:
+        return None  # both machines stop together: leave it to the simulation
+    end = min(*stops, c.MAX_FIGHT_S)
+    for s in (0, 1):
+        me, foe = sides[s], sides[1 - s]
+        if not me.can_attack or starts[s] == math.inf:
+            continue
+        attacks = me.count * (me.attacks_per_s * max(0.0, end - starts[s]) + 1)
+        # Nothing changes if the most damage possible can neither kill even one fighter (all
+        # the hits could land on the same one) nor push the whole side past its morale limit.
+        limit = min(foe.max_hp, foe.morale * foe.max_hp * foe.count)
+        if attacks * damage_per_hit(me, foe) >= limit:
+            return None
+    if end >= c.MAX_FIGHT_S:
+        return DRAW, c.MAX_FIGHT_S
+    return (1 if stops[0] < stops[1] else 0), end
+
+
 def run_once(
     sides: list[Template],
     terrain: Terrain,
@@ -148,6 +185,16 @@ def run_once(
     if not any(sides[s].can_attack and starts[s] != math.inf for s in (0, 1)):
         alive = [sides[0].count, sides[1].count]
         return _outcome(alive, c.MAX_FIGHT_S, events, record_events)
+
+    sure = None if record_events else _foregone(sides, starts)
+    if sure is not None:
+        # A certain result: skip the (possibly enormous) simulation. The replay of a
+        # representative fight is still simulated in full, so the log shows real events.
+        winner, end = sure
+        alive = [sides[0].count, sides[1].count]
+        if winner != DRAW:
+            alive[1 - winner] = 0  # the machine that ran out of time is out of action
+        return _outcome(alive, end, events, record_events)
 
     for s in (0, 1):
         hint = "closes in" + (f", {notes[s]}" if notes[s] else "")

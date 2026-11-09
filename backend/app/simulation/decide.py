@@ -154,8 +154,8 @@ def decide(
         return Decision(shown, _explain_stalemate())  # most runs were draws: nobody "won"
     if size < c.MIN_EFFECT:
         if base_won >= 0.9:
-            return Decision(key, _explain_comfortable(sheets[fav].display_name))
-        return Decision(key, _explain_even())
+            return Decision(shown, _explain_comfortable(sheets[fav].display_name))
+        return Decision(shown, _explain_even())
     return Decision(shown, _explain(key, matchup, sheets, fav, signed >= 0))
 
 
