@@ -13,6 +13,7 @@ from app.config import Settings
 from app.providers import base, health
 from app.providers.live.chat import LiveChatLLM
 from app.providers.live.http import ProviderError
+from app.providers.live.structured import LiveStructuredLLM
 from app.providers.mock.text import MockChatLLM, MockStructuredLLM, input_hash
 from app.providers.registry import (
     MOCKS,
@@ -35,6 +36,13 @@ INTERFACES = {
     "tts": base.TTS,
     "music": base.MusicGen,
 }
+CHALLENGER: dict[str, base.DecisionQuestion] = {
+    "challenger": {
+        "type": "choice",
+        "instructions": "Which opponent gives the closest fight?",
+        "criteria": {"house_cat": "a house cat", "duck": "a duck"},
+    }
+}
 
 
 # Live-mode settings pointing at a decoy host, never the real .env.
@@ -44,6 +52,8 @@ def live_settings(**overrides: object) -> Settings:
         "course_api_key": DECOY_KEY,
         "chat_llm_url": f"http://{DECOY_HOST}:9001",
         "chat_llm_model": "decoy/chat-model",
+        "structured_llm_url": f"http://{DECOY_HOST}:9010",
+        "structured_llm_model": "decoy/decision-model",
     }
     return Settings(_env_file=None, **(values | overrides))
 
@@ -61,8 +71,18 @@ async def test_mocks_return_the_right_types_and_are_deterministic() -> None:
     assert reply == await chat.complete(messages, prompt_name="example")
     assert isinstance(reply, str) and reply
 
-    extracted = await get_provider("structured").extract("toaster", {}, prompt_name="example")
-    assert extracted["quote"]
+    picked = await get_provider("structured").decide(
+        {"winner": "gray wolf"}, CHALLENGER, prompt_name="no-fixture"
+    )
+    assert picked == {
+        "challenger": {
+            "choice": "house_cat",
+            "probabilities": {"house_cat": 0.5, "duck": 0.5},
+            "confidence": 0.5,
+        }
+    }
+    fixture = await get_provider("structured").decide({}, CHALLENGER, prompt_name="example")
+    assert fixture["challenger"]["choice"] == "grizzly_bear"
 
     vectors = await get_provider("embedder").embed(["wolf", "wolf", "toaster"])
     assert vectors[0] == vectors[1] != vectors[2]
@@ -103,8 +123,10 @@ async def test_canned_replies_are_keyed_by_prompt_name_and_input_hash(tmp_path: 
     assert await chat.complete(other, prompt_name="pick") == "fallback"
     with pytest.raises(LookupError, match="no-such-prompt"):
         await chat.complete(messages, prompt_name="no-such-prompt")
+    (tmp_path / "structured").mkdir()
+    (tmp_path / "structured" / "pick.json").write_text("{}", encoding="utf-8")
     with pytest.raises(LookupError):
-        await MockStructuredLLM(fixture_dir=tmp_path).extract("x", {}, prompt_name="pick")
+        await MockStructuredLLM(fixture_dir=tmp_path).decide({}, CHALLENGER, prompt_name="pick")
 
 
 def test_registry_returns_mocks_under_test_and_rejects_unknown_names() -> None:
@@ -181,6 +203,83 @@ async def test_live_chat_retries_twice_then_fails_without_leaking_host_or_key(
     with pytest.raises(ProviderError) as error:
         await chat_with(httpx.MockTransport(down)).complete(messages, prompt_name="x")
     assert "HTTP 503" in str(error.value)
+    assert DECOY_HOST not in str(error.value) and DECOY_KEY not in str(error.value)
+
+
+def test_live_mode_builds_the_structured_adapter() -> None:
+    assert isinstance(get_provider("structured", live_settings()), LiveStructuredLLM)
+
+
+# A LiveStructuredLLM whose HTTP calls go to handler instead of the network.
+def structured_with(handler: httpx.MockTransport) -> LiveStructuredLLM:
+    settings = live_settings()
+    client = httpx.AsyncClient(transport=handler)
+    return LiveStructuredLLM(service_config("structured", settings), settings, client=client)
+
+
+async def test_live_structured_sends_the_decision_request_and_keeps_only_the_answer() -> None:
+    seen: list[httpx.Request] = []
+    answer = {
+        "type": "choice",
+        "probabilities": {"house_cat": 0.3, "duck": 0.7},
+        "confidence": 0.7,
+        "choice": "duck",
+        "source": "local",
+        "decision": "duck",
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"answers": {"challenger": answer}, "model": "m"})
+
+    state = {"winner": "gray wolf"}
+    picked = await structured_with(httpx.MockTransport(handler)).decide(
+        state, CHALLENGER, prompt_name="challenger"
+    )
+    assert picked == {
+        "challenger": {
+            "choice": "duck",
+            "probabilities": {"house_cat": 0.3, "duck": 0.7},
+            "confidence": 0.7,
+        }
+    }
+    request = seen[0]
+    assert request.url.path == "/v1/decisions"
+    assert request.headers["authorization"] == f"Bearer {DECOY_KEY}"
+    assert json.loads(request.content) == {
+        "title": "challenger",
+        "state": state,
+        "questions": CHALLENGER,
+    }
+
+
+@pytest.mark.parametrize(
+    "reply",
+    [
+        {"answers": {}},
+        {"answers": {"challenger": {"choice": "duck", "confidence": 0.5}}},
+        {
+            "answers": {
+                "challenger": {
+                    "choice": "toaster",
+                    "probabilities": {"house_cat": 0.5, "duck": 0.5},
+                    "confidence": 0.5,
+                }
+            }
+        },
+        {"error": "busy"},
+    ],
+)
+async def test_live_structured_rejects_bad_answers_without_leaking_host_or_key(
+    reply: dict[str, object],
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=reply)
+
+    with pytest.raises(ProviderError) as error:
+        await structured_with(httpx.MockTransport(handler)).decide(
+            {}, CHALLENGER, prompt_name="challenger"
+        )
     assert DECOY_HOST not in str(error.value) and DECOY_KEY not in str(error.value)
 
 
