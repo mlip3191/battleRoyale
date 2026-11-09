@@ -152,7 +152,7 @@ App software: Python 3.12 (FastAPI), React + Vite + TypeScript, Phaser 3, SQLite
 The deck and presentation are prepared outside this repo starting Nov 25; this section only makes sure the app is demo-ready. Everything shown should be pre-generated: on presentation day the whole class may be hitting the same course endpoints.
 
 
-1. Pre-generate five showcase battles (cached, so they play instantly): *100 duck-sized horses vs 1 horse-sized duck*, *grizzly vs 6 wolves (forest)*, *honey badger vs king cobra*, *Roman legionary vs gorilla*, *great white shark vs saltwater crocodile (shoreline)*.
+1. Pre-generate five showcase battles (cached, so they play instantly): *100 duck-sized horses vs 1 horse-sized duck*, *grizzly vs 6 wolves (forest)*, *honey badger vs king cobra*, *Roman legionary vs gorilla*, *a dragon vs a main battle tank (open field)* — the last one shows that legends and machines play by the same rules (D-40).
 2. One live battle chosen by the audience from the seed list.
 3. Show a source link and an "estimate" tag on screen; show the fair-fight line.
 4. Backup: a screen recording of the five showcase battles, in case the course endpoints are down or slow on demo day.

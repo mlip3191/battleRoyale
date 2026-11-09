@@ -41,7 +41,7 @@ The slide deck and presentation are prepared outside this repo, starting Nov 25 
 3. A08 generated sprites (placeholders already exist in D05)
 4. A07 voice (captions carry the narration)
 5. F07 benchmark reduced to the held-out set plus the 15 "obvious" matchups
-6. G05 hand-verified sheets reduced from 15 to the 10 showcase-battle fighters (M09's extraction check then uses 10)
+6. G05 hand-verified sheets reduced from 15 to the 11 the showcase battles need: 9 real showcase fighters plus the dragon's two analogs (M09's extraction check then uses 11)
 
 Never cut: M09's evaluation, D09's user guide, D10's usability sessions, or the fresh-clone check in G08. They're what the course grades beyond "it runs."
 
@@ -70,7 +70,7 @@ graph LR
   F05 & G06 & G07-->F07
   G04-->G09
   F04 & F05-->F08
-  G09 & F08-->M09
+  G09 & F08-->M09 & G08
   D02-->D03 & D04 & D05
   D08-->D03
   D05-->D07
