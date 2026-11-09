@@ -84,3 +84,13 @@ DECIDING_RUNS = 200
 SURVIVOR_WEIGHT = 0.5
 # If no factor moves the favorite's results by at least this much, the fight is "too close".
 MIN_EFFECT = 0.02
+
+# --- Fair-fight search (F06) ---
+
+# Runs per probe of the fair-fight search and per next-challenger duel.
+FAIR_RUNS = 200
+# A fight is "fair" when the varied side's win share is within this of 50%.
+FAIR_TOLERANCE = 0.05
+# Most probes one search may use, and the largest count it will try.
+FAIR_MAX_PROBES = 20
+FAIR_MAX_COUNT = 10_000
