@@ -19,7 +19,7 @@ The five showcase battles (PRODUCT_SPEC §9) run through the engine before the r
 
 | Battle | Verdict | Sensible? | Time |
 |---|---|---|---|
-| 100 duck-sized horses vs 1 horse-sized duck (open field) | Duck wins 100% (about 103 s) | Yes, but the explanation is wrong (finding 1) | 7.4 s |
+| 100 duck-sized horses vs 1 horse-sized duck (open field) | Duck wins 100% (about 103 s) | Yes; the explanation now credits the scaling (finding 1, fixed) | 7.4 s |
 | Grizzly vs 6 wolves (forest) | Grizzly 53% / wolves 47%, about 18 s | Yes: a close, believable fight. Fair fight is 6 wolves | 1.4 s |
 | Honey badger vs king cobra | Badger wins 100% in about 3 s | Overconfident: the cobra can't hurt it (finding 2) | 1.1 s |
 | Roman legionary vs gorilla (forest) | Gorilla 99.9% | Yes. A fair fight needs about 5 legionaries, a nice talking point | 0.6 s |
@@ -27,10 +27,9 @@ The five showcase battles (PRODUCT_SPEC §9) run through the engine before the r
 
 ## Findings
 
-### 1. The headline battle's explanation credits the wrong cause
-For the duck/horse battle the engine says "Attack rate decided it: Duck (2 attacks per second) against Horse (0.5 attacks per second)." The real reason is the size scaling (a duck grown to 500 kg against horses shrunk to 1.2 kg). The deciding-factor check equalizes the *sheet* stats but leaves the scaling in place, so size never shows up as a factor, and whichever raw stat is next biggest wins.
-- **Proposed fix (small):** add a "scaling" variant to the check (rerun with the scale factors removed). If it wins, report `mass_kg` with a sentence that quotes the sheets and the reference ("Size decided it: the duck scaled to horse size, 500 kg, against horses scaled to duck size, 1.2 kg each"). Every number is still an input.
-- This is the demo's first battle, so it is worth doing before the demo.
+### 1. The headline battle's explanation credited the wrong cause (fixed)
+The first run of this dry run said "Attack rate decided it: Duck (2 attacks per second) against Horse (0.5 attacks per second)." The real reason is the size scaling (a duck grown to 500 kg against horses shrunk to 1.2 kg). The deciding-factor check equalized the *sheet* stats but left the scaling in place, so size never showed up as a factor.
+- **Fix (merged into this stack):** the check now also re-runs the fight without the scale factors. When that moves the result most, it reports size and quotes the sheets and the references. The battle now reads: "Size decided it: after scaling, Duck (1.2 kg normally, scaled to horse size) against 100 Horse (500 kg normally, scaled to duck size)." Every number is still an input.
 
 ### 2. Venom is not modeled, so the cobra is toothless
 A sheet can list `venom`, but the engine has no venom mechanic (F08 covers bodies and legendary abilities, not venom). A real king cobra can kill; here a 100 N bite does almost nothing against a 10 kg badger with 0.5 armor, so the badger wins 100% and the log is only 11 events.
