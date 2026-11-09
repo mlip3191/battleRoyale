@@ -103,7 +103,7 @@ battleRoyale/
     │
     ▼
 [2 Research] per fighter: cache hit? ─yes─► StatSheet
-    │                      └no─► retrieve → rerank → extract (Structured) → verify → StatSheet
+    │                      └no─► retrieve → rerank → extract (chat, JSON schema) → verify → StatSheet
     ▼
 [3 Simulate] 1,000 seeded runs → SimulationResult + representative EventLog
     │
@@ -283,11 +283,11 @@ class BattleRecord(BaseModel):
 
 ### The number rule, made precise
 
-The proposal says "no language model sets a number." Because the Structured Decisions model reads the evidence, the rule is:
+The proposal says "no language model sets a number." Because the chat model reads the evidence and extracts from it (D-41), the rule is:
 
 | Method | Who produces the value | Allowed when |
 |---|---|---|
-| `extracted` | Structured Decisions model copies a number **and** the exact quote it came from | Code verifies the number (after unit conversion) appears in `source.quote`, and the quote appears in the retrieved passage. Otherwise the value is rejected. |
+| `extracted` | Chat model (JSON-schema mode) copies a number **and** the exact quote it came from | Code verifies the number (after unit conversion) appears in `source.quote`, and the quote appears in the retrieved passage. Otherwise the value is rejected. |
 | `derived` | Code (e.g. size from mass via allometric formula) | An input stat exists; note says which formula |
 | `category_default` | Code, from `backend/app/research/defaults.py` | No evidence found. `is_estimate=True`, confidence `low` |
 | `hand_verified` | A teammate, in `data/seed/fighters/*.json` | Seed fighters only; source required |
@@ -323,7 +323,7 @@ One adapter per course endpoint, each behind an interface:
 | Interface | Course endpoint | Port | Mock behavior |
 |---|---|---|---|
 | `ChatLLM.complete(messages, json_schema=None)` | Chat/Classification LLM | 9001 | canned responses keyed by prompt name + input hash, from `tests/fixtures/providers/` |
-| `StructuredLLM.extract(prompt, schema)` | Structured Decisions | `.env` | returns fixture stat extractions with quotes |
+| `StructuredLLM.decide(state, questions)` | Structured Decisions | 9010 | fixed choice per question with fixed probabilities (D-41: decisions only; stat extraction uses `ChatLLM` with `json_schema`) |
 | `Embedder.embed(texts)` | Text Embeddings | 9002 | deterministic hash-based vectors (fixed dimension from config) |
 | `Reranker.rerank(query, passages)` | Multimodal Reranking | `.env` | keyword-overlap score |
 | `DocParser.parse(bytes, mime)` | Document Parsing | 9005 | returns plain text |
