@@ -26,14 +26,14 @@
 **Prompt for Claude Code:**
 ```text
 Task D01 from docs/plan/lane-5-dillon.md.
-1. Write docs/onboarding.md for non-coders: accounts and access (GitHub with 2FA, invite accepted, Claude plan with Claude Code), installs with download links and how to check each version (Git — Git for Windows on Windows; GitHub CLI then gh auth login; Claude Code; VS Code; Node 26 via fnm or nvm-windows; uv; gitleaks via Homebrew or winget), first run (clone, setup check, copy .env.example to .env, fill every [required] line with the course endpoint values everyone has, run node scripts/check-env.mjs until it passes, npm run setup, npm run dev), the practice loop (pick issue, branch, change, PR, review someone else), and a cheat sheet of Claude Code requests (start work on issue #n, /new-issue, "what can I review?", pull latest main, undo your last change and explain, explain this in plain English).
+1. Write docs/onboarding.md for non-coders: accounts and access (GitHub with 2FA, invite accepted, Claude plan with Claude Code), installs with download links and how to check each version (Git — Git for Windows on Windows; GitHub CLI then gh auth login; Claude Code; VS Code; Node 26 via fnm or nvm-windows; uv; gitleaks via Homebrew or winget), first run (clone, setup check, run npm run env:setup in your own terminal and enter the course host and API key — never in a chat — then npm run env:check until it passes, npm run setup, npm run dev), the practice loop (pick issue, branch, change, PR, review someone else), and a cheat sheet of Claude Code requests (start work on issue #n, /new-issue, "what can I review?", pull latest main, undo your last change and explain, explain this in plain English).
 2. Create scripts/setup-check.mjs (Node, so it runs the same on Windows and Mac) and a root npm script "doctor" that runs it; it reuses scripts/check-env.mjs for the .env part. It checks: git, gh logged in, claude installed, node version matches .nvmrc, uv installed, gitleaks installed (prints the install command for the user's OS if not), git user.name/email set, core.hooksPath is .githooks (sets it if not, and says so), .env passes scripts/check-env.mjs (never shows values), and that git ls-files --cached --ignored --exclude-standard prints nothing. Output is a checklist with a plain-English fix for each failure. Add a test that runs the .env check on a decoy file in a temporary folder containing a marker value and asserts the marker never appears in the output (never use the real .env).
 3. Add "If a teammate is new, point them to docs/onboarding.md." to CLAUDE.md.
 Run npm run doctor on your machine and paste the output (no secrets) in the PR. Mike runs it on his Mac during review (the rest of the team is on Windows).
 ```
 
 **Acceptance criteria**
-- [ ] `docs/onboarding.md` covers accounts, every install with a version check, first run (including `.env` and `node scripts/check-env.mjs`), the practice loop, and the cheat sheet
+- [ ] `docs/onboarding.md` covers accounts, every install with a version check, first run (including `npm run env:setup` and `npm run env:check`), the practice loop, and the cheat sheet
 - [ ] `npm run doctor` checks every item in step 2 and prints a plain-English fix for each failure; it passes on Dillon's Windows machine and Mike's Mac (output pasted, no secrets)
 - [ ] A test runs the doctor's `.env` check on a decoy file in a temporary folder containing a marker value; the marker never appears in the output
 - [ ] The CLAUDE.md onboarding line is added
@@ -194,7 +194,7 @@ Task D08 from docs/plan/lane-5-dillon.md. This one is backend (Python) work; it 
 ```text
 Task D09 from docs/plan/lane-5-dillon.md. Write docs/user-guide.md for someone who has never seen the app or a terminal:
 1. What the app does in three sentences, and what "science-backed" means here (sourced stats, estimates labeled, a simulation decides).
-2. How to run it on Windows and Mac: install Node 26 and uv, copy .env.example to .env and fill it in (or leave PROVIDER_MODE=mock to try it without endpoints), npm run setup, npm start, open http://localhost:8000. Screenshots of each step.
+2. How to run it on Windows and Mac: install Node 26 and uv, run npm run env:setup and enter the course host and API key (or skip it and leave PROVIDER_MODE=mock to try it without endpoints), npm run setup, npm start, open http://localhost:8000. Screenshots of each step.
 3. How to use it: typing a matchup, answering the clarifying question, choosing terrain, watching the broadcast, reading the results page (win % and the range, deciding factor, fair fight, next challenger, source links, the "estimate" and "assumption" tags), and the five showcase battles.
 4. What it won't do (real people, more than two sides, etc.) and why.
 5. Troubleshooting: the five most likely problems and their fixes (from the bug bash and usability sessions).

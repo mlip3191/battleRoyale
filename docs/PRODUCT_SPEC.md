@@ -64,7 +64,7 @@ The chat LLM (port 9001) parses free text into a structured matchup: entity, cou
 - **Done when:** 25+ test phrasings parse correctly; 50-case safety set passes.
 
 ### Step 2 — Research, RAG (Gunnar: G01–G06)
-Reference text from Wikipedia, Wikidata, and Hugging Face datasets is parsed (port 9005), embedded (port 9002), and stored in a local vector index. At fight time, the app retrieves and reranks the best passages for each fighter. The Structured Decisions model fills a fixed stat schema using only that evidence, recording a source and confidence for each value. A seed set of popular fighters is verified by hand.
+Reference text from Wikipedia, Wikidata, and Hugging Face datasets is parsed (port 9005), embedded (port 9002), and stored in a local vector index. At fight time, the app retrieves and reranks the best passages for each fighter. The chat model fills a fixed stat schema using only that evidence, recording a source and confidence for each value. A seed set of popular fighters is verified by hand.
 - **[added] The number rule:** the model may only *copy* a number together with the exact quote it came from; code checks the number is in the quote and the quote is in the source. Estimates are made by code from category defaults, never by the model. (ARCHITECTURE §5.)
 - **[added]** Fixed stat schema: seven physical stats (mass, size, top speed, attack force, attack rate, reach, endurance) that are sourced or labeled estimates, and three behavioral stats (aggression, group tactics, armor) that no source measures, so they're labeled **assumptions** set from a written rubric. Every stat carries a plausible range.
 - **[added]** 30 seed fighters (25 animals and archetypes, 5 objects and machines); 15 hand-verified sheets; 12 mythical creatures in a lore table with quoted sources.
@@ -94,7 +94,7 @@ Statistics come straight from the simulation: win rate, survivors, duration, and
 - **[added]** If no count up to 10,000 reaches ~50/50, say so ("No fair fight within 10,000 ants").
 
 ### Step 8 — Next challenger (Adam A05 + Felipe F06)
-The Structured Decisions model proposes candidate opponents for the winner (from seed and cached fighters); the simulation quick-tests each and suggests the closest matchup.
+The Structured Decisions model rates candidate opponents for the winner (a choice question over seed and cached fighters); the simulation quick-tests each and suggests the closest matchup.
 
 ## 5. Tone guide [added]
 
@@ -133,8 +133,8 @@ All GenAI calls use course-provided endpoints, so no paid API keys are needed fo
 
 | Service | Port | Used for | Status |
 |---|---|---|---|
-| Chat/Classification LLM | 9001 | parsing, moderation, scripts, challenger names | confirmed in proposal |
-| Structured Decisions | in `.env` | schema-validated stat extraction | ports and keys in each person's `.env` (D-03) |
+| Chat/Classification LLM | 9001 | parsing, moderation, scripts, stat extraction (D-41) | confirmed in proposal |
+| Structured Decisions | 9010 | next-challenger pick (choice questions with probabilities; D-41) | ports and keys in each person's `.env` (D-03) |
 | Document Parsing | 9005 | HTML/PDF → text | confirmed |
 | Text Embeddings | 9002 | vector index | confirmed |
 | Multimodal Reranking | in `.env` | passage ranking | |
