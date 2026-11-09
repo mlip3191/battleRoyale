@@ -83,6 +83,11 @@ async def test_mocks_return_the_right_types_and_are_deterministic() -> None:
     }
     fixture = await get_provider("structured").decide({}, CHALLENGER, prompt_name="example")
     assert fixture["challenger"]["choice"] == "grizzly_bear"
+    empty: dict[str, base.DecisionQuestion] = {
+        "q": {"type": "choice", "instructions": "Pick one.", "criteria": {}}
+    }
+    with pytest.raises(ValueError, match="no options"):
+        await get_provider("structured").decide({}, empty, prompt_name="no-fixture")
 
     vectors = await get_provider("embedder").embed(["wolf", "wolf", "toaster"])
     assert vectors[0] == vectors[1] != vectors[2]
@@ -262,6 +267,15 @@ async def test_live_structured_sends_the_decision_request_and_keeps_only_the_ans
             "answers": {
                 "challenger": {
                     "choice": "toaster",
+                    "probabilities": {"house_cat": 0.5, "duck": 0.5},
+                    "confidence": 0.5,
+                }
+            }
+        },
+        {
+            "answers": {
+                "challenger": {
+                    "choice": ["duck"],
                     "probabilities": {"house_cat": 0.5, "duck": 0.5},
                     "confidence": 0.5,
                 }

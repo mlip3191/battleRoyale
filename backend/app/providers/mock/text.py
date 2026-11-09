@@ -80,6 +80,8 @@ class MockStructuredLLM:
 # The default mock answer: the first option, with every option equally likely.
 def first_option(question: DecisionQuestion) -> DecisionAnswer:
     options = list(question["criteria"])
+    if not options:
+        raise ValueError("Decision question has no options in its criteria.")
     share = 1 / len(options)
     return {
         "choice": options[0],

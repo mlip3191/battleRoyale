@@ -57,6 +57,6 @@ def read_answer(name: str, raw: Any, question: DecisionQuestion) -> DecisionAnsw
         confidence = float(raw["confidence"])
     except (KeyError, TypeError, ValueError) as error:
         raise ProviderError(f"Live 'structured' answer for '{name}' was incomplete.") from error
-    if choice not in options:
+    if not isinstance(choice, str) or choice not in options:
         raise ProviderError(f"Live 'structured' answer for '{name}' picked an unknown option.")
     return {"choice": choice, "probabilities": probabilities, "confidence": confidence}
