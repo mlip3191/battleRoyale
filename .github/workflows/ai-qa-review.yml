@@ -88,9 +88,11 @@ jobs:
             - Must fix, Needs PM, and Nit are exactly as the checklist defines them.
             - Never quote a secret's value; say where it is.
             - Post inline comments on the exact lines with a GitHub ```suggestion
-              block for each fix, then post the full report as one PR comment with
-              `gh pr comment`. Plain English for non-coders. End the report with:
-              "This review is advisory. A teammate's approval is what counts."
+              block for each fix.
+            - Don't post the report yourself: put the full report (markdown, plain
+              English for non-coders) in the `report` field of the structured
+              output, and the workflow posts it as one PR comment. End the report
+              with: "This review is advisory. A teammate's approval is what counts."
             - Never approve the PR.
 
             Finish with the structured verdict: ready_to_merge when there are
@@ -99,8 +101,8 @@ jobs:
           claude_args: >-
             --model sonnet
             --max-turns 30
-            --allowedTools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh issue view:*),Bash(gh pr comment:*),mcp__github_inline_comment__create_inline_comment"
-            --json-schema '{"type":"object","required":["verdict","must_fix_count","summary"],"properties":{"verdict":{"type":"string","enum":["ready_to_merge","merge_after_fixes","do_not_merge"]},"must_fix_count":{"type":"integer"},"summary":{"type":"string"}}}'
+            --allowedTools "Read,Grep,Glob,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr checks:*),Bash(gh issue view:*),mcp__github_inline_comment__create_inline_comment"
+            --json-schema '{"type":"object","required":["verdict","must_fix_count","summary","report"],"properties":{"report":{"type":"string"},"verdict":{"type":"string","enum":["ready_to_merge","merge_after_fixes","do_not_merge"]},"must_fix_count":{"type":"integer"},"summary":{"type":"string"}}}'
 
       - name: Record the verdict (advisory, never fails)
         if: always()
@@ -123,6 +125,19 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           if [ "$verdict" != "ready_to_merge" ]; then
             echo "::warning::QA bot verdict: $verdict ($count must-fix). Advisory only — fix what makes sense, then add the re-review label."
+          fi
+
+      # The workflow posts the report (not the bot), so posting never depends on the bot's
+      # shell commands getting past its tool permissions.
+      - name: Post the report as a PR comment
+        if: always() && steps.review.outputs.structured_output != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RESULT: ${{ steps.review.outputs.structured_output }}
+        run: |
+          echo "$RESULT" | jq -r '.report' > "$RUNNER_TEMP/qa-report.md"
+          if [ -s "$RUNNER_TEMP/qa-report.md" ]; then
+            gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body-file "$RUNNER_TEMP/qa-report.md" || echo "::warning::Couldn't post the QA report; it's in the job summary."
           fi
 
       - name: Remove the re-review label
