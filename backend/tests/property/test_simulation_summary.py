@@ -125,6 +125,25 @@ def test_a_size_reference_battle_credits_the_scaling_not_a_raw_stat():
     assert_only_input_numbers(result, matchup, sheets)
 
 
+def test_a_nearly_irrelevant_scaling_is_still_reported_as_a_valid_factor():
+    """Whatever wins the sensitivity check, the result must hold a displayable factor."""
+    from app.simulation.decide import decide
+    from app.simulation.engine import DRAW, RunOutcome
+
+    def outcomes(draws):
+        return [RunOutcome(DRAW if k < draws else 0, (1, 0), 10.0, []) for k in range(100)]
+
+    matchup = matchup_of(1, 1, ref_0="horse")
+    sheets = [duck(), horse()]
+
+    def simulate(m, sh, terrain, n, scaled=True):
+        return outcomes(0 if scaled else 1)  # only dropping the scaling changes anything, barely
+
+    decision = decide(matchup, sheets, outcomes(0), simulate, (2.0, 1.0))
+    assert decision.factor in set(StatName) | {"numbers", "terrain", "habitat", "abilities"}
+    assert decision.factor == StatName.MASS
+
+
 def test_a_battle_without_size_references_never_mentions_scaling():
     big = make_sheet("big", mass_kg=400, size_m=2.4)
     small = make_sheet("small", mass_kg=40, size_m=1.0)
