@@ -133,8 +133,8 @@ All GenAI calls use course-provided endpoints, so no paid API keys are needed fo
 
 | Service | Port | Used for | Status |
 |---|---|---|---|
-| Chat/Classification LLM | 9001 | parsing, moderation, scripts, challenger names | confirmed in proposal |
-| Structured Decisions | in `.env` | next-challenger pick (choice questions with probabilities; D-41) | ports and keys in each person's `.env` (D-03) |
+| Chat/Classification LLM | 9001 | parsing, moderation, scripts, stat extraction (D-41) | confirmed in proposal |
+| Structured Decisions | 9010 | next-challenger pick (choice questions with probabilities; D-41) | ports and keys in each person's `.env` (D-03) |
 | Document Parsing | 9005 | HTML/PDF → text | confirmed |
 | Text Embeddings | 9002 | vector index | confirmed |
 | Multimodal Reranking | in `.env` | passage ranking | |

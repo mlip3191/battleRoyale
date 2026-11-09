@@ -108,7 +108,7 @@ battleRoyale/
 [3 Simulate] 1,000 seeded runs → SimulationResult + representative EventLog
     │
     ├──► [7 Summary + Fair fight]  (code only)          ──┐
-    ├──► [8 Next challenger]  LLM proposes → sim tests ───┤  text results ready → UI shows verdict
+    ├──► [8 Next challenger]  LLM ranks    → sim tests ───┤  text results ready → UI shows verdict
     ├──► [4 Intro script] + [5 Play-by-play script] (LLM) ┤
     │          └──► [5 TTS audio] [5 Music] (parallel) ───┤  media fills in progressively
     └──► [6 Sprites + battlefield] (image endpoint) ──────┘
@@ -323,7 +323,7 @@ One adapter per course endpoint, each behind an interface:
 | Interface | Course endpoint | Port | Mock behavior |
 |---|---|---|---|
 | `ChatLLM.complete(messages, json_schema=None)` | Chat/Classification LLM | 9001 | canned responses keyed by prompt name + input hash, from `tests/fixtures/providers/` |
-| `StructuredLLM.decide(state, questions)` | Structured Decisions | 9010 | fixed choice per question with fixed probabilities (D-41: decisions only; stat extraction uses `ChatLLM` with `json_schema`) |
+| `StructuredLLM.decide(state, questions, *, prompt_name)` | Structured Decisions | 9010 | first option per question with equal odds, unless a fixture in `tests/fixtures/providers/structured/<prompt_name>.json` overrides it (D-41: decisions only; stat extraction uses `ChatLLM` with `json_schema`) |
 | `Embedder.embed(texts)` | Text Embeddings | 9002 | deterministic hash-based vectors (fixed dimension from config) |
 | `Reranker.rerank(query, passages)` | Multimodal Reranking | `.env` | keyword-overlap score |
 | `DocParser.parse(bytes, mime)` | Document Parsing | 9005 | returns plain text |
