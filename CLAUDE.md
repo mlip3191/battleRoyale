@@ -60,4 +60,8 @@ Every feature or fix has at least one test (`backend/tests/{unit,contract,golden
 - Work only on an assigned issue; read its acceptance criteria and its task in `docs/plan/` first. If it's bigger than size M or unclear, stop and suggest splitting or clarifying.
 
 ## 10. Permissions and hooks
-`.claude/settings.json` (task M03) enforces these rules with permissions and hooks. Never suggest bypassing them or changing them outside a PM-approved PR.
+`.claude/settings.json` enforces these rules; the hooks in `.claude/hooks/` are the real enforcement (permission rules only match command prefixes). Never suggest bypassing them or changing them outside a PM-approved PR. Bypass-permissions mode is disabled.
+- **Blocked:** reading or changing `.env` files (anything but `.env.example`), `*.pem`, `*.key`; printing environment variables; commits on `main`; pushing to `main`, force pushes, deleting remote branches; `git add -f`, `git commit --no-verify`/`-n`; `git reset --hard`, `git clean`, `git branch -D`, discarding changes (`git checkout -- <path>`, `git restore` without `--staged`); changing `core.hooksPath`; `rm -rf`, `Remove-Item -Recurse`; `sudo`. If a guard itself errors, the command is blocked to be safe.
+- **Asks first:** every `gh api` call, installing packages, `gh` commands that write (PRs, issues, reviews, merges, labels, workflow runs, projects), and edits to critical config (`.github/`, `.claude/`, `.githooks/`, `scripts/`, CLAUDE.md, INIT.md, `.gitignore`, `.gitattributes`, `package.json`, `pyproject.toml`).
+- **Automatic:** before any commit, `core.hooksPath` is set to `.githooks`; edited `.py` files are formatted with ruff and `frontend/` files with prettier. Test the hooks with `node .claude/hooks/test-hooks.mjs`.
+- **Long text goes through files:** write commit messages, PR/issue bodies, and comments to `.claude/tmp/` and pass them with `-F` / `--body-file`, so the guard never mistakes message words for file paths.
