@@ -12,7 +12,7 @@ This document takes the project from "plan only" to a protected repo with a runn
 
 ## Part 1 — For Mike, before starting (about 15 minutes, by hand, on the Mac)
 
-1. **Install and sign in:** Git, GitHub CLI, Claude Code (`claude`), Node 24, uv. Optional: `brew install gitleaks` (the git hook uses it when present; otherwise a built-in checker runs).
+1. **Install and sign in:** Git, GitHub CLI, Claude Code (`claude`), Node 26, uv. Optional: `brew install gitleaks` (the git hook uses it when present; otherwise a built-in checker runs).
 2. **GitHub CLI scopes:** `gh auth login` as `mlip3191`, then `gh auth refresh -s workflow,project,read:user`, then `gh auth setup-git` (so `git push` uses the same login). Check with `gh auth status`: the token scopes must include `workflow` (needed to push workflow files in M04/M07), `project` (board in M08), and `read:user` (Pro check in M01).
 3. **GitHub Pro** is active (confirmed). M01 double-checks it.
 4. **Clone:** `git clone https://github.com/mlip3191/battleRoyale.git` then `cd battleRoyale`.
@@ -210,7 +210,7 @@ Backend (`backend/`):
 - ruff (line length 100, import sorting) and pytest config in `pyproject.toml`. One passing test for `/api/health`.
 
 Front end (`frontend/`):
-- Scaffold with the current create-vite, non-interactively: `npm create vite@latest frontend -- --template react-ts` (answer any prompt with the defaults; record the create-vite version in the build log). Node 24 pinned in root `.nvmrc` and `engines`; `package-lock.json` committed.
+- Scaffold with the current create-vite, non-interactively: `npm create vite@latest frontend -- --template react-ts` (answer any prompt with the defaults; record the create-vite version in the build log). Node 26 pinned in root `.nvmrc` and `engines`; `package-lock.json` committed.
 - `vite.config.ts`: `envDir: '..'` so Vite reads the **root** `.env` (only `VITE_*` variables reach the browser); dev proxy for `/api` and `/media` to :8000.
 - Add phaser, react-router-dom (D02 needs it), vitest, @testing-library/react, jsdom, eslint, prettier, openapi-typescript.
 - Folders `src/api`, `src/pages`, `src/components`, `src/game`, `src/fixtures`. A Home page that calls `/api/health` and shows "Backend: ok". One passing Vitest test.

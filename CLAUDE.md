@@ -4,8 +4,8 @@ Read this first in every session. It is a critical file: changes need PM (Mike) 
 
 ## 1. Project
 **Battle Royale: The Science-Backed Fight Simulator** — a web app where users name two combatants; the app builds cited stat sheets from vetted sources, a Monte Carlo simulation in code decides the outcome, and the result plays as a corny late-night sports broadcast. **Corny voice, serious brain: no language model sets a number.**
-Stack: Python 3.12 + FastAPI + Pydantic v2 + SQLite/sqlite-vec (`backend/`, uv); React + Vite + TypeScript + Phaser 3 (`frontend/`, Node 24, npm). No Docker: `npm start` runs the whole app at http://localhost:8000. All AI calls go to course-provided endpoints through `backend/app/providers/`.
-Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SPEC.md` · `ARCHITECTURE.md` · `TEAM_PROCESS.md` · `DECISIONS.md` · `plan/` (tasks and prompts per lane).
+Stack: Python 3.12 + FastAPI + Pydantic v2 + SQLite/sqlite-vec (`backend/`, uv); React + Vite + TypeScript + Phaser 3 (`frontend/`, Node 26, npm). No Docker: `npm start` runs the whole app at http://localhost:8000. All AI calls go to course-provided endpoints through `backend/app/providers/`.
+Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `docs/PRODUCT_SPEC.md` · `docs/ARCHITECTURE.md` · `docs/TEAM_PROCESS.md` · `docs/DECISIONS.md` · `docs/plan/` (tasks and prompts per lane).
 **Phase:** if `backend/` doesn't exist yet, we're in Phase 0 — follow `INIT.md`.
 
 ## 2. Commands (from the repo root; work the same on Windows and Mac — available after task M04)
@@ -14,7 +14,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SP
 - Backend only: `uv run --directory backend pytest` · `.env` check: `npm run env:check` (never shows values) · Full environment check: `npm run doctor` (added by task D01)
 
 ## 3. Folders and protected files
-`backend/app/` modules: models (contracts), providers, safety, intake, research, simulation, narration, media, pipeline, api, db. `backend/prompts/` holds every prompt. `frontend/src/`: api, pages, components, game (Phaser), fixtures. `data/seed/` and `data/benchmark/` are committed; `data/app.db`, `data/kb/`, `data/media/` are generated and ignored.
+`backend/app/` modules: models (contracts), providers, safety, intake, research, simulation, narration, media, pipeline, api, db. `backend/prompts/` holds every prompt. `frontend/src/`: api, pages, components, game (Phaser), fixtures. `data/seed/`, `data/benchmark/`, and `data/showcase/` are committed; `data/app.db`, `data/kb/`, `data/media/` are generated and ignored.
 **Protected (PM approval; the list in `.github/CODEOWNERS` is authoritative):** CLAUDE.md, INIT.md, .claude/, .github/, .githooks/, .gitignore, .gitattributes, .editorconfig, .nvmrc, .env.example, .mcp.json, .gitleaks.toml, .gitleaksignore, root `scripts/` (not `backend/scripts/`), all package.json / lockfiles / pyproject.toml / uv.lock, `backend/app/config.py`, `backend/app/models/`, `docs/ARCHITECTURE.md`.
 
 ## 4. Conventions
@@ -41,7 +41,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SP
 - **Contracts:** shapes in `backend/app/models/` are shared by all lanes. Don't change them without an issue labeled `contract-change` and PM approval. Until a module exists, use its fixture in `backend/tests/fixtures/contracts/`.
 - **Mocks:** every provider has a mock; tests and CI run with `PROVIDER_MODE=mock`. Live calls have timeouts, retries, and a fallback.
 - **Simulation:** all randomness from the seeded generator; bump `ENGINE_VERSION` when results change.
-- **Safety and tone:** no real people, minors, groups of people, named fictional characters, deities, or firearms/explosives as fighters (objects, machines, and mythical creature types are fine — DECISIONS D-38); PG — no gore; no real artists, songs, franchises, or characters in media prompts; voice cloning only with written consent.
+- **Safety and tone:** no real people, minors, groups of people, named fictional characters, deities, firearms/explosives, or abstract ideas, places, landforms, or celestial bodies as fighters (objects, machines, and mythical creature types are fine — DECISIONS D-38); PG — no gore; no real artists, songs, franchises, or characters in media prompts; voice cloning only with written consent.
 
 ## 7. Testing and Definition of Done
 Every feature or fix has at least one test (`backend/tests/{unit,contract,golden,property}`, `frontend/src/**/*.test.tsx`). A bug fix starts with a failing test. **Done** = the issue's acceptance criteria all met, `npm run check` passes, the app still starts, the PR explains the change in plain English, docs updated if behavior changed.

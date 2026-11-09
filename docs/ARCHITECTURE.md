@@ -24,7 +24,7 @@
 | HTTP client | httpx (async) | per `uv.lock` | used only inside `providers/` |
 | Backend tests | pytest, pytest-asyncio, hypothesis | | property tests for the simulation; `conftest.py` forces mock mode |
 | Backend lint/format | ruff | | `ruff check`, `ruff format` |
-| Front-end runtime | Node.js | 24 LTS (`.nvmrc`) | |
+| Front-end runtime | Node.js | 26 LTS (`.nvmrc`) | |
 | Front end | React + Vite + TypeScript | per `package-lock.json` | |
 | Game engine | Phaser 3 | per `package-lock.json` | replays the event log |
 | Front-end tests | Vitest + Testing Library | | Playwright e2e is a later task |

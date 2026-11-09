@@ -17,7 +17,7 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 ## Teammate quick start
 
 1. GitHub account with two-factor authentication on. Send Mike your username and OS. Accept the repo invite.
-2. Install Git, GitHub CLI (`gh auth login`), Claude Code (`claude`), Node 24, and uv.
+2. Install Git, GitHub CLI (`gh auth login`), Claude Code (`claude`), Node 26, and uv.
 3. `git clone https://github.com/mlip3191/battleRoyale.git` then `cd battleRoyale`
 4. `git config core.hooksPath .githooks` — switches on the guard that blocks keys and `.env` files from being committed. (After setup is finished, `npm run setup` does this for you.)
 5. Copy `.env.example` to `.env` (Windows: `copy .env.example .env`) and fill every `[required]` line with the course endpoint URLs, ports, and keys you already have. Check it with `node scripts/check-env.mjs` — it never shows your values.
@@ -36,7 +36,7 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 
 ## For the instructor
 
-Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 24 and uv; copy `.env.example` to `.env` and fill in the course endpoints (`node scripts/check-env.mjs` confirms); `npm run setup`; `npm run ingest` (builds the knowledge base, once); `npm start`; open http://localhost:8000. Five showcase battles load automatically. A full first-time guide is in `docs/user-guide.md`. With `PROVIDER_MODE=mock` the app runs without any endpoints. A naïve-user guide will be in `docs/user-guide.md`.
+Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 26 and uv; copy `.env.example` to `.env` and fill in the course endpoints (`node scripts/check-env.mjs` confirms); `npm run setup`; `npm run ingest` (builds the knowledge base, once); `npm start`; open http://localhost:8000. Five showcase battles load automatically. A full first-time guide is in `docs/user-guide.md`. With `PROVIDER_MODE=mock` the app runs without any endpoints.
 
 ## Stack
 

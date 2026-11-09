@@ -1,0 +1,7 @@
+# Line endings: LF everywhere so the git hook and scripts work on Windows and Mac
+* text=auto eol=lf
+.githooks/* text eol=lf
+*.sh text eol=lf
+*.mjs text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

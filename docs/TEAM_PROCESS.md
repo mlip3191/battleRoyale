@@ -44,7 +44,7 @@ Personal-account repos give every collaborator the same Write role, which matche
 
 ### PM prerequisites
 
-- [ ] Claude Code, Git, GitHub CLI, Node 24, and uv installed and logged in on Mike's machine.
+- [ ] Claude Code, Git, GitHub CLI, Node 26, and uv installed and logged in on Mike's machine.
 - [ ] `.env` filled from `.env.example` with the course endpoint details (DECISIONS D-03).
 - [ ] Team handles and OS are recorded in DECISIONS (team table).
 
@@ -290,9 +290,9 @@ Each teammate goes from zero to a first merged pull request on day one.
 
 - [ ] VS Code (or another editor)
 
-- [ ] gitleaks (the secret checker): Homebrew on Mac, winget on Windows. The setup check script prints the exact command.
+- [ ] Optional: gitleaks (the secret checker): Homebrew on Mac, winget on Windows. Without it the hook uses its built-in checker (DECISIONS D-08). The setup check script prints the exact command.
 
-- [ ] Project runtime: Node 24 (via fnm or nvm-windows) and uv (it installs Python 3.12 for you)
+- [ ] Project runtime: Node 26 (via fnm or nvm-windows) and uv (it installs Python 3.12 for you)
 
 OS-specific setup:
 
@@ -354,7 +354,7 @@ Every PR is tested automatically on Windows and Linux (macOS runs only on demand
 
 - A workflow runs on every PR and every push to main (Linux + Windows), plus macOS on demand.
 
-- On PRs it runs install, lint, typecheck, tests, and the production build on windows-latest and ubuntu-latest (4 required checks). On pushes to main it runs the same on Linux and Windows; macOS runs only when triggered by hand (`gh workflow run ci.yml --ref main`), before each milestone. It also fails if generated API types or synced fixtures are stale.
+- On PRs it runs install, lint, typecheck, tests, and the production build on windows-latest and ubuntu-latest (4 required checks). On pushes to main it runs the same on Linux and Windows; macOS runs only when triggered by hand (`gh workflow run ci.yml --ref main -f os=macos-latest`), before each milestone. It also fails if generated API types or synced fixtures are stale.
 
 - Linux and Windows are required status checks, so a PR that breaks on either cannot merge. No `paths:` filters on required workflows: a skipped required check waits forever and blocks the merge.
 
@@ -439,7 +439,7 @@ A leaked key can't be un-leaked. Once it is pushed, assume someone has it, even 
 
 - **.env.example** is committed. It has the same variable names, placeholder values, and a comment for each.
 
-- Everyone already has the course endpoint values (DECISIONS D-21) and keeps them only in their own `.env`. Never in issues, PRs, commits, email, or Claude chats.
+- Everyone already has the course endpoint values (DECISIONS D-03) and keeps them only in their own `.env`. Never in issues, PRs, commits, email, or Claude chats.
 
 - Where the provider allows it, each person gets their own key, so a leak means one key to replace and usage is traceable.
 
@@ -590,7 +590,7 @@ Smaller rules that close the remaining gaps. Each takes a few minutes.
 
 ### Accounts and access
 
-- Two-factor authentication is required for everyone (organization setting), not just requested.
+- Two-factor authentication is expected of everyone. A personal-account repo can't enforce it (that needs an organization), so the PM checks it during onboarding.
 
 - Everyone has Write; only the PM has Admin (Step 2).
 

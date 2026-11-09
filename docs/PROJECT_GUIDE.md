@@ -46,10 +46,10 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 
 ## 4. Step by step — Mike (Phase 0)
 
-1. **Install and log in:** Git, GitHub CLI (`gh auth login`), Claude Code (`claude`), Node 24, uv.
+1. **Install and log in:** Git, GitHub CLI (`gh auth login`), Claude Code (`claude`), Node 26, uv.
 2. **Clone:** `git clone https://github.com/mlip3191/battleRoyale.git`, `cd battleRoyale`.
 3. **Fill `.env`:** copy `.env.example` to `.env`; add the course endpoint URLs (D-03). Never paste them anywhere else — they're public URLs, so anyone holding them could use the course's quota.
-4. **Turn on GitHub Pro** through the GitHub Student Developer Pack (D-01), and collect the remaining open items in [DECISIONS.md](DECISIONS.md): D-03 (missing ports), D-05 (deadlines), D-06 (roster), D-08 (usernames).
+4. **GitHub Pro is confirmed** for the team (D-01; M01 re-checks it). D-03, D-05, D-06, and D-08 are decided; remaining open items are in [DECISIONS.md](DECISIONS.md).
 5. **Open Claude Code in the repo and say: "Read INIT.md and follow it."** ([INIT.md](../INIT.md)) It runs M01–M08 one at a time, stops for your confirmation, and tells you when to click something in GitHub. In order:
    - **M01** GitHub settings: confirm Pro, make the repo private, squash-only merges, Dependabot, read-only Actions token, allowed-actions list.
    - **M02** Line-ending rules, test the secret-blocking hook with decoys, build log, a light ruleset on `main`, and early invites so teammates can install while you finish.
@@ -71,7 +71,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
    - Git (Windows: Git for Windows, which includes Git Bash; Mac: `xcode-select --install`)
    - GitHub CLI, then run `gh auth login` and pick GitHub.com → HTTPS → log in with a browser
    - Claude Code (needs a Claude plan that includes it), then run `claude` once to log in
-   - Node 24 (Windows: nvm-windows or fnm; Mac: fnm or nvm) and uv
+   - Node 26 (Windows: nvm-windows or fnm; Mac: fnm or nvm) and uv
    - VS Code (optional but helpful)
 4. **Tell git who you are** (same email as GitHub):
    `git config --global user.name "Your Name"` and `git config --global user.email "you@example.com"`
