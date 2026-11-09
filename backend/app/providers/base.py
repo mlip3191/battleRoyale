@@ -33,14 +33,38 @@ class ChatLLM(Protocol):
         ...
 
 
+class DecisionQuestion(TypedDict):
+    """A named "pick one of these options" question for Structured Decisions."""
+
+    type: Literal["choice"]
+    instructions: str
+    criteria: dict[str, str]
+    """Option id -> what that option means."""
+
+
+class DecisionAnswer(TypedDict):
+    """The model's pick for one question, with a probability for every option."""
+
+    choice: str
+    probabilities: dict[str, float]
+    confidence: float
+
+
 @runtime_checkable
 class StructuredLLM(Protocol):
-    """Structured decisions endpoint: returns JSON shaped by a schema."""
+    """Structured Decisions (course port 9010): answers choice questions, never extracts (D-41)."""
 
-    async def extract(
-        self, prompt: str, schema: dict[str, Any], *, prompt_name: str
-    ) -> dict[str, Any]:
-        """Return a JSON object matching schema, decided from prompt."""
+    async def decide(
+        self,
+        state: dict[str, str],
+        questions: dict[str, DecisionQuestion],
+        *,
+        prompt_name: str,
+    ) -> dict[str, DecisionAnswer]:
+        """Answer every question about state; the reply has one answer per question name.
+
+        prompt_name names the decision (sent as its title); mocks key on it.
+        """
         ...
 
 
