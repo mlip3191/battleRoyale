@@ -13,14 +13,18 @@ from app.simulation.summary import summary
 | Call | Returns | Use it for | Typical time |
 |---|---|---|---|
 | `run(matchup, stat_sheets, runs=None, reference_sheets=None, explain=True)` | `SimulationResult` | The verdict, the replay log, the deciding factor | 0.4 s for a 1 v 1; ~1 s for 6 v 1; ~1.5 s for 10,000 ants v 1 lion |
-| `run(..., explain=False)` | `SimulationResult` (placeholder explainer) | Quick probes where you do not need the "why" | 0.15 s for a 1 v 1 |
+| `run(..., explain=False)` | `SimulationResult` (placeholder explainer) | Quick probes where you do not need the "why". **Never show** its `deciding_factor` (always `mass_kg`) or explainer ("Deciding factor not computed."): both are placeholders | 0.15 s for a 1 v 1 |
 | `fair_fight(matchup, stat_sheets, result=None, reference_sheets=None)` | `FairFight` | "A fair fight needs 37 house cats" | 0.1 s for wolf vs cats; ~4-5 s when there is no answer (15 swarm probes) |
 | `test_challengers(winner_sheet, candidates, terrain=Terrain.ARENA)` | `list[ChallengerSuggestion]`, closest to 50/50 first | The "next challenger" step | ~0.3 s for 8 candidates |
 | `summary(result, names)` | `Summary` | The numbers the UI and announcer need | instant |
 
+Timings are typical on a dev laptop at `ENGINE_VERSION 5`; expect similar or faster.
+
 All calls are **deterministic**: the same matchup, sheets, and engine version always give the identical result (the seed is built from the matchup, both `sheet_hash` values, and `ENGINE_VERSION`). That is what lets "same battle requested twice" return the cached answer.
 
 ## A complete example
+
+Run it from the repo root: the fixture path below is relative (the guide's own test does the same).
 
 ```python
 import json
@@ -82,9 +86,9 @@ print(fair.message)
 |---|---|---|
 | **No contest** (flier vs swimmer in open water; two objects that can't hurt anyone) | `outcome == "no_contest"`, probabilities 0, one END event with a joke-able hint | Skip the sports commentary; show the explainer. `fair_fight` returns `count=None` with an explanation |
 | **Draw / stalemate** | `outcome == "draw"` | There is no favorite (`summary.favorite is None`); the explainer says it was a stalemate |
-| **A side flees** | RETREAT then FLEE events; the other side wins; the runner is counted among the survivors | The log tells the story |
+| **A side flees** | RETREAT then FLEE: the runner escapes, the other side wins, and the runner is counted among the survivors. RETREAT **without** FLEE means the runner is too slow to get away and the fight continues | The log tells the story |
 | **A machine runs out of operating time** | a KO event with the hint "out of action: its operating time ran out" | Narrate it as breaking down, not dying |
-| **Swarms** (a side over 200) | Group events with `group_size > 1` and `actor`/`target` of `None` | Animate a crowd, not individuals |
+| **Swarms** (either side over 200) | Group events: `actor`/`target` are `None` and `group_size` is how many acted or fell (it can be 1). In swarm mode every HIT and KO is a group event, for both sides, and there are no MISS events | Animate a crowd, not individuals. Decide "swarm" from the matchup counts (> 200), not from `group_size`; APPROACH, RETREAT and FLEE are group events in every fight |
 | **Size reference** ("horse-sized duck") | The first APPROACH event's hint ends with ", scaled to horse size" | See below |
 
 ## Size references ("horse-sized duck")
@@ -100,17 +104,31 @@ If a fighter has a `size_reference` and no reference sheet is given, `run` raise
 
 ## What the replay log contains
 
-`FightEvent.type` values used, with the `text_hint` words you can rely on (all neutral, and none contains a number):
+**Switch on `FightEvent.type`; `text_hint` is flavor text for narration, never a code.** Every `text_hint` is neutral and contains no number. Who `side`, `actor` and `target` refer to depends on the type:
 
-| Type | Typical `text_hint` |
-|---|---|
-| `approach` | "closes in" (plus ", scaled to X size" when scaled) |
-| `hit` / `miss` | "bite lands", "claw swipe misses", "blast lands", "spines jab back" (swarms: plural, "bites land") |
-| `ko` | "goes down" / "go down"; "out of action: its operating time ran out" |
-| `retreat` / `flee` | "breaks and runs" / "escapes" |
-| `stalemate` / `end` | "neither side can win", "fight ends in a draw", "the fight is over", "no contest: ..." |
+| `type` | `side`, `actor`, `target` | `text_hint` |
+|---|---|---|
+| `approach` | `side` closes in; `group_size` is how many fighters that side has; no `actor` | "closes in" (plus ", scaled to horse size" when scaled) |
+| `hit` | `side` is the **attacker's** side, `actor` the attacker, `target` the one hit; `damage` is the hit. **Swarm hits:** `actor` and `target` are `None`, `group_size` is how many hit, and `damage` is the group total | "bite lands" (swarm: "bites land"), "blast lands", "ram lands", and so on (weapon words below) |
+| `hit` (spines) | **Swapped:** `side` is the **defender's** side, `actor` the spiny defender, `target` the attacker it hurt | "spines jab back" |
+| `miss` | Like `hit`; `damage` is `None`. Swarm fights have no MISS events | "bite misses", "blast misses", and so on |
+| `ko` | `side` is the side that **went down** (or the machine that broke), `actor` is the fallen fighter's index, `target` is `None`; swarm: `actor` is `None` and `group_size` is how many fell | "goes down" / "go down"; "out of action: its operating time ran out" |
+| `retreat` | `side` is the side that ran; `group_size` is how many were left | "breaks and runs" / "break and run" |
+| `flee` | `side` is the side that got away | "escapes" / "escape" |
+| `stalemate` | `side` is 0 | "neither side can win" |
+| `end` | `side` is the **winner** (0 for a draw or no contest: check `outcome`) | "the fight is over", "fight ends in a draw", "no contest: neither can reach the other", "no contest: nobody can hurt anybody" |
 
-`actor` and `target` are fighter indexes within a side; `side` is 0 or 1 (the matchup order); `damage` is in hit points (relative, not real units). Events are in time order, `t` in simulated seconds. The log holds at most 298 events from the fight itself plus the closing events (300 in all), so a long fight's log may stop before the fight does; the END event is always last.
+Weapon words: bite, claw swipe, goring thrust, kick, venom strike, squeeze, tusk jab, peck, sting, blow, shot, ram, crush, spine jab, blast, strike (when no weapon fits). A swarm hint uses the plural: "bites land".
+
+### What the replay scene can and cannot rely on
+
+- **Positions:** events carry none. The scene places the fighters itself.
+- **Arrival:** there is one APPROACH per side at `t = 0` and no "arrived" event; the first HIT or MISS is the first contact.
+- **`damage`** is in hit points (relative, not real units): per hit for single fighters, the group total for swarm hits, `None` on misses and knock-outs.
+- **`EventType.ATTACK`** exists in the contract but is never emitted.
+- **Time:** events are in time order, `t` in simulated seconds, and all fall within 600 s.
+- **Length and cut-off:** the log has at most 300 events. After about 298 events from the fight itself, later hits and knock-outs are dropped, but the closing events are always added. If `len(log) >= 299` the log may be cut off, so never count KOs to work out who survived; use `outcome` and `mean_survivors`, and treat the log as a highlight reel.
+- **Who won:** read `outcome` (or `summary(...).favorite`). The END event's `side` is the winner only when there is one (0 for a draw or no contest).
 
 ## Speed and good habits
 
