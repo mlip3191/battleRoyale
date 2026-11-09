@@ -6,7 +6,7 @@ import time
 import pytest
 
 from app.models.simulation import EventType
-from app.models.stats import StatName
+from app.models.stats import StatName, StatSheet
 from app.simulation import constants as c
 from app.simulation.engine import _Pool, run, run_once
 from app.simulation.fighters import max_engagers, sample_template
@@ -158,6 +158,25 @@ def test_100_vs_1000_finishes_under_three_seconds():
 def test_10000_ants_vs_one_lion_finishes_under_three_seconds():
     _, seconds = timed(matchup_of(10_000, 1), [ant(), lion()])
     assert seconds < 3.0
+
+
+def test_plural_weapon_words_are_spelled_correctly():
+    from app.simulation.fighters import _WEAPON_WORD, plural_word
+
+    assert plural_word("bite") == "bites"
+    assert plural_word("crush") == "crushes"
+    assert plural_word("claw swipe") == "claw swipes"
+    assert plural_word("strike") == "strikes"
+    for word in (*_WEAPON_WORD.values(), "strike"):
+        assert not plural_word(word).endswith(("ss", "shs", "chs", "xs", "zs")), word
+
+
+def test_a_swarm_of_crushers_reads_correctly():
+    base = make_sheet("crushers", mass_kg=100, size_m=1.0, attack_force_n=900, attacks_per_s=2.0)
+    crushers = StatSheet.model_validate({**base.model_dump(mode="json"), "weapons": ["crushing"]})
+    result, _ = timed(matchup_of(250, 1), [crushers, lion()], runs=30)
+    hints = {e.text_hint for e in result.representative_log if e.type == EventType.HIT}
+    assert "crushes land" in hints and not any("crushs" in h for h in hints)
 
 
 def test_swarm_events_carry_group_size():

@@ -60,8 +60,9 @@ class ServiceConfig:
 # Live adapters by provider name; each is added by the task that builds it.
 def _live_factories() -> dict[ProviderName, Callable[[ServiceConfig, Settings], object]]:
     from app.providers.live.chat import LiveChatLLM
+    from app.providers.live.structured import LiveStructuredLLM
 
-    return {"chat": LiveChatLLM}
+    return {"chat": LiveChatLLM, "structured": LiveStructuredLLM}
 
 
 # Gather a service's URL, model, and key, failing fast on anything missing.

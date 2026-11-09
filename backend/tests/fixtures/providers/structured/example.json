@@ -1,7 +1,9 @@
 {
   "default": {
-    "stat": "mass_kg",
-    "value": 1.2,
-    "quote": "A typical two-slice toaster weighs about 1.2 kg."
+    "challenger": {
+      "choice": "grizzly_bear",
+      "probabilities": { "house_cat": 0.1, "grizzly_bear": 0.7, "duck": 0.2 },
+      "confidence": 0.7
+    }
   }
 }
