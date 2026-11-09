@@ -3,6 +3,7 @@
 import heapq
 import math
 import random
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from app.config import get_settings
@@ -151,7 +152,7 @@ def _run_individuals(
     sides: list[Template],
     rng: random.Random,
     approach_s: float,
-    log,
+    log: Callable[[FightEvent], None],
     events: list[FightEvent],
     record_events: bool,
 ) -> RunOutcome:
@@ -268,7 +269,7 @@ def _run_swarm(
     sides: list[Template],
     rng: random.Random,
     approach_s: float,
-    log,
+    log: Callable[[FightEvent], None],
     events: list[FightEvent],
     record_events: bool,
 ) -> RunOutcome:

@@ -18,6 +18,7 @@ from tests.property.sim_helpers import (
     lion,
     make_sheet,
     matchup_of,
+    with_stat,
 )
 
 
@@ -110,6 +111,14 @@ def test_scale_factor_comes_from_sheet_masses():
     from app.simulation.fighters import scale_factor
 
     assert scale_factor(duck(), horse()) == pytest.approx(500 / 1.2)
+
+
+def test_scaling_a_massless_sheet_is_a_clear_error():
+    from app.simulation.fighters import scale_factor
+
+    massless = with_stat(horse(), StatName.MASS, 0.0)
+    with pytest.raises(ValueError, match="above zero"):
+        scale_factor(massless, horse())
 
 
 def test_missing_reference_sheet_is_an_error():

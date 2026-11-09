@@ -50,7 +50,10 @@ class Template:
 
 def scale_factor(sheet: StatSheet, reference: StatSheet) -> float:
     """k = reference mass / own mass, from the sheets' central values (computed in code)."""
-    return reference.stats[StatName.MASS].value / sheet.stats[StatName.MASS].value
+    own = sheet.stats[StatName.MASS].value
+    if own <= 0:
+        raise ValueError(f"cannot scale {sheet.display_name}: its mass must be above zero")
+    return reference.stats[StatName.MASS].value / own
 
 
 def sample_template(sheet: StatSheet, count: int, rng: random.Random, k: float = 1.0) -> Template:
