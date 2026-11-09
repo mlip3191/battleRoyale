@@ -101,8 +101,15 @@ def is_described(hint: str, phrases: set[str], words: set[str]) -> bool:
     if hint in phrases or re.fullmatch(r"closes in, scaled to .+ size", hint):
         return True
     single = re.fullmatch(r"(.+) (?:lands|misses)", hint)
-    swarm = re.fullmatch(r"(.+)s land", hint)  # a swarm hint uses the plural: "bites land"
-    return any(m and m.group(1) in words for m in (single, swarm))
+    if single and single.group(1) in words:
+        return True
+    swarm = re.fullmatch(r"(.+) land", hint)  # a swarm hint uses the plural: "bites land"
+    if not swarm:
+        return False
+    plural = swarm.group(1)
+    return (plural.endswith("es") and plural[:-2] in words) or (
+        plural.endswith("s") and plural[:-1] in words
+    )
 
 
 def scenarios():
@@ -147,11 +154,16 @@ def scenarios():
         "truck", body="machine", weapons=["ramming"], mass_kg=8000, size_m=6, top_speed_mps=20,
         attack_force_n=0, endurance_s=600, armor_0_1=0.5,
     )  # fmt: skip
+    crushers = make_sheet(
+        "crushers", body="machine", weapons=["crushing"], mass_kg=100, size_m=1.0,
+        top_speed_mps=5, endurance_s=5000, attack_force_n=900,
+    )  # fmt: skip
     return [
         ("1 v 1", matchup_of(1, 1), [bear, wolf], None),
         ("1 v 6 in a forest", matchup_of(1, 6, terrain=Terrain.FOREST), [bear, wolf], None),
         ("1 v 300 swarm", matchup_of(1, 300), [lion(), ant()], None),
         ("300 v 300 swarm", matchup_of(300, 300), [ant(), ant()], None),
+        ("a crushing swarm", matchup_of(250, 1), [crushers, lion()], None),
         ("a machine breaks down", matchup_of(1, 1), [tank, boulder], None),
         ("a machine swarm stops", matchup_of(250, 1), [drones, boulder], None),
         ("spines", matchup_of(1, 1), [wolf, cactus], None),

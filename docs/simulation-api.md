@@ -118,7 +118,7 @@ If a fighter has a `size_reference` and no reference sheet is given, `run` raise
 | `stalemate` | `side` is 0 | "neither side can win" |
 | `end` | `side` is the **winner** (0 for a draw or no contest: check `outcome`) | "the fight is over", "fight ends in a draw", "no contest: neither can reach the other", "no contest: nobody can hurt anybody" |
 
-Weapon words: bite, claw swipe, goring thrust, kick, venom strike, squeeze, tusk jab, peck, sting, blow, shot, ram, crush, spine jab, blast, strike (when no weapon fits). A swarm hint uses the plural: "bites land".
+Weapon words: bite, claw swipe, goring thrust, kick, venom strike, squeeze, tusk jab, peck, sting, blow, shot, ram, crush, spine jab, blast, strike (when no weapon fits). A swarm hint uses the plural: "bites land", "crushes land".
 
 ### What the replay scene can and cannot rely on
 
