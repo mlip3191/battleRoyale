@@ -45,7 +45,7 @@ Personal-account repos give every collaborator the same Write role, which matche
 ### PM prerequisites
 
 - [ ] Claude Code, Git, GitHub CLI, Node 26, and uv installed and logged in on Mike's machine.
-- [ ] `.env` filled from `.env.example` with the course endpoint details (DECISIONS D-03).
+- [ ] `.env` filled in with `npm run env:setup` (DECISIONS D-03).
 - [ ] Team handles and OS are recorded in DECISIONS (team table).
 
 ## Step 1: CLAUDE.md
