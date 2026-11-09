@@ -63,6 +63,7 @@ def test_repr_never_shows_keys_or_hosts(tmp_path: Path) -> None:
 def test_tests_run_in_mock_mode_even_when_env_says_live(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    monkeypatch.delenv("PROVIDER_MODE", raising=False)  # CI sets it; read only the file here
     live_env = write_env(tmp_path, "PROVIDER_MODE=live\nSIM_RUNS=7\n")
     monkeypatch.setitem(Settings.model_config, "env_file", live_env)
     assert Settings().provider_mode == "live"  # what the app would load from this .env
