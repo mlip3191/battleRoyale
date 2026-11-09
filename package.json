@@ -1,0 +1,32 @@
+{
+  "name": "battle-royale",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Battle Royale: The Science-Backed Fight Simulator",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "setup": "npm ci && uv sync --directory backend && npm ci --prefix frontend && git config core.hooksPath .githooks",
+    "dev": "concurrently --names backend,frontend --prefix-colors blue,magenta --kill-others-on-fail \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "uv run --directory backend uvicorn app.main:app --reload --port 8000",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "start": "npm run build && node -e \"console.log('\\nBattle Royale is starting at http://localhost:8000\\n')\" && uv run --directory backend uvicorn app.main:app --port 8000",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "uv run --directory backend pytest",
+    "test:frontend": "npm test --prefix frontend",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "uv run --directory backend ruff check . && uv run --directory backend ruff format --check .",
+    "lint:frontend": "npm run lint --prefix frontend",
+    "format": "uv run --directory backend ruff check --fix --select I . && uv run --directory backend ruff format . && npm run format --prefix frontend",
+    "typecheck": "npm run typecheck --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "gen:api": "node -e \"console.log('gen:api: placeholder until M05 adds API type generation')\"",
+    "fixtures:sync": "node -e \"console.log('fixtures:sync: placeholder until M05 adds fixture syncing')\"",
+    "env:check": "node scripts/check-env.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7"
+  }
+}

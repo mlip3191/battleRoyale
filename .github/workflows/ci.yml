@@ -1,0 +1,79 @@
+# CI: lint, typecheck, test, and build the backend and front end.
+# PRs and pushes to main run on Linux + Windows (4 required checks).
+# macOS runs only by hand, before milestones, to save Actions minutes (D-26):
+#   gh workflow run ci.yml --ref main -f os=macos-latest
+# No `paths:` filters: a skipped required check waits forever and blocks merging.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      os:
+        description: Runner to test on
+        type: choice
+        options: [macos-latest, ubuntu-latest, windows-latest]
+        default: macos-latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PROVIDER_MODE: mock
+
+jobs:
+  backend:
+    name: backend (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.os) || '["ubuntu-latest","windows-latest"]') }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install (from uv.lock)
+        run: uv sync --directory backend --locked
+      - name: Lint
+        run: |
+          uv run --directory backend ruff check .
+          uv run --directory backend ruff format --check .
+      - name: Test
+        run: uv run --directory backend pytest
+
+  frontend:
+    name: frontend (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.os) || '["ubuntu-latest","windows-latest"]') }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install (from package-lock.json)
+        run: npm ci --prefix frontend
+      - name: Lint
+        run: npm run lint --prefix frontend
+      - name: Typecheck
+        run: npm run typecheck --prefix frontend
+      - name: Test
+        run: npm test --prefix frontend
+      - name: Build
+        run: npm run build --prefix frontend
+      - name: Audit (report only)
+        continue-on-error: true
+        run: npm audit --audit-level=high --prefix frontend
