@@ -46,3 +46,4 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 - M08: 21 labels. Issues: #9-#16 closed Phase 0 records (#14 is the course-key setup), #17 M08, #18-#51 the 34 tasks (labeled, assigned, with "Blocked by" links).
   Board https://github.com/users/mlip3191/projects/2: Backlog / Ready / In progress / In review / Done; Wave 1 (#18-#21) in Ready; auto-add, "item added → Backlog", and "PR merged → Done" are on; teammates have Write.
   Dry run: issue #52, PR #53.
+  Ruleset "main protection" (id 26832578) read back: PR with 1 approval; required checks = 4 CI + Secret scan + Critical files approval; force push and deletion blocked; no bypass; D-26's four options off. Team board: #54 (pinned).
