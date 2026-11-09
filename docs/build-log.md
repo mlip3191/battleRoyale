@@ -9,8 +9,8 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 ### Progress
 
 - M01: done
-- M02: committed — hook test, light ruleset, invites pending
-- M03: not started
+- M02: done
+- M03: merged — live checks pending
 - M04: not started
 - M05: not started
 - M06: not started
@@ -37,3 +37,5 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 ### Notes
 
 - Node changed from 24 to 26 (current LTS) before M04 (DECISIONS D-12).
+- M02: hook test passed with decoys (fake AWS-format key and `hook-test/decoy.env` both blocked, key never printed); light ruleset "main protection" (id 26832578): PR required with 0 approvals, force push and deletion blocked, no bypass; teammates invited with Write.
+- M03: `.claude/settings.json` + hooks (`guard-shell.mjs`, `ensure-hookspath.mjs`, `format-on-edit.mjs`); `node .claude/hooks/test-hooks.mjs` → 119 cases, 0 failed.
