@@ -41,7 +41,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `PRODUCT_SP
 - **Contracts:** shapes in `backend/app/models/` are shared by all lanes. Don't change them without an issue labeled `contract-change` and PM approval. Until a module exists, use its fixture in `backend/tests/fixtures/contracts/`.
 - **Mocks:** every provider has a mock; tests and CI run with `PROVIDER_MODE=mock`. Live calls have timeouts, retries, and a fallback.
 - **Simulation:** all randomness from the seeded generator; bump `ENGINE_VERSION` when results change.
-- **Safety and tone:** no real people, minors, or groups of people as fighters; PG — no gore; no real artists, songs, franchises, or characters in media prompts; voice cloning only with written consent.
+- **Safety and tone:** no real people, minors, groups of people, named fictional characters, deities, or firearms/explosives as fighters (objects, machines, and mythical creature types are fine — DECISIONS D-38); PG — no gore; no real artists, songs, franchises, or characters in media prompts; voice cloning only with written consent.
 
 ## 7. Testing and Definition of Done
 Every feature or fix has at least one test (`backend/tests/{unit,contract,golden,property}`, `frontend/src/**/*.test.tsx`). A bug fix starts with a failing test. **Done** = the issue's acceptance criteria all met, `npm run check` passes, the app still starts, the PR explains the change in plain English, docs updated if behavior changed.

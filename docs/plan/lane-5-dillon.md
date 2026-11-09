@@ -72,7 +72,7 @@ Task D02 from docs/plan/lane-5-dillon.md. In frontend/:
 **Prompt for Claude Code:**
 ```text
 Task D03 from docs/plan/lane-5-dillon.md. Build the Home page:
-1. A large text box ("Who would win?"), a Fight! button, 6 example chips (e.g. "100 duck-sized horses vs 1 horse-sized duck"), and a "Showcase" row of the five saved battles from GET /api/battles?showcase=true (Gunnar's G08; use a fixture until it lands).
+1. A large text box ("Who would win?"), a Fight! button, 6 example chips (e.g. "100 duck-sized horses vs 1 horse-sized duck", "a toaster vs a goose", "a dragon vs a main battle tank"), and a "Showcase" row of the five saved battles from GET /api/battles?showcase=true (Gunnar's G08; use a fixture until it lands).
 2. Calls POST /api/intake. On "clarify", show the question with the options as buttons plus a free-text answer, then POST the answer. On "blocked", show the friendly message and keep the text so the user can edit it. On "ok", show a confirmation card (fighters, counts, terrain, assumptions) with a terrain dropdown the user can change, then POST /api/battles and navigate to /battle/:id.
 3. Keyboard: Enter submits; all controls reachable by Tab; labels for screen readers.
 4. Tests in fixtures mode for ok, clarify, and blocked.
@@ -96,15 +96,17 @@ Task D03 from docs/plan/lane-5-dillon.md. Build the Home page:
 Task D04 from docs/plan/lane-5-dillon.md. Build the Results page and components:
 1. VerdictBanner: winner (or draw/no contest), win % per side with the 95% interval shown as "62% (58–66%)", survivors, duration, and the deciding factor explainer.
 2. StatSheetCard per fighter: each stat with value + unit, a SourceBadge (link to the source in a new tab, confidence dot, hover/focus shows the quote), and a tag: "assumption" when method is assumption, otherwise "estimate" when is_estimate. A banner if more than 3 stats are estimates or assumptions.
-3. FairFightCard ("A fair fight needs 37 house cats" or the no-fair-fight message) and NextChallengerCard with a "Fight them!" button that starts a new battle with the winner vs the suggestion.
-4. A Sources section listing every unique source with title, URL, and license.
-5. Tests in fixtures mode: every displayed stat has either a SourceBadge link or an estimate tag (this is our traceability promise in the UI).
+3. LoreCard for mythical fighters: "Modeled on <body_analog>, scaled to <size_analog>", the abilities as icons with labels, and the quoted lore sentence with its link; plus a banner "Legendary fighter: every stat is an assumption".
+4. FairFightCard ("A fair fight needs 37 house cats" or the no-fair-fight message) and NextChallengerCard with a "Fight them!" button that starts a new battle with the winner vs the suggestion.
+5. A Sources section listing every unique source with title, URL, and license.
+6. Tests in fixtures mode (add a mythical fixture): every displayed stat has either a SourceBadge link or an estimate tag (this is our traceability promise in the UI).
 ```
 
 **Acceptance criteria**
 - [ ] Test: every stat on the results fixture shows either a SourceBadge link or an "estimate" / "assumption" tag
 - [ ] Win % is shown with its range (e.g. "62% (58–66%)"), along with the deciding-factor explainer
 - [ ] A banner appears when more than 3 stats are estimates or assumptions (test)
+- [ ] A mythical fighter shows the LoreCard with both analogs, its abilities, and the linked quote, plus the "Legendary fighter" banner (test)
 - [ ] FairFightCard handles both a count and the no-fair-fight message; "Fight them!" posts a new battle with the winner vs the suggestion (test)
 - [ ] The Sources section lists every unique source once, with title, URL, and license (test)
 

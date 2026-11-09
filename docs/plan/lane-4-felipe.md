@@ -1,6 +1,6 @@
 # Lane 4 — Felipe: Simulation & Analytics
 
-**Total effort: 13 points.** Felipe owns the "serious brain": the Monte Carlo engine that decides every outcome, the statistics shown to users, the fair-fight search, and the benchmark runner. The engine is pure Python with no network, so this lane can start as soon as the contracts land.
+**Total effort: 15 points.** Felipe owns the "serious brain": the Monte Carlo engine that decides every outcome, the statistics shown to users, the fair-fight search, and the benchmark runner. The engine is pure Python with no network, so this lane can start as soon as the contracts land.
 
 | ID | Task | Size | Depends on | Blocks | Wave |
 |---|---|---|---|---|---|
@@ -11,6 +11,7 @@
 | F05 | Summary stats + deciding factor | M | F03, F04 | A06, D04 | 3 |
 | F06 | Fair-fight search + next-challenger testing | M | F05 | A05 | 4 |
 | F07 | Benchmark runner + report | M | F05, G07, G06 | — | 4 |
+| F08 | Machines, inert objects, and mythical abilities | M | F04, F05 | G09 integration, demo | 3–4 |
 
 **Definition of Done for every task (CLAUDE.md §7), on top of its own acceptance criteria:** at least one test for every code change (docs-only tasks such as G01, G07, F01, D09, and D10 are checked by the reviewer instead); `npm run check` passes; the app still starts with `npm start`; the PR uses the template with `Closes #<n>`, explains the change in plain English, and ticks each criterion with its evidence (test name, command output, link, or screenshot); docs updated if behavior changed; a teammate approved and all required checks passed before merging. Criteria marked "live" are run by the task owner on their own machine (never in CI), and the pasted results never include endpoint hosts or keys.
 
@@ -174,3 +175,33 @@ Run it live once and paste the headline numbers in the PR.
 - [ ] Earlier runs are kept below the newest one (last 5)
 - [ ] `--mock` runs 3 matchups in CI
 - [ ] The baseline is committed and its headline numbers pasted in the PR (target: at least 80% on held-out "obvious"; report the real result whatever it is)
+
+---
+
+## F08 · Machines, inert objects, and mythical abilities in the engine · M (2)
+
+**Goal:** Toasters don't charge, bulldozers don't panic, and dragons breathe fire — all decided by code, with every new constant documented.
+**When:** Wave 3–4 (Nov 16–19), after F04.
+**Read first:** ARCHITECTURE §9 "Bodies" and "Abilities", §14; DECISIONS D-38.
+
+**Prompt for Claude Code:**
+```text
+Task F08 from docs/plan/lane-4-felipe.md. Extend backend/app/simulation/ for StatSheet.body and lore abilities.
+1. Bodies:
+   - machine: no morale (never RETREAT or FLEE); when endurance_s (operating time) runs out it is out of action (counts as a loss for that fighter, with a clear text_hint); no fatigue before that.
+   - inert: never approaches; attacks only a target in reach and only if it has an attack; spines deal damage back to whoever hits it.
+   - ramming and crushing: damage per hit from mass and speed with a documented momentum formula (cite it in docs/simulation-model.md); attack rate from a constant labeled an assumption.
+   - If neither side can damage the other, end immediately as no_contest with a text_hint the announcer can joke about; if one side can't finish the other in 600 s, it's a draw.
+2. Abilities (lore): flight (can engage air and land targets; terrain penalties as for birds), breath_weapon (ranged attack using the square law; damage and reach from constants labeled assumptions), regeneration (heals a share of HP per second), extra_heads (attack rate times heads, default 3 if heads is None).
+3. Deciding factor: add "abilities" to the sensitivity check (remove all abilities and re-run).
+4. Every new constant goes in simulation/constants.py with a comment and in docs/simulation-model.md with a source or "assumption". Bump ENGINE_VERSION.
+5. Tests: a toaster vs a goose ends in a draw or a goose win, never a toaster win; a rock vs a sword (both inert, no attack) is no_contest; a machine never produces RETREAT or FLEE events; a dragon with breath_weapon beats the same dragon without it more often; regeneration raises survival time; flight lets an air fighter engage a land fighter in open_field.
+```
+
+**Acceptance criteria**
+- [ ] Tests: toaster vs goose never ends as a toaster win; rock vs sword (both inert, no attack) → `no_contest`; across 1,000 runs a machine never produces RETREAT or FLEE
+- [ ] A machine whose operating time runs out is out of action with a text_hint saying so (test)
+- [ ] Ability tests: breath_weapon raises win probability against the same opponent; regeneration raises mean survival time; extra_heads raises attack rate by the heads factor; flight lets an air fighter engage a land fighter
+- [ ] `deciding_factor` can be `abilities` (test with a dragon whose breath_weapon decides it)
+- [ ] Every new constant is in `constants.py` and `docs/simulation-model.md` with a source or "assumption"; `ENGINE_VERSION` bumped
+- [ ] The existing property and timing tests still pass

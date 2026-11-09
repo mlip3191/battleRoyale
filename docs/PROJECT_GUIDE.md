@@ -137,7 +137,8 @@ The full list of edge cases the app must handle is in [ARCHITECTURE §14](ARCHIT
 - One-question clarification with automatic, visible assumptions
 - Count words and swarm limits (up to 10,000 per side, aggregated swarm mode)
 - Verified-quote extraction: model numbers rejected unless the quote proves them
-- Hand-verified seed stat sheets for 15 fighters (25 seed fighters total)
+- Hand-verified seed stat sheets for 15 fighters (30 seed fighters total)
+- Any physical fighter: objects, plants, vehicles, and machines with sourced stats; mythical creatures modeled on real animals, every number labeled "according to legend" (D-38)
 - Win % with 95% confidence intervals
 - Deterministic, cached battles (same input → same result, instantly)
 - "No contest" outcome for fighters that can't reach each other

@@ -6,11 +6,11 @@ Five lanes, one per person, sized to similar effort. **S = 1 point (a few hours)
 |---|---|---|---|---|
 | 1 | **Mike Lippert** (PM) `mlip3191` | Foundation & platform (Phase 0), then integration, reviews, and the live AI evaluation | M01–M09 | 16 |
 | 2 | **Adam Fondale** `afondale` | Intake, safety & orchestration, plus all generated media: announcer script, voice, music, sprites | A01, A02, A04–A08 | 14 |
-| 3 | **Gunnar O'Connor** `gunnaroc` | Research & knowledge base: sources, ingestion, retrieval, stat sheets, hand-verified sheets, traceability, benchmark data, showcase battles | G01–G08 | 13 |
-| 4 | **Felipe Cervino** `felcervino` | Simulation & analytics: engine, numbers/size, terrain/behavior, stats, fair fight, benchmark runner | F01–F07 | 13 |
+| 3 | **Gunnar O'Connor** `gunnaroc` | Research & knowledge base: sources, ingestion, retrieval, stat sheets, hand-verified sheets, traceability, benchmark data, showcase battles, objects and mythical creatures | G01–G09 | 15 |
+| 4 | **Felipe Cervino** `felcervino` | Simulation & analytics: engine, numbers/size, terrain/behavior, stats, fair fight, benchmark runner, machines/objects/abilities | F01–F08 | 15 |
 | 5 | **Dillon Smart** `dilloncsmart` | Front end, battle stage & user experience: onboarding, app shell, intake + clarifying question, results, Phaser scene, broadcast page, user guide, usability testing | D01–D05, D07–D10 | 14 |
 
-Mike's lane is higher because Phase 0 must happen before anyone else can build. After Phase 0 his only build task is M09, the live AI evaluation, which he runs because he didn't build the research pipeline it measures. Teammates are invited early (M02) so they can install and read while Mike finishes. **Gunnar is Mike's backup approver** for critical-file PRs (DECISIONS D-31).
+Mike's lane is higher because Phase 0 must happen before anyone else can build. Gunnar and Felipe went from 13 to 15 points when the scope grew to objects, machines, and mythical creatures (D-38, D-39); Mike's integration time is the buffer for their Wave 4. After Phase 0 his only build task is M09, the live AI evaluation, which he runs because he didn't build the research pipeline it measures. Teammates are invited early (M02) so they can install and read while Mike finishes. **Gunnar is Mike's backup approver** for critical-file PRs (DECISIONS D-31).
 
 Each teammate's **first task (Wave 1) is a setup task** that also teaches the workflow: Adam builds the issue system, Gunnar plans the sources and the assumption rubric, Felipe writes the review guide and does the first review, Dillon builds onboarding and the setup checker.
 
@@ -29,18 +29,19 @@ The slide deck and presentation are prepared outside this repo, starting Nov 25 
 | 0 — Foundation | Mon Nov 9 – Tue Nov 10 | M01 → M08 | install, read | install, read | install, read | install, read |
 | 1 — Onboard + setup | Wed Nov 11 | review, unblock | A01 | G01 | F01 | D01 |
 | 2 — Skeleton | Thu Nov 12 – Sat Nov 14 | review | A02, A04 | G02, G05 (first 5 sheets: horse, duck, grizzly, wolf, honey badger), G07 | F02, F03 | D02, D03 |
-| 3 — Core | Sun Nov 15 – Tue Nov 17 | review, integration checks | A05, A06 | G03, G04 | F04, F05 | D08, D04, D05 |
-| 4 — Complete | Wed Nov 18 – Fri Nov 20 | M09 evaluation, review | A07, A08 | G05 (remaining 10), G06, G08 | F06, F07 | D07 |
+| 3 — Core | Sun Nov 15 – Tue Nov 17 | review, integration checks | A05, A06 | G03, G04, G09 (start: `mythical.yaml`) | F04, F05 | D08, D04, D05 |
+| 4 — Complete | Wed Nov 18 – Fri Nov 20 | M09 evaluation, review | A07, A08 | G05 (remaining 10), G09, G06, G08 | F06, F08, F07 | D07 |
 | 5 — Test + polish | Sat Nov 21 – Sun Nov 22 | bug bash, triage | bug bash, fixes | bug bash, fixes | bug bash, fixes | D10 usability sessions, D09 user guide |
 | Freeze + fix | **Feature freeze end of Sun Nov 22**; fixes Mon Nov 23 – Tue Nov 24 | final README, export | fixes | fixes | fixes | fixes |
 | Code complete | **Wed Nov 25** | tag `v1.0`, export (DELIVERABLES) | — | — | — | — |
 
 **Cut order if we're behind** (check at MS-1 on Nov 14 and MS-2 on Nov 17). Cut from the top; the app still works with captions and placeholder sprites:
 1. Music generation (keep the announcer voice) — part of A07
-2. A08 generated sprites (placeholders already exist in D05)
-3. A07 voice (captions carry the narration)
-4. F07 benchmark reduced to the held-out set plus the 15 "obvious" matchups
-5. G05 hand-verified sheets reduced from 15 to the 10 showcase-battle fighters (M09's extraction check then uses 10)
+2. On-demand mythical creatures in G09 (the 12 in `mythical.yaml` still work; unknown legends get a friendly "not in our bestiary yet")
+3. A08 generated sprites (placeholders already exist in D05)
+4. A07 voice (captions carry the narration)
+5. F07 benchmark reduced to the held-out set plus the 15 "obvious" matchups
+6. G05 hand-verified sheets reduced from 15 to the 10 showcase-battle fighters (M09's extraction check then uses 10)
 
 Never cut: M09's evaluation, D09's user guide, D10's usability sessions, or the fresh-clone check in G08. They're what the course grades beyond "it runs."
 
@@ -50,7 +51,7 @@ Never cut: M09's evaluation, D09's user guide, D10's usability sessions, or the 
 |---|---|---|
 | **MS-1 Walking skeleton** (Sat Nov 14) | Type a matchup in the UI → see a verdict from mocks and stubs | M04–M06, A02, A05 stub path, F02, D02, D03 |
 | **MS-2 Real brain** (Tue Nov 17) | Real stat sheets with sources + real simulation in the UI | G04, F03–F05, D04, A05 |
-| **MS-3 The show** (Fri Nov 20) | Announcer, music, sprites, animation; benchmark baseline | A06–A08, D05, D07, F06, F07 |
+| **MS-3 The show** (Fri Nov 20) | Announcer, music, sprites, animation; benchmark baseline; a toaster, a bulldozer, and a dragon each fight correctly | A06–A08, D05, D07, F06, F07, G09, F08 |
 | **MS-4 Demo-ready** (Sun Nov 22) | Five showcase battles in `data/showcase/`, `npm start` from a fresh clone on Windows and Mac, evaluation written | G08, M09, everyone |
 
 ## Dependency graph
@@ -67,6 +68,9 @@ graph LR
   F02-->F03 & F04
   F03 & F04-->F05-->F06
   F05 & G06 & G07-->F07
+  G04-->G09
+  F04 & F05-->F08
+  G09 & F08-->M09
   D02-->D03 & D04 & D05
   D08-->D03
   D05-->D07
@@ -87,6 +91,7 @@ graph LR
 | Dillon D08 | `/api/intake` endpoints | Dillon D03 |
 | Adam A05 | `BattleRecord`, `/api/battles`, SSE | Dillon D07 |
 | Gunnar G04 | `StatSheet`, `/api/fighters` | Felipe (all), Adam A05/A06, Dillon D04 |
+| Gunnar G09 | `body`, `media_name`, `lore` on `StatSheet`; `data/seed/mythical.yaml` | Felipe F08, Adam A06–A08, Dillon D04 |
 | Felipe F02–F06 | `SimulationResult`, `FairFight`, `ChallengerSuggestion` | Adam A05/A06, Dillon D04/D05 |
 | Adam A06 | `Script` with `at_event` | Dillon D07, Adam A07 |
 | Adam A07 / A08 | `Asset` | Dillon D05/D07 |

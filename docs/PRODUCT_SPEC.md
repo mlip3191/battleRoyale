@@ -46,10 +46,10 @@ The result is staged as a cheesy late-night sports broadcast: an announcer, a so
 
 | Priority | Feature |
 |---|---|
-| **Must (MVP)** | Two-sided matchups with counts and terrain · one clarifying question · safety blocking · cited stat sheets with estimate labels · Monte Carlo verdict with win % · deciding factor · fair-fight count · next challenger · announcer captions · crude animation replaying the event log · results page with sources · runs with one command |
+| **Must (MVP)** | Two-sided matchups with counts and terrain · any physical fighter: animals, historical archetypes, objects, plants, vehicles, machines, and mythical creatures (D-38) · one clarifying question · safety blocking · cited stat sheets with estimate labels · Monte Carlo verdict with win % · deciding factor · fair-fight count · next challenger · announcer captions · crude animation replaying the event log · results page with sources · runs with one command |
 | **Should** | Announcer voice (TTS) · soundtrack · generated sprites and battlefields · benchmark ≥ 80% on "obvious" cases · shareable result link — the results URL reopens the stored battle **[added]** |
-| **Could (stretch)** | 3+ combatants · voice input (speech-to-text) · photo-based fighters (multimodal embeddings) · mythical creatures (all-estimate) · mobile layout |
-| **Won't (this term)** | User accounts · real people as fighters · paid APIs · public deployment beyond the demo |
+| **Could (stretch)** | 3+ combatants · voice input (speech-to-text) · photo-based fighters (multimodal embeddings) · mobile layout |
+| **Won't (this term)** | User accounts · real people, named fictional characters, deities, or firearms as fighters · paid APIs · public deployment beyond the demo |
 
 ## 4. The eight-step pipeline
 
@@ -60,13 +60,14 @@ The chat LLM (port 9001) parses free text into a structured matchup: entity, cou
 - **[added]** Counts, number words, clamping (max 10,000 per side), and normalization are done by code, not the model.
 - **[added]** Size phrases like "horse-sized duck" are parsed into a `size_reference`; the scale factor is computed by code from both fighters' sourced masses, never by the model.
 - **[added]** If the answer to the clarifying question is still vague, the app picks the most common variant and shows it as an assumption.
-- **Done when:** 25+ test phrasings parse correctly; 40-case safety set passes.
+- **[added]** Any physical thing can fight (D-38): objects, plants, vehicles, and machines get sourced mass, size, and speed like animals; mythical creature types ("dragon") are modeled by code on the real animals their legends compare them to, and every one of their stats is labeled an assumption. Named fictional characters, deities, firearms and explosives, and abstract ideas are politely turned away.
+- **Done when:** 25+ test phrasings parse correctly; 50-case safety set passes.
 
 ### Step 2 — Research, RAG (Gunnar: G01–G06)
 Reference text from Wikipedia, Wikidata, and Hugging Face datasets is parsed (port 9005), embedded (port 9002), and stored in a local vector index. At fight time, the app retrieves and reranks the best passages for each fighter. The Structured Decisions model fills a fixed stat schema using only that evidence, recording a source and confidence for each value. A seed set of popular fighters is verified by hand.
 - **[added] The number rule:** the model may only *copy* a number together with the exact quote it came from; code checks the number is in the quote and the quote is in the source. Estimates are made by code from category defaults, never by the model. (ARCHITECTURE §5.)
 - **[added]** Fixed stat schema: seven physical stats (mass, size, top speed, attack force, attack rate, reach, endurance) that are sourced or labeled estimates, and three behavioral stats (aggression, group tactics, armor) that no source measures, so they're labeled **assumptions** set from a written rubric. Every stat carries a plausible range.
-- **[added]** 25 seed fighters; 15 hand-verified sheets.
+- **[added]** 30 seed fighters (25 animals and archetypes, 5 objects and machines); 15 hand-verified sheets; 12 mythical creatures in a lore table with quoted sources.
 - **Done when:** every displayed stat has a source link or an estimate tag (traceability 100%).
 
 ### Step 3 — Simulation (Felipe: F02–F04)
@@ -99,7 +100,8 @@ The Structured Decisions model proposes candidate opponents for the winner (from
 
 - **Voice:** cheesy late-night sports broadcast. Puns welcome. A gruff, deep-voiced, hard-hitting fight announcer delivers the corny lines dead serious; a deadpan color commentator backs him up.
 - **Rating:** PG. Knockouts, retreats, and "taps out." No blood, gore, or suffering described.
-- **Respect:** jokes are about the animals and the absurdity, never about groups of people.
+- **Respect:** jokes are about the fighters and the absurdity, never about groups of people.
+- **Legends:** a mythical creature's numbers are introduced as legend ("according to legend, this dragon…"); objects get the same dead-serious treatment as a grizzly.
 - **Honesty:** estimates are called estimates on air ("our best guess puts this badger at…").
 - **Length:** intro 4–8 lines; play-by-play 8–20 beats; every line under 200 characters.
 
@@ -121,7 +123,7 @@ The proposal commits to two checks; the spec makes them measurable, and adds a l
 | Intake accuracy, live [added] | 25+ phrasings on the live chat model (M09) | reported |
 | Stability [added] | Same input twice → same result | 100% |
 | Latency [added] | Cached fighters: verdict ≤ 20 s; full show ≤ 2 min | met in the demo set |
-| Safety, live [added] | 40-case safety set + injection cases on the live model (A04, M09) | 100% of blocked cases blocked; ≤ 2 false blocks |
+| Safety, live [added] | 50-case safety set + injection cases on the live model (A04, M09) | 100% of blocked cases blocked; ≤ 2 false blocks |
 | Usability [added] | 3–5 outside users (D10) | findings filed and top issues fixed before the freeze |
 | Cost [added] | Endpoint calls per battle and cache hit rate (M09) | reported for new vs. repeat matchups |
 

@@ -29,9 +29,9 @@
 Task M09 from docs/plan/lane-1-mike.md. Build backend/scripts/evaluate_ai.py (live mode only; never in CI) and write docs/evaluation.md. Measure:
 1. Extraction accuracy: for each hand-verified fighter in data/seed/fighters/, build a sheet with the research pipeline ONLY (ignore the seed file), then compare stat by stat to the hand-verified value: share within 10% / within 25% / wrong, share returned as estimates, and how many extracted values failed quote verification.
 2. Retrieval: hit@5 on backend/tests/fixtures/retrieval_cases.yaml (G03).
-3. Coverage on new fighters: for 10 fighters NOT in the seed list, the share of the 7 sourced stats that came from sources vs. estimates.
+3. Coverage on new fighters: for 10 fighters NOT in the seed list (5 animals, 3 objects or machines, 2 mythical creatures not in data/seed/mythical.yaml), the share of the 7 physical stats that came from sources vs. estimates vs. assumptions, reported by kind; for the mythical ones, whether the chosen analogs are sensible (your judgment, one line each).
 4. Intake accuracy on the live chat model: run the 25+ A02 phrasings; exact-match rate on entity, count, and terrain.
-5. Safety on the live model: precision and recall on the 40-case set (A04), plus the injection cases.
+5. Safety on the live model: precision and recall on the 50-case set (A04), plus the injection cases.
 6. Benchmark twice (via F07's runner): with seed sheets, and with research-only sheets, on the held-out subset that was frozen before tuning (G07). Report both.
 7. Cost and speed: endpoint calls per battle by service, cache hit rate on a repeat run, median and 90th-percentile time to verdict and to full show.
 Write docs/evaluation.md with a one-paragraph summary, a table per section, the date, the commit, and an honest "what this means / limitations" section. Never print or write endpoint hosts or keys.
@@ -40,7 +40,7 @@ Write docs/evaluation.md with a one-paragraph summary, a table per section, the 
 **Acceptance criteria**
 - [ ] `docs/evaluation.md` has all seven sections and a one-paragraph summary, with numbers from live endpoints, the run date, and the commit hash
 - [ ] Extraction: a per-stat comparison for every hand-verified fighter (within 10% / within 25% / wrong / returned as estimate) and the count of quote-verification failures
-- [ ] Intake exact-match rate on the A02 phrasings; safety precision and recall on the 40-case set plus the injection results
+- [ ] Intake exact-match rate on the A02 phrasings; safety precision and recall on the 50-case set plus the injection results
 - [ ] The held-out benchmark is reported for both seed and research-only sheets
 - [ ] Cost and speed: endpoint calls per battle by service, the cache hit rate on a repeat run, and median and 90th-percentile time to verdict and to full show
 - [ ] The Limitations section names at least: estimates, behavioral assumptions, two-sided matchups only, and dependence on the course endpoints
