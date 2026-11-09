@@ -1,0 +1,29 @@
+# Critical files: changes need PM approval (CLAUDE.md §3, DECISIONS D-29, D-31).
+# This list is authoritative. The "Critical files approval" check reads it from main.
+# A leading / anchors a path at the repo root; a trailing / covers the whole folder.
+# Backup approver when Mike is unavailable: @gunnaroc (enforced by the check, D-31).
+# CRITICAL FILE: changes need PM approval.
+
+/CLAUDE.md                     @mlip3191
+/INIT.md                       @mlip3191
+/.claude/                      @mlip3191
+/.github/                      @mlip3191
+/.githooks/                    @mlip3191
+/.gitignore                    @mlip3191
+/.gitattributes                @mlip3191
+/.editorconfig                 @mlip3191
+/.nvmrc                        @mlip3191
+/.env.example                  @mlip3191
+/.mcp.json                     @mlip3191
+/.gitleaks.toml                @mlip3191
+/.gitleaksignore               @mlip3191
+/scripts/                      @mlip3191
+/package.json                  @mlip3191
+/package-lock.json             @mlip3191
+/frontend/package.json         @mlip3191
+/frontend/package-lock.json    @mlip3191
+/backend/pyproject.toml        @mlip3191
+/backend/uv.lock               @mlip3191
+/backend/app/config.py         @mlip3191
+/backend/app/models/           @mlip3191
+/docs/ARCHITECTURE.md          @mlip3191

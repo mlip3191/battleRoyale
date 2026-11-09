@@ -14,7 +14,7 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 - M04: done
 - M05: done
 - M06: done
-- M07: not started
+- M07: in progress
 - M08: not started
 
 ### M01 — repo settings (read back from the GitHub API, 2026-11-08)

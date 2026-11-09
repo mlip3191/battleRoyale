@@ -1,0 +1,106 @@
+# Critical files approval - a PR that changes a critical file (listed in .github/CODEOWNERS)
+# needs an approval from Mike (@mlip3191), or from the backup approver @gunnaroc when he
+# didn't write the PR (DECISIONS D-31), on the PR's latest commit. Make it a required check.
+#
+# Safety: pull_request_target runs MAIN's copy of this workflow, so a PR can't weaken the
+# check that guards it. It never checks out or runs the PR's code; it only reads the PR
+# through the GitHub API, and CODEOWNERS is read from main, not from the PR.
+#
+# Approvals don't start new runs. After approving, re-run this check (the review-prs skill
+# does it with `gh run rerun`; or click "Re-run jobs" on the PR's Checks tab).
+# CRITICAL FILE: changes need PM approval.
+name: Critical files approval
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: critical-files-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  critical-files:
+    name: Critical files approval
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check critical files have PM approval
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const OWNER = "mlip3191";
+            const BACKUP = "gunnaroc";
+            const { owner, repo } = context.repo;
+            const number = context.payload.pull_request.number;
+
+            // Read the PR fresh (a re-run reuses the old event, so its head SHA may be stale).
+            const { data: pr } = await github.rest.pulls.get({ owner, repo, pull_number: number });
+            const author = pr.user.login;
+            const head = pr.head.sha;
+            const mainBranch = pr.base.repo.default_branch;
+
+            // CODEOWNERS patterns from main: the first word of each non-comment line.
+            const { data: file } = await github.rest.repos.getContent({
+              owner, repo, path: ".github/CODEOWNERS", ref: mainBranch,
+            });
+            const patterns = Buffer.from(file.content, "base64").toString("utf8")
+              .split(/\r?\n/).map((line) => line.trim())
+              .filter((line) => line && !line.startsWith("#"))
+              .map((line) => line.split(/\s+/)[0]);
+
+            // "/x" matches x at the root, "/x/" the whole root folder x, and an unanchored
+            // "x" or "x/" matches at any depth.
+            const matches = (path, pattern) => {
+              const anchored = pattern.startsWith("/");
+              const body = anchored ? pattern.slice(1) : pattern;
+              const candidates = anchored
+                ? [path]
+                : path.split("/").map((_, i, parts) => parts.slice(i).join("/"));
+              return candidates.some((p) => (body.endsWith("/") ? p.startsWith(body) : p === body));
+            };
+
+            // Every path the PR touches, including the old name of a renamed file.
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: number, per_page: 100,
+            });
+            const paths = [...new Set(files.flatMap((f) => [f.filename, f.previous_filename].filter(Boolean)))];
+            const critical = paths.filter((path) => patterns.some((pattern) => matches(path, pattern)));
+
+            if (critical.length === 0) {
+              core.info("No critical files changed. Nothing to approve.");
+              return;
+            }
+            core.info(`Critical files changed:\n  ${critical.join("\n  ")}`);
+            if (author === OWNER) {
+              core.info(`The PM (${OWNER}) wrote this PR, so no extra approval is needed.`);
+              return;
+            }
+
+            // Each approver's latest deciding review must be APPROVED on the current head commit.
+            const approvers = [OWNER, BACKUP].filter((login) => login !== author);
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {
+              owner, repo, pull_number: number, per_page: 100,
+            });
+            const deciding = ["APPROVED", "CHANGES_REQUESTED", "DISMISSED"];
+            const approvedBy = approvers.filter((login) => {
+              const latest = reviews
+                .filter((r) => r.user && r.user.login === login && deciding.includes(r.state))
+                .at(-1);
+              return latest && latest.state === "APPROVED" && latest.commit_id === head;
+            });
+
+            if (approvedBy.length > 0) {
+              core.info(`Approved by ${approvedBy.join(", ")} on the latest commit.`);
+              return;
+            }
+            core.setFailed(
+              `This PR changes critical files (${critical.join(", ")}). ` +
+              `It needs an approval from @${approvers.join(" or @")} on the latest commit. ` +
+              "If they already approved an earlier commit, ask them to approve again. " +
+              "After they approve, re-run this check (Checks tab > Re-run jobs)."
+            );
