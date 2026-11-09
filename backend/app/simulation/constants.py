@@ -5,7 +5,7 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-ENGINE_VERSION = 2
+ENGINE_VERSION = 3
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1
@@ -63,3 +63,14 @@ STRENGTH_SCALE_EXP = 2 / 3
 LENGTH_SCALE_EXP = 1 / 3
 # Top running speed scales roughly with mass ** 0.17 (Garland 1983), about k ** (1/6).
 SPEED_SCALE_EXP = 1 / 6
+
+# --- Terrain and behavior (F04) ---
+
+# A side retreats once it has lost this share of its total hit points. The share is
+# MORALE_FLOOR + MORALE_SPAN * aggression_0_1, so the most timid break at 20% and the most
+# aggressive never do (assumption; no source measures this).
+MORALE_FLOOR = 0.2
+MORALE_SPAN = 0.8
+# Coordinated attacks: with two or more attackers on one target, hit chance rises by up to
+# this share at group_tactics_0_1 = 1 (assumption).
+GROUP_TACTICS_BONUS = 0.5
