@@ -4,7 +4,7 @@
 
 MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM), Adam Fondale, Gunnar O'Connor, Felipe Cervino, Dillon Smart.
 
-> **Status: Phase 0 (setup).** The app code doesn't exist yet. This repo holds the plan, the rules, and the prompts that build it with Claude Code.
+> **Status: Phase 0 done.** The skeleton runs (`npm start`), every task is an issue on the [project board](https://github.com/users/mlip3191/projects/2), and Wave 1 starts Wed Nov 11.
 
 ## Start here
 
