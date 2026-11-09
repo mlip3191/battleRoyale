@@ -34,6 +34,49 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 | Rulesets | none (light ruleset added in M02) |
 | GitHub secret scanning / push protection | not offered for this private personal repo; covered by the local git hook and the gitleaks Secret scan (M07) |
 
+### D-34 fallback: Linux-only required checks (ready to apply)
+
+**Minutes snapshot (2026-11-09):** about 289 of 3,000 billed Actions minutes used in November (90 runs: 99 Linux job-minutes ×1, 85 Windows ×2, 2 macOS ×10; each job rounded up to a whole minute). One PR push costs roughly 10–13 billed minutes, most of it the two Windows jobs. Estimated from job timings, because the billing API needs the `user` token scope (`gh auth refresh -s user` to read it directly).
+
+**When:** fewer than ~600 minutes remain (check Settings → Billing weekly). Step 1 is to stop manual macOS runs; this is step 2.
+
+**Step 2a — CI runs Windows only on demand.** In `.github/workflows/ci.yml` (protected; PR needs PM approval), change the default matrix in both jobs from `'["ubuntu-latest","windows-latest"]'` to `'["ubuntu-latest"]'`. `workflow_dispatch` still accepts `windows-latest`, so step 3 is `gh workflow run ci.yml --ref main -f os=windows-latest` before each milestone.
+
+**Step 2b — the ruleset stops requiring the Windows checks.** Save this as `.claude/tmp/ruleset-linux.json` and run `gh api repos/mlip3191/battleRoyale/rulesets/26832578 --method PUT --input .claude/tmp/ruleset-linux.json`. Do 2a and 2b together: if 2b comes first nothing breaks; if 2a comes first, PRs wait forever for Windows checks that never run.
+
+```json
+{
+  "name": "main protection",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+  "bypass_actors": [],
+  "rules": [
+    {"type": "pull_request", "parameters": {
+      "required_approving_review_count": 1,
+      "dismiss_stale_reviews_on_push": false,
+      "required_reviewers": [],
+      "require_code_owner_review": false,
+      "require_last_push_approval": false,
+      "required_review_thread_resolution": false,
+      "require_extra_approval_for_unattributed_changes": true,
+      "allowed_merge_methods": ["merge", "squash", "rebase"]}},
+    {"type": "required_status_checks", "parameters": {
+      "strict_required_status_checks_policy": false,
+      "do_not_enforce_on_create": false,
+      "required_status_checks": [
+        {"context": "backend (ubuntu-latest)", "integration_id": 15368},
+        {"context": "frontend (ubuntu-latest)", "integration_id": 15368},
+        {"context": "Secret scan", "integration_id": 15368},
+        {"context": "Critical files approval", "integration_id": 15368}]}},
+    {"type": "non_fast_forward"},
+    {"type": "deletion"}
+  ]
+}
+```
+
+**Switch back** (new month, minutes reset): restore the two-OS matrix in `ci.yml`, then add `{"context": "backend (windows-latest)", "integration_id": 15368}` and `{"context": "frontend (windows-latest)", "integration_id": 15368}` back to `required_status_checks` and run the same `gh api ... --method PUT` command.
+
 ### Notes
 
 - Node changed from 24 to 26 (current LTS) before M04 (DECISIONS D-12).
