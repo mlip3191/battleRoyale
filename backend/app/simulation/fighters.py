@@ -97,6 +97,8 @@ def sample_template(
     force = max(draw(StatName.ATTACK_FORCE), 0.0) * k**c.STRENGTH_SCALE_EXP
     length = k**c.LENGTH_SCALE_EXP
     speed = max(draw(StatName.SPEED), 0.0) * k**c.SPEED_SCALE_EXP
+    if sheet.body == Body.INERT:
+        speed = 0.0  # objects and plants never move toward anyone, whatever speed a source lists
     rate = max(draw(StatName.ATTACK_RATE), 0.0)
     reach = max(draw(StatName.REACH), 0.0) * length
     damage = force * c.DAMAGE_PER_NEWTON
