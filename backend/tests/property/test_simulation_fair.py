@@ -114,11 +114,17 @@ def test_the_search_shrinks_the_count_when_the_first_probe_is_already_too_strong
 
 
 def test_a_rough_answer_says_about_and_reports_the_real_win_share():
-    # 9 cats vs a wolf: no whole number of wolves lands inside the band, so the closest is returned.
-    found = fair_fight(matchup_of(9, 1), [house_cat(), wolf()])
-    assert found.count is not None
-    assert abs(found.win_prob_at_count - 0.5) > c.FAIR_TOLERANCE
-    assert "about" in found.message
+    # Whole numbers can't always land inside the band. Which cat counts do depends on the engine
+    # version, so scan a range: "about" must appear exactly when the win share is outside the band,
+    # and at least one fight in the range must be of that kind.
+    rough = 0
+    for cats in range(9, 31):
+        found = fair_fight(matchup_of(cats, 1), [house_cat(), wolf()])
+        assert found.count is not None
+        outside = abs(found.win_prob_at_count - 0.5) > c.FAIR_TOLERANCE
+        assert ("about" in found.message) == outside
+        rough += outside
+    assert rough >= 1
 
 
 # --- test_challengers ----------------------------------------------------------------------------
