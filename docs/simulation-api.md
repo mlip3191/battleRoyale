@@ -15,7 +15,7 @@ from app.simulation.summary import summary
 | `run(matchup, stat_sheets, runs=None, reference_sheets=None, explain=True)` | `SimulationResult` | The verdict, the replay log, the deciding factor | 0.4 s for a 1 v 1; ~1 s for 6 v 1; ~1.5 s for 10,000 ants v 1 lion |
 | `run(..., explain=False)` | `SimulationResult` (placeholder explainer) | Quick probes where you do not need the "why". **Never show** its `deciding_factor` (always `mass_kg`) or explainer ("Deciding factor not computed."): both are placeholders | 0.15 s for a 1 v 1 |
 | `fair_fight(matchup, stat_sheets, result=None, reference_sheets=None)` | `FairFight` | "A fair fight needs 37 house cats" | 0.1 s for wolf vs cats; ~4-5 s when there is no answer (15 swarm probes) |
-| `test_challengers(winner_sheet, candidates, terrain=Terrain.ARENA)` | `list[ChallengerSuggestion]`, closest to 50/50 first | The "next challenger" step | ~0.3 s for 8 candidates |
+| `test_challengers(winner_sheet, candidates, terrain)` | `list[ChallengerSuggestion]`, closest to 50/50 first (may be **empty**: candidates that cannot meet the winner are dropped; `entity` is a display name, not a `fighter_id`) | The "next challenger" step | ~0.3 s for 8 candidates |
 | `summary(result, names)` | `Summary` | The numbers the UI and announcer need | instant |
 
 Timings are typical on a dev laptop at `ENGINE_VERSION 5`; expect similar or faster.
@@ -136,7 +136,8 @@ Weapon words: bite, claw swipe, goring thrust, kick, venom strike, squeeze, tusk
 - Pass the `result` you already have to `fair_fight` so it does not re-simulate.
 - Fair-fight and challenger probes use 200 runs each by design.
 - One-by-one fights cost roughly the number of attacks made, so groups just under 200 per side are slow (200 v 200 takes ~17 s at 1,000 runs). If you let users type big numbers, cap the run count there, or ask the simulation owner (Felipe) to lower the swarm threshold.
-- Run the engine off the event loop (a thread or task): it is CPU-bound Python.
+- Run the engine off the event loop: `run`, `fair_fight` and `test_challengers` are plain blocking, CPU-bound functions. For example `result = await asyncio.to_thread(run, matchup, sheets)`.
+- **Stage budgets vs real timings** (ARCHITECTURE §4): Simulate ≤ 3 s, Fair fight ≤ 5 s, Next challenger ≤ 10 s. A 1 v 1 and most real fights fit easily. Two cases do not: large one-by-one fights (200 v 200 takes ~17 s) and the "no fair fight" search (~4-6 s). Until the team settles how to handle large counts (see #91: lower the swarm threshold, cap counts in intake, or allow the stage to time out), the orchestrator should put a timeout on each call and fall back: for fair fight, show "no fair fight found in time" rather than failing; for the challenger step, use the closest-odds seed fighter. The empty challenger list is the same fallback.
 
 ## Known gaps
 
