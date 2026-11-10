@@ -9,9 +9,11 @@ from pydantic import BaseModel
 from app.models import (
     CONTRACT_MODELS,
     Asset,
+    BattleCreated,
     BattleRecord,
     ChallengerSuggestion,
     FairFight,
+    FighterMatch,
     FighterRequest,
     FightEvent,
     IntakeResult,
@@ -19,6 +21,7 @@ from app.models import (
     Matchup,
     Script,
     ScriptLine,
+    ShowcaseBattle,
     SimulationResult,
     Source,
     StageStatus,
@@ -50,6 +53,9 @@ FIXTURE_MODELS: dict[str, type[BaseModel]] = {
     "stage-status.json": StageStatus,
     "battle-record-running.json": BattleRecord,
     "battle-record-done.json": BattleRecord,
+    "battle-created.json": BattleCreated,
+    "showcase-battle.json": ShowcaseBattle,
+    "fighter-match.json": FighterMatch,
 }
 
 
