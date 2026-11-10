@@ -19,6 +19,7 @@ from app.intake.parser import (
     parse_matchup,
     typed_sides,
 )
+from app.intake.schema import ParsedMatchup
 from app.models.matchup import IntakeResult
 from app.models.terrain import Terrain
 from app.providers.base import ChatMessage
@@ -170,22 +171,67 @@ async def test_every_kind_of_outage_raises_intake_unavailable(error: Exception) 
         await parse_matchup("a lion vs a tiger", chat=DownChat())
 
 
-# A reply that came back unusable is still "please rephrase", even if the other call failed.
+# An empty `{}` reply plus a failed call is an outage, not the user's wording (live runs saw both).
 @pytest.mark.parametrize("fail_first", [True, False])
-async def test_one_bad_reply_and_one_outage_still_asks_to_rephrase(fail_first: bool) -> None:
+async def test_empty_reply_and_one_outage_raises_intake_unavailable(fail_first: bool) -> None:
     class FlakyChat:
         calls = 0
 
         async def complete(self, messages: list[ChatMessage], **_: Any) -> str:
             self.calls += 1
             if (self.calls == 1) == fail_first:
-                raise ProviderError("HTTP 503")
-            return "not JSON"
+                raise TimeoutError()
+            return "{}"
 
     chat = FlakyChat()
-    result = await parse_matchup("a lion vs a tiger", chat=chat)
-    assert result.status == "clarify" and "another way" in (result.question or "")
+    with pytest.raises(IntakeUnavailable):
+        await parse_matchup("a lion vs a tiger", chat=chat)
     assert chat.calls == 2
+
+
+# Two `{}` replies mean the model answered but unusably: ask the user to rephrase.
+async def test_two_empty_replies_ask_to_rephrase() -> None:
+    text = "a lion vs a tiger"
+    chat = CannedChat({text: ["{}", "{}"]})
+    result = await parse_matchup(text, chat=chat)
+    assert result.status == "clarify" and "another way" in (result.question or "")
+    assert len(chat.calls) == 2
+
+
+# A `{}` first reply is retried, and a good second reply is used.
+async def test_empty_reply_then_valid_reply_is_ok() -> None:
+    text = "a lion vs a tiger"
+    good = {
+        "fighters": [{"raw": "a lion", "entity": "lion"}, {"raw": "a tiger", "entity": "tiger"}]
+    }
+    chat = CannedChat({text: ["{}", good]})
+    result = await parse_matchup(text, chat=chat)
+    assert result.status == "ok" and result.matchup is not None
+    assert [f.entity for f in result.matchup.fighters] == ["lion", "tiger"]
+    assert "fighters" in chat.calls[1][3]["content"]  # the retry names the missing field
+
+
+# One-sided input: before the schema fix, `{}` passed as an empty matchup; now it is retried.
+async def test_empty_reply_then_valid_one_sided_reply_is_used() -> None:
+    text = "bear"
+    good = {
+        "fighters": [{"raw": "bear", "entity": "bear"}],
+        "needs_clarification": {
+            "question": "Which bear are we talking about?",
+            "options": ["grizzly bear", "polar bear", "black bear"],
+        },
+    }
+    chat = CannedChat({text: ["{}", good]})
+    result = await parse_matchup(text, chat=chat)
+    assert len(chat.calls) == 2  # the `{}` triggered a retry
+    assert "fighters" in chat.calls[1][3]["content"]
+    assert result.status == "clarify" and result.question == "Which bear are we talking about?"
+    assert result.options == ["grizzly bear", "polar bear", "black bear"]
+
+
+# The schema sent to the model must require `fighters`, so structured output can't return `{}`.
+def test_parsed_matchup_schema_requires_fighters() -> None:
+    assert "fighters" in ParsedMatchup.model_json_schema().get("required", [])
 
 
 # Issue #142 item 6: a missing mock fixture is a developer error and must fail loudly.

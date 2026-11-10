@@ -74,7 +74,7 @@ class ModelReplyError(ValueError):
 
 
 class IntakeUnavailable(RuntimeError):
-    """Every model call failed because the provider was unavailable; no reply came back at all.
+    """A model call failed (provider error, network, timeout) and no attempt gave a usable reply.
 
     Raised instead of the "please rephrase" result so an outage isn't blamed on the user's wording
     (issue #142 item 4). The API layer maps it to a "try again in a moment" response (D08).
@@ -154,19 +154,18 @@ def read_reply(reply: str, text: str) -> ParsedMatchup:
 
 
 # Ask the model, retrying once with the problem described; None if the replies were unusable.
-# Raises IntakeUnavailable when no attempt got a reply at all (the provider is down).
+# Raises IntakeUnavailable when any call failed and no reply was usable, so a provider error
+# isn't blamed on the user's wording; only all-replies-unusable means "please rephrase".
 async def ask_model(chat: ChatLLM, text: str) -> ParsedMatchup | None:
     messages = build_messages(text)
     schema = ParsedMatchup.model_json_schema()
     outage: Exception | None = None
-    got_reply = False
     for attempt in range(2):
         try:
             reply = await chat.complete(messages, prompt_name=PROMPT_NAME, json_schema=schema)
         except CALL_ERRORS as error:
             outage = error
             continue  # the call itself failed: the retry sends the same messages
-        got_reply = True
         try:
             return read_reply(reply, text)
         except ModelReplyError as error:
@@ -177,8 +176,10 @@ async def ask_model(chat: ChatLLM, text: str) -> ParsedMatchup | None:
                     {"role": "assistant", "content": reply},
                     {"role": "user", "content": f"{problem}\nReply again with JSON only."},
                 ]
-    if not got_reply:
-        raise IntakeUnavailable("The chat provider is unavailable; no reply came back.") from outage
+    if outage is not None:
+        raise IntakeUnavailable(
+            "The chat provider failed and no usable reply came back."
+        ) from outage
     return None
 
 
