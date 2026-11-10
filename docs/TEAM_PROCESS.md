@@ -13,7 +13,7 @@
 | 0 | Repo settings | M01 (all Phase 0 tasks are in INIT.md) |
 | 1 | CLAUDE.md | shipped in the repo; finalized in M02 |
 | 2 | Branch protection, critical files, PR template | M07, M08 |
-| 3 | Reviewer agent and the review-prs skill | shipped; verified in M07; guide in F01 |
+| 3 | Reviewer agent and the review-prs skill | shipped; verified in M07; guide: [reviewing.md](reviewing.md) |
 | 4 | Issues scaffold | M08 (labels, issues, board), A01 (forms, /new-issue) |
 | 5 | Onboarding | README quick start (shipped), D01 (guide + setup check) |
 | 6 | CI and cross-platform | M04 |
@@ -330,7 +330,7 @@ People on two computers repeat the installs on both, log in to GitHub and Claude
 
 3.  Ask Claude to open the pull request.
 
-4.  Run /review on a teammate's PR to practice reviewing.
+4.  Run /review on a teammate's PR to practice reviewing (the guide: [reviewing.md](reviewing.md)).
 
 5.  Once your PR is approved, merge it.
 
@@ -340,7 +340,7 @@ People on two computers repeat the installs on both, log in to GitHub and Claude
 |--------------------|----------------------------------------------------|
 | Start a task       | "Start work on issue \#\<number\>"                 |
 | Create a new issue | /new-issue                                         |
-| Review a PR        | "What can I review?" or /review \<PR number\>|
+| Review a PR        | "What can I review?" or /review \<PR number\> (see [reviewing.md](reviewing.md)) |
 | Check my own work  | /qa (current branch) or /qa \<PR number\>     |
 | Get latest code    | "Pull the latest main"                             |
 | Undo something     | "Undo your last change and explain what you undid" |

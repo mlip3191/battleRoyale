@@ -29,6 +29,35 @@ async def post_json(
     timeout_s: float,
     client: httpx.AsyncClient | None = None,
 ) -> Any:
+    return await _request_json(
+        "POST", provider, base_url, path, api_key, payload, timeout_s, client
+    )
+
+
+# GET a JSON reply, with the same retries as post_json.
+async def get_json(
+    *,
+    provider: str,
+    base_url: str,
+    path: str,
+    api_key: str,
+    timeout_s: float,
+    client: httpx.AsyncClient | None = None,
+) -> Any:
+    return await _request_json("GET", provider, base_url, path, api_key, None, timeout_s, client)
+
+
+# Send one request and return the parsed reply, retrying transient failures.
+async def _request_json(
+    method: str,
+    provider: str,
+    base_url: str,
+    path: str,
+    api_key: str,
+    payload: dict[str, Any] | None,
+    timeout_s: float,
+    client: httpx.AsyncClient | None,
+) -> Any:
     headers = {"Authorization": f"Bearer {api_key}"}
     owned = client is None
     client = client or httpx.AsyncClient(timeout=timeout_s)
@@ -36,7 +65,9 @@ async def post_json(
         for attempt in range(RETRIES + 1):
             started = time.perf_counter()
             try:
-                response = await client.post(base_url + path, json=payload, headers=headers)
+                response = await client.request(
+                    method, base_url + path, json=payload, headers=headers
+                )
             except httpx.TransportError as error:
                 problem = f"{type(error).__name__}"
             else:

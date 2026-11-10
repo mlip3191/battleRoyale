@@ -99,6 +99,37 @@ def test_plural_rules():
     assert plural("Monkey", 2) == "monkeys"
 
 
+def test_plural_handles_irregular_names_and_keeps_proper_nouns():
+    assert plural("House mouse", 37) == "house mice"
+    assert plural("Goose", 2) == "geese"
+    assert plural("Sheep", 5) == "sheep"
+    assert plural("African elephant", 1) == "african elephant"
+    assert plural("T. rex", 2) == "t. rexes"
+
+
+def test_the_search_shrinks_the_count_when_the_first_probe_is_already_too_strong():
+    """A main result from a small fight, reused for a 300-cat matchup (cats win easily)."""
+    small = run(matchup_of(1, 1), [house_cat(), wolf()], runs=200, explain=False)
+    found = fair_fight(matchup_of(300, 1), [house_cat(), wolf()], result=small)
+    assert found.varied_side == 0
+    assert found.count is not None and found.count < 300
+    assert abs(found.win_prob_at_count - 0.5) <= 0.1
+
+
+def test_a_rough_answer_says_about_and_reports_the_real_win_share():
+    # Whole numbers can't always land inside the band. Which cat counts do depends on the engine
+    # version, so scan a range: "about" must appear exactly when the win share is outside the band,
+    # and at least one fight in the range must be of that kind.
+    rough = 0
+    for cats in range(9, 31):
+        found = fair_fight(matchup_of(cats, 1), [house_cat(), wolf()])
+        assert found.count is not None
+        outside = abs(found.win_prob_at_count - 0.5) > c.FAIR_TOLERANCE
+        assert ("about" in found.message) == outside
+        rough += outside
+    assert rough >= 1
+
+
 # --- test_challengers ----------------------------------------------------------------------------
 
 
@@ -109,8 +140,8 @@ def test_challengers_are_sorted_by_closeness_to_a_coin_flip_and_repeatable():
         make_sheet("bear", mass_kg=300, size_m=2.2, attack_force_n=4000),
         make_sheet("jackal", mass_kg=10, size_m=0.9, attack_force_n=700, attacks_per_s=1.5),
     ]
-    first = test_challengers(wolf(), candidates)
-    second = test_challengers(wolf(), candidates)
+    first = test_challengers(wolf(), candidates, terrain=Terrain.ARENA)
+    second = test_challengers(wolf(), candidates, terrain=Terrain.ARENA)
     assert first == second
     gaps = [abs(s.tested_win_prob - 0.5) for s in first]
     assert gaps == sorted(gaps)
@@ -130,5 +161,5 @@ def test_test_challengers_is_not_collected_as_a_test():
 
 
 def test_challenger_win_probability_is_the_challengers_not_the_winners():
-    (weak,) = test_challengers(wolf(), [house_cat()])
+    (weak,) = test_challengers(wolf(), [house_cat()], terrain=Terrain.ARENA)
     assert weak.tested_win_prob == pytest.approx(0.0, abs=0.05)

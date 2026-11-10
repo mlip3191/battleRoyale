@@ -25,7 +25,7 @@ def test_main_prints_one_section_per_scenario(capsys):
     assert out.startswith("### pack") and out.count("wolves v bear") == 5
 
 
-def test_the_table_has_a_noise_column_and_flags_gaps_inside_it():
+def test_the_table_has_a_noise_column():
     label, a, na, b, nb = vs.scenarios()["mirror"][0]
     out = vs.table([vs.compare(label, a, na, b, nb, runs=40)])
     assert "Noise (95%)" in out.splitlines()[0]

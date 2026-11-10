@@ -18,11 +18,20 @@ class FairFightSearch:
     probes: int
 
 
+_IRREGULAR_PLURALS = {
+    "mouse": "mice", "goose": "geese", "ox": "oxen", "sheep": "sheep", "deer": "deer",
+    "fish": "fish", "moose": "moose",
+}  # fmt: skip
+
+
 def plural(name: str, count: int) -> str:
-    """ "house cat" -> "house cats" (simple English rules; names are lower-cased)."""
-    name = name.lower()
+    """ "House cat" -> "house cats" (simple English rules; only the first letter is lower-cased)."""
+    name = name[:1].lower() + name[1:]
     if count == 1:
         return name
+    head, _, last = name.rpartition(" ")
+    if last in _IRREGULAR_PLURALS:
+        return (head + " " if head else "") + _IRREGULAR_PLURALS[last]
     if name.endswith(("s", "x", "sh", "ch")):
         return name + "es"
     if name.endswith("y") and name[-2:-1] not in "aeiou":
@@ -171,7 +180,7 @@ def _how_even(p: float) -> str:
 def test_challengers(
     winner_sheet: StatSheet,
     candidates: list[StatSheet],
-    terrain: Terrain = Terrain.ARENA,
+    terrain: Terrain,
 ) -> list[ChallengerSuggestion]:
     """Quick 200-run duels of the winner against each candidate, closest to 50/50 first.
 

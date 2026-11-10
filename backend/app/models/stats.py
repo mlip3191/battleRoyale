@@ -155,7 +155,7 @@ class StatSheet(Contract):
     """Everything the simulation knows about one fighter, with a source for every number."""
 
     fighter_id: str
-    """Stable slug, e.g. "grizzly-bear--adult-male"."""
+    """Stable slug, e.g. "grizzly-bear"; a non-default variant adds "--variant"."""
     display_name: str
     """Name shown to users and used in narration (letters, digits, spaces, hyphens)."""
     media_name: str
