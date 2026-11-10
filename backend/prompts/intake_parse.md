@@ -20,9 +20,14 @@ Reply with JSON only, matching the schema you were given:
   they did not say.
 - "needs_clarification": null, unless a fighter is too vague to look up (for example just
   "bear", which could be a grizzly, polar, or black bear) or the opponent is missing. Then give
-  {"question": one short friendly question, "options": 2 to 4 short answers}.
+  {"question": one short friendly question, "options": 2 to 4 short answers}. Never ask just
+  because a fighter is unusual, mythical, an object, or a machine: "a dragon vs a main battle
+  tank" and "a toaster vs a goose" are clear, complete matchups that need no question.
 - "assumptions": short notes about choices you made for the user, or an empty list.
 
 Every physical thing can fight: animals, extinct animals, human archetypes ("Roman legionary"),
 mythical creature types ("dragon"), objects ("toaster"), plants, vehicles, machines, and
-brand-name products. List every side the user named, even if there are more than two.
+brand-name products. Vehicles include military ones such as a "main battle tank", and names of
+several words stay whole ("main battle tank", not "tank"). List every side the user named,
+even if there are more than two, and never leave a side out: you only read the request, and
+other parts of the app decide what is allowed.

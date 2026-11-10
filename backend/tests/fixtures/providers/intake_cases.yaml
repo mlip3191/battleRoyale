@@ -432,3 +432,62 @@
     status: clarify
     calls: 2
     question_include: [another way]
+
+# Regression (live check, #24): the model dropped the tank and the app asked
+# "Who should a dragon fight?". Code now counts the sides the user typed and retries.
+- name: dragon vs tank, model drops the tank, retry lists both
+  text: A dragon vs a main battle tank
+  replies:
+    - fighters:
+        - {raw: A dragon, entity: dragon}
+    - fighters:
+        - {raw: A dragon, entity: dragon}
+        - {raw: a main battle tank, entity: main battle tank}
+  expect:
+    status: ok
+    calls: 2
+    fighters:
+      - {entity: dragon, count: 1, size_reference: null}
+      - {entity: main battle tank, count: 1, raw: a main battle tank}
+
+- name: toaster vs goose, model drops the goose, retry lists both
+  text: A toaster vs a goose
+  replies:
+    - fighters:
+        - {raw: A toaster, entity: toaster}
+      needs_clarification:
+        question: Who should the toaster fight?
+        options: [a goose, a cat]
+    - fighters:
+        - {raw: A toaster, entity: toaster}
+        - {raw: a goose, entity: goose}
+  expect:
+    status: ok
+    calls: 2
+    fighters:
+      - {entity: toaster, count: 1}
+      - {entity: goose, count: 1}
+
+- name: dragon vs tank, model drops the tank twice
+  text: a dragon versus a main battle tank
+  replies:
+    - fighters:
+        - {raw: a dragon, entity: dragon}
+  expect:
+    status: clarify
+    calls: 2
+    question_include: [another way]
+
+- name: multi-word names survive, with or without hyphens
+  text: 2 main battle tanks vs a saguaro cactus in the desert
+  replies:
+    - fighters:
+        - {raw: 2 main-battle tanks, entity: main battle tanks, count: 2}
+        - {raw: a saguaro cactus, entity: saguaro cactus}
+      terrain: the desert
+  expect:
+    status: ok
+    terrain: open_field
+    fighters:
+      - {entity: main battle tank, count: 2}
+      - {entity: saguaro cactus, count: 1}

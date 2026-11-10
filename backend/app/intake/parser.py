@@ -35,6 +35,8 @@ MAX_TEXT_CHARS = 500
 MAX_VARIANT_CHARS = 60
 MAX_MODEL_ASSUMPTIONS = 3
 MAX_NOTE_CHARS = 200
+# Words that separate the sides of a matchup in the user's text.
+SIDE_SPLIT = re.compile(r"\s+(?:vs\.?|versus|v\.|against)\s+", re.I)
 # Errors a chat call may raise that mean "try again", not "the app is misconfigured".
 CALL_ERRORS = (ProviderError, httpx.HTTPError, TimeoutError, LookupError)
 
@@ -83,9 +85,16 @@ def build_messages(text: str) -> list[ChatMessage]:
 # --- Talking to the model -----------------------------------------------------------------
 
 
-# Lowercase with single spaces, so "raw" phrases match however the model spaced them.
+# Lowercase with single spaces and no hyphens, so "raw" phrases match however the model spaced
+# them ("main-battle tank" and "main battle tank" are the same words).
 def _squash(text: str) -> str:
-    return " ".join(text.lower().split())
+    return " ".join(text.lower().replace("-", " ").split())
+
+
+# The sides the user typed, split on "vs", "versus", "v." or "against": "a dragon vs a tank" -> 2.
+def typed_sides(text: str) -> list[str]:
+    parts = SIDE_SPLIT.split(text.strip())
+    return [part.strip() for part in parts if part.strip()]
 
 
 # Drop a ```json fence some models wrap around JSON.
@@ -109,6 +118,13 @@ def read_reply(reply: str, text: str) -> ParsedMatchup:
             )
         if not normalize_entity(fighter.entity) and not normalize_entity(fighter.raw):
             raise ModelReplyError(f"fighters[{index}].entity must name the fighter.")
+    sides = typed_sides(text)
+    if len(sides) >= 2 and len(parsed.fighters) < len(sides):
+        raise ModelReplyError(
+            f"The request names {len(sides)} sides ({'; '.join(sides)}) but fighters lists "
+            f"{len(parsed.fighters)}. List every side, including vehicles, machines, objects, "
+            "and mythical creatures."
+        )
     return parsed
 
 

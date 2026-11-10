@@ -8,7 +8,14 @@ import pytest
 import yaml
 
 from app.config import REPO_ROOT
-from app.intake.parser import INPUT_END, INPUT_START, PROMPT_NAME, parse_matchup
+from app.intake.parser import (
+    INPUT_END,
+    INPUT_START,
+    PROMPT_NAME,
+    load_prompt,
+    parse_matchup,
+    typed_sides,
+)
 from app.models.matchup import IntakeResult
 from app.models.terrain import Terrain
 from app.providers.base import ChatMessage
@@ -176,3 +183,42 @@ async def test_the_real_mock_provider_parses_its_default_reply() -> None:
 async def test_parse_matchup_uses_the_registry_provider_by_default() -> None:
     result = await parse_matchup("a grizzly bear vs 6 gray wolves in a forest")
     assert result.status == "ok"
+
+
+@pytest.mark.parametrize(
+    ("text", "sides"),
+    [
+        ("a dragon vs a main battle tank", ["a dragon", "a main battle tank"]),
+        ("a toaster VS. a goose", ["a toaster", "a goose"]),
+        ("a wolf versus a bear against a moose", ["a wolf", "a bear", "a moose"]),
+        ("a horse v. a goat", ["a horse", "a goat"]),
+        ("bear", ["bear"]),
+        ("a grizzly bear vs", ["a grizzly bear vs"]),
+    ],
+)
+def test_typed_sides_splits_on_vs_words(text: str, sides: list[str]) -> None:
+    assert typed_sides(text) == sides
+
+
+# Regression for the live check: the model dropped the tank; the retry must name what's missing.
+async def test_a_dropped_side_is_named_in_the_retry() -> None:
+    text = "a dragon vs a main battle tank"
+    only_dragon = {"fighters": [{"raw": "a dragon", "entity": "dragon"}]}
+    both = {
+        "fighters": [
+            {"raw": "a dragon", "entity": "dragon"},
+            {"raw": "a main battle tank", "entity": "main battle tank"},
+        ]
+    }
+    chat = CannedChat({text: [only_dragon, both]})
+    result = await parse_matchup(text, chat=chat)
+    assert result.status == "ok" and result.matchup is not None
+    assert [f.entity for f in result.matchup.fighters] == ["dragon", "main battle tank"]
+    feedback = chat.calls[1][3]["content"]
+    assert "2 sides" in feedback and "a main battle tank" in feedback
+
+
+def test_the_prompt_says_unusual_fighters_need_no_question() -> None:
+    prompt = " ".join(load_prompt().split())
+    assert "a dragon vs a main battle tank" in prompt and "a toaster vs a goose" in prompt
+    assert "never leave a side out" in prompt
