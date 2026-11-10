@@ -36,9 +36,13 @@ def content_hash(text: str) -> str:
 async def ensure_vector_table(connection: sqlite3.Connection, embedder: Embedder) -> int:
     size = len((await embedder.embed([SIZE_PROBE]))[0])
     row = connection.execute("SELECT value FROM kb_meta WHERE key = ?", (SIZE_KEY,)).fetchone()
-    if row is not None and int(row[0]) == size:
+    table = connection.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'chunks_vec'"
+    ).fetchone()
+    if row is not None and table is not None and int(row[0]) == size:
         return size
     with connection:
+        connection.execute("BEGIN")  # table changes join the transaction only if it is explicit
         connection.execute("DROP TABLE IF EXISTS chunks_vec")
         connection.execute("DELETE FROM documents")
         connection.execute(

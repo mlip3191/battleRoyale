@@ -122,6 +122,27 @@ async def test_a_new_embedding_size_rebuilds_the_table(database: sqlite3.Connect
     assert await store_document(database, RECORD, larger) is True
 
 
+async def test_a_missing_vector_table_is_rebuilt(database: sqlite3.Connection) -> None:
+    embedder = MockEmbedder()
+    await ensure_vector_table(database, embedder)
+    database.execute("DROP TABLE chunks_vec")
+    assert await ensure_vector_table(database, embedder) == 64
+    assert await store_document(database, RECORD, embedder) is True
+    assert count(database, "chunks_vec") > 0
+
+
+async def test_a_failed_rebuild_keeps_the_old_table(database: sqlite3.Connection) -> None:
+    await ensure_vector_table(database, MockEmbedder(dim=64))
+    await store_document(database, RECORD, MockEmbedder(dim=64))
+    database.execute(
+        "CREATE TRIGGER fail_rebuild BEFORE INSERT ON kb_meta "
+        "BEGIN SELECT RAISE(ABORT, 'simulated crash'); END"
+    )
+    with pytest.raises(sqlite3.Error):
+        await ensure_vector_table(database, MockEmbedder(dim=128))
+    assert count(database, "documents") == 1 and count(database, "chunks_vec") > 0
+
+
 async def test_a_failed_vector_insert_stores_nothing(database: sqlite3.Connection) -> None:
     await ensure_vector_table(database, MockEmbedder(dim=64))
     with pytest.raises(sqlite3.Error):
