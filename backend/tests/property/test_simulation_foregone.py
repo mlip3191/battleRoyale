@@ -15,13 +15,20 @@ from app.simulation.engine import (
 )
 from app.simulation.fair import fair_fight
 from app.simulation.rng import run_rng
-from tests.property.sim_helpers import make_sheet, matchup_of
+from tests.property.sim_helpers import make_dragon, make_sheet, matchup_of
 
 WEAPONS = [["teeth"], ["claws"], ["weapon_ranged"], ["ramming"], ["crushing"], ["spines"], ["none"]]
 
 
 def random_sheet(rng: random.Random, tag: str):
     """A fighter that is often feeble, huge, or stopped, so many fights are foregone."""
+    if rng.random() < 0.2:  # mythical abilities: regeneration and breath take their own paths
+        return make_dragon(
+            rng.choice([["regeneration"], ["breath_weapon"], ["regeneration", "breath_weapon"]]),
+            name=tag,
+            mass_kg=rng.choice([5.0, 800.0, 5000.0]),
+            attack_force_n=rng.choice([2.0, 3000.0, 20000.0]),
+        )
     return make_sheet(
         tag,
         spread=rng.choice([0.0, 0.2, 0.5]),
@@ -47,7 +54,11 @@ def test_a_foregone_result_matches_the_full_simulation_exactly():
     checked = 0
     for i in range(400):
         a, b = random_sheet(rng, f"a{i}"), random_sheet(rng, f"b{i}")
-        matchup = matchup_of(rng.choice([1, 2, 6]), rng.choice([1, 3, 12]), terrain=Terrain.ARENA)
+        matchup = matchup_of(
+            rng.choice([1, 2, 6, 250, 1000]),
+            rng.choice([1, 3, 12, 300]),
+            terrain=rng.choice(list(Terrain)),
+        )
         stream = run_rng(7, i)
         sides = _templates(matchup, [a, b], stream, (1.0, 1.0))
         if _foregone(sides, _starts(sides)) is None:
@@ -172,3 +183,39 @@ def test_draw_constant_is_used_for_certain_stalemates():
     )
     sides = _templates(matchup_of(1, 1), [gnat, mountain], run_rng(1, 0), (1.0, 1.0))
     assert _foregone(sides, _starts(sides)) == (DRAW, c.MAX_FIGHT_S)
+
+
+def test_the_shortcut_is_never_taken_when_a_side_is_above_the_swarm_threshold():
+    # Swarm mode acts in coarse steps, so the per-interval bound is not exact there: 300 archers
+    # against a wall at the edge of the bound used to be called a draw but won in the full run.
+    archer = make_sheet("archer", weapons=["weapon_ranged"], reach_m=8, attack_force_n=2.0)
+    wall = make_sheet(
+        "wall", body="inert", weapons=["none"], mass_kg=5e6, size_m=10, attack_force_n=0,
+        attacks_per_s=0, top_speed_mps=0, spread=0.0,
+    )  # fmt: skip
+    matchup = matchup_of(300, 1)
+    sides = _templates(matchup, [archer, wall], run_rng(1, 0), (1.0, 1.0))
+    assert _foregone(sides, _starts(sides)) is None
+
+
+def test_two_machines_that_both_stop_en_route_in_swarm_mode_the_first_to_stop_loses():
+    # 250 machines with 5 s of operating time against one with 7 s: one by one, the 5 s side loses
+    # at its exact endurance. Swarm mode used to zero both at the same step (a mutual wipe-out).
+    slow = make_sheet(
+        "slow", body="machine", weapons=["ramming"], mass_kg=3, endurance_s=5,
+        attack_force_n=0, top_speed_mps=0.4, spread=0.0,
+    )  # fmt: skip
+    lasting = make_sheet(
+        "lasting", body="machine", weapons=["ramming"], mass_kg=3, endurance_s=7,
+        attack_force_n=0, top_speed_mps=0.4, spread=0.0,
+    )  # fmt: skip
+    m = matchup_of(250, 1)
+    for k in range(5):
+        rng = run_rng(8, k)
+        sides = _templates(m, [slow, lasting], rng, (1.0, 1.0))
+        # Recording events runs the real swarm simulation (the shortcut would also get this right).
+        outcome = run_once(sides, m.terrain, rng, record_events=True)
+        assert outcome.winner == 1 and outcome.survivors == (0, 1)
+        assert outcome.duration_s <= 5.0 + c.TICK_S  # at its operating time, not a step later
+        stops = [e for e in outcome.events if e.text_hint.startswith("out of action")]
+        assert [(e.side, e.group_size) for e in stops] == [(0, 250)]

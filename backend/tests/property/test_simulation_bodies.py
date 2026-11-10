@@ -229,7 +229,7 @@ def test_flight_gives_air_rules_and_lets_a_flier_engage_land_fighters():
     assert flying.speed_mps < plain.speed_mps  # forest hinders fliers more (assumption table)
     # An air fighter fights a land fighter in the open field.
     result = run(matchup_of(1, 1), [flier, truck()], runs=50, explain=False)
-    assert result.outcome != "no_contest"
+    assert result.win_prob[0] + result.win_prob[1] + result.draw_prob == pytest.approx(1.0)
     assert any(e.side == 0 and e.type == EventType.HIT for e in result.representative_log)
 
 
