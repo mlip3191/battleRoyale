@@ -83,20 +83,37 @@ const slug = (text: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
+// True when `name` appears in the sprite's id or URL as whole dash-separated words,
+// so "ant" does not match "elephant" or "giant" ("-ant-" is not inside "-elephant-png-").
+const namesSprite = (asset: Asset, name: string) =>
+  name !== "" &&
+  `-${slug(`${asset.asset_id} ${asset.url}`)}-`.includes(`-${name}-`);
+
+// Which fighter a sprite belongs to: the one whose name it contains. When both names fit
+// ("bear" and "polar bear" both fit "polar-bear.png"), the longer, more specific name wins.
+function ownerOf(asset: Asset, names: readonly string[]): number | null {
+  const fits = names
+    .map((name, i) => ({ name, i }))
+    .filter(({ name }) => namesSprite(asset, name));
+  if (fits.length === 0) return null;
+  const longest = Math.max(...fits.map((f) => f.name.length));
+  const best = fits.filter((f) => f.name.length === longest);
+  return best.length === 1 ? best[0].i : null;
+}
+
 // Pick each side's sprite URL. The Asset contract does not say which fighter a sprite belongs to,
-// so a sprite is used only when that is unambiguous: its file name contains exactly one side's
-// fighter name, or there are exactly two sprites and neither names a fighter (taken in fighter order).
-// Otherwise that side gets a placeholder.
+// so a sprite is used only when that is unambiguous: its file name names exactly one side's
+// fighter (whole words), or there are exactly two sprites and neither names a fighter (taken in
+// fighter order). Otherwise that side gets a placeholder.
 export function spriteUrls(
   assets: readonly Asset[],
   fighters: readonly Pick<FighterRequest, "entity">[],
 ): [string | null, string | null] {
   const sprites = assets.filter((a) => a.kind === "sprite" && a.url);
   const names = fighters.map((f) => slug(f.entity));
-  const byName = names.map((name) => {
-    const hits = sprites.filter((a) =>
-      slug(`${a.asset_id} ${a.url}`).includes(name),
-    );
+  const owners = sprites.map((a) => ownerOf(a, names));
+  const byName = names.map((_, i) => {
+    const hits = sprites.filter((_, s) => owners[s] === i);
     return hits.length === 1 ? hits[0] : null;
   });
   // Name matches win; a side with no match falls back to a placeholder.

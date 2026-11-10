@@ -121,6 +121,9 @@ function describe(
     case "ko": {
       // side = the side that went down; actor = the fallen fighter. No actor = a crowd fell,
       // including the "more go down" summary KO, which must never be looked up as one fighter.
+      // A machine whose operating time ran out also arrives as a plain KO (hint "out of action:
+      // its operating time ran out"). It is animated like any KO; the wording ("breaks down", not
+      // "dies") belongs to the captions, which may show text_hint but never branch on it.
       const fallen = event.actor ?? null;
       return {
         ...none,
@@ -155,6 +158,8 @@ function describe(
 }
 
 // Build the replay timeline: one beat per event, in log order, back to back.
+// Beat lengths depend only on the kind of event; the log's `t` is ignored on purpose (a summary
+// KO's `t` is the last logged event, not when that crowd fell), so do not time beats from `t`.
 export function buildTimeline(
   result: Pick<SimulationResult, "representative_log" | "outcome">,
   counts: readonly [number, number],
