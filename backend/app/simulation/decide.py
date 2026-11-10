@@ -209,8 +209,14 @@ def _explain(
     counts = (matchup.fighters[fav].count, matchup.fighters[foe].count)
 
     if key == "numbers":
+        pair = f"{counts[0]} {fav_name} against {counts[1]} {foe_name}"
+        if not helped:
+            return (
+                f"{fav_name} came out ahead in spite of the head count: {pair}. "
+                "A crowd can wear down even a tougher fighter, but here it was not enough."
+            )
         return (
-            f"Numbers decided it: {counts[0]} {fav_name} against {counts[1]} {foe_name}. "
+            f"Numbers decided it: {pair}. "
             "A crowd can wear down even a tougher fighter, and a lone fighter can only face "
             "so many at once."
         )
@@ -228,9 +234,14 @@ def _explain(
         return _explain_scaling(matchup, sheets, fav, helped)
     if key == "terrain":
         terrain = matchup.terrain.value.replace("_", " ")
-        who = fav_name if helped else foe_name
-        mover = effective_habitat(sheets[fav if helped else foe]).value
-        return f"The ground decided it: the {terrain} suits the {who} ({mover} mover) better."
+        if not helped:
+            mover = effective_habitat(sheets[foe]).value
+            return (
+                f"{fav_name} came out ahead in spite of the ground: the {terrain} suits "
+                f"the {foe_name} ({mover} mover) better."
+            )
+        mover = effective_habitat(sheets[fav]).value
+        return f"The ground decided it: the {terrain} suits the {fav_name} ({mover} mover) better."
 
     label, lower, unit = _STAT_TEXT[key]
     vf = fmt(sheets[fav].stats[key].value)
