@@ -2,11 +2,11 @@
 
 Fights where either side has more than 200 individuals run in **swarm mode** (each side is one group; see [simulation-model.md](simulation-model.md)). Swarm mode exists for speed, but it is a different model from the one-by-one engine, so this page measures how far apart they are. The one-by-one engine is the reference.
 
-Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (about 20 s; `--scenario cats` for one group, `--runs` to change the 600 runs per engine). Each fight is simulated twice with the same sheets, once forced through each engine.
+Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (about 20 s; `--scenario cats` for one group, `--runs` to change the 600 runs per engine). Each fight is simulated twice with the same sheets, once forced through each engine. The table has a **Noise (95%)** column (`1.96 x sqrt(2 p (1-p) / runs)`, with p the one-by-one win share) and marks gaps that are within it. The numbers below were re-run after the stack was rebased on `main` (engine version 5) and reproduce exactly; if the engine version changes, re-run the script and refresh the tables, since a new version reshuffles every run's random stream.
 
 ## Results (600 runs each)
 
-Noise: a single win share at 600 runs near 50/50 has a 95% noise of about ±0.04, so the **gap between two such results is only reliable to about ±0.06**. The gaps quoted as "within ±0.02" below are the observed gaps, not the noise. Gunnar's check at 4,000 runs found the mirror gaps from 5 v 5 to 50 v 50 were 0.006 or less, so the conclusion holds, but a single gap of +0.06 (such as 10 v 2 cats) is about the size of the noise.
+Noise: a single win share at 600 runs near 50/50 has a 95% noise of about ±0.04, so the **gap between two such results is only reliable to about ±0.06**. The gaps quoted as "within ±0.02" below are the observed gaps, not the noise. a teammate's check at 4,000 runs (`uv run --directory backend python scripts/validate_swarm.py --scenario mirror --runs 4000`) found the mirror gaps from 5 v 5 to 50 v 50 were 0.006 or less, so the conclusion holds, but a single gap of +0.06 (such as 10 v 2 cats) is about the size of the noise.
 
 | Kind of fight | Win share: swarm minus one-by-one | Duration | Survivors |
 |---|---|---|---|
@@ -26,7 +26,7 @@ Full tables are printed by the script. Speed is the point of swarm mode, but tim
 
 ## Larger fights (above the swarm threshold)
 
-Every scenario above is 125 per side or fewer, but swarm mode only runs above 200 per side. Gunnar ran larger fights (one-by-one vs swarm, win share of the first side):
+Every scenario above is 125 per side or fewer, but swarm mode only runs above 200 per side. These larger fights can be reproduced with `uv run --directory backend python scripts/validate_swarm.py --scenario large --runs 300` (opt-in: the one-by-one reference takes minutes). A teammate first ran them at 150-300 runs each (one-by-one vs swarm, win share of the first side):
 
 | Fight | Runs | One-by-one | Swarm | Gap |
 |---|---|---|---|---|

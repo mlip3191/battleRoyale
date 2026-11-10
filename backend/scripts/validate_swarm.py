@@ -13,6 +13,7 @@ Nothing here uses the network.
 
 import argparse
 import json
+import math
 import sys
 import time
 from dataclasses import dataclass
@@ -51,12 +52,20 @@ def scenarios() -> dict[str, list[tuple[str, StatSheet, int, StatSheet, int]]]:
     one_big = [(n, 1) for n in (3, 6, 12, 25, 50)]
     many_weak = [(n, max(n // 5, 1)) for n in (10, 25, 50, 100)]
     ranged = [(n, n // 2) for n in (10, 25, 50)]
+    # Sizes where swarm mode really runs (above 200 per side). Opt-in: the one-by-one reference
+    # takes minutes. `--scenario large --runs 300`.
+    large = [(250, 250, wolf, wolf, "wolves"), (300, 60, cat, wolf, "(cats v wolves)")]
+    large += [
+        (600, 120, cat, wolf, "(cats v wolves)"),
+        (400, 200, archer, wolf, "(archers v wolves)"),
+    ]
     return {
         "mirror": fights(wolf, wolf, even, "wolves"),
         "uneven": fights(wolf, wolf, uneven, "wolves"),
         "pack": fights(wolf, bear, one_big, "(wolves v bear)"),
         "cats": fights(cat, wolf, many_weak, "(cats v wolves)"),
         "ranged": fights(archer, wolf, ranged, "(archers v wolves)"),
+        "large": [(f"{na} v {nb} {label}", a, na, b, nb) for na, nb, a, b, label in large],
     }
 
 
@@ -72,6 +81,7 @@ def compare(label: str, a: StatSheet, na: int, b: StatSheet, nb: int, runs: int)
     """Run one matchup through both engines."""
     matchup = matchup_of(na, nb)
     results, seconds = [], []
+    # Changes a module-level constant and restores it in `finally`; not safe to run in threads.
     saved = c.SWARM_THRESHOLD
     try:
         for threshold in (ALWAYS_INDIVIDUAL, ALWAYS_SWARM):
@@ -86,15 +96,19 @@ def compare(label: str, a: StatSheet, na: int, b: StatSheet, nb: int, runs: int)
 
 def table(rows: list[Row]) -> str:
     lines = [
-        "| Fight | Win share side 0 (one-by-one / swarm) | Gap | Duration s (one-by-one / swarm) "
+        "| Fight | Win share side 0 (one-by-one / swarm) | Gap | Noise (95%) "
+        "| Duration s (one-by-one / swarm) "
         "| Survivors side 0 | Survivors side 1 | Time s (one-by-one / swarm) |",
-        "|---|---|---|---|---|---|---|",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for r in rows:
         i, s = r.individual, r.swarm
         gap = s.win_prob[0] - i.win_prob[0]
+        p = i.win_prob[0]
+        noise = 1.96 * math.sqrt(2 * p * (1 - p) / max(i.runs, 1))
         lines.append(
             f"| {r.label} | {i.win_prob[0]:.3f} / {s.win_prob[0]:.3f} | {gap:+.3f} "
+            f"| {noise:.3f}{' (within noise)' if abs(gap) <= noise else ''} "
             f"| {i.mean_duration_s:.1f} / {s.mean_duration_s:.1f} "
             f"| {i.mean_survivors[0]:.1f} / {s.mean_survivors[0]:.1f} "
             f"| {i.mean_survivors[1]:.1f} / {s.mean_survivors[1]:.1f} "
@@ -115,8 +129,8 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     for name, fights in groups.items():
-        if args.scenario not in ("all", name):
-            continue
+        if args.scenario not in ("all", name) or (args.scenario == "all" and name == "large"):
+            continue  # "large" runs only when asked for: its one-by-one reference takes minutes
         rows = [compare(label, a, na, b, nb, args.runs) for label, a, na, b, nb in fights]
         print(f"### {name}\n\n{table(rows)}\n")
     return 0
