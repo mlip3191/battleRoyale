@@ -1,11 +1,21 @@
 import { Route, Routes } from "react-router-dom";
+import { Header } from "./components/Broadcast.tsx";
+import Battle from "./pages/Battle.tsx";
 import Home from "./pages/Home.tsx";
+import NotFound from "./pages/NotFound.tsx";
+import Results from "./pages/Results.tsx";
 
-// Top-level routes; Battle and Results pages are added by later tasks.
+// The broadcast frame and every top-level route.
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-    </Routes>
+    <>
+      <Header />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/battle/:id" element={<Battle />} />
+        <Route path="/battle/:id/results" element={<Results />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 }
