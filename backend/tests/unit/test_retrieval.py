@@ -3,7 +3,7 @@
 import json
 import logging
 import sqlite3
-from collections.abc import Callable, Iterator
+from collections.abc import AsyncIterator, Callable
 from pathlib import Path
 
 import httpx
@@ -52,7 +52,7 @@ def record(fighter_id: str, title: str, text: str) -> DocumentRecord:
 
 
 @pytest.fixture
-async def database(tmp_path: Path) -> Iterator[sqlite3.Connection]:
+async def database(tmp_path: Path) -> AsyncIterator[sqlite3.Connection]:
     connection = connect(tmp_path / "app.db")
     apply_migrations(connection)
     embedder = MockEmbedder()
