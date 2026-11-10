@@ -14,7 +14,9 @@ from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.fighters import (
     Template,
+    apply_terrain,
     damage_per_hit,
+    group_bonus,
     hit_chance,
     max_engagers,
     plural_word,
@@ -22,6 +24,7 @@ from app.simulation.fighters import (
     scale_factor,
 )
 from app.simulation.rng import make_seed, run_rng
+from app.simulation.terrain import can_engage
 
 DRAW = 2
 
@@ -120,7 +123,8 @@ def run_once(
     Time moves in 0.1 s ticks; the loop jumps straight to the next tick where someone acts.
     Sides with more than 200 individuals run in groups (swarm mode). `notes` are short
     neutral phrases added to the opening events (e.g. "scaled to horse size").
-    `terrain` is accepted now and used from F04 on.
+    Terrain modifiers are already applied to `sides` (see `_templates`). A side that loses too
+    much of its hit points retreats; if it is faster than its pursuers it escapes.
     """
     events: list[FightEvent] = []
     # Leave room for the closing events so the log never passes the cap.
@@ -190,6 +194,10 @@ def _run_individuals(
     alive_list = [list(range(sides[0].count)), list(range(sides[1].count))]
     alive_set = [set(a) for a in alive_list]
     hp = [[sides[s].max_hp] * sides[s].count for s in (0, 1)]
+    start_hp = [sides[s].max_hp * sides[s].count for s in (0, 1)]
+    total_hp = list(start_hp)
+    retreating: int | None = None
+    bonus = [group_bonus(sides[0]), group_bonus(sides[1])]
     hit_p = [hit_chance(sides[0], sides[1]), hit_chance(sides[1], sides[0])]
     dmg = [damage_per_hit(sides[0], sides[1]), damage_per_hit(sides[1], sides[0])]
     # Pools only matter for melee; ranged sides use the square law (everyone engages).
@@ -214,8 +222,8 @@ def _run_individuals(
         t, _, s, i = heapq.heappop(queue)
         if t > c.MAX_FIGHT_S:
             break
-        if i not in alive_set[s]:
-            continue
+        if i not in alive_set[s] or s == retreating:
+            continue  # dead fighters and a side that is running away do not attack
         me, foe_side = sides[s], 1 - s
         pool = pools[s]
         if pool is None:
@@ -225,7 +233,13 @@ def _run_individuals(
             if target is None:
                 pool.waiting.append(i)  # every target is full: wait for a free slot
                 continue
-        if rng.random() < hit_p[s]:
+        chance = hit_p[s]
+        if sides[s].group_tactics > 0 and (
+            len(pool.engaged.get(target, ())) >= 2 if pool is not None else len(alive_list[s]) >= 2
+        ):
+            chance = min(c.HIT_MAX, chance * bonus[s])  # coordinated attack
+        if rng.random() < chance:
+            total_hp[foe_side] -= min(dmg[s], max(hp[foe_side][target], 0.0))
             hp[foe_side][target] -= dmg[s]
             log(
                 FightEvent(
@@ -261,6 +275,31 @@ def _run_individuals(
                                 queue, (_tick_up(t + c.TICK_S), rng.random(), foe_side, j)
                             )
                             break
+            if retreating is None and 1 - total_hp[foe_side] / start_hp[foe_side] >= (
+                sides[foe_side].morale
+            ):
+                retreating = foe_side
+                log(
+                    FightEvent(
+                        t=t,
+                        type=EventType.RETREAT,
+                        side=foe_side,
+                        group_size=len(alive_list[foe_side]),
+                        text_hint="breaks and runs",
+                    )
+                )
+                if sides[foe_side].speed_mps > sides[s].speed_mps:
+                    log(
+                        FightEvent(
+                            t=t,
+                            type=EventType.FLEE,
+                            side=foe_side,
+                            group_size=len(alive_list[foe_side]),
+                            text_hint="escapes",
+                        )
+                    )
+                    alive = [len(alive_list[0]), len(alive_list[1])]
+                    return _outcome(alive, t, events, record_events, winner=s)
         else:
             log(
                 FightEvent(
@@ -310,6 +349,9 @@ def _run_swarm(
     hit_p = [hit_chance(sides[0], sides[1]), hit_chance(sides[1], sides[0])]
     dmg = [damage_per_hit(sides[0], sides[1]), damage_per_hit(sides[1], sides[0])]
     cap = [max_engagers(sides[0], sides[1]), max_engagers(sides[1], sides[0])]
+    bonus = [group_bonus(sides[0]), group_bonus(sides[1])]
+    start_hp = [sides[s].max_hp * sides[s].count for s in (0, 1)]
+    retreating: int | None = None
     t = _tick_up(approach_s)
 
     while t <= c.MAX_FIGHT_S:
@@ -319,15 +361,17 @@ def _run_swarm(
         order = (0, 1) if rng.random() < 0.5 else (1, 0)
         for s in order:
             me, foe = sides[s], 1 - s
-            if n[s] == 0 or not me.can_attack or n[foe] == 0:
+            if n[s] == 0 or not me.can_attack or n[foe] == 0 or s == retreating:
                 continue
             engaged = n[s] if me.ranged else min(n[s], n[foe] * cap[s])
+            crowding = n[s] >= 2 if me.ranged else engaged > n[foe]
             rate = me.attacks_per_s * dt
             whole = int(rate)
             attempts = engaged * whole
             if rate > whole:
                 attempts += rng.binomialvariate(engaged, rate - whole)
-            hits = rng.binomialvariate(attempts, hit_p[s]) if attempts else 0
+            chance = min(c.HIT_MAX, hit_p[s] * bonus[s]) if crowding else hit_p[s]
+            hits = rng.binomialvariate(attempts, chance) if attempts else 0
             if not hits or dmg[s] <= 0:
                 continue
             log(
@@ -353,6 +397,33 @@ def _run_swarm(
                         text_hint="go down" if kills > 1 else "goes down",
                     )
                 )
+            remaining = (n[foe] - 1) * sides[foe].max_hp + front[foe] if n[foe] else 0.0
+            if (
+                retreating is None
+                and n[foe] > 0
+                and 1 - remaining / start_hp[foe] >= sides[foe].morale
+            ):
+                retreating = foe
+                log(
+                    FightEvent(
+                        t=t,
+                        type=EventType.RETREAT,
+                        side=foe,
+                        group_size=n[foe],
+                        text_hint="break and run",
+                    )
+                )
+                if sides[foe].speed_mps > me.speed_mps:
+                    log(
+                        FightEvent(
+                            t=t,
+                            type=EventType.FLEE,
+                            side=foe,
+                            group_size=n[foe],
+                            text_hint="escape",
+                        )
+                    )
+                    return _outcome(n, t, events, record_events, winner=s)
         if n[0] == 0 or n[1] == 0:
             return _outcome(n, t, events, record_events)
         t = _tick_up(t + dt)
@@ -360,13 +431,19 @@ def _run_swarm(
 
 
 def _outcome(
-    alive: list[int], t: float, events: list[FightEvent], record_events: bool
+    alive: list[int],
+    t: float,
+    events: list[FightEvent],
+    record_events: bool,
+    winner: int | None = None,
 ) -> RunOutcome:
+    """Wrap up a fight. `winner` is given when the loser fled while still alive."""
     survivors = (alive[0], alive[1])
-    if (survivors[0] and survivors[1]) or not (survivors[0] or survivors[1]):
-        winner = DRAW
-    else:
-        winner = 0 if survivors[0] else 1
+    if winner is None:
+        if (survivors[0] and survivors[1]) or not (survivors[0] or survivors[1]):
+            winner = DRAW
+        else:
+            winner = 0 if survivors[0] else 1
     if record_events:
         if winner == DRAW:
             events.append(
@@ -415,7 +492,12 @@ def scale_factors(
 def _templates(
     matchup: Matchup, sheets: list[StatSheet], rng: random.Random, ks: tuple[float, float]
 ) -> list[Template]:
-    return [sample_template(sheets[s], matchup.fighters[s].count, rng, ks[s]) for s in (0, 1)]
+    return [
+        apply_terrain(
+            sample_template(sheets[s], matchup.fighters[s].count, rng, ks[s]), matchup.terrain
+        )
+        for s in (0, 1)
+    ]
 
 
 def _notes(matchup: Matchup, ks: tuple[float, float]) -> tuple[str, str]:
@@ -426,6 +508,37 @@ def _notes(matchup: Matchup, ks: tuple[float, float]) -> tuple[str, str]:
         return f"scaled to {ref} size" if ref and ks[s] != 1.0 else ""
 
     return note(0), note(1)
+
+
+def _no_contest(
+    matchup: Matchup, sheets: list[StatSheet], seed: int, runs: int
+) -> SimulationResult:
+    """Neither side can reach the other: end immediately with a clear hint for the announcer."""
+    terrain = matchup.terrain.value.replace("_", " ")
+    names = (sheets[0].display_name, sheets[1].display_name)
+    return SimulationResult(
+        seed=seed,
+        runs=runs,
+        win_prob=(0.0, 0.0),
+        draw_prob=0.0,
+        win_prob_ci95=((0.0, 0.0), (0.0, 0.0)),
+        mean_survivors=(float(matchup.fighters[0].count), float(matchup.fighters[1].count)),
+        mean_duration_s=0.0,
+        outcome="no_contest",
+        deciding_factor="habitat",
+        deciding_factor_explainer=(
+            f"No contest: {names[0]} ({sheets[0].habitat.value}) and {names[1]} "
+            f"({sheets[1].habitat.value}) can't reach each other in the {terrain}."
+        ),
+        representative_log=[
+            FightEvent(
+                t=0.0,
+                type=EventType.END,
+                side=0,
+                text_hint="no contest: neither can reach the other",
+            )
+        ],
+    )
 
 
 def run(
@@ -443,6 +556,8 @@ def run(
         raise ValueError("runs must be at least 1")
     seed = make_seed(matchup, stat_sheets[0].sheet_hash, stat_sheets[1].sheet_hash)
     ks = scale_factors(matchup, stat_sheets, reference_sheets)
+    if not can_engage(matchup.terrain, stat_sheets[0].habitat, stat_sheets[1].habitat):
+        return _no_contest(matchup, stat_sheets, seed, runs)
 
     outcomes: list[RunOutcome] = []
     for k in range(runs):
