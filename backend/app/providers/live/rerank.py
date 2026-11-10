@@ -41,6 +41,8 @@ class LiveReranker:
             raise ProviderError(
                 "Live 'reranker' reply had no results[].relevance_score."
             ) from error
+        # The length check catches a passage scored twice (the dict keeps only one of them);
+        # the index check catches one that was skipped or out of range.
         if len(reply["results"]) != len(passages) or sorted(scores) != list(range(len(passages))):
             raise ProviderError("Live 'reranker' reply did not score every passage once.")
         return [scores[index] for index in range(len(passages))]

@@ -1,7 +1,8 @@
 # Retrieval quality check (G03): for each fighter and stat, a phrase the top 5 passages
 # should contain. The phrases are quotes already hand-verified for the G05 seed sheets,
 # and each one is in the fighter's main article from docs/research.md.
-# Live mode reports hit@5; mock tests only check this file's shape.
+# A live hit@5 runner arrives in the follow-up G03 PR; for now, mock tests only check this
+# file's shape.
 
 cases:
   - {fighter_id: grizzly-bear, stat: mass_kg, phrase: "389 kilograms"}
