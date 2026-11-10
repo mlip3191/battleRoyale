@@ -23,7 +23,7 @@ class FighterMatch(Contract):
     """One row of GET /api/fighters?q=: a fighter whose name matches the search text."""
 
     fighter_id: str
-    """Stable fighter id, e.g. "grizzly-bear--adult-male"."""
+    """Stable fighter id, e.g. "grizzly-bear"."""
     display_name: str
     """Name shown to the user."""
     cached: bool
