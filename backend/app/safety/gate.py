@@ -1,13 +1,15 @@
-"""The safety gate: code rules, then the classifier, on the request and on what intake read.
+"""The safety gate: code rules, then the classifier and the Wikidata name check, on the request
+and on what intake read.
 
 parse_matchup (intake) runs check_text_rules before any model call, classify_text alongside the
 parse call, and check_parsed_sides on the model's reading. check_matchup runs every layer on a
-Matchup that never went through intake (for the battle API, A05).
+Matchup that never went through intake (for the battle API, A05). Any block wins; the Wikidata
+layer fails open and never overrides a rules or classifier block.
 """
 
 import asyncio
 import re
-from collections.abc import Sequence
+from collections.abc import Awaitable, Sequence
 from typing import Protocol
 
 from app.intake.rules import singular_word
@@ -17,6 +19,7 @@ from app.providers.registry import get_provider
 from app.safety.classify import classify_text
 from app.safety.rules import check_text_rules, check_variant_rules
 from app.safety.verdict import ALLOWED, SafetyVerdict
+from app.safety.wikidata import WikidataCache, WikidataLookup, check_names, lookup_query
 
 # Model-written words that only describe a fighter, so they never need a second classifier call.
 PLAIN_DESCRIPTORS = frozenset(
@@ -83,26 +86,74 @@ def check_side_rules(fighters: Sequence[Side]) -> SafetyVerdict:
     return ALLOWED
 
 
-# After intake parsed text: code rules on both sides, then the classifier on the model's
-# reading if it added words the user never typed. Raises SafetyUnavailable on an outage.
+# Names for the Wikidata check: each side's raw text, plus its entity when that names something
+# else. The model writes entities in lowercase, so when the entity is just what the user typed,
+# the user's own casing decides ("a napoleon" stays a common noun). The variant is never looked
+# up: in "a dog named Napoleon" the fighter is the dog.
+def wikidata_names(fighters: Sequence[Side]) -> list[str]:
+    names: list[str] = []
+    for fighter in fighters:
+        names.append(fighter.raw)
+        if fighter.entity and lookup_query(fighter.entity)[0] != lookup_query(fighter.raw)[0]:
+            names.append(fighter.entity)
+    return names
+
+
+# Run safety checks at the same time; if one raises, cancel the rest before re-raising.
+async def _run_together(*checks: Awaitable[SafetyVerdict]) -> list[SafetyVerdict]:
+    tasks = [asyncio.ensure_future(check) for check in checks]
+    try:
+        return list(await asyncio.gather(*tasks))
+    except BaseException:
+        # Cancel the rest and await them (errors swallowed) so none outlives us, then re-raise.
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        raise
+
+
+# The first block in order (classifier before Wikidata), else ALLOWED.
+def _first_block(verdicts: Sequence[SafetyVerdict]) -> SafetyVerdict:
+    return next((v for v in verdicts if not v.allowed), ALLOWED)
+
+
+# After intake parsed text: code rules on both sides, then, at the same time, the Wikidata name
+# check and (if the model added words the user never typed) the classifier on its reading.
+# Wikidata fails open; a classifier outage raises SafetyUnavailable.
 async def check_parsed_sides(
-    fighters: Sequence[Side], text: str, *, chat: ChatLLM
+    fighters: Sequence[Side],
+    text: str,
+    *,
+    chat: ChatLLM,
+    wikidata_lookup: WikidataLookup | None = None,
+    wikidata_cache: WikidataCache | None = None,
 ) -> SafetyVerdict:
     verdict = check_side_rules(fighters)
-    if not verdict.allowed or not adds_new_words(fighters, text):
+    if not verdict.allowed:
         return verdict
-    return await classify_text(describe_sides(fighters), chat=chat)
+    checks = [check_names(wikidata_names(fighters), lookup=wikidata_lookup, cache=wikidata_cache)]
+    if adds_new_words(fighters, text):
+        checks.insert(0, classify_text(describe_sides(fighters), chat=chat))
+    return _first_block(await _run_together(*checks))
 
 
 # Every layer on a Matchup that skipped intake: code rules on the request and both sides, then
-# the classifier on the request and on the sides, at the same time. Raises SafetyUnavailable.
-async def check_matchup(matchup: Matchup, *, chat: ChatLLM | None = None) -> SafetyVerdict:
+# the classifier on the request and on the sides and the Wikidata name check, all at the same
+# time. Wikidata fails open; a classifier outage raises SafetyUnavailable.
+async def check_matchup(
+    matchup: Matchup,
+    *,
+    chat: ChatLLM | None = None,
+    wikidata_lookup: WikidataLookup | None = None,
+    wikidata_cache: WikidataCache | None = None,
+) -> SafetyVerdict:
     for verdict in (check_text_rules(matchup.raw_text), check_side_rules(matchup.fighters)):
         if not verdict.allowed:
             return verdict
     chat = chat or get_provider("chat")
-    verdicts = await asyncio.gather(
+    verdicts = await _run_together(
         classify_text(matchup.raw_text, chat=chat),
         classify_text(describe_sides(matchup.fighters), chat=chat),
+        check_names(wikidata_names(matchup.fighters), lookup=wikidata_lookup, cache=wikidata_cache),
     )
-    return next((v for v in verdicts if not v.allowed), ALLOWED)
+    return _first_block(verdicts)

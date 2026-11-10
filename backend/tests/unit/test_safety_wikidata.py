@@ -14,6 +14,7 @@ from app.safety.verdict import BLOCKED_REASONS
 from app.safety.wikidata import (
     CLASSES_PATH,
     MOCK_FIXTURE,
+    TIMEOUT_S,
     Candidate,
     ClassMap,
     EntityClasses,
@@ -24,10 +25,13 @@ from app.safety.wikidata import (
     check_names,
     load_class_map,
     lookup_query,
+    resolve,
 )
 
 START = datetime(2026, 11, 10, tzinfo=UTC)
 FIREARM = "Q12796"
+ASTRO = "Q6999"  # astronomical object
+FAMILY_NAME, GIVEN_NAME, DISAMBIGUATION = "Q101352", "Q202444", "Q4167410"
 
 
 class Clock:
@@ -83,9 +87,85 @@ def cache(tmp_path: Path, clock: Clock) -> WikidataCache:
 
 def test_the_class_map_uses_only_contract_reasons() -> None:
     class_map = load_class_map()
-    assert class_map.version >= 1
+    assert class_map.version >= 2
     assert set(class_map.reasons.values()) <= set(BLOCKED_REASONS)
     assert class_map.instance_only == {"Q5"}
+    assert class_map.name_items == {FAMILY_NAME, GIVEN_NAME, DISAMBIGUATION}
+    assert not class_map.name_items & set(class_map.reasons)
+
+
+class NameItemsFirst(FakeLookup):
+    """Like live 'the Moon': name/meta items come first among the exact matches."""
+
+    def __init__(self, first: list[EntityClasses], second: EntityClasses | None) -> None:
+        super().__init__()
+        self.items = [(f"N{n}", c) for n, c in enumerate(first)]
+        if second is not None:
+            self.items.append(("Q405", second))
+        self.entities.update(self.items)
+
+    async def search(self, name: str) -> list[Candidate]:
+        return [Candidate(qid, "Moon", "Moon") for qid, _ in self.items]
+
+
+@pytest.mark.parametrize(
+    ("first", "second", "expected"),
+    [
+        # Family name, then the Moon: the name item is skipped.
+        ([EntityClasses((FAMILY_NAME,))], EntityClasses((ASTRO,)), ("Q405", "out_of_scope")),
+        # Given name and disambiguation page are skipped too.
+        (
+            [EntityClasses((GIVEN_NAME,)), EntityClasses((DISAMBIGUATION,))],
+            EntityClasses((ASTRO,)),
+            ("Q405", "out_of_scope"),
+        ),
+        # Only name items: no match, no verdict.
+        ([EntityClasses((FAMILY_NAME,))], None, (None, None)),
+        # A name item that is also something else is kept (P31 not only name classes).
+        ([EntityClasses((FAMILY_NAME, ASTRO))], EntityClasses(("Q1",)), ("N0", "out_of_scope")),
+        # An item with no P31 is kept.
+        ([EntityClasses()], EntityClasses((ASTRO,)), ("N0", None)),
+    ],
+)
+async def test_name_items_are_skipped_when_picking_the_top_match(
+    cache: WikidataCache,
+    first: list[EntityClasses],
+    second: EntityClasses | None,
+    expected: tuple[str | None, str | None],
+) -> None:
+    check = await resolve("moon", NameItemsFirst(first, second), load_class_map())
+    assert (check.qid, check.reason) == expected
+
+
+async def test_a_skipped_match_without_class_data_gives_no_verdict(cache: WikidataCache) -> None:
+    lookup = NameItemsFirst([EntityClasses((FAMILY_NAME,))], EntityClasses((ASTRO,)))
+    del lookup.entities["N0"]
+    with pytest.raises(WikidataUnavailable):
+        await resolve("moon", lookup, load_class_map())
+    assert (await check_names(["the Moon"], lookup=lookup, cache=cache)).allowed
+
+
+@pytest.mark.parametrize(
+    ("lookup", "logged"),
+    [
+        (SlowLookup(), "Wikidata check skipped (TimeoutError)"),
+        (FakeLookup(fail=WikidataUnavailable("down")), "skipped (WikidataUnavailable: down)"),
+    ],
+)
+async def test_a_skipped_check_logs_the_error_type(
+    cache: WikidataCache,
+    lookup: FakeLookup,
+    logged: str,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setattr("app.safety.wikidata.TIMEOUT_S", 0.05)
+    await check_names(["gizmo"], lookup=lookup, cache=cache)
+    assert logged in caplog.text
+
+
+def test_the_lookup_time_limit_fits_the_intake_budget() -> None:
+    assert TIMEOUT_S == 2.5
 
 
 @pytest.mark.parametrize(
@@ -210,6 +290,22 @@ async def test_mock_fixture_examples(
     assert verdict.layer == ("wikidata" if reason else None)
 
 
+async def test_the_real_moon_shape_is_blocked_by_natural_satellite(cache: WikidataCache) -> None:
+    # Live Q405: P31 three moon classes, each P279 natural satellite (Q2537), which is more than
+    # two levels below astronomical object. Without Q2537 in the class map it would pass.
+    class_map = load_class_map()
+    verdict = await check_names(["the Moon"], lookup=MockWikidataLookup(), cache=cache)
+    assert (verdict.reason, verdict.layer) == ("out_of_scope", "wikidata")
+    without = ClassMap(
+        class_map.version + 1,
+        {q: r for q, r in class_map.reasons.items() if q != "Q2537"},
+        class_map.instance_only,
+        class_map.name_items,
+    )
+    check = await resolve("moon", MockWikidataLookup(), without)
+    assert (check.qid, check.reason) == ("Q405", None)
+
+
 def test_a_missing_mock_fixture_fails_loudly(tmp_path: Path) -> None:
     with pytest.raises(LookupError, match="No mock Wikidata fixture"):
         MockWikidataLookup(tmp_path / "missing.json")
@@ -267,6 +363,19 @@ async def test_a_broken_cache_database_fails_open(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
     cache = WikidataCache(tmp_path)  # a folder, so SQLite cannot open it
+    verdict = await check_names(["Zeus"], lookup=MockWikidataLookup(), cache=cache)
+    assert (verdict.reason, verdict.layer) == ("deity", "wikidata")
+    assert "cache read failed" in caplog.text and "cache write skipped" in caplog.text
+
+
+async def test_a_cache_os_error_fails_open(
+    cache: WikidataCache, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    # Opening the cache raises OSError (e.g. disk or permission trouble), not sqlite3.Error.
+    def broken_connect(path: Path | None = None) -> None:
+        raise OSError("disk unavailable")
+
+    monkeypatch.setattr("app.safety.wikidata.connect", broken_connect)
     verdict = await check_names(["Zeus"], lookup=MockWikidataLookup(), cache=cache)
     assert (verdict.reason, verdict.layer) == ("deity", "wikidata")
     assert "cache read failed" in caplog.text and "cache write skipped" in caplog.text

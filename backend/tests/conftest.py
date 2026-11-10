@@ -1,6 +1,7 @@
 """Shared test setup: every test runs in mock mode and never reads the real .env."""
 
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
@@ -16,10 +17,11 @@ def mock_settings(**overrides: object) -> Settings:
 use_settings(mock_settings())
 
 
-# Re-install mock settings before every test, in case a test replaced them.
+# Re-install mock settings before every test, in case a test replaced them. data_dir points at
+# the test's own temp folder, so nothing (e.g. the Wikidata safety cache) writes data/app.db.
 @pytest.fixture(autouse=True)
-def _force_mock_settings() -> Iterator[None]:
-    use_settings(mock_settings())
+def _force_mock_settings(tmp_path: Path) -> Iterator[None]:
+    use_settings(mock_settings(data_dir=tmp_path / "data"))
     yield
     use_settings(mock_settings())
 
