@@ -108,6 +108,35 @@ test("assumptions are tagged 'assumption', defaults 'estimate', derived 'derived
   expect(tagOf(row("Mass"))).toBeUndefined();
 });
 
+test("tiny and precise values keep every digit (the UI never rounds)", () => {
+  expect(formatExact(0.00042)).toBe("0.00042");
+  expect(formatExact(1.23456)).toBe("1.23456");
+  expect(formatExact(1500)).toBe("1,500");
+  const mass = grizzly.stats.mass_kg;
+  const stats = { ...grizzly.stats, mass_kg: { ...mass, value: 0.00042 } };
+  showCards([{ ...grizzly, stats }]);
+  const [row] = statRows(grizzly.display_name);
+  expect(row.textContent).toContain(`0.00042 ${mass.unit}`);
+});
+
+test("the tag follows the method, so a sourceless hand-verified stat isn't called an estimate", () => {
+  const mass = grizzly.stats.mass_kg;
+  const bare = { ...mass, source: null, is_estimate: false };
+  expect(statTag({ ...bare, method: "hand_verified" })).toBe("hand verified");
+  expect(statTag({ ...bare, method: "derived" })).toBe("derived");
+  expect(
+    statTag({ ...bare, method: "category_default", is_estimate: true }),
+  ).toBe("estimate");
+  expect(statTag(mass)).toBeNull();
+  const stats = {
+    ...grizzly.stats,
+    mass_kg: { ...bare, method: "hand_verified" as const },
+  };
+  showCards([{ ...grizzly, stats }]);
+  const [row] = statRows(grizzly.display_name);
+  expect(tagOf(row)).toBe("hand verified");
+});
+
 test("a banner appears when more than 3 stats are estimates or assumptions", () => {
   showCards([toaster]);
   expect(
