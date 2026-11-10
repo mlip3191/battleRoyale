@@ -29,11 +29,11 @@ The five showcase battles (PRODUCT_SPEC §9) run through the engine before the r
 
 ### 1. The headline battle's explanation credited the wrong cause (fixed)
 The first run of this dry run said "Attack rate decided it: Duck (2 attacks per second) against Horse (0.5 attacks per second)." The real reason is the size scaling (a duck grown to 500 kg against horses shrunk to 1.2 kg). The deciding-factor check equalized the *sheet* stats but left the scaling in place, so size never showed up as a factor.
-- **Fix (merged into this stack):** the check now also re-runs the fight without the scale factors. When that moves the result most, it reports size and quotes the sheets and the references. The battle now reads: "Size decided it: after scaling, Duck (1.2 kg normally, scaled to horse size) against 100 Horse (500 kg normally, scaled to duck size)." Every number is still an input.
+- **Fix (merged in #69):** the check now also re-runs the fight without the scale factors. When that moves the result most, it reports size and quotes the sheets and the references. The battle now reads: "Size decided it: after scaling, Duck (1.2 kg normally, scaled to horse size) against 100 Horse (500 kg normally, scaled to duck size)." Every number is still an input.
 
 ### 2. Venom is not modeled, so the cobra is toothless
 A sheet can list `venom`, but the engine has no venom mechanic (F08 covers bodies and legendary abilities, not venom). A real king cobra can kill; here a 100 N bite does almost nothing against a 10 kg badger with 0.5 armor, so the badger wins 100% and the log is only 11 events.
-- **Options:** (a) add a venom effect (damage over time, constants labeled as assumptions, venom resistance for the badger as a stat or note); (b) give venomous sheets an effective attack force through the number rule's `assumption` path; (c) accept it and pick a different matchup. Needs a decision from Mike.
+- **Decided (D-42, recorded in PR #83; refined by D-44):** venom will be modeled, tracked in #81. The options considered were (a) a venom effect over time with assumption-labeled constants and a resistance note for the badger, (b) an effective attack force through the number rule's `assumption` path, and (c) a different matchup.
 
 ### 3. The dragon can't touch a 60-tonne tank
 Hit points scale with mass (10 hp per kg), so the tank has 600,000. The dragon's breath is about 5,000 damage per hit.
@@ -49,10 +49,10 @@ Hit points scale with mass (10 hp per kg), so the tank has 600,000. The dragon's
 | Tank mass 15 t | 27% |
 | Tank mass 8 t | 88% |
 
-Armor barely matters because damage is dominated by the hit-point pool. If we want a real contest, the lever is the breath constant (`BREATH_DAMAGE_N`, an assumption) or how a machine's hit points scale. If we only want to show "legends and machines play by the same rules," a tank win is fine; the fair-fight line ("about 6 dragons against 1 tank") is a good demo moment either way. **This needs a decision, and it should wait for G09's real dragon sheet.**
+Armor barely matters because damage is dominated by the hit-point pool. (The what-if rows above are one-off runs with edited constants or sheet values; this script does not produce them.) If we want a real contest, the lever is the breath constant (`BREATH_DAMAGE_N`, an assumption) or how a machine's hit points scale. If we only want to show "legends and machines play by the same rules," a tank win is fine; the fair-fight line ("about 6 dragons against 1 tank") is a good demo moment either way. **Decided (D-43):** wait for G09's real dragon sheet; a tank win is acceptable for the demo; no constant changes until then.
 
 ### 4. Speed
-The duck/horse battle took 7.4 s end to end (101 fighters one by one, the deciding-factor analysis, and the fair-fight search, which goes into swarm mode above 200 horses). That is fine for a pre-generated showcase battle, but not for a live user. Live runs of groups near 100 per side will be slow; see `docs/swarm-validation.md`.
+The duck/horse battle took 7.4 s end to end (101 fighters one by one, the deciding-factor analysis, and the fair-fight search, which goes into swarm mode above 200 horses). That is fine for a pre-generated showcase battle, but not for a live user. Live runs of groups near 100 per side will be slow; see [swarm-validation.md](swarm-validation.md) (arrives with #75; the fix for swarm accuracy is tracked in #76).
 
 ## What this does not check
 Real sheets, real sources, the announcer, sprites, and the UI. It only checks that the engine produces a sensible, explainable verdict for each demo battle.

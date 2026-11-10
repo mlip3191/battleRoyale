@@ -25,7 +25,17 @@ from app.models.terrain import Terrain  # noqa: E402
 from app.simulation.engine import run  # noqa: E402
 from app.simulation.fair import fair_fight  # noqa: E402
 from app.simulation.summary import Summary, summary  # noqa: E402
+
+# Deliberately borrowed from the test helpers (this works because the backend folder is on the
+# path); moving `sim_helpers` breaks it. Note that `make_sheet` copies the gray wolf's citations
+# onto invented numbers, so the stand-in sheets built here must never be shown, saved, or used as
+# fixtures.
 from tests.property.sim_helpers import FIXTURES, make_dragon, make_sheet, matchup_of  # noqa: E402
+
+BANNER = (
+    "STAND-IN SHEETS: only the grizzly and the gray wolf are real; every other fighter is an "
+    "unsourced stand-in.\nEngine check only, not demo results."
+)
 
 
 def fixture(name: str) -> StatSheet:
@@ -155,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+    print(BANNER + "\n")
     for battle in battles():
         print(report(play(battle, args.runs)) + "\n")
     return 0

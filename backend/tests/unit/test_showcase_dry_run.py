@@ -30,3 +30,5 @@ def test_main_prints_every_battle(capsys):
     assert dry.main(["--runs", "30"]) == 0
     out = capsys.readouterr().out
     assert out.count("### ") == 5
+    # A pasted report must never pass for real results.
+    assert out.startswith("STAND-IN SHEETS") and "not demo results" in out.split("###")[0]
