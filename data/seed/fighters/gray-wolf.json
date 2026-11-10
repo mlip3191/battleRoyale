@@ -1,0 +1,150 @@
+{
+  "fighter_id": "gray-wolf",
+  "display_name": "Gray wolf",
+  "media_name": "gray wolf",
+  "category": "mammal",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "teeth"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 40.0,
+      "unit": "kg",
+      "source": {
+        "title": "Wolf",
+        "url": "https://en.wikipedia.org/w/index.php?title=Wolf&oldid=1384814257",
+        "quote": "The mean body mass of the wolf is 40 kg (88 lb)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 25.0,
+      "high": 54.0,
+      "note": "Mean for wolves generally, not male-only. Low is the Indian and Arabian wolf average; high is where the source says wolves become uncommon."
+    },
+    "size_m": {
+      "value": 1.6,
+      "unit": "m",
+      "source": {
+        "title": "Wolf",
+        "url": "https://en.wikipedia.org/w/index.php?title=Wolf&oldid=1384814257",
+        "quote": "Adult wolves measure 105–160 cm (41–63 in) in length",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 1.05,
+      "high": 1.6,
+      "note": "The source does not split by sex and lists the tail separately right after. Upper end of the stated range; the source gives no mean."
+    },
+    "top_speed_mps": {
+      "value": 17.78,
+      "unit": "m/s",
+      "source": {
+        "title": "Hunting behavior of gray wolves",
+        "url": "https://en.wikipedia.org/w/index.php?title=Hunting_behavior_of_gray_wolves&oldid=1358698251",
+        "quote": "Wolves can run at 56–64 km/h (35–40 mph) across several kilometers",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 15.56,
+      "high": 17.78,
+      "note": "Converted from 64 km/h, low from 56 km/h."
+    },
+    "attack_force_n": {
+      "value": 593.0,
+      "unit": "N",
+      "source": {
+        "title": "Bite club: comparative bite force in big biting mammals and the prediction of predatory behaviour in fossil taxa",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1564077/",
+        "quote": "Canis lupus lupus (C.l.l) Canidae 22.92 13.22 34.7 593 136",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "Publisher copyright, not an open license; one data row cited"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 445.0,
+      "high": 741.0,
+      "note": "Canine bite force estimated from a skull of a 34.7 kg wolf; range is +/-25%."
+    },
+    "attacks_per_s": {
+      "value": 1.5,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.75,
+      "high": 2.25,
+      "note": "No published attack rate found for this animal; category default."
+    },
+    "reach_m": {
+      "value": 0.4,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.3,
+      "high": 0.5,
+      "note": "reach = 0.25 x size_m (lunging bite), from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.15,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.075,
+      "high": 0.225,
+      "note": "armor level 1: fur only."
+    },
+    "endurance_s": {
+      "value": 300.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "Category default (mammal). Wolves 'can maintain rapid pursuit for at least 20 minutes' (Hunting behavior of gray wolves), but that is a chase minimum, not fighting endurance."
+    },
+    "aggression_0_1": {
+      "value": 0.5,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.25,
+      "high": 0.75,
+      "note": "aggression level 3: hunts or defends itself, avoids risky fights."
+    },
+    "group_tactics_0_1": {
+      "value": 0.8,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.4,
+      "high": 1.0,
+      "note": "group tactics level 4: pack that hunts in coordination."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "72e79b874aacbbfb8c03c0d810ce33c90611af6aac40ecd938f55ed07ae952b1"
+}

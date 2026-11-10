@@ -60,6 +60,7 @@ Every feature or fix has at least one test (`backend/tests/{unit,contract,golden
 - To check your own work: the user types `/qa [n]` (or asks "check my work before I open a PR") → run the **/qa** self-check. It works on your own branch or PR and posts nothing.
 - The QA bot, /review, and /qa all follow **`.claude/qa/checklist.md`** on the same model, so they agree. Change the checklist, not the individual tools.
 - The QA bot on GitHub is **advisory**. Treat its comments as suggestions; a teammate's approval and the required checks (CI, Secret scan, Critical files approval) are the gate. To have it look again after fixes, add the `re-review` label.
+- To file a new issue, use /new-issue.
 - Work only on an assigned issue; read its acceptance criteria and its task in `docs/plan/` first. If it's bigger than size M or unclear, stop and suggest splitting or clarifying.
 
 ## 10. Permissions and hooks

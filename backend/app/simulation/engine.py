@@ -155,7 +155,7 @@ def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] |
         limit = min(foe.max_hp, foe.morale * foe.max_hp * foe.count)
         if attacks * damage_per_hit(me, foe) >= limit:
             return None
-    if end >= c.MAX_FIGHT_S:
+    if math.isinf(min(stops)):  # no machine stops, so the clock runs out (a stop at 600 s counts)
         return DRAW, c.MAX_FIGHT_S
     return (1 if stops[0] < stops[1] else 0), end
 
@@ -473,7 +473,11 @@ def _run_swarm(
                 front[s] = min(sides[s].max_hp, front[s] + heal_hp)
         # Machines stop in order of their operating time, and the first to stop loses, as in the
         # one-by-one engine (both stopping in the same step is not a mutual wipe-out).
-        for s in sorted((0, 1), key=lambda x: sides[x].endurance_s):
+        stop_order = sorted((0, 1), key=lambda x: sides[x].endurance_s)
+        both_machines = sides[0].body == sides[1].body == Body.MACHINE
+        if both_machines and sides[0].endurance_s == sides[1].endurance_s:
+            stop_order = [0, 1] if rng.random() < 0.5 else [1, 0]  # a tie is a coin flip
+        for s in stop_order:
             if sides[s].body == Body.MACHINE and n[s] > 0 and t >= sides[s].endurance_s:
                 # It stopped at its exact operating time, which falls after the previous step.
                 stopped_at = sides[s].endurance_s

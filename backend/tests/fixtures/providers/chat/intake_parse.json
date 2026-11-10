@@ -1,0 +1,23 @@
+{
+  "default": {
+    "fighters": [
+      {
+        "raw": "a grizzly bear",
+        "entity": "grizzly bear",
+        "count": 1,
+        "variant": "adult male",
+        "size_reference": null
+      },
+      {
+        "raw": "6 gray wolves",
+        "entity": "gray wolf",
+        "count": 6,
+        "variant": null,
+        "size_reference": null
+      }
+    ],
+    "terrain": "a forest",
+    "needs_clarification": null,
+    "assumptions": ["Assumed adult male grizzly"]
+  }
+}
