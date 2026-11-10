@@ -8,7 +8,7 @@ from app.simulation.rng import run_rng
 from tests.property.sim_helpers import make_sheet, matchup_of
 
 
-@pytest.mark.parametrize("rate", [1, 3, 7, 9])
+@pytest.mark.parametrize("rate", [1, 2, 3, 4, 7, 9])
 def test_attacks_over_a_long_fight_match_the_sheet_rate(rate):
     """One attacker against a target that cannot be hurt, for the whole 600 s."""
     attacker = make_sheet("attacker", attack_force_n=50, attacks_per_s=rate, spread=0.0, mass_kg=10)
