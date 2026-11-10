@@ -105,6 +105,58 @@ async def test_wikidata_returns_the_entity_or_none_when_missing() -> None:
     assert await fetch_wikidata(client_with(missing), "Nope", sleep=no_sleep) is None
 
 
+async def test_an_article_with_no_revision_warns_that_its_link_is_not_pinned(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"<p>x</p>")
+
+    with caplog.at_level("WARNING", logger="app.research.sources"):
+        document = await fetch_article(client_with(handler), "Horse", sleep=no_sleep)
+    assert document is not None and document.url.endswith("/wiki/Horse")
+    assert "not pinned" in caplog.text
+
+
+async def test_network_errors_are_retried() -> None:
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        if len(calls) == 1:
+            raise httpx.ConnectError("refused")
+        return httpx.Response(200, content=b"x")
+
+    assert await fetch_article(client_with(handler), "Horse", sleep=no_sleep) is not None
+    assert len(calls) == 2
+
+
+async def test_a_forbidden_reply_fails_without_retrying() -> None:
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(403)
+
+    with pytest.raises(SourceError, match="HTTP 403"):
+        await fetch_article(client_with(handler), "Horse", sleep=no_sleep)
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize(
+    ("reply", "message"),
+    [
+        (httpx.Response(200, content=b"not json"), "not valid JSON"),
+        (httpx.Response(200, json={"error": {"code": "bad"}}), "reported an error"),
+    ],
+)
+async def test_bad_wikidata_replies_are_source_errors(reply: httpx.Response, message: str) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return reply
+
+    with pytest.raises(SourceError, match=message):
+        await fetch_wikidata(client_with(handler), "Horse", sleep=no_sleep)
+
+
 async def test_save_raw_writes_the_body_and_its_details(tmp_path: Path) -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, content=b"<p>x</p>")

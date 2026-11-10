@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import logging
 import re
 import urllib.parse
 from collections.abc import Awaitable, Callable
@@ -11,6 +12,8 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 USER_AGENT = "battle-royale-course-project/0.1"
 WIKIPEDIA_HTML = "https://en.wikipedia.org/api/rest_v1/page/html/{title}"
@@ -87,6 +90,8 @@ async def fetch_article(
     if response is None:
         return None
     revision = re.search(r"(\d+)/", response.headers.get("ETag", ""))
+    if revision is None:
+        logger.warning("No revision number for %s, so its saved link is not pinned.", title)
     url = (
         WIKIPEDIA_REVISION.format(title=slug, revision=revision.group(1))
         if revision
@@ -110,7 +115,13 @@ async def fetch_wikidata(
     response = await _get(client, WIKIDATA_API, params=params, sleep=sleep)
     if response is None:
         return None
-    entities: dict[str, Any] = response.json().get("entities", {})
+    try:
+        reply: dict[str, Any] = response.json()
+    except ValueError as error:
+        raise SourceError("Wikidata reply was not valid JSON.") from error
+    if "error" in reply:
+        raise SourceError("Wikidata reported an error.")
+    entities: dict[str, Any] = reply.get("entities", {})
     found = [(key, value) for key, value in entities.items() if not key.startswith("-")]
     if not found:
         return None
