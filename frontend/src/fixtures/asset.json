@@ -1,7 +1,7 @@
 {
-  "asset_id": "sprite-grizzly-bear--adult-male",
+  "asset_id": "sprite-grizzly-bear",
   "kind": "sprite",
-  "url": "/media/sprites/grizzly-bear--adult-male.png",
+  "url": "/media/sprites/grizzly-bear.png",
   "prompt_hash": "3f9a1c0e5b7d2a46",
   "fallback": false
 }

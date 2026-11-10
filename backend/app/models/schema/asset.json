@@ -19,7 +19,7 @@
       "type": "string"
     },
     "url": {
-      "description": "Where the front end loads it, e.g. \"/media/sprites/grizzly-bear--adult-male.png\".",
+      "description": "Where the front end loads it, e.g. \"/media/sprites/grizzly-bear.png\".",
       "title": "Url",
       "type": "string"
     },
