@@ -42,6 +42,9 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `DECIDING_RUNS` | 200 | Runs per one-at-a-time sensitivity check. | Design choice (ARCHITECTURE §9) |
 | `SURVIVOR_WEIGHT` | 0.5 | Weight of the favorite's average survivors next to its win share when ranking factors. | **Assumption**: keeps a lopsided fight (win share stuck at 100%) from hiding which factor matters most |
 | `MIN_EFFECT` | 0.02 | If no factor moves the favorite's score by at least this much, the verdict is "too close to call". | **Assumption** (about the noise of a 200-run check) |
+| `FAIR_RUNS` | 200 | Runs per fair-fight probe and per next-challenger duel. | Design choice (ARCHITECTURE §9) |
+| `FAIR_TOLERANCE` | 0.05 | A fight is fair when the varied side's win share is within this of 50%. | Design choice (ARCHITECTURE §9) |
+| `FAIR_MAX_PROBES`, `FAIR_MAX_COUNT` | 20, 10,000 | Most probes one search may use, and the largest count it tries. | Design choice (ARCHITECTURE §9; 10,000 is the app's count limit) |
 | `STRENGTH_SCALE_EXP` | 2/3 | Strength and damage scale as k^(2/3) when resized by k. | Muscle force follows cross-section area, so mass^(2/3): the square-cube law (Galileo 1638; Hill 1950, "The Dimensions of Animals and their Muscular Dynamics") |
 | `LENGTH_SCALE_EXP` | 1/3 | Size and reach scale as k^(1/3). | Geometric similarity: length = mass^(1/3) |
 | `SPEED_SCALE_EXP` | 1/6 | Top speed scales as k^(1/6). | Maximum running speed grows about mass^0.17 across mammals (Garland 1983, *J. Zoology*); simplified to 1/6 and applied to all movement. Garland also finds speed falls for the very largest animals, which this does not model |
@@ -102,6 +105,15 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 - **Explanation.** A code template, never a language model. It quotes values straight from the stat sheets and the matchup counts, rounded to three significant figures; it never computes new numbers (a test checks that every number in an explainer is an input). If the deciding factor is aggression, teamwork, or armor, it adds "This rests on an assumption: behavior and armor are judgments, not measurements." Special cases: a stalemate (most runs drew) and "too close to call" (no factor moved the score by 0.02).
 - **Cost.** About a dozen extra 200-run simulations: 0.3 s for a 1 v 1, about 1 s for a 6 v 1, and about 3 s extra for 10,000 ants v 1 lion. `run(..., explain=False)` skips this analysis; use it for quick probes such as the fair-fight search.
 - **`summary()`** (`summary.py`) returns what the results page and the announcer need: win and draw percentages, average survivors, duration in seconds, the favorite (none for a draw, no contest, or an exact tie), and the deciding-factor text.
+
+## Fair fight and next challenger (F06)
+
+- **Fair-fight search (`fair.py`).** "How many house cats would make this a coin flip?" The search varies the count of the **losing** side (the side with the lower win share in the main result). It starts at the current count, doubles until the varied side's win share passes 55%, then bisects on whole numbers between the last count below 45% and the first above 55%. Each probe is a 200-run simulation (no deciding-factor analysis), at most 20 probes, counts capped at 10,000. It stops as soon as a probe lands within 5 points of 50% ("A fair fight needs 37 house cats against 1 gray wolf.").
+- **When it can't.** If even 10,000 can't reach 45%, the answer is `count = None` with "No fair fight within 10,000 house cats." (a stalemate where neither side can win counts as this too). If the main fight is a draw or a `no_contest`, there is no loser to even up, so `count` is `None` with a plain explanation.
+- **Whole numbers can't always hit 50%.** Near the balance point one extra fighter can move the win share by 10-20 points. When no integer lands within the 5-point band, the closest count found is returned with "about", and `win_prob_at_count` shows the real value.
+- **Draws don't count as half a win.** The target is the varied side's win share alone, so a stalemate (for example ants against an elephant) can't masquerade as a fair fight.
+- **Next challenger (`test_challengers`).** Given the winner's sheet and candidate sheets (the language model proposes the candidates elsewhere), it runs a 200-run 1 v 1 duel of the winner against each candidate and returns suggestions sorted by how close the candidate's win share is to 50%, with ties broken by name so results repeat exactly. A candidate that cannot meet the winner at all (`no_contest`) is left out. The reason text is a code template ("a coin flip", "a slight underdog", and so on) with no invented numbers.
+- **Cost.** About 0.2 s for wolf vs house cats and about 4 s for the no-answer case (15 swarm probes up to 10,000 ants). One-by-one probes with many fighters (just under 200) are slower; see the speed note above.
 
 ## Why probabilities are shown as "range"
 
