@@ -33,14 +33,12 @@ from app.simulation.summary import Summary, summary  # noqa: E402
 # fixtures.
 from tests.property.sim_helpers import make_dragon, make_sheet, matchup_of  # noqa: E402
 
+SEED_FIGHTERS = Path(__file__).resolve().parents[2] / "data" / "seed" / "fighters"
+
 BANNER = (
     "STAND-IN SHEETS: only the grizzly and the gray wolf are real (G05 seed sheets); every other "
-    "fighter is an "
-    "unsourced stand-in.\nEngine check only, not demo results."
+    "fighter is an unsourced stand-in.\nEngine check only, not demo results."
 )
-
-
-SEED_FIGHTERS = Path(__file__).resolve().parents[2] / "data" / "seed" / "fighters"
 
 
 def seed_sheet(name: str) -> StatSheet:
