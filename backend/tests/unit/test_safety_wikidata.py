@@ -87,11 +87,15 @@ def cache(tmp_path: Path, clock: Clock) -> WikidataCache:
 
 def test_the_class_map_uses_only_contract_reasons() -> None:
     class_map = load_class_map()
-    assert class_map.version >= 2
+    assert class_map.version >= 3
     assert set(class_map.reasons.values()) <= set(BLOCKED_REASONS)
-    assert class_map.instance_only == {"Q5"}
-    assert class_map.name_items == {FAMILY_NAME, GIVEN_NAME, DISAMBIGUATION}
+    # Only human and the band classes count on the item's own P31 alone.
+    assert class_map.instance_only == {"Q5"} | class_map.bands
+    assert {"Q215380", "Q5741069"} <= class_map.bands  # musical group, rock band
+    assert {FAMILY_NAME, GIVEN_NAME, DISAMBIGUATION} <= class_map.name_items
     assert not class_map.name_items & set(class_map.reasons)
+    assert not class_map.name_items & class_map.demoted
+    assert not class_map.kinds & (class_map.demoted | class_map.name_items)
 
 
 class NameItemsFirst(FakeLookup):
@@ -183,6 +187,10 @@ def test_the_lookup_time_limit_fits_the_intake_budget() -> None:
         ("5 Testor Blipworths", ("testor blipworth", True)),
         ("an Testor blipworth", ("testor blipworth", True)),
         ("Hercules", ("hercules", True)),
+        ("the Beatles", ("beatles", True)),  # a proper name keeps its plural
+        ("the beatles", ("beatle", False)),
+        ("2 Beatles", ("beatle", True)),  # a count still means several of one thing
+        ("a Moose-Sized Napoleon", ("napoleon", True)),  # size words still dropped
     ],
 )
 def test_lookup_query_reads_proper_names_from_original_casing(
@@ -280,6 +288,7 @@ async def test_the_class_walk_climbs_two_levels(
         (["Mercury"], "out_of_scope"),
         (["a dragon", "a toaster", "a bulldozer", "a Roman legionary", "a boxer"], None),
         (["a grizzly bear"], None),
+        (["Thor"], "deity"),  # the male given name ranks first and is skipped
     ],
 )
 async def test_mock_fixture_examples(

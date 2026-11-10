@@ -7,28 +7,172 @@
 # Bump classes_version whenever this list changes: cached lookups from an older version are
 # ignored, so the change takes effect at once.
 #
-# Each Q-ID was verified live 2026-11-10 against wbgetentities; label is the live English label.
+# Each Q-ID was verified live 2026-11-10 against wbgetentities or Special:EntityData; label is
+# the live English label.
 #
-# Not listed yet: weapons of mass destruction and religious figures. The rules and classifier
-# layers already cover them; Wikidata classes for them can be added in A04 part 3.
-classes_version: 2
+# Religious figures need no class of their own: they are humans (Q5), so real_person covers them.
+#
+# Version 3 (A04 part 3a): demote_matches, bands as real_person, weapons of mass destruction.
+# Version 4 (A04 part 3a fixes): kind_matches, band subtypes, given-name variants; bands yield
+# only to a kind item, and the cache stores whether the pick was a band.
+# Version 5 (A04 part 3a fix round 2): the cache also stores whether a band's name is a common
+# word, which changes how cached band picks block.
+classes_version: 5
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed
-# over for the Moon. Verified live 2026-11-10 against wbgetentities (labels as returned).
+# over for the Moon, "Thor" the male given name for the god. Verified live 2026-11-10 against
+# wbgetentities (labels as returned).
 skip_matches:
   - qid: Q101352
     label: family name
+  - qid: Q29042997
+    label: double family name
   - qid: Q202444
     label: given name
+  - qid: Q12308941
+    label: male given name
+  - qid: Q11879590
+    label: female given name
+  - qid: Q3409032
+    label: unisex given name
   - qid: Q4167410
     label: Wikimedia disambiguation page
+  - qid: Q22808320
+    label: Wikimedia human name disambiguation page
+
+# Kind items: an exact match is a kind (a type of thing, not one individual) when it has a P279
+# (subclass of) value or its P31 includes one of these classes. A band is passed over only when a
+# kind item is among the exact matches ("Grizzly Bear" the band for the grizzly bear), never for
+# another individual ("the Beatles" the band beats the asteroid "8749 Beatles"). Verified live
+# 2026-11-10 against wbgetentities (labels as returned).
+kind_matches:
+  - qid: Q16521
+    label: taxon
+  - qid: Q55983715
+    label: organisms known by a particular common name # the live "raven"
+
+# Creative works that share a name with a fighter. When picking the top exact match, an item whose
+# P31 is only these classes (or band classes, see "band: true" below) is passed over if another
+# usable exact match is left: "Dragon" the magazine for the dragon. A creative work is used only
+# if nothing else fits. Verified live 2026-11-10 against Special:EntityData (labels as returned).
+demote_matches:
+  - qid: Q41298
+    label: magazine
+  - qid: Q57904379
+    label: tabletop role-playing game periodical # the live "Dragon" magazine has this too
+  - qid: Q1002697
+    label: periodical
+  - qid: Q571
+    label: book
+  - qid: Q7725634
+    label: literary work
+  - qid: Q47461344
+    label: written work
+  - qid: Q13442814
+    label: scholarly article
+  - qid: Q11424
+    label: film
+  - qid: Q24862
+    label: short film
+  - qid: Q506240
+    label: television film
+  - qid: Q5398426
+    label: television series
+  - qid: Q7889
+    label: video game
+  - qid: Q482994
+    label: album
+  - qid: Q108352648
+    label: album release
+  - qid: Q169930
+    label: extended play
+  - qid: Q134556
+    label: single
+  - qid: Q7366
+    label: song
+  - qid: Q55850593
+    label: music track with vocals # the live "Beatles" track item
+  - qid: Q2188189
+    label: musical work
 
 classes:
   - qid: Q5
     label: human
     reason: real_person
     instance_only: true
+  # A band is a group of real people (D-38). Band classes (band: true) count only on the item's own
+  # P31, are demoted like creative works but yield only to a kind item (see kind_matches), and
+  # block only when typed as "the" + the band's label ("the Eagles"), or as the bare label when
+  # its singular is not a kind item ("Beatles" blocks; "Eagles", "eagles" and "a grizzly bear"
+  # do not). Capitals must match the label. Other
+  # organizations, companies, sports teams and brands stay allowed. Subtypes are listed because
+  # only the item's own P31 counts. Verified live 2026-11-10 against wbgetentities.
+  - qid: Q215380
+    label: musical group
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q127334927
+    label: band
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q5741069
+    label: rock band
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q25391823
+    label: punk band
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q56816954
+    label: heavy metal band
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q2491498
+    label: pop band
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q216337
+    label: boy band
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q641066
+    label: girl group
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q120544
+    label: vocal group
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q19351429
+    label: a cappella group
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q19464263
+    label: rap group # alias "hip hop group"
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q9212979
+    label: musical duo
+    reason: real_person
+    instance_only: true
+    band: true
+  - qid: Q281643
+    label: musical trio
+    reason: real_person
+    instance_only: true
+    band: true
   - qid: Q95074
     label: character # alias "fictional character"
     reason: copyrighted_character
@@ -43,6 +187,13 @@ classes:
     reason: weapon
   - qid: Q911807
     label: explosive
+    reason: weapon
+  # Live "nuclear bomb", "chemical weapon" and "biological weapon" are direct subclasses of this.
+  - qid: Q49394
+    label: weapon of mass destruction
+    reason: weapon
+  - qid: Q12802
+    label: nuclear weapon
     reason: weapon
   - qid: Q6999
     label: astronomical object

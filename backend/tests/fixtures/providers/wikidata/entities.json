@@ -1,5 +1,5 @@
 {
-  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
+  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before a football team that has 'Eagles' as an alias) with made-up item IDs. 'wolves' and 'sharks' are made up: a band that matches only through an alias. 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
   "search": {
     "default": [],
     "napoleon": [{ "id": "Q900001", "label": "Napoleon" }],
@@ -12,9 +12,15 @@
       { "id": "Q900050", "label": "Mercury" },
       { "id": "Q900051", "label": "Mercury" }
     ],
-    "dragon": [{ "id": "Q900060", "label": "dragon" }],
+    "dragon": [
+      { "id": "Q900062", "label": "Dragon" },
+      { "id": "Q900060", "label": "dragon" }
+    ],
     "toaster": [{ "id": "Q900070", "label": "toaster" }],
-    "bulldozer": [{ "id": "Q900071", "label": "bulldozer" }],
+    "bulldozer": [
+      { "id": "Q900074", "label": "Bulldozer" },
+      { "id": "Q900071", "label": "bulldozer" }
+    ],
     "roman legionary": [{ "id": "Q17346959", "label": "Roman legionary" }],
     "canadian goose": [
       { "id": "Q7322356", "label": "Ribes oxyacanthoides", "match": "Canadian gooseberry" }
@@ -26,7 +32,40 @@
       { "id": "Q900091", "label": "boxer" }
     ],
     "tesla": [{ "id": "Q900100", "label": "Testa Tesla", "match": "Tesla" }],
-    "testor blipworth": [{ "id": "Q900110", "label": "Testor Blipworth" }]
+    "testor blipworth": [{ "id": "Q900110", "label": "Testor Blipworth" }],
+    "grizzly bear": [
+      { "id": "Q900120", "label": "Grizzly Bear" },
+      { "id": "Q900121", "label": "brown bear", "match": "grizzly bear" }
+    ],
+    "beatles": [
+      { "id": "Q900130", "label": "The Beatles", "match": "Beatles" },
+      { "id": "Q900131", "label": "Beatles" },
+      { "id": "Q900132", "label": "8749 Beatles", "match": "Beatles" }
+    ],
+    "nuclear bomb": [{ "id": "Q900140", "label": "nuclear bomb" }],
+    "thor": [
+      { "id": "Q900150", "label": "Thor" },
+      { "id": "Q900151", "label": "Thor" },
+      { "id": "Q900152", "label": "Thor" }
+    ],
+    "eagles": [
+      { "id": "Q900160", "label": "Eagles" },
+      { "id": "Q900161", "label": "Philadelphia Testles", "match": "Eagles" }
+    ],
+    "eagle": [
+      { "id": "Q900163", "label": "Eagle" },
+      { "id": "Q900164", "label": "eagle" }
+    ],
+    "rolling stones": [
+      { "id": "Q900190", "label": "The Rolling Stones", "match": "Rolling Stones" },
+      { "id": "Q900191", "label": "19383 Rolling Stones", "match": "Rolling Stones" }
+    ],
+    "rolling stone": [{ "id": "Q900192", "label": "Rolling Stone" }],
+    "wolves": [
+      { "id": "Q900170", "label": "Testwolf Pack", "match": "Wolves" },
+      { "id": "Q900171", "label": "Wolverhampton Testers", "match": "Wolves" }
+    ],
+    "sharks": [{ "id": "Q900180", "label": "The Sharkz Crew", "match": "Sharks" }]
   },
   "entities": {
     "Q900001": { "P31": ["Q5"] },
@@ -46,8 +85,12 @@
     "Q900042": { "P279": ["Q6999"] },
     "Q900050": { "P31": ["Q900041"] },
     "Q900051": { "P31": ["Q900021"] },
-    "Q900060": { "P279": ["Q900061"] },
+    "Q900060": { "P31": ["Q24334299"], "P279": ["Q900061"] },
     "Q900061": { "P279": [] },
+    "Q24334299": { "P279": [] },
+    "Q900062": { "P31": ["Q41298", "Q57904379"] },
+    "Q41298": { "P279": [] },
+    "Q57904379": { "P279": [] },
     "Q900070": { "P279": ["Q900072"] },
     "Q900071": { "P279": ["Q900073"] },
     "Q900072": { "P279": [] },
@@ -65,6 +108,33 @@
     "Q900092": { "P279": [] },
     "Q900093": { "P279": [] },
     "Q900100": { "P31": ["Q5"] },
-    "Q900110": { "P31": ["Q5"] }
+    "Q900110": { "P31": ["Q5"] },
+    "Q900120": { "P31": ["Q215380"] },
+    "Q900121": { "P31": ["Q16521"], "P279": ["Q900122"] },
+    "Q900122": { "P279": [] },
+    "Q900130": { "P31": ["Q215380"] },
+    "Q900131": { "P31": ["Q55850593"] },
+    "Q55850593": { "P279": [] },
+    "Q900140": { "P279": ["Q12802", "Q49394"] },
+    "Q900074": { "P31": ["Q215380"] },
+    "Q900132": { "P31": ["Q3863"] },
+    "Q3863": { "P279": [] },
+    "Q900150": { "P31": ["Q12308941"] },
+    "Q12308941": { "P279": [] },
+    "Q900151": { "P31": ["Q900021"] },
+    "Q900152": { "P31": ["Q16521"] },
+    "Q900160": { "P31": ["Q215380"] },
+    "Q900161": { "P31": ["Q900162"] },
+    "Q900162": { "P279": [] },
+    "Q900170": { "P31": ["Q641066"] },
+    "Q900171": { "P31": ["Q900162"] },
+    "Q900163": { "P31": ["Q101352"] },
+    "Q900164": { "P31": ["Q55983715"] },
+    "Q101352": { "P279": [] },
+    "Q55983715": { "P279": [] },
+    "Q900180": { "P31": ["Q56816954"] },
+    "Q900190": { "P31": ["Q215380", "Q127334927"] },
+    "Q900191": { "P31": ["Q3863"] },
+    "Q900192": { "P31": ["Q41298"] }
   }
 }
