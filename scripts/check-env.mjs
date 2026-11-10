@@ -46,9 +46,10 @@ export function checkEnv({
   }
   if (!existsSync(envPath)) {
     error("No .env file yet.");
-    error("  Windows:  copy .env.example .env");
-    error("  Mac:      cp .env.example .env");
-    error("Then fill in the lines marked [required] and run this again.");
+    error("  Easiest: run  npm run env:setup  in your own terminal (it asks for the host and key).");
+    error("  By hand: copy .env.example .env (Windows) or cp .env.example .env (Mac),");
+    error("           then fill in the lines marked [required].");
+    error("Then run this again.");
     return 1;
   }
 
