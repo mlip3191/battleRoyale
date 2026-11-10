@@ -15,7 +15,7 @@ Noise: a single win share at 600 runs near 50/50 has a 95% noise of about ±0.04
 | **Ranged** (10-50 archers vs half as many wolves) | within +0.02 | within ~10% | the loser's survivors are 50-60% lower in swarm |
 | **Many weak vs few strong** (10-100 cats vs a fifth as many wolves) | **+0.06 to +0.22** (swarm favors the crowd) | within ~15% | swarm has more crowd survivors and fewer wolves |
 
-Full tables are printed by the script. Speed is the point of swarm mode, but timings depend on the machine. On the author's laptop a 100 v 100 fight takes about 3 s per 1,000 runs one by one and 0.2 s in swarm; 200 v 200 takes about 17 s one by one. On Gunnar's machine 100 v 100 took about 9.8 s one by one and 0.67 s in swarm (about 3x slower, with the same ratio between the modes). Treat the stage budget in #91 with the slower numbers.
+Full tables are printed by the script. Speed is the point of swarm mode, but timings depend on the machine. On the author's laptop a 100 v 100 fight takes about 3 s per 1,000 runs one by one and 0.2 s in swarm; 200 v 200 takes about 17 s one by one. On a teammate's machine 100 v 100 took about 9.8 s one by one and 0.67 s in swarm (about 3x slower, with the same ratio between the modes). Treat the stage budget in #91 with the slower numbers.
 
 ## Why they differ
 
