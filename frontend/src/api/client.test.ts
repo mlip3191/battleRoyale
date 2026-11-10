@@ -59,14 +59,70 @@ describe("fixtures mode (no backend)", () => {
   });
 });
 
-test("live mode calls our own /api routes", async () => {
-  const fetchMock = vi
-    .fn()
-    .mockResolvedValue(Response.json({ battle_id: "b1" }));
-  vi.stubGlobal("fetch", fetchMock);
-  await client.getBattle("b1");
-  expect(fetchMock).toHaveBeenCalledWith("/api/battles/b1", undefined);
-  expect(client.battleEventsUrl("b1")).toBe("/api/battles/b1/events");
+describe("live mode", () => {
+  // A fetch stand-in that answers every call with the same JSON and status.
+  const answer = (body: unknown, status = 200) => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(Response.json(body, { status })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  };
+
+  test("calls our own /api routes", async () => {
+    const fetchMock = answer({ battle_id: "b1" });
+    await client.getBattle("b1");
+    expect(fetchMock).toHaveBeenCalledWith("/api/battles/b1", undefined);
+    expect(client.battleEventsUrl("b1")).toBe("/api/battles/b1/events");
+  });
+
+  test("createBattle sends a JSON POST with the matchup", async () => {
+    const fetchMock = answer({ battle_id: "b9" });
+    const matchup = {
+      fighters: [],
+      terrain: "forest",
+      raw_text: "x",
+      assumptions: [],
+    };
+    const created = await client.createBattle(
+      matchup as unknown as client.Matchup,
+    );
+    expect(created.battle_id).toBe("b9");
+    expect(fetchMock).toHaveBeenCalledWith("/api/battles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(matchup),
+    });
+  });
+
+  test("a non-OK reply throws an ApiError with its status", async () => {
+    answer({ detail: "missing" }, 404);
+    const error = await client.getBattle("nope").catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(client.ApiError);
+    expect((error as client.ApiError).status).toBe(404);
+    expect((error as Error).message).toBe("HTTP 404");
+  });
+
+  test("ids and search text are URL-encoded", async () => {
+    const fetchMock = answer([]);
+    await client.searchFighters("a b/c");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/fighters?q=a%20b%2Fc",
+      undefined,
+    );
+    expect(client.mediaUrl("x/y")).toBe("/media/x%2Fy");
+  });
+
+  test("VITE_API_BASE prefixes every backend address", async () => {
+    vi.stubEnv("VITE_API_BASE", "http://localhost:9999");
+    const fetchMock = answer({ battle_id: "b1" });
+    await client.getBattle("b1");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:9999/api/battles/b1",
+      undefined,
+    );
+    expect(client.mediaUrl("a1")).toBe("http://localhost:9999/media/a1");
+  });
 });
 
 test("client.ts takes its types only from the generated schema", () => {
@@ -75,13 +131,6 @@ test("client.ts takes its types only from the generated schema", () => {
   ].map((m) => m[1]);
   expect(typeImports).toEqual(["./schema"]);
   expect(clientSource).not.toMatch(/\binterface\b/);
-  // Only the documented contract-gap replies may be described by hand.
-  const handWritten = [
-    ...clientSource.matchAll(/^export type (\w+) = \{/gm),
-  ].map((m) => m[1]);
-  expect(handWritten).toEqual([
-    "BattleCreated",
-    "ShowcaseBattle",
-    "FighterMatch",
-  ]);
+  // Every exported type is an alias of a generated schema type, never a hand-written shape.
+  expect(clientSource).not.toMatch(/^export type \w+ = \{/m);
 });

@@ -30,6 +30,8 @@ export function createBattle() {
 }
 
 // The battle as it looks right now: stages finish one by one, and each part appears when its stage is done.
+// The real pipeline runs some stages in parallel (summary/challenger/script; audio/music/images),
+// so no screen should assume stages finish in this exact order.
 export function battleAt(id: string, elapsedMs: number): BattleRecord {
   const step = BATTLE_MS / done.stages.length;
   const stages = done.stages.map((s, i) =>
