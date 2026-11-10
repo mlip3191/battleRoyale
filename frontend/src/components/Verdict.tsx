@@ -7,18 +7,67 @@ import {
   type FairFight,
   type Matchup,
   type SimulationResult,
+  type StatSheet,
 } from "../api/client.ts";
-import { ErrorPanel } from "./Broadcast.tsx";
+import { ErrorPanel, srOnly } from "./Broadcast.tsx";
 import styles from "./verdict.module.css";
 
 // A probability as a whole percent, e.g. 0.62 -> "62%".
 const pct = (p: number) => `${Math.round(p * 100)}%`;
 
-// One side's win chance with its 95% interval, labeled, e.g. "62% (range 58–66%)".
+// One side's win chance with its 95% interval, labeled, e.g. "62% - range 58-66%".
 export const winRange = (result: SimulationResult, side: 0 | 1) => {
   const [low, high] = result.win_prob_ci95[side];
-  return `${pct(result.win_prob[side])} (range ${Math.round(low * 100)}–${pct(high)})`;
+  return `${pct(result.win_prob[side])} - range ${Math.round(low * 100)}-${pct(high)}`;
 };
+
+// The explainer an explain=False run leaves behind; the guide says never to show it.
+export const PLACEHOLDER_EXPLAINER = "Deciding factor not computed.";
+
+// The engine's "why" sentence, or null when it is empty or only the placeholder.
+export const explainerOf = (result: SimulationResult) => {
+  const text = result.deciding_factor_explainer.trim();
+  return text && text !== PLACEHOLDER_EXPLAINER ? text : null;
+};
+
+type Fighter = Matchup["fighters"][number];
+
+// Plurals that don't just add "s"; anything else follows the rules in pluralOf.
+const IRREGULAR: Record<string, string> = {
+  bison: "bison",
+  deer: "deer",
+  fish: "fish",
+  goose: "geese",
+  moose: "moose",
+  mouse: "mice",
+  ox: "oxen",
+  sheep: "sheep",
+};
+
+// "gray wolf" -> "gray wolves", "fox" -> "foxes", "moose" -> "moose" (last word only).
+export function pluralOf(name: string) {
+  const [, head, last] = /^(.*?)(\S+)$/.exec(name) ?? ["", "", name];
+  const word = IRREGULAR[last.toLowerCase()];
+  if (word) return head + word;
+  if (/(s|x|z|sh|ch)$/i.test(last)) return `${head}${last}es`;
+  if (/[^aeiou]y$/i.test(last)) return `${head}${last.slice(0, -1)}ies`;
+  if (/lf$/i.test(last)) return `${head}${last.slice(0, -1)}ves`;
+  return `${head}${last}s`;
+}
+
+// "4 gray wolves": a count of one fighter, reusing the plural the user typed when there is one.
+export function howMany(count: number, fighter: Fighter) {
+  if (count === 1) return `1 ${fighter.entity}`;
+  const typed =
+    fighter.count > 1 ? /^\d+\s+(.+)$/.exec(fighter.raw)?.[1] : null;
+  return `${count.toLocaleString("en-US")} ${typed ?? pluralOf(fighter.entity)}`;
+}
+
+// A side's name: the stat sheet's display name for a single fighter, "6 gray wolves" for a group.
+export const sideName = (fighter: Fighter, sheet?: StatSheet) =>
+  fighter.count > 1
+    ? howMany(fighter.count, fighter)
+    : (sheet?.display_name ?? fighter.raw);
 
 // An average over many runs, to one decimal place, e.g. 2.738 -> "2.7".
 export const average = (value: number) =>
@@ -37,6 +86,7 @@ export function VerdictBanner({
   names: string[];
 }) {
   const winner = winnerOf(result);
+  const explainer = explainerOf(result);
   const headline =
     winner !== null
       ? `Winner: ${names[winner]}`
@@ -72,9 +122,11 @@ export function VerdictBanner({
           Fights last about {average(result.mean_duration_s)} s on average.
         </p>
       )}
-      <p>
-        <strong>Deciding factor:</strong> {result.deciding_factor_explainer}
-      </p>
+      {explainer && (
+        <p>
+          <strong>Deciding factor:</strong> {explainer}
+        </p>
+      )}
       <p className={styles.muted}>
         Based on {result.runs.toLocaleString("en-US")} simulated fights.
       </p>
@@ -91,14 +143,14 @@ export function FairFightCard({
   matchup: Matchup;
 }) {
   const { count, win_prob_at_count: chance } = fairFight;
-  const entity = matchup.fighters[fairFight.varied_side]?.entity;
+  const fighter = matchup.fighters[fairFight.varied_side];
   return (
     <section className={styles.card} aria-labelledby="fair-title">
       <h2 id="fair-title">{count === null ? "No fair fight" : "Fair fight"}</h2>
       <p>{fairFight.message}</p>
-      {count !== null && (
+      {count !== null && fighter && (
         <p className={styles.muted}>
-          Tested with {count.toLocaleString("en-US")} × {entity}
+          Tested with {howMany(count, fighter)}
           {chance !== null && `: ${pct(chance)} win chance`}.
         </p>
       )}
@@ -151,8 +203,8 @@ export function NextChallengerCard({
       <h2 id="next-title">Next challenger: {challenger.entity}</h2>
       <p>{challenger.reason}</p>
       <p className={styles.muted}>
-        It won {pct(challenger.tested_win_prob)} of our test fights against the
-        champ.
+        It won {pct(challenger.tested_win_prob)} of our one-on-one test fights
+        against the champ.
       </p>
       {failed && (
         <ErrorPanel message="We couldn't book that fight. Check your connection and try again." />
@@ -165,6 +217,9 @@ export function NextChallengerCard({
       >
         {starting ? "Ringing the bell…" : "Fight them!"}
       </button>
+      <p role="status" aria-live="polite" className={srOnly}>
+        {starting ? "Ringing the bell… booking the fight." : ""}
+      </p>
     </section>
   );
 }

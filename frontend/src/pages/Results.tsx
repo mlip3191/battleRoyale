@@ -11,6 +11,7 @@ import { SourceList, StatSheetCard } from "../components/StatSheet.tsx";
 import {
   FairFightCard,
   NextChallengerCard,
+  sideName,
   VerdictBanner,
   winnerOf,
 } from "../components/Verdict.tsx";
@@ -19,7 +20,11 @@ export default function Results() {
   const { id = "" } = useParams();
   const { battle, error } = useBattle(id);
   const result = battle?.result;
-  const names = battle?.matchup.fighters.map((f) => f.raw) ?? [];
+  // Sheets come one per side, in side order.
+  const names =
+    battle?.matchup.fighters.map((f, i) =>
+      sideName(f, battle.stat_sheets[i]),
+    ) ?? [];
   const waiting = !error && (!battle || battle.status === "running");
   // Only a fight with a winner has a champ for the next challenger to face.
   const winner = result ? winnerOf(result) : null;
@@ -40,6 +45,12 @@ export default function Results() {
       )}
       <LoadingTicker message={waiting ? "Tallying the scorecards…" : ""} />
       {result && <VerdictBanner result={result} names={names} />}
+      {battle?.status === "done" && !result && (
+        <ErrorPanel
+          title="No verdict"
+          message="The fight finished, but its result is missing. Try running the matchup again."
+        />
+      )}
       {battle && battle.stat_sheets.length > 0 && (
         <section aria-labelledby="tape-title">
           <h2 id="tape-title">Tale of the tape</h2>
