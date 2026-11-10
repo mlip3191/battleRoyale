@@ -20,6 +20,7 @@ MAX_TOKENS = 6_000
 PLAIN_TYPES = {"text/plain", "application/json", "application/xml"}
 DROPPED_BLOCKS = re.compile(r"<(script|style)\b.*?</\1>|<!--.*?-->", re.DOTALL | re.IGNORECASE)
 TAG_ATTRIBUTES = re.compile(r"<(/?[a-zA-Z][a-zA-Z0-9]*)\b[^>]*>")
+CLOSING_TAG = re.compile(r"</\s*document\s*>", re.IGNORECASE)
 
 
 # Remove scripts, styles, comments, and tag attributes, which hold no article text.
@@ -60,7 +61,7 @@ class LiveDocParser:
 
     # Convert one piece, refusing a cut-off reply so no text is silently lost.
     async def _parse_piece(self, piece: str) -> str:
-        document = piece.replace("</document>", "")  # the page cannot close the data block
+        document = CLOSING_TAG.sub("", piece)  # the page cannot close the data block
         content = f"{self._instruction}\n\n<document>\n{document}\n</document>"
         reply = await post_json(
             provider="doc_parser",
