@@ -109,7 +109,7 @@ def decide(
         variant_sheets: list[StatSheet],
         terrain: bool,
         scaled: bool = True,
-    ):
+    ) -> tuple[float, float]:
         if factor not in cache:
             outcomes = simulate(variant, variant_sheets, terrain, n, scaled)
             won, left = _score(outcomes, fav, variant.fighters[fav].count)
