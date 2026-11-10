@@ -1,0 +1,22 @@
+{
+  "additionalProperties": false,
+  "description": "One row of GET /api/battles?showcase=true: a saved showcase battle.",
+  "properties": {
+    "battle_id": {
+      "description": "Id of the saved battle.",
+      "title": "Battle Id",
+      "type": "string"
+    },
+    "title": {
+      "description": "Matchup title shown on the home page, e.g. \"Grizzly bear vs Gray wolf\".",
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "battle_id",
+    "title"
+  ],
+  "title": "ShowcaseBattle",
+  "type": "object"
+}
