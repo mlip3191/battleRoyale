@@ -1,0 +1,16 @@
+{
+  "additionalProperties": false,
+  "description": "Reply to POST /api/battles (202): the id to follow the new battle with.",
+  "properties": {
+    "battle_id": {
+      "description": "Id of the battle that just started, e.g. \"b-7f3k2q\".",
+      "title": "Battle Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "battle_id"
+  ],
+  "title": "BattleCreated",
+  "type": "object"
+}

@@ -6,7 +6,7 @@ from hypothesis import strategies as st
 from app.models.stats import StatName
 from app.models.terrain import Terrain
 from app.simulation.engine import run
-from tests.property.test_simulation_engine import load_sheet, matchup, with_stat
+from tests.property.sim_helpers import load_sheet, matchup, with_stat
 
 
 @settings(max_examples=10, deadline=None, suppress_health_check=[HealthCheck.too_slow])

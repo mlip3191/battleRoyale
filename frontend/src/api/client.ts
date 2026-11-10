@@ -8,16 +8,18 @@ export type IntakeResult = components["schemas"]["IntakeResult"];
 export type Matchup = components["schemas"]["Matchup"];
 export type StageStatus = components["schemas"]["StageStatus"];
 export type StatSheet = components["schemas"]["StatSheet"];
+export type BattleCreated = components["schemas"]["BattleCreated"];
+export type ShowcaseBattle = components["schemas"]["ShowcaseBattle"];
+export type FighterMatch = components["schemas"]["FighterMatch"];
 
-// CONTRACT GAP: these three replies have no model in backend/app/models yet, so they are
-// described inline here. Replace them with generated types once the contracts add them.
-export type BattleCreated = { battle_id: string };
-export type ShowcaseBattle = { battle_id: string; title: string };
-export type FighterMatch = {
-  fighter_id: string;
-  display_name: string;
-  cached: boolean;
-};
+// An HTTP error from our backend; `status` lets callers tell "not found" from a passing hiccup.
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number) {
+    super(`HTTP ${status}`);
+    this.status = status;
+  }
+}
 
 // Whether to answer from fixtures instead of the backend (read on each call so tests can switch it).
 export const fixturesMode = () => import.meta.env.VITE_USE_FIXTURES === "true";
@@ -37,7 +39,7 @@ async function call<T>(
       body: JSON.stringify(init.body),
     },
   );
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) throw new ApiError(response.status);
   return (await response.json()) as T;
 }
 

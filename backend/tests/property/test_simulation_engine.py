@@ -1,13 +1,11 @@
 """F02: the fight engine is deterministic, honest about uncertainty, and fast."""
 
-import copy
 import json
 import time
-from pathlib import Path
 
 import pytest
 
-from app.models.matchup import FighterRequest, Matchup
+from app.models.matchup import Matchup
 from app.models.simulation import EventType, SimulationResult
 from app.models.stats import StatName, StatSheet
 from app.models.terrain import Terrain
@@ -15,40 +13,13 @@ from app.simulation import constants as c
 from app.simulation.engine import DRAW, run, run_once
 from app.simulation.fighters import sample_template
 from app.simulation.rng import make_seed, run_rng
-
-FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "contracts"
-
-
-def load_sheet(name: str) -> StatSheet:
-    return StatSheet.model_validate(json.loads((FIXTURES / name).read_text("utf-8")))
-
-
-def matchup(count_0: int = 1, count_1: int = 1) -> Matchup:
-    return Matchup(
-        fighters=[
-            FighterRequest(entity="a", count=count_0, raw="a"),
-            FighterRequest(entity="b", count=count_1, raw="b"),
-        ],
-        terrain=Terrain.OPEN_FIELD,
-        raw_text="a vs b",
-    )
-
-
-def scaled_ranges(sheet: StatSheet, factor: float) -> StatSheet:
-    """Copy of a sheet with every low-high range shrunk toward its value by `factor`."""
-    data = copy.deepcopy(sheet.model_dump(mode="json"))
-    for stat in data["stats"].values():
-        stat["low"] = stat["value"] - (stat["value"] - stat["low"]) * factor
-        stat["high"] = stat["value"] + (stat["high"] - stat["value"]) * factor
-    return StatSheet.model_validate(data)
-
-
-def with_stat(sheet: StatSheet, name: StatName, value: float) -> StatSheet:
-    data = sheet.model_dump(mode="json")
-    stat = data["stats"][name.value]
-    stat["value"], stat["low"], stat["high"] = value, value, value
-    data["sheet_hash"] = f"{sheet.sheet_hash}-{name.value}-{value}"
-    return StatSheet.model_validate(data)
+from tests.property.sim_helpers import (
+    FIXTURES,
+    load_sheet,
+    matchup,
+    scaled_ranges,
+    with_stat,
+)
 
 
 def test_run_returns_valid_result_for_contract_fixture():
