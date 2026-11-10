@@ -1,6 +1,6 @@
 # Simulation Model: where our numbers come from
 
-This is the answer to "where do your numbers come from?" Every constant lives in `backend/app/simulation/constants.py`. The stat sheets (sourced, cited) say *what a fighter is*; these constants say *how a fight turns those stats into hits and hit points*. **No language model sets any of these numbers.**
+This is the answer to "where do your numbers come from?" Every constant lives in `backend/app/simulation/constants.py`, except the terrain table, which lives in `backend/app/simulation/terrain.py`. Each one is listed here with its source or an "assumption" label. The stat sheets (sourced, cited) say *what a fighter is*; these constants say *how a fight turns those stats into hits and hit points*. **No language model sets any of these numbers.**
 
 Honesty note: published studies say how strong a bite is or how fast an animal runs (that is what the stat sheets cite), but nothing in the literature gives a conversion from "newtons of bite force" to "hit points in a fight." Where a constant has no published source, it is labeled **assumption** below and was chosen so that results look sensible across the benchmark matchups. The benchmark (F07) is how we check that choice.
 
@@ -53,6 +53,39 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 ## Terrain, habitat, and behavior (F04)
 
 - **Terrain table.** `terrain.py` gives every Terrain x Habitat pair (28 rows, each commented) a speed, attack, and hit multiplier. Water-only fighters on dry land are stranded (speed x0.1, attack x0.3, hit x0.5); land fighters in deep water are crippled (speed x0.2, attack x0.4, hit x0.5); the shoreline lets both engage weakly (land x0.7/0.8/0.8, water x0.5/0.6/0.7). All values are **assumptions** chosen for clear, sensible handicaps; they are not measured.
+
+The full table (each row is a multiplier on that fighter's speed, attack damage and hit chance; every value is an **assumption**, not a measurement):
+
+| Terrain | Habitat | Speed | Attack | Hit | Reason (all values are assumptions) |
+|---|---|---|---|---|---|
+| arena | land | x1.0 | x1.0 | x1.0 | home ground for land animals |
+| arena | water | x0.1 | x0.3 | x0.5 | stranded: gasping, can barely move or bite |
+| arena | air | x0.8 | x1.0 | x0.95 | walls limit flight a little |
+| arena | amphibious | x0.8 | x0.9 | x0.9 | amphibians are clumsy but fine on land |
+| open field | land | x1.0 | x1.0 | x1.0 | baseline |
+| open field | water | x0.1 | x0.3 | x0.5 | stranded on dry land |
+| open field | air | x1.0 | x1.0 | x1.0 | open sky: fliers are unhindered |
+| open field | amphibious | x0.8 | x0.9 | x0.9 | amphibious animal out of the water |
+| forest | land | x0.9 | x1.0 | x1.0 | undergrowth costs a little speed |
+| forest | water | x0.1 | x0.3 | x0.5 | stranded |
+| forest | air | x0.6 | x1.0 | x0.85 | branches block flight paths and dives |
+| forest | amphibious | x0.8 | x0.9 | x0.9 | damp ground helps a little, no more |
+| water | land | x0.2 | x0.4 | x0.5 | deep water: paddling, no footing (heavy penalty) |
+| water | water | x1.0 | x1.0 | x1.0 | home ground for fish and swimmers |
+| water | air | x1.0 | x1.0 | x1.0 | fliers hover over the surface freely |
+| water | amphibious | x0.9 | x1.0 | x1.0 | swimming amphibians are nearly at home |
+| shoreline | land | x0.7 | x0.8 | x0.8 | wading slows footing |
+| shoreline | water | x0.5 | x0.6 | x0.7 | shallows restrict a swimmer's movement |
+| shoreline | air | x1.0 | x1.0 | x1.0 | open air above the shallows |
+| shoreline | amphibious | x1.0 | x1.0 | x1.0 | amphibians' favorite ground |
+| urban | land | x1.0 | x1.0 | x0.95 | hard ground, some cover |
+| urban | water | x0.1 | x0.3 | x0.5 | stranded |
+| urban | air | x0.8 | x1.0 | x0.9 | buildings clutter the air |
+| urban | amphibious | x0.8 | x0.9 | x0.9 | out of its element |
+| mountain | land | x0.85 | x1.0 | x0.95 | slopes cost speed |
+| mountain | water | x0.1 | x0.3 | x0.5 | stranded |
+| mountain | air | x0.9 | x1.0 | x0.95 | thin air and updrafts, small cost |
+| mountain | amphibious | x0.7 | x0.9 | x0.85 | rough rock is hard on soft bodies |
 - **`no_contest`.** If neither side can reach the other, `run()` returns immediately with outcome `no_contest`, zero probabilities, and an END event "no contest: neither can reach the other". The only unreachable pair is a flier against a strictly water-living fighter in open water (the swimmer is submerged and the flier is out of reach). On dry land a fish is stranded and reachable; in the shallows everyone is reachable.
 - **Morale, retreat, and flee.** When a side's lost share of total hit points passes its morale threshold (see constants), it retreats (RETREAT event) and stops attacking. If it is faster than the other side (after terrain) it escapes (FLEE event): the fight ends, the pursuer wins, and the runner counts as a survivor (a loss for its side, but alive). If it is not faster, it is caught and finishes the fight defenseless. Machines will never retreat (F08).
 - **Group tactics.** Two or more attackers on the same target (or, for ranged sides and swarms, a crowd of attackers) raise hit chance by `group_tactics_0_1 x 0.5`, capped by the normal hit-chance maximum.

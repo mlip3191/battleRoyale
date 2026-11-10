@@ -33,7 +33,7 @@ MODIFIERS: dict[tuple[Terrain, Habitat], Modifier] = {
     (T.OPEN_FIELD, W): Modifier(0.1, 0.3, 0.5),  # stranded on dry land
     (T.OPEN_FIELD, A): Modifier(1.0, 1.0, 1.0),  # open sky: fliers are unhindered
     (T.OPEN_FIELD, X): Modifier(0.8, 0.9, 0.9),  # amphibious animal out of the water
-    # --- forest: trees slow big, fast movers and hide small ones ---
+    # --- forest: undergrowth slows land movers a little; branches hamper fliers ---
     (T.FOREST, L): Modifier(0.9, 1.0, 1.0),  # undergrowth costs a little speed
     (T.FOREST, W): Modifier(0.1, 0.3, 0.5),  # stranded
     (T.FOREST, A): Modifier(0.6, 1.0, 0.85),  # branches block flight paths and dives
@@ -53,7 +53,7 @@ MODIFIERS: dict[tuple[Terrain, Habitat], Modifier] = {
     (T.URBAN, W): Modifier(0.1, 0.3, 0.5),  # stranded
     (T.URBAN, A): Modifier(0.8, 1.0, 0.9),  # buildings clutter the air
     (T.URBAN, X): Modifier(0.8, 0.9, 0.9),  # out of its element
-    # --- mountain: steep rock; heavy bodies and fliers cope worst ---
+    # --- mountain: steep rock slows land movers; amphibians cope worst, fliers lose a little ---
     (T.MOUNTAIN, L): Modifier(0.85, 1.0, 0.95),  # slopes cost speed
     (T.MOUNTAIN, W): Modifier(0.1, 0.3, 0.5),  # stranded
     (T.MOUNTAIN, A): Modifier(0.9, 1.0, 0.95),  # thin air and updrafts, small cost
@@ -69,8 +69,8 @@ def modifier(terrain: Terrain, habitat: Habitat) -> Modifier:
 def can_engage(terrain: Terrain, habitat_a: Habitat, habitat_b: Habitat) -> bool:
     """False when neither side can reach the other (the result is then `no_contest`).
 
-    A strictly water-living fighter is submerged in open water or the shallows' deep end, out of
-    reach of a flier, and a flier is out of reach of it. On dry land a fish is stranded and
+    A strictly water-living fighter is submerged in open water (`Terrain.WATER`), out of reach of
+    a flier, and a flier is out of reach of it. On dry land a fish is stranded and
     reachable. In the shallows (shoreline) everyone is reachable, but weakly.
     """
     if terrain is Terrain.WATER and {habitat_a, habitat_b} == {Habitat.AIR, Habitat.WATER}:

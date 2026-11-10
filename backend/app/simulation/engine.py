@@ -409,12 +409,11 @@ def _outcome(
 ) -> RunOutcome:
     """Wrap up a fight. `winner` is given when the loser fled while still alive."""
     survivors = (alive[0], alive[1])
-    if winner is not None:
-        pass
-    elif (survivors[0] and survivors[1]) or not (survivors[0] or survivors[1]):
-        winner = DRAW
-    else:
-        winner = 0 if survivors[0] else 1
+    if winner is None:
+        if (survivors[0] and survivors[1]) or not (survivors[0] or survivors[1]):
+            winner = DRAW
+        else:
+            winner = 0 if survivors[0] else 1
     if record_events:
         if winner == DRAW:
             events.append(

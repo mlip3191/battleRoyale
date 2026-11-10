@@ -2,6 +2,8 @@
 
 import statistics
 
+import pytest
+
 from app.models.simulation import EventType
 from app.models.stats import Habitat
 from app.models.terrain import Terrain
@@ -75,6 +77,11 @@ def test_eagle_vs_shark_is_a_fight_where_the_shark_is_stranded_or_in_the_shallow
     assert can_engage(Terrain.SHORELINE, Habitat.AIR, Habitat.WATER)
     result = run(matchup_of(1, 1, terrain=Terrain.OPEN_FIELD), [eagle(), shark()], runs=100)
     assert result.outcome != "no_contest"
+    # The stranded penalty bites: the same shark kills the eagle more slowly out of the water
+    # than it would if it were a land animal (it is still the favorite: it outweighs the eagle).
+    landlubber = make_sheet("shark", **{**SHARK, "habitat": "land"})
+    at_home = run(matchup_of(1, 1, terrain=Terrain.OPEN_FIELD), [eagle(), landlubber], runs=100)
+    assert result.mean_duration_s > at_home.mean_duration_s * 1.5
 
 
 # --- Behavior: morale, retreat, flee ---------------------------------------------------------
@@ -105,8 +112,10 @@ def test_timid_side_retreats_earlier_than_an_aggressive_one():
 def test_morale_threshold_rises_with_aggression():
     timid = sample_template(make_sheet("t", aggression_0_1=0.0, spread=0.0), 1, run_rng(1, 0))
     bold = sample_template(make_sheet("b", aggression_0_1=1.0, spread=0.0), 1, run_rng(1, 0))
+    middle = sample_template(make_sheet("m", aggression_0_1=0.5, spread=0.0), 1, run_rng(1, 0))
     assert timid.morale == c.MORALE_FLOOR
     assert bold.morale == 1.0
+    assert middle.morale == pytest.approx(c.MORALE_FLOOR + c.MORALE_SPAN * 0.5)
 
 
 def test_fast_timid_fighter_escapes_with_retreat_and_flee_events():
@@ -131,6 +140,37 @@ def test_slower_retreating_fighter_is_caught_and_never_flees():
         flees += sum(e.type == EventType.FLEE for e in outcome.events)
         retreats += sum(e.type == EventType.RETREAT for e in outcome.events)
     assert retreats > 0 and flees == 0
+
+
+# --- Morale in swarm mode (more than 200 per side) -------------------------------------------
+
+
+def swarm_vs_boss(top_speed_mps: float):
+    swarm = make_sheet(
+        "swarm", aggression_0_1=0.0, mass_kg=20, size_m=0.6, attack_force_n=100,
+        top_speed_mps=top_speed_mps,
+    )  # fmt: skip
+    boss = make_sheet(
+        "boss", aggression_0_1=1.0, mass_kg=600, size_m=2.5, attack_force_n=9000,
+        attacks_per_s=2.0, top_speed_mps=10, armor_0_1=0.5,
+    )  # fmt: skip
+    return run(matchup_of(300, 1), [swarm, boss], runs=50)
+
+
+def test_a_timid_swarm_breaks_and_runs():
+    result = swarm_vs_boss(top_speed_mps=6)  # slower than the boss: it breaks but is caught
+    kinds = {e.type for e in result.representative_log}
+    assert EventType.RETREAT in kinds and EventType.FLEE not in kinds
+    assert result.outcome == "win_1"
+
+
+def test_a_fast_timid_swarm_escapes_and_survives():
+    result = swarm_vs_boss(top_speed_mps=25)  # faster than the boss: it gets away
+    kinds = [e.type for e in result.representative_log]
+    assert EventType.RETREAT in kinds and EventType.FLEE in kinds
+    assert kinds.index(EventType.RETREAT) < kinds.index(EventType.FLEE)
+    assert result.outcome == "win_1"  # fleeing counts as a loss for the runners
+    assert result.mean_survivors[0] > 0  # ...but they are alive
 
 
 # --- Group tactics ---------------------------------------------------------------------------
