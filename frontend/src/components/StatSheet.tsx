@@ -77,13 +77,17 @@ export function SourceBadge({
   );
 }
 
-// The honesty tag for a stat without a plain source; null when the source badge says it all.
+// The honesty tag for a stat, from how it was produced; null when the source badge says it all.
 export function statTag(stat: StatValue) {
   if (stat.method === "assumption") return "assumption";
   if (stat.is_estimate) return "estimate";
-  if (!stat.source) return stat.method === "derived" ? "derived" : "estimate";
-  return null;
+  if (stat.source) return null;
+  return stat.method.replace("_", " ");
 }
+
+// Show every digit the sheet has (the number rule): no rounding, only thousands separators.
+export const formatStatValue = (value: number) =>
+  value.toLocaleString("en-US", { maximumFractionDigits: 20 });
 
 // Whether a stat counts toward the "lots of guesses" banner.
 const isGuess = (stat: StatValue) =>
@@ -96,7 +100,7 @@ function StatRow({ name, stat }: { name: string; stat: StatValue }) {
     <tr>
       <th scope="row">{STAT_LABELS[name] ?? name}</th>
       <td className={styles.value}>
-        {stat.value.toLocaleString("en-US")} {stat.unit}
+        {formatStatValue(stat.value)} {stat.unit}
       </td>
       <td>
         {stat.source && (
