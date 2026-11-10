@@ -27,9 +27,9 @@ from app.simulation.fair import fair_fight  # noqa: E402
 from app.simulation.summary import Summary, summary  # noqa: E402
 
 # Deliberately borrowed from the test helpers (this works because the backend folder is on the
-# path); moving `sim_helpers` breaks it. Note that `make_sheet` copies the gray wolf's citations
-# onto invented numbers, so the stand-in sheets built here must never be shown, saved, or used as
-# fixtures.
+# path); moving `sim_helpers` breaks it. `make_sheet` labels every overridden stat as an unsourced
+# stand-in (#86), but the numbers are still invented, so the stand-in sheets built here must never
+# be shown, saved, or used as fixtures.
 from tests.property.sim_helpers import FIXTURES, make_dragon, make_sheet, matchup_of  # noqa: E402
 
 BANNER = (
