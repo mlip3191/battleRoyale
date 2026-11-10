@@ -155,7 +155,7 @@ def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] |
         limit = min(foe.max_hp, foe.morale * foe.max_hp * foe.count)
         if attacks * damage_per_hit(me, foe) >= limit:
             return None
-    if end >= c.MAX_FIGHT_S:
+    if math.isinf(min(stops)):  # no machine stops, so the clock runs out (a stop at 600 s counts)
         return DRAW, c.MAX_FIGHT_S
     return (1 if stops[0] < stops[1] else 0), end
 

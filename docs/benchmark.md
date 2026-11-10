@@ -1,0 +1,51 @@
+# Benchmark matchup set
+
+The benchmark asks whether the simulator's verdicts are sensible. It holds 30 matchups with an expected answer, written before anyone ran them through the engine (DECISIONS D-10). `run_benchmark.py` (task F07) scores them.
+
+## How the set was built
+
+| Group | Entries | Where the expected answer comes from |
+|---|---|---|
+| Obvious | 15 (5 with an object or machine) | The outcome follows from size or biology. Each has a one-line reason. |
+| Documented | 10 | A published source records the outcome or who preys on whom. Each has a link to the exact page revision and the quote. |
+| Count | 5 | A rough range for how many of the weaker fighter make the fight even. Each range is a judgment from relative size, with a one-line reason. |
+
+All fighters come from the seed list in `docs/research.md`. Fighters and terrain are given as plain slugs, and `variant: null` means the default variant.
+
+**Mythical creatures are excluded,** because legends have no right answer.
+
+**Held-out set.** `data/benchmark/heldout.yaml` holds 10 entries: 5 obvious, 3 documented, and 2 count. They were drawn at random so nobody chose the easy ones. The draw was a one-off run with a single Python `random.Random(30)` generator: `sample` took 5 from the obvious entries, then 3 from the documented, then 2 from the count entries, each list in id order. The other 20 are in `data/benchmark/matchups.yaml`. **Held-out results are never used to change constants.** Only the tuning set may guide tuning. F07 reports held-out results separately from tuning results, and the held-out set is run only after tuning is frozen. A held-out miss may be investigated as a possible bug, but no constant may be tuned to move it. The file is committed in the open, so this is a team promise, not a technical lock.
+
+## Entry format
+
+| Field | Meaning |
+|---|---|
+| `id` | Unique name: `obv-`, `doc-`, or `cnt-` and a number |
+| `group` | `obvious`, `documented`, or `count` |
+| `fighters` | Two sides, each with `entity`, `count`, and `variant` |
+| `terrain` | One of the app's terrains |
+| `expected_winner` | `"0"` (first side), `"1"` (second side), or `"draw"` |
+| `confidence` | `high` or `medium` |
+| `expected_fair_count` | Count cases only: `[low, high]` for the weaker side's count, with the stronger side fixed at its listed count (1 in all five cases) |
+| `source` | A link, or `obvious: <one-line reason>` |
+| `quote` | Documented cases only: the sentence the answer rests on |
+
+## Pass rules
+
+These were written before the first run.
+
+1. **Favorite correct:** the simulator's favorite matches `expected_winner`. For `draw`, the simulated outcome must be a draw (no entry uses `draw` yet).
+2. **High-confidence cases:** the favorite's win probability is at least 0.7. Medium-confidence cases need only the right favorite.
+3. **Count cases:** these are judged only on the fair-fight search, which varies the count of the side expected to lose until the fight is closest to even. That count must land inside `expected_fair_count`. Rules 1 and 2 don't apply to them.
+
+The product target is at least 80% favorite-correct on the obvious cases in the held-out set. Everything else is reported as it comes out.
+
+## Known weaknesses
+
+- **Predation is not a duel.** Most documented cases say one animal preys on another, usually under conditions that favor the hunter. The benchmark treats that as evidence for a one-on-one fight, which is weaker than a direct statement, so most are `medium` confidence.
+- **Some quotes are indirect or about a broader group.** `doc-01` is about brown bears against wolf packs, `doc-03` lists lions among several predators of the honey badger, `doc-04` is about cobras in general rather than the king cobra, `doc-05` is about wolves preying on wild horses, `doc-06` is about shepherd dogs rather than golden retrievers, `doc-09` lists horses among livestock eaten "if given the opportunity", and `doc-10` says lion prides rarely kill adult hippos, which is thin support for a one-on-one result.
+- **The random draw left gaps in the held-out set.** Two pairings appear twice in it, cat vs wolf (`obv-01` and `cnt-01`) and horse vs duck (`obv-09` and `cnt-04`), so it holds 8 distinct matchups, not 10. None of the 5 held-out obvious cases involves an object or machine. (The tuning set also repeats wolf vs grizzly as `cnt-02` and `doc-01`.) Replacing entries by hand would undo the point of the draw, so they stay.
+- **Count ranges are assumptions, not measurements.** No source measures how many house cats equal a wolf. The ranges come from rough size ratios and are deliberately wide (for example `cnt-04` spans 20 to 300), so they catch gross errors in the engine, not small ones. A pass here is weak evidence.
+- **Fighters without hand-verified sheets.** Only 15 fighters get hand-verified sheets (G05). Matchups using the others can only be scored with research sheets or skipped.
+- **The set is small.** With 5 obvious cases held out, one miss moves that score by 20 points.
+- **No swarm or edge-case coverage.** No matchup puts more than 4 fighters on a side apart from the count-case ranges, so the set cannot judge swarm mode or `SWARM_THRESHOLD`. It also has no mirror matches, no draws, no ranged fighters, and never uses the water, urban or mountain terrain. Ten seed fighters (chimpanzee, great white shark, army ant, honey bee, T. rex, triceratops, medieval knight, samurai, pickup truck, saguaro cactus) are not used. A second set for these is a follow-up.
