@@ -36,6 +36,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `docs/PRODU
 - Commit messages: imperative summary + issue, e.g. `Add matchup count clamping (#12)`. PRs under ~300 changed lines, using the PR template, with `Closes #<n>`. Merge only after a teammate approves and all checks pass.
 - Write long text (commit messages, PR/issue bodies, comments) to a file in `.claude/tmp/` and pass it with `git commit -F` / `--body-file`; the shell guard ignores message text only when it isn't on the command line as a path-like word.
 - If unsure, stop and ask.
+- If a teammate is new, point them to docs/onboarding.md.
 
 ## 6. Battle Royale rules
 - **Number rule:** a model may only copy a number together with the exact quote it came from, and code verifies it. Estimates come from code and are labeled `is_estimate`. Scripts may only contain numbers present in the stat sheets or results.
