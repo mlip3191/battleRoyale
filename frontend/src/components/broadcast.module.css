@@ -1,0 +1,105 @@
+/* Shared broadcast pieces: header, lower third, ticker, error panel. */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--panel);
+  border-bottom: 3px solid var(--neon);
+}
+
+.logo {
+  margin: 0;
+  font-family: var(--font-score);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--text);
+  text-decoration: none;
+  text-shadow: 0 0 12px var(--neon);
+}
+
+.live {
+  font-family: var(--font-digits);
+  color: var(--hot);
+  font-weight: 700;
+}
+
+.lowerThird {
+  display: inline-block;
+  margin: 1rem 0;
+  padding: 0.4rem 1.2rem;
+  background: var(--banner);
+  color: var(--banner-text);
+  font-family: var(--font-score);
+  font-weight: 800;
+  text-transform: uppercase;
+  clip-path: polygon(0 0, 100% 0, 96% 100%, 0 100%);
+  animation: slide-in 0.4s ease-out;
+}
+
+.ticker {
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0.5rem 1rem;
+  background: var(--panel);
+  border-top: 2px solid var(--hot);
+  border-bottom: 2px solid var(--hot);
+  font-family: var(--font-digits);
+  color: var(--neon);
+}
+
+.tickerText {
+  display: inline-block;
+  animation: crawl 12s linear infinite;
+}
+
+/* No message: hide the bar, but the status region around it stays for screen readers. */
+.ticker:has(.tickerText:empty) {
+  display: none;
+}
+
+.error {
+  padding: 1rem 1.25rem;
+  background: var(--panel);
+  border-left: 6px solid var(--danger);
+  color: var(--text);
+}
+
+.error h1,
+.error h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+  color: var(--danger);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* With motion off the ticker stops crawling, so let long messages wrap instead of being cut off. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker {
+    white-space: normal;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-110%);
+  }
+}
+
+@keyframes crawl {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
