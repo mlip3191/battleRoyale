@@ -14,7 +14,7 @@ All fighters come from the seed list in `docs/research.md`. Fighters and terrain
 
 **Mythical creatures are excluded,** because legends have no right answer.
 
-**Held-out set.** `data/benchmark/heldout.yaml` holds 10 entries: 5 obvious, 3 documented, and 2 count. They were drawn at random with Python's `random.Random(30)`, so nobody chose the easy ones. The other 20 are in `data/benchmark/matchups.yaml`. **Held-out results are never used to change constants.** Only the tuning set may guide tuning.
+**Held-out set.** `data/benchmark/heldout.yaml` holds 10 entries: 5 obvious, 3 documented, and 2 count. They were drawn at random so nobody chose the easy ones. The draw was a one-off run with a single Python `random.Random(30)` generator: `sample` took 5 from the obvious entries, then 3 from the documented, then 2 from the count entries, each list in id order. The other 20 are in `data/benchmark/matchups.yaml`. **Held-out results are never used to change constants.** Only the tuning set may guide tuning.
 
 ## Entry format
 
@@ -26,7 +26,7 @@ All fighters come from the seed list in `docs/research.md`. Fighters and terrain
 | `terrain` | One of the app's terrains |
 | `expected_winner` | `"0"` (first side), `"1"` (second side), or `"draw"` |
 | `confidence` | `high` or `medium` |
-| `expected_fair_count` | Count cases only: `[low, high]` for the losing side's count |
+| `expected_fair_count` | Count cases only: `[low, high]` for the weaker side's count, with the stronger side fixed at its listed count (1 in all five cases) |
 | `source` | A link, or `obvious: <one-line reason>` |
 | `quote` | Documented cases only: the sentence the answer rests on |
 
@@ -36,7 +36,7 @@ These were written before the first run.
 
 1. **Favorite correct:** the simulator's favorite matches `expected_winner`.
 2. **High-confidence cases:** the favorite's win probability is at least 0.7.
-3. **Count cases:** the fair-fight count falls inside `expected_fair_count`.
+3. **Count cases:** these are judged only on the fair-fight search, which must vary the side expected to lose and land inside `expected_fair_count`. Rules 1 and 2 don't apply to them.
 
 The product target is at least 80% favorite-correct on the obvious cases in the held-out set. Everything else is reported as it comes out.
 
