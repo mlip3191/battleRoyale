@@ -5,7 +5,7 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-ENGINE_VERSION = 1
+ENGINE_VERSION = 2
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1
@@ -43,3 +43,23 @@ CLOSING_EVENTS = 2
 
 # z-score for a 95% Wilson confidence interval.
 WILSON_Z = 1.96
+
+# --- Numbers and size (F03) ---
+
+# Most attackers that can surround one target at once (Lanchester linear law, melee).
+MAX_ENGAGERS = 8
+# A side with more individuals than this is simulated in groups instead of one by one.
+SWARM_THRESHOLD = 200
+# Shortest swarm step. Swarm fights act in coarse steps, not per-fighter events.
+SWARM_STEP_S = 0.5
+# Steps lengthen as a fight goes on: at least this share of the elapsed time (assumption:
+# keeps long swarm fights fast while early, decisive moments stay finely resolved).
+SWARM_STEP_GROWTH = 0.1
+
+# Square-cube scaling when a fighter is resized by factor k = reference mass / own mass.
+# Strength (muscle cross-section) scales with area: k ** (2/3).
+STRENGTH_SCALE_EXP = 2 / 3
+# Length-like stats (size, reach) scale with k ** (1/3).
+LENGTH_SCALE_EXP = 1 / 3
+# Top running speed scales roughly with mass ** 0.17 (Garland 1983), about k ** (1/6).
+SPEED_SCALE_EXP = 1 / 6
