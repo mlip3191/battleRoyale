@@ -49,6 +49,7 @@ def make_sheet(
     habitat: str | None = None,
     body: str | None = None,
     weapons: list[str] | None = None,
+    fighter_id: str | None = None,
     **stats: float,
 ) -> StatSheet:
     """A stand-in fighter: the gray wolf with some stats replaced (range = value +/- spread).
@@ -58,6 +59,8 @@ def make_sheet(
     data = copy.deepcopy(load_sheet("stat-sheet-gray-wolf.json").model_dump(mode="json"))
     data["sheet_hash"] = name
     data["display_name"] = name.capitalize()
+    if fighter_id:
+        data["fighter_id"] = fighter_id  # e.g. "honey-badger", for per-fighter tables
     if habitat:
         data["habitat"] = habitat
     if body:

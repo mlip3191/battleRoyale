@@ -57,6 +57,8 @@ class Template:
     endurance_s: float = float("inf")  # machines stop working after this long
     regen_per_s: float = 0.0  # share of max hit points healed per second
     spiky: bool = False  # inert fighter whose spines hurt whoever hits it
+    venomous: bool = False  # its bites deliver venom (resolved after the fight, D-44)
+    venom_resist: float = 0.0  # 0 = none, 1 = immune
     abilities: tuple[Ability, ...] = ()
 
     @property
@@ -147,6 +149,8 @@ def sample_template(
         else float("inf"),
         regen_per_s=c.REGEN_SHARE_PER_S if Ability.REGENERATION in abilities else 0.0,
         spiky=sheet.body == Body.INERT and "spines" in weapons,
+        venomous="venom" in weapons,
+        venom_resist=venom_resistance(sheet),
         abilities=abilities,
     )
 
@@ -159,6 +163,23 @@ def hit_chance(attacker: Template, defender: Template) -> float:
     chance = c.HIT_BASE * speed_ratio**c.HIT_SPEED_EXP * size_ratio**c.HIT_SIZE_EXP
     chance *= attacker.hit_mult
     return min(max(chance, c.HIT_MIN), c.HIT_MAX)
+
+
+def venom_resistance(sheet: StatSheet) -> float:
+    """0 (none) to 1 (immune), from the per-fighter assumption table in constants.py."""
+    return c.VENOM_RESISTANCE.get(sheet.fighter_id.split("--")[0], 0.0)
+
+
+def venom_dose(attacker: Template, target: Template) -> float:
+    """Share of a lethal dose one landed bite delivers (0 for a bite without venom).
+
+    The same bite is a bigger dose for a smaller victim: it scales with (attacker mass / target
+    mass) ** 0.5, an assumption, and resistance cuts it.
+    """
+    if not attacker.venomous:
+        return 0.0
+    size = (attacker.mass_kg / max(target.mass_kg, c.MIN_MASS_KG)) ** 0.5
+    return c.VENOM_BITE_SHARE * size * (1.0 - target.venom_resist)
 
 
 def damage_per_hit(attacker: Template, defender: Template) -> float:
