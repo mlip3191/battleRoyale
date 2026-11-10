@@ -14,5 +14,7 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // Let theme.test.ts read the real theme file (CSS is otherwise stubbed out in tests).
+    css: { include: [/src\/index\.css/] },
   },
 });
