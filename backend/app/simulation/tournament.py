@@ -18,8 +18,7 @@ from app.simulation.engine import run
 
 BRACKET_SIZE = 8
 
-# Seeding: the caller's order is the seeding (first = top seed). Round 1 pairs 1v8, 4v5, 2v7, 3v6,
-# so the top seeds can only meet late and the winners of matches 1+2 and 3+4 meet in the semis.
+# Seeding: the caller's order is the seed order; round 1 pairs 1v8, 4v5, 2v7, 3v6.
 ROUND_ONE_PAIRS = ((0, 7), (3, 4), (1, 6), (2, 5))
 
 DecidedBy = Literal["simulation", "better_odds", "seed"]

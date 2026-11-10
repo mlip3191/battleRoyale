@@ -92,9 +92,9 @@ def test_each_match_is_the_ordinary_one_v_one_simulation():
 
 def test_a_clear_favorite_is_decided_by_the_simulation():
     t = tournament()
-    weakest_meets_strongest = t.rounds[0][0]
-    assert weakest_meets_strongest.winner == weakest_meets_strongest.fighters[0]
-    assert weakest_meets_strongest.decided_by == "simulation"
+    top_seed_match = t.rounds[0][0]
+    assert top_seed_match.winner == top_seed_match.fighters[0]
+    assert top_seed_match.decided_by == "simulation"
 
 
 def test_a_stalemate_still_sends_someone_through_and_says_how():
