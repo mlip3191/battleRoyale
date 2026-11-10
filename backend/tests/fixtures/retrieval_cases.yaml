@@ -1,0 +1,21 @@
+# Retrieval quality check (G03): for each fighter and stat, a phrase the top 5 passages
+# should contain. The phrases are quotes already hand-verified for the G05 seed sheets,
+# and each one is in the fighter's main article from docs/research.md.
+# Live mode reports hit@5; mock tests only check this file's shape.
+
+cases:
+  - {fighter_id: grizzly-bear, stat: mass_kg, phrase: "389 kilograms"}
+  - {fighter_id: grizzly-bear, stat: size_m, phrase: "240 cm"}
+  - {fighter_id: grizzly-bear, stat: top_speed_mps, phrase: "48 km/h"}
+  - {fighter_id: gray-wolf, stat: mass_kg, phrase: "40 kg (88 lb)"}
+  - {fighter_id: gray-wolf, stat: size_m, phrase: "105–160 cm"}
+  - {fighter_id: horse, stat: mass_kg, phrase: "500 to 600 kilograms"}
+  - {fighter_id: horse, stat: size_m, phrase: "157 cm"}
+  - {fighter_id: horse, stat: top_speed_mps, phrase: "40 to 48 kilometres per hour"}
+  - {fighter_id: duck, stat: mass_kg, phrase: "0.7–1.6 kg"}
+  - {fighter_id: duck, stat: size_m, phrase: "50–65 cm"}
+  - {fighter_id: honey-badger, stat: mass_kg, phrase: "9 to 16 kg"}
+  - {fighter_id: honey-badger, stat: size_m, phrase: "55–77 cm"}
+  - {fighter_id: saltwater-crocodile, stat: mass_kg, phrase: "408 to 770 kg"}
+  - {fighter_id: saltwater-crocodile, stat: attack_force_n, phrase: "16,414 N"}
+  - {fighter_id: african-elephant, stat: reach_m, phrase: "1.5 to 2.4 m"}
