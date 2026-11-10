@@ -4,6 +4,7 @@ From the repo root:
   uv run --directory backend python scripts/run_benchmark.py --mock
       CI-safe: three matchups from test fixtures, nothing is written unless --output is given.
   uv run --directory backend python scripts/run_benchmark.py --live --sheets seed
+  uv run --directory backend python scripts/run_benchmark.py --live --sheets seed --tuning-only
   uv run --directory backend python scripts/run_benchmark.py --live --sheets research
       The real run: data/benchmark/matchups.yaml (tuning) and heldout.yaml (never tuned on).
 
@@ -32,6 +33,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--matchups", type=Path, default=None)
     parser.add_argument("--heldout", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=None, help="results file to update")
+    parser.add_argument(
+        "--tuning-only", action="store_true",
+        help="do not run or show the held-out set (use while changing constants)",
+    )  # fmt: skip
     args = parser.parse_args(argv)
 
     try:
@@ -46,7 +51,7 @@ def main(argv: list[str] | None = None) -> int:
             sheets = bm.seed_sheets() if args.sheets == "seed" else bm.research_sheets()
             label = args.sheets
             runs, output = args.runs or get_settings().sim_runs, args.output or bm.RESULTS_FILE
-        report = bm.run_benchmark(sheets, label, tuning, held, runs)
+        report = bm.run_benchmark(sheets, label, tuning, held, runs, args.tuning_only)
     except bm.BenchmarkError as error:
         print(f"Cannot run the benchmark: {error}", file=sys.stderr)
         return 2

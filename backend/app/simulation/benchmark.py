@@ -11,6 +11,7 @@ Pass rules (docs/benchmark.md, G07):
 - for "count" cases the fair-fight count must fall inside the expected range.
 """
 
+import json
 import re
 import subprocess
 import time
@@ -167,15 +168,19 @@ class IndexedSheets:
 
 
 def _load_sheets_from(directory: Path, patterns: tuple[str, ...]) -> list[StatSheet]:
-    import json
-
     sheets: list[StatSheet] = []
     for pattern in patterns:
         for path in sorted(directory.glob(pattern)):
-            text = path.read_text(encoding="utf-8")
-            data = yaml.safe_load(text) if path.suffix in (".yaml", ".yml") else json.loads(text)
-            items = data if isinstance(data, list) else data.get("sheets", [data])
-            sheets += [StatSheet.model_validate(item) for item in items]
+            try:
+                text = path.read_text(encoding="utf-8")
+                is_yaml = path.suffix in (".yaml", ".yml")
+                data = yaml.safe_load(text) if is_yaml else json.loads(text)
+                items = data if isinstance(data, list) else data.get("sheets", [data])
+                sheets += [StatSheet.model_validate(item) for item in items]
+            except (ValueError, AttributeError, yaml.YAMLError) as error:
+                # pydantic's ValidationError and json's decode error are both ValueErrors
+                first = str(error).strip().splitlines()[0] if str(error).strip() else "invalid"
+                raise BenchmarkError(f"{path.name} is not a valid stat sheet: {first}") from error
     return sheets
 
 
@@ -185,8 +190,11 @@ def mock_sheets() -> SheetSource:
 
 
 def seed_sheets(directory: Path | None = None) -> SheetSource:
-    """Hand-verified seed sheets (G05) from `data/seed/`: JSON or YAML, one sheet or a list."""
-    directory = directory or REPO_ROOT / "data" / "seed"
+    """Hand-verified seed sheets (G05) from `data/seed/fighters/<id>.json` (or YAML).
+
+    Only that folder is read: G09's top-level `data/seed/*.yaml` files are not stat sheets.
+    """
+    directory = (directory or REPO_ROOT / "data" / "seed") / "fighters"
     sheets = (
         _load_sheets_from(directory, ("*.json", "*.yaml", "*.yml")) if directory.exists() else []
     )
@@ -218,6 +226,7 @@ class Judged:
     fair_count: int | None
     passed: bool
     reason: str
+    skipped: bool = False  # no stat sheet for a fighter: not scored, and said so in the report
 
 
 def judge(entry: Entry, result: SimulationResult, fair: FairFight | None) -> Judged:
@@ -231,12 +240,28 @@ def judge(entry: Entry, result: SimulationResult, fair: FairFight | None) -> Jud
 
     if entry.fair_range is not None:
         lo, hi = entry.fair_range
-        ok = fair_count is not None and lo <= fair_count <= hi
-        reason = (
-            f"fair count {fair_count} {'inside' if ok else 'outside'} expected {lo}-{hi}"
-            if fair_count is not None
-            else f"no fair count found (expected {lo}-{hi})"
-        )
+        # `expected_winner` is the side expected to win as written; the range is the other
+        # side's count, so the fair-fight search must have varied that other side.
+        expected_loser = None if entry.expected_winner == "draw" else 1 - int(entry.expected_winner)
+        if fair_count is None:
+            why = (
+                f"the main fight was a {result.outcome.replace('_', ' ')}, so there is no loser "
+                "to even up"
+                if result.outcome in ("draw", "no_contest")
+                else "no fair count found"
+            )
+            return Judged(
+                entry, result.outcome, favorite, win_pct, None, False, f"{why} (expected {lo}-{hi})"
+            )
+        if fair is not None and expected_loser is not None and fair.varied_side != expected_loser:
+            reason = (
+                f"expected side {1 - expected_loser} to win, but the fair-fight search varied "
+                f"side {fair.varied_side} (the favorite was "
+                f"{'nobody' if favorite is None else f'side {favorite}'})"
+            )
+            return Judged(entry, result.outcome, favorite, win_pct, fair_count, False, reason)
+        ok = lo <= fair_count <= hi
+        reason = f"fair count {fair_count} {'inside' if ok else 'outside'} expected {lo}-{hi}"
         return Judged(entry, result.outcome, favorite, win_pct, fair_count, ok, reason)
 
     expected = entry.expected_winner
@@ -285,6 +310,7 @@ class RunReport:
     started: datetime
     traceability: float | None = None  # share of results whose numbers trace to a source
     notes: list[str] = field(default_factory=list)
+    tuning_only: bool = False  # held-out matchups were not run, so none of their rows are shown
 
     def subset(self, held_out: bool | None = None, group: Group | None = None) -> list[Judged]:
         return [
@@ -296,10 +322,12 @@ class RunReport:
 
 
 def rate(items: Sequence[Judged]) -> str:
-    if not items:
+    """Pass rate over the matchups that were scored (skipped ones are listed separately)."""
+    scored = [j for j in items if not j.skipped]
+    if not scored:
         return "n/a"
-    passed = sum(j.passed for j in items)
-    return f"{passed}/{len(items)} ({round(100 * passed / len(items))}%)"
+    passed = sum(j.passed for j in scored)
+    return f"{passed}/{len(scored)} ({round(100 * passed / len(scored))}%)"
 
 
 def current_commit() -> str:
@@ -317,6 +345,9 @@ def render_run(report: RunReport) -> str:
     """One run as a markdown section; the heading carries the date so nothing is overwritten."""
     when = report.started.strftime("%Y-%m-%d %H:%M")
     trace = "n/a" if report.traceability is None else f"{round(report.traceability * 100)}%"
+    held_rate = (
+        "not run (tuning only)" if report.tuning_only else rate(report.subset(held_out=True))
+    )
     lines = [
         f"## Run {when} — sheets: {report.mode}",
         "",
@@ -325,8 +356,7 @@ def render_run(report: RunReport) -> str:
         "| Set | Pass rate |",
         "|---|---|",
         f"| Tuning | {rate(report.subset(held_out=False))} |",
-        f"| Held-out (never used to change constants) | {rate(report.subset(held_out=True))} |",
-        f"| Overall | {rate(report.judged)} |",
+        f"| Held-out (never used to change constants) | {held_rate} |",
         "",
         "| Group | Tuning | Held-out |",
         "|---|---|---|",
@@ -334,10 +364,21 @@ def render_run(report: RunReport) -> str:
     for group in GROUPS:
         tuning = rate(report.subset(held_out=False, group=group))
         held = rate(report.subset(held_out=True, group=group))
+        held = "not run" if report.tuning_only else held
         lines.append(f"| {group} | {tuning} | {held} |")
+    skipped = [j for j in report.judged if j.skipped]
+    if skipped:
+        lines += [
+            "",
+            f"**Skipped ({len(skipped)}):** not scored, because a stat sheet is missing.",
+            "",
+        ]
+        lines += [f"- {j.entry.id}: {j.reason}" for j in skipped]
     for note in report.notes:
         lines += ["", f"_{note}_"]
     for title, held_out in (("Tuning set", False), ("Held-out set", True)):
+        if held_out and report.tuning_only:
+            continue  # held-out rows stay hidden while tuning
         rows = report.subset(held_out=held_out)
         lines += ["", f"### {title}", ""]
         if not rows:
@@ -353,7 +394,9 @@ def render_run(report: RunReport) -> str:
                 f"side {j.entry.expected_winner}" if j.entry.expected_winner != "draw" else "draw"
             )
             fair = "—" if j.fair_count is None else str(j.fair_count)
-            verdict = ("pass" if j.passed else "FAIL") + f" — {j.reason}"
+            verdict = (
+                "skipped" if j.skipped else "pass" if j.passed else "FAIL"
+            ) + f" — {j.reason}"
             lines.append(
                 f"| {j.entry.id} | {j.entry.group} | {expected} | {favorite} "
                 f"| {j.win_pct[0]} / {j.win_pct[1]} | {fair} | {verdict} |"
@@ -390,16 +433,26 @@ def run_benchmark(
     tuning: Sequence[Entry],
     held_out: Sequence[Entry],
     runs: int,
+    tuning_only: bool = False,
 ) -> RunReport:
+    """Score every matchup. With `tuning_only` the held-out set is neither run nor shown."""
+    if tuning_only:
+        held_out = []
     started = datetime.now()
     clock = time.perf_counter()
-    judged = [evaluate(entry, sheets, runs) for entry in [*tuning, *held_out]]
+    judged = []
+    for entry in [*tuning, *held_out]:
+        try:
+            judged.append(evaluate(entry, sheets, runs))
+        except BenchmarkError as error:  # e.g. no hand-verified sheet for one fighter yet
+            judged.append(Judged(entry, "skipped", None, (0.0, 0.0), None, False, str(error), True))
     return RunReport(
         mode=mode,
         judged=judged,
         runtime_s=time.perf_counter() - clock,
         commit=current_commit(),
         started=started,
+        tuning_only=tuning_only,
         notes=[
             "Traceability (G06) is not wired in yet; it shows n/a until research/trace.py lands."
         ],

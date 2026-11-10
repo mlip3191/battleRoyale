@@ -154,7 +154,8 @@ def test_mock_mode_runs_three_matchups_end_to_end(tmp_path, capsys):
     assert main(["--mock", "--output", str(out)]) == 0
     text = out.read_text("utf-8")
     assert text.count("| mock-") == 3  # three matchups scored
-    assert "3/3 (100%)" in text
+    assert "2/2 (100%)" in text and "1/1 (100%)" in text  # tuning and held-out, separately
+    assert "Overall" not in text  # the two sets are never mixed into one number
     assert "mock-wolves-to-match-a-bear" in capsys.readouterr().out
 
 
@@ -177,3 +178,111 @@ def test_live_modes_say_what_they_are_waiting_for(tmp_path, capsys):
 def test_unknown_fighter_is_a_clear_error():
     with pytest.raises(bm.BenchmarkError, match="no stat sheet for 'unicorn'"):
         bm.mock_sheets().get(FighterRequest(entity="unicorn", raw="unicorn"))
+
+
+# --- Seed sheets: the real layout, bad files, and missing sheets -------------------------------
+
+
+def write_sheet(path: Path, fighter_id: str) -> None:
+    data = json.loads((FIXTURES / "contracts" / "stat-sheet-gray-wolf.json").read_text("utf-8"))
+    data["fighter_id"] = fighter_id
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data), encoding="utf-8")
+
+
+def test_seed_sheets_are_read_from_the_fighters_folder(tmp_path):
+    write_sheet(tmp_path / "fighters" / "gray-wolf.json", "gray-wolf")
+    (tmp_path / "fighters.yaml").write_text("- slug: gray-wolf\n", encoding="utf-8")  # G01's list
+    (tmp_path / "mythical.yaml").write_text("- not: a sheet\n", encoding="utf-8")  # G09's file
+    found = bm.seed_sheets(tmp_path)
+    assert found.get(FighterRequest(entity="gray-wolf", raw="wolf")).fighter_id == "gray-wolf"
+
+
+def test_a_stat_sheet_in_the_wrong_place_is_not_found(tmp_path):
+    write_sheet(tmp_path / "gray-wolf.json", "gray-wolf")  # top level: not where G05 puts them
+    with pytest.raises(bm.BenchmarkError, match="no seed stat sheets found"):
+        bm.seed_sheets(tmp_path)
+
+
+def test_an_invalid_sheet_names_the_file_in_a_benchmark_error(tmp_path):
+    folder = tmp_path / "fighters"
+    folder.mkdir()
+    (folder / "broken.json").write_text('{"fighter_id": "x"}', encoding="utf-8")
+    with pytest.raises(bm.BenchmarkError, match="broken.json is not a valid stat sheet"):
+        bm.seed_sheets(tmp_path)
+    (folder / "broken.json").write_text("{not json", encoding="utf-8")
+    with pytest.raises(bm.BenchmarkError, match="broken.json is not a valid stat sheet"):
+        bm.seed_sheets(tmp_path)
+
+
+def test_a_matchup_with_a_missing_sheet_is_skipped_and_the_rest_are_scored():
+    tuning = bm.load_entries(bm.MOCK_DIR / "matchups.yaml", False)
+    held = bm.load_entries(bm.MOCK_DIR / "heldout.yaml", True)
+    ghost = bm.Entry(
+        "ghost", "obvious",
+        Matchup(
+            fighters=[
+                FighterRequest(entity="unicorn", raw="unicorn"),
+                FighterRequest(entity="grizzly-bear", raw="bear"),
+            ],
+            raw_text="unicorn vs bear",
+        ),
+        "0", "high", None, "obvious: test", False,
+    )  # fmt: skip
+    report = bm.run_benchmark(bm.mock_sheets(), "mock", [*tuning, ghost], held, runs=60)
+    skipped = [j for j in report.judged if j.skipped]
+    assert [j.entry.id for j in skipped] == ["ghost"] and "no stat sheet for 'unicorn'" in skipped[
+        0
+    ].reason
+    text = bm.render_run(report)
+    assert "Skipped (1)" in text and "ghost" in text
+    assert "| Tuning | 2/2 (100%) |" in text  # pass rate over the scored matchups only
+
+
+# --- Count cases: the right favorite, and the right side varied --------------------------------
+
+
+def test_a_count_case_fails_when_the_fair_fight_varied_the_wrong_side():
+    # Side 0 is expected to win, so the range is side 1's count; here side 0 was varied instead.
+    wrong_side = FairFight(varied_side=0, count=5, win_prob_at_count=0.5, message="m")
+    judged = bm.judge(
+        entry("0", fair_range=(3, 10), group="count"), result("win_1", 0.1, 0.9), wrong_side
+    )
+    assert not judged.passed and "varied side 0" in judged.reason
+
+
+def test_a_count_case_passes_only_with_the_expected_favorite_and_a_count_in_range():
+    right = FairFight(varied_side=1, count=5, win_prob_at_count=0.5, message="m")
+    assert bm.judge(
+        entry("0", fair_range=(3, 10), group="count"), result("win_0", 0.9, 0.1), right
+    ).passed
+    flipped = bm.judge(
+        entry("1", fair_range=(3, 10), group="count"), result("win_0", 0.9, 0.1), right
+    )
+    assert not flipped.passed  # side 1 was expected to win, but the search varied side 1
+
+
+def test_a_count_case_says_when_the_main_fight_was_a_draw_or_no_contest():
+    none = FairFight(varied_side=0, count=None, win_prob_at_count=None, message="m")
+    draw = bm.judge(entry("0", fair_range=(3, 10), group="count"), result("draw", 0.0, 0.0), none)
+    assert not draw.passed and "draw" in draw.reason and "no loser" in draw.reason
+    nc = bm.judge(
+        entry("0", fair_range=(3, 10), group="count"), result("no_contest", 0.0, 0.0), none
+    )
+    assert "no contest" in nc.reason
+
+
+# --- Tuning only ------------------------------------------------------------------------------
+
+
+def test_tuning_only_neither_runs_nor_shows_the_held_out_set():
+    tuning = bm.load_entries(bm.MOCK_DIR / "matchups.yaml", False)
+    held = bm.load_entries(bm.MOCK_DIR / "heldout.yaml", True)
+    report = bm.run_benchmark(bm.mock_sheets(), "mock", tuning, held, runs=60, tuning_only=True)
+    assert not report.subset(held_out=True)
+    text = bm.render_run(report)
+    assert "### Held-out set" not in text and "not run (tuning only)" in text
+    assert all(
+        j.entry.id not in text
+        for j in bm.run_benchmark(bm.mock_sheets(), "mock", [], held, runs=60).judged
+    )
