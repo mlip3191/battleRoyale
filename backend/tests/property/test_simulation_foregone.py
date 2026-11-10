@@ -255,3 +255,19 @@ def test_an_inert_fighter_never_moves_even_if_its_sheet_lists_a_speed():
     still = run(matchup_of(1, 1), [boulder(0), goose], runs=50, explain=False)
     assert still.win_prob[0] == 0.0  # a boulder that stays put never reaches the goose
     assert moving.win_prob == still.win_prob
+
+
+def test_a_machine_that_stops_exactly_at_the_time_limit_still_loses():
+    tank = make_sheet(
+        "tank", body="machine", weapons=["ramming"], mass_kg=3, endurance_s=c.MAX_FIGHT_S,
+        attack_force_n=0, spread=0.0,
+    )  # fmt: skip
+    boulder = make_sheet(
+        "boulder", body="inert", weapons=["none"], mass_kg=1_000_000, attack_force_n=0,
+        attacks_per_s=0, top_speed_mps=0, spread=0.0,
+    )  # fmt: skip
+    m = matchup_of(5, 5)
+    sides = _templates(m, [tank, boulder], run_rng(1, 0), (1.0, 1.0))
+    fast = run_once(sides, m.terrain, run_rng(2, 0))
+    full = run_once(sides, m.terrain, run_rng(2, 0), record_events=True)  # real simulation
+    assert (fast.winner, fast.survivors) == (full.winner, full.survivors) == (1, (0, 5))
