@@ -224,7 +224,7 @@ Root:
 - Extend `.gitattributes` (from M02) with binary types: images, audio, fonts. `.editorconfig` (utf-8, lf, final newline, 2 spaces; 4 for `.py`).
 - Keep `.gitignore`; don't remove any rule.
 
-CI (`.github/workflows/ci.yml`), designed for the Actions-minutes budget (Pro: 3,000 min/month; Windows ×2, macOS ×10, so one macOS run ≈ 80 billed minutes):
+CI (`.github/workflows/ci.yml`), designed for the Actions-minutes budget (Pro: 3,000 min/month; Windows ×2, macOS ×10, so one macOS run ≈ 80 billed minutes; superseded by D-48, since GitHub-hosted minutes are free on the public repo):
 - On `pull_request` and `push` to `main`: jobs `backend` and `frontend`, each on a matrix of `ubuntu-latest` and `windows-latest` → 4 checks that become required in M08.
 - On `workflow_dispatch` only: the same jobs on `macos-latest` (an `os` input chooses it). Mike runs it before each milestone with `gh workflow run ci.yml --ref main -f os=macos-latest`. No nightly schedule.
 - **No `paths:` filters** on this workflow: a required check that's skipped waits forever and blocks merging.
@@ -351,7 +351,7 @@ Run the smoke script; show Mike `docs/providers.md` and confirm with him that it
 - Before each milestone (Nov 14, 17, 20, 22): `gh workflow run ci.yml --ref main -f os=macos-latest` and test on the Mac by hand.
 - Run `backend/scripts/smoke_providers.py` whenever an endpoint changes.
 - Merge Dependabot PRs after CI and Secret scan pass (they need your approval for lockfiles).
-- Check Actions minutes weekly (Settings → Billing). **Downgrade plan (D-34)** if fewer than ~600 minutes remain: (1) stop manual macOS runs; (2) switch the Windows CI jobs to on-demand and edit the ruleset so only the two ubuntu checks plus Secret scan and Critical files approval are required; (3) run Windows CI by hand before milestones. Keep the ruleset JSON for step 2 ready in `docs/build-log.md` so the switch takes one command.
+- Check Actions minutes weekly (Settings → Billing). **Downgrade plan (D-34)** if fewer than ~600 minutes remain: (1) stop manual macOS runs; (2) switch the Windows CI jobs to on-demand and edit the ruleset so only the two ubuntu checks plus Secret scan and Critical files approval are required; (3) run Windows CI by hand before milestones. Keep the ruleset JSON for step 2 ready in `docs/build-log.md` so the switch takes one command. (Superseded by D-48: the repo is public, so GitHub-hosted minutes are free and this check and downgrade plan no longer apply.)
 - **Instructor access (your call, whenever you choose):** the overview requires adding the instructor as a collaborator on a private repo. GitHub invitations expire after 7 days, so invite close to when he'll look, or re-check and re-send. Claude doesn't send this. (Since D-48 the repo is public, so he can read it anytime; Mike still sends the collaborator invite at code complete, Nov 25.)
 - Squash-merged local branches can't be deleted by Claude (`git branch -D` is denied); clean them up yourself occasionally, or ignore them.
 

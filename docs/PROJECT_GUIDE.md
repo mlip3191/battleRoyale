@@ -52,7 +52,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 3. **Fill `.env`:** in your own terminal, run `npm run env:setup`; it asks for the course host and key (hidden) and writes `.env` (D-03). Never paste them anywhere else — they're public URLs, so anyone holding them could use the course's quota.
 4. **GitHub Pro is confirmed** for the team (D-01; M01 re-checks it). D-03, D-05, D-06, and D-08 are decided; remaining open items are in [DECISIONS.md](DECISIONS.md).
 5. **Open Claude Code in the repo and say: "Read INIT.md and follow it."** ([INIT.md](../INIT.md)) It runs M01–M08 one at a time, stops for your confirmation, and tells you when to click something in GitHub. In order:
-   - **M01** GitHub settings: confirm Pro, make the repo private (public since D-48), squash-only merges, Dependabot, read-only Actions token, allowed-actions list.
+   - **M01** GitHub settings: confirm Pro, squash-only merges, Dependabot, read-only Actions token, allowed-actions list. (M01's "make the repo private" step is superseded by D-48; the repo is public.)
    - **M02** Line-ending rules, test the secret-blocking hook with decoys, build log, a light ruleset on `main`, and early invites so teammates can install while you finish.
    - **M03** Claude Code permissions and hooks (`.claude/settings.json`); needs one Claude Code restart.
    - **M04** Backend + front-end skeleton, `npm start`, cross-platform files, CI (Linux + Windows on PRs, Mac on demand).
