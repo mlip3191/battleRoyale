@@ -119,6 +119,11 @@ def read_reply(reply: str, text: str) -> ParsedMatchup:
         if not normalize_entity(fighter.entity) and not normalize_entity(fighter.raw):
             raise ModelReplyError(f"fighters[{index}].entity must name the fighter.")
     sides = typed_sides(text)
+    # A repeated raw is fine only if the user typed it that many times too ("a wolf vs a wolf").
+    raws = [_squash(fighter.raw) for fighter in parsed.fighters]
+    typed = [_squash(as_data(side)) for side in sides]
+    if any(raws.count(raw) > max(1, typed.count(raw)) for raw in raws):
+        raise ModelReplyError("Two fighters have the same raw; each side must have its own words.")
     if len(sides) >= 2 and len(parsed.fighters) < len(sides):
         raise ModelReplyError(
             f"The request names {len(sides)} sides ({'; '.join(sides)}) but fighters lists "
@@ -237,6 +242,11 @@ def vague(parsed: ParsedMatchup) -> IntakeResult:
     return clarify(asked.question or REPHRASE_QUESTION, asked.options)
 
 
+# True if model-written text holds any digit; such text is dropped so the model never sets a number.
+def has_digit(text: str) -> bool:
+    return any(ch.isdigit() for ch in text)
+
+
 # One side, with every number decided by code; the second value lists its assumptions.
 def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterRequest, list[str]]:
     entity = normalize_entity(fighter.entity) or normalize_entity(fighter.raw)
@@ -248,7 +258,8 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
     count, clamp_note = clamp_count(count, entity, max_count)
     if clamp_note:
         notes.append(clamp_note)
-    variant = (fighter.variant or "").strip()[:MAX_VARIANT_CHARS] or None
+    variant = (fighter.variant or "").strip()[:MAX_VARIANT_CHARS]
+    variant = None if not variant or has_digit(variant) else variant  # number rule
     request = FighterRequest(
         entity=entity,
         count=count,
@@ -259,9 +270,9 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
     return request, notes
 
 
-# Model notes worth showing: short, non-empty, a few at most.
+# Model notes worth showing: short, non-empty, digit-free (number rule), a few at most.
 def _model_notes(parsed: ParsedMatchup) -> list[str]:
-    notes = [n.strip() for n in parsed.assumptions if n.strip()]
+    notes = [n.strip() for n in parsed.assumptions if n.strip() and not has_digit(n)]
     return [n[:MAX_NOTE_CHARS] for n in notes][:MAX_MODEL_ASSUMPTIONS]
 
 

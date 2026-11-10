@@ -218,6 +218,83 @@ async def test_a_dropped_side_is_named_in_the_retry() -> None:
     assert "2 sides" in feedback and "a main battle tank" in feedback
 
 
+# Number rule (PR #140 review): a model-written variant with a digit is dropped.
+async def test_a_variant_with_a_digit_is_dropped_and_a_digit_free_one_kept() -> None:
+    text = "a moose vs a polar bear"
+    reply = {
+        "fighters": [
+            {"raw": "a moose", "entity": "moose", "variant": "weighs 4000 kg"},
+            {"raw": "a polar bear", "entity": "polar bear", "variant": "adult male"},
+        ]
+    }
+    result = await parse_matchup(text, chat=CannedChat({text: [reply]}))
+    assert result.status == "ok" and result.matchup is not None
+    moose, bear = result.matchup.fighters
+    assert (moose.variant, bear.variant) == (None, "adult male")
+
+
+# Number rule (PR #140 review): model notes with a digit are dropped; code notes stay.
+async def test_model_assumptions_with_a_digit_are_dropped_but_code_notes_stay() -> None:
+    text = "a million ants vs moose in the volcano"
+    reply = {
+        "fighters": [
+            {"raw": "a million ants", "entity": "ant"},
+            {"raw": "moose", "entity": "moose"},
+        ],
+        "terrain": "the volcano",
+        "assumptions": ["Moose weighs 600 kg and runs 56 km/h", "Ants fight as one swarm."],
+    }
+    result = await parse_matchup(text, chat=CannedChat({text: [reply]}))
+    assert result.status == "ok" and result.matchup is not None
+    notes = " | ".join(result.matchup.assumptions)
+    assert "600" not in notes and "km/h" not in notes
+    assert "Ants fight as one swarm." in notes
+    assert "Assumed 1 moose" in notes and "10,000" in notes and "volcano" in notes
+
+
+# PR #140 review: two sides copied from the same words are rejected, then retried.
+async def test_two_sides_with_the_same_raw_are_retried() -> None:
+    text = "a goose vs a toaster"
+    same = {
+        "fighters": [
+            {"raw": "a goose", "entity": "goose"},
+            {"raw": "A  Goose", "entity": "goose"},
+        ]
+    }
+    good = {
+        "fighters": [
+            {"raw": "a goose", "entity": "goose"},
+            {"raw": "a toaster", "entity": "toaster"},
+        ]
+    }
+    chat = CannedChat({text: [same, good]})
+    result = await parse_matchup(text, chat=chat)
+    assert result.status == "ok" and result.matchup is not None
+    assert [f.entity for f in result.matchup.fighters] == ["goose", "toaster"]
+    assert len(chat.calls) == 2 and "same raw" in chat.calls[1][3]["content"]
+
+
+# A mirror match the user really typed keeps both identical sides, with no retry.
+async def test_a_typed_mirror_match_is_not_rejected() -> None:
+    text = "a wolf vs A  Wolf"
+    reply = {
+        "fighters": [
+            {"raw": "a wolf", "entity": "wolf"},
+            {"raw": "a wolf", "entity": "wolf"},
+        ]
+    }
+    chat = CannedChat({text: [reply]})
+    result = await parse_matchup(text, chat=chat)
+    assert result.status == "ok" and result.matchup is not None
+    assert [f.entity for f in result.matchup.fighters] == ["wolf", "wolf"]
+    assert len(chat.calls) == 1
+
+
+def test_the_prompt_says_variant_and_assumptions_have_no_numbers() -> None:
+    prompt = " ".join(load_prompt().split())
+    assert '"variant" and "assumptions" must contain no numbers' in prompt
+
+
 def test_the_prompt_says_unusual_fighters_need_no_question() -> None:
     prompt = " ".join(load_prompt().split())
     assert "a dragon vs a main battle tank" in prompt and "a toaster vs a goose" in prompt

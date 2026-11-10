@@ -24,6 +24,8 @@ Reply with JSON only, matching the schema you were given:
   because a fighter is unusual, mythical, an object, or a machine: "a dragon vs a main battle
   tank" and "a toaster vs a goose" are clear, complete matchups that need no question.
 - "assumptions": short notes about choices you made for the user, or an empty list.
+- "variant" and "assumptions" must contain no numbers or digits (no weights, speeds, sizes, or
+  counts). Text with a digit in it is thrown away.
 
 Every physical thing can fight: animals, extinct animals, human archetypes ("Roman legionary"),
 mythical creature types ("dragon"), objects ("toaster"), plants, vehicles, machines, and
