@@ -28,6 +28,8 @@ class LiveEmbedder:
         vectors: list[list[float]] = []
         for start in range(0, len(texts), BATCH_SIZE):
             vectors += await self._embed_batch(texts[start : start + BATCH_SIZE])
+        if len({len(vector) for vector in vectors}) > 1:
+            raise ProviderError("Live 'embedder' returned vectors of different lengths.")
         return vectors
 
     # Embed one batch and put the vectors back in input order.
@@ -43,9 +45,12 @@ class LiveEmbedder:
         )
         try:
             rows = sorted(reply["data"], key=lambda row: row["index"])
+            indexes = [row["index"] for row in rows]
             vectors = [row["embedding"] for row in rows]
         except (KeyError, TypeError) as error:
             raise ProviderError("Live 'embedder' reply had no data[].embedding.") from error
         if len(vectors) != len(batch):
             raise ProviderError("Live 'embedder' reply had the wrong number of vectors.")
+        if indexes != list(range(len(batch))):
+            raise ProviderError("Live 'embedder' reply had unexpected indexes.")
         return vectors
