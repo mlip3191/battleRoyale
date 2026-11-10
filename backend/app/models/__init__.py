@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from app.models.api import BattleCreated, FighterMatch, ShowcaseBattle
 from app.models.battle import BattleRecord, StageStatus
 from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.models.media import Asset
@@ -46,6 +47,9 @@ CONTRACT_MODELS: tuple[type[BaseModel], ...] = (
     Asset,
     StageStatus,
     BattleRecord,
+    BattleCreated,
+    ShowcaseBattle,
+    FighterMatch,
 )
 
 
@@ -63,6 +67,7 @@ __all__ = [
     "CONTRACT_MODELS",
     "Ability",
     "Asset",
+    "BattleCreated",
     "BattleRecord",
     "Body",
     "ChallengerSuggestion",
@@ -70,6 +75,7 @@ __all__ = [
     "EventType",
     "FairFight",
     "FightEvent",
+    "FighterMatch",
     "FighterRequest",
     "Habitat",
     "IntakeResult",
@@ -77,6 +83,7 @@ __all__ = [
     "Matchup",
     "Script",
     "ScriptLine",
+    "ShowcaseBattle",
     "SimulationResult",
     "Source",
     "StageStatus",
