@@ -1,20 +1,325 @@
-import { useEffect, useState } from "react";
-import { fetchHealth } from "../api/health.ts";
+// Home page, the intake desk (D03): type a matchup, answer one question if needed, start the battle.
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  answerIntake,
+  createBattle,
+  listShowcase,
+  postIntake,
+  type IntakeResult,
+  type Matchup,
+  type ShowcaseBattle,
+} from "../api/client.ts";
+import { ErrorPanel } from "../components/Broadcast.tsx";
+import styles from "./home.module.css";
 
-// Landing page; for now it only shows whether the backend is reachable.
+type Terrain = Matchup["terrain"];
+
+export const EXAMPLES = [
+  "100 duck-sized horses vs 1 horse-sized duck",
+  "a grizzly bear vs 6 gray wolves in a forest",
+  "a toaster vs a goose",
+  "a honey badger vs a king cobra",
+  "a Roman legionary vs a gorilla",
+  "a dragon vs a main battle tank",
+];
+
+export const TERRAINS = {
+  arena: "Arena",
+  open_field: "Open field",
+  forest: "Forest",
+  water: "Open water",
+  shoreline: "Shoreline",
+  urban: "City streets",
+  mountain: "Mountain",
+} satisfies Record<Terrain, string>;
+
+const OFFLINE =
+  "We couldn't reach the studio. Check your connection and try again.";
+
+const LOST_QUESTION =
+  "That question got lost on the way to the studio. Please send your matchup again.";
+
+// Where the desk is: waiting for input, talking to the backend, or showing intake's answer
+// (while an answer to its question is on its way, or after that answer failed).
+type Step =
+  | { kind: "idle" }
+  | { kind: "busy" }
+  | {
+      kind: "result";
+      result: IntakeResult;
+      answering?: boolean;
+      error?: string;
+    }
+  | { kind: "error"; message: string };
+
 export default function Home() {
-  const [status, setStatus] = useState("checking…");
+  const [text, setText] = useState("");
+  const [step, setStep] = useState<Step>({ kind: "idle" });
+  const [showcase, setShowcase] = useState<ShowcaseBattle[]>([]);
+  const box = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    fetchHealth()
-      .then(setStatus)
-      .catch(() => setStatus("unreachable"));
+    listShowcase()
+      .then(setShowcase)
+      .catch(() => setShowcase([]));
   }, []);
 
+  // Send intake's reply (or a failure) to the screen.
+  const handle = (request: Promise<IntakeResult>) => {
+    setStep({ kind: "busy" });
+    request
+      .then((result) => setStep({ kind: "result", result }))
+      .catch(() => setStep({ kind: "error", message: OFFLINE }));
+  };
+
+  // Answer the clarifying question. The card stays up (buttons off) while the answer is sent,
+  // and stays up with an error if it fails, so the question is never lost.
+  const answering = useRef(false);
+  const answer = (result: IntakeResult, reply: string) => {
+    if (answering.current) return;
+    if (!result.pending_id) {
+      setStep({ kind: "result", result, error: LOST_QUESTION });
+      return;
+    }
+    answering.current = true;
+    setStep({ kind: "result", result, answering: true });
+    answerIntake(result.pending_id, reply)
+      .then((next) => setStep({ kind: "result", result: next }))
+      .catch(() => setStep({ kind: "result", result, error: OFFLINE }))
+      .finally(() => (answering.current = false));
+  };
+
+  const submit = (e?: FormEvent) => {
+    e?.preventDefault();
+    if (text.trim() && step.kind !== "busy") handle(postIntake(text.trim()));
+  };
+
+  const pick = (example: string) => {
+    setText(example);
+    box.current?.focus();
+  };
+
+  const result = step.kind === "result" ? step.result : null;
   return (
     <main>
-      <h1>Battle Royale</h1>
-      <p>Backend: {status}</p>
+      <form className={styles.intake} onSubmit={submit}>
+        <h1 className={styles.prompt}>
+          <label htmlFor="matchup">Who would win?</label>
+        </h1>
+        <textarea
+          id="matchup"
+          ref={box}
+          className={styles.box}
+          value={text}
+          placeholder="a horse-sized duck vs a lion"
+          aria-describedby="matchup-hint"
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter fights; Shift+Enter adds a line; Enter that confirms an IME word does neither.
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing)
+              submit(e);
+          }}
+        />
+        <span id="matchup-hint" className={styles.muted}>
+          Name two sides, with counts and a place if you like. Press Enter to
+          fight.
+        </span>
+        <button
+          className={styles.fight}
+          type="submit"
+          disabled={step.kind === "busy"}
+        >
+          {step.kind === "busy" ? "Checking the card…" : "FIGHT!"}
+        </button>
+        <ul className={styles.chips} aria-label="Examples">
+          {EXAMPLES.map((example) => (
+            <li key={example}>
+              <button
+                type="button"
+                className={styles.chip}
+                onClick={() => pick(example)}
+              >
+                {example}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </form>
+
+      {step.kind === "error" && <ErrorPanel message={step.message} />}
+      {result?.status === "blocked" && (
+        <ErrorPanel
+          title="We can't book that fight"
+          message={
+            result.message ??
+            "That matchup isn't allowed on our show. Try different fighters."
+          }
+        />
+      )}
+      {result?.status === "clarify" && (
+        <Clarify
+          result={result}
+          busy={step.kind === "result" && !!step.answering}
+          error={step.kind === "result" ? step.error : undefined}
+          onAnswer={(reply) => answer(result, reply)}
+        />
+      )}
+      {result?.status === "ok" && result.matchup && (
+        <Confirm
+          key={result.matchup.raw_text}
+          matchup={result.matchup}
+          message={result.message}
+        />
+      )}
+
+      {showcase.length > 0 && (
+        <section className={styles.showcase} aria-labelledby="showcase-title">
+          <h2 id="showcase-title">Showcase</h2>
+          <ul>
+            {showcase.map((s) => (
+              <li key={s.battle_id}>
+                <Link to={`/battle/${s.battle_id}`}>{s.title}</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </main>
+  );
+}
+
+// One clarifying question: tap an option or type an answer.
+function Clarify({
+  result,
+  busy,
+  error,
+  onAnswer,
+}: {
+  result: IntakeResult;
+  busy: boolean;
+  error?: string;
+  onAnswer: (answer: string) => void;
+}) {
+  const [own, setOwn] = useState("");
+  return (
+    <section className={styles.card} aria-labelledby="clarify-title">
+      <h2 id="clarify-title">Quick question</h2>
+      <p>{result.question}</p>
+      {error && <ErrorPanel message={error} />}
+      <div className={styles.row}>
+        {result.options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            className={styles.option}
+            disabled={busy}
+            onClick={() => onAnswer(option)}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+      <form
+        className={styles.row}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (own.trim()) onAnswer(own.trim());
+        }}
+      >
+        <label htmlFor="own-answer">Or type your answer</label>
+        <input
+          id="own-answer"
+          className={styles.answer}
+          value={own}
+          onChange={(e) => setOwn(e.target.value)}
+        />
+        <button type="submit" className={styles.option} disabled={busy}>
+          {busy ? "Sending…" : "Answer"}
+        </button>
+      </form>
+    </section>
+  );
+}
+
+// The tale of the tape before the bell: who's fighting, where, and what we assumed.
+function Confirm({
+  matchup,
+  message,
+}: {
+  matchup: Matchup;
+  message?: string | null;
+}) {
+  const [terrain, setTerrain] = useState<Terrain>(matchup.terrain);
+  const [starting, setStarting] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const navigate = useNavigate();
+
+  const fight = () => {
+    setStarting(true);
+    setFailed(false);
+    createBattle({ ...matchup, terrain })
+      .then(({ battle_id }) => navigate(`/battle/${battle_id}`))
+      .catch(() => {
+        setStarting(false);
+        setFailed(true);
+      });
+  };
+
+  return (
+    <section className={styles.card} aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Tonight's card</h2>
+      {message && <p>{message}</p>}
+      <ul className={styles.sides}>
+        {matchup.fighters.map((f, i) => (
+          <li key={i} className={styles.side}>
+            <strong>
+              {f.count > 1 ? `${f.count.toLocaleString()} × ` : ""}
+              {f.entity}
+            </strong>
+            {f.variant && <div className={styles.muted}>{f.variant}</div>}
+            {f.size_reference && (
+              <div className={styles.muted}>
+                sized like a {f.size_reference}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className={styles.row}>
+        <label htmlFor="terrain">Battlefield</label>
+        <select
+          id="terrain"
+          className={styles.select}
+          value={terrain}
+          onChange={(e) => setTerrain(e.target.value as Terrain)}
+        >
+          {Object.entries(TERRAINS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {matchup.assumptions.length > 0 && (
+        <div>
+          <span className={styles.muted}>We assumed:</span>
+          <ul>
+            {matchup.assumptions.map((a) => (
+              <li key={a}>{a}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {failed && <ErrorPanel message={OFFLINE} />}
+      <button
+        type="button"
+        className={styles.fight}
+        onClick={fight}
+        disabled={starting}
+      >
+        {starting ? "Ringing the bell…" : "FIGHT!"}
+      </button>
+    </section>
   );
 }
