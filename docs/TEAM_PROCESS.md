@@ -45,7 +45,7 @@ Personal-account repos give every collaborator the same Write role, which matche
 ### PM prerequisites
 
 - [ ] Claude Code, Git, GitHub CLI, Node 26, and uv installed and logged in on Mike's machine.
-- [ ] `.env` filled from `.env.example` with the course endpoint details (DECISIONS D-03).
+- [ ] `.env` filled in with `npm run env:setup` (DECISIONS D-03).
 - [ ] Team handles and OS are recorded in DECISIONS (team table).
 
 ## Step 1: CLAUDE.md
@@ -314,7 +314,7 @@ People on two computers repeat the installs on both, log in to GitHub and Claude
 
 2.  Run the setup check script. It also switches on the team's shared git hook (git config core.hooksPath .githooks), which blocks commits that contain keys.
 
-3.  Copy .env.example to a new file named .env and fill in every [required] line with the course endpoint values; check with node scripts/check-env.mjs.
+3.  In your own terminal, run npm run env:setup and enter the course host and API key (the key is hidden as you type); check anytime with npm run env:check.
 
 4.  Open Claude Code in the repo folder and ask it to read CLAUDE.md and explain the project in plain English.
 

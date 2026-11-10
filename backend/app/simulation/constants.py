@@ -38,8 +38,12 @@ MIN_SPEED_MPS = 0.1
 # Smallest mass and size a sampled fighter can have (numerical safeguards).
 MIN_MASS_KG = 1e-6
 MIN_SIZE_M = 1e-3
-# Log slots kept free at the end for the closing events (a stalemate and the end).
-CLOSING_EVENTS = 2
+# Log slots kept free at the end for the closing events: a stalemate, the end, and one summary
+# knock-out per side for the falls that did not fit in the log ("more go down").
+CLOSING_EVENTS = 4
+# Hits and misses may fill only this share of the replay log; the rest is kept for knock-outs,
+# retreats and escapes, so a crowded fight still shows fighters going down.
+LOG_FLOW_SHARE = 0.5
 
 # z-score for a 95% Wilson confidence interval.
 WILSON_Z = 1.96
