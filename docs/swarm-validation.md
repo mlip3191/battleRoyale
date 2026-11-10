@@ -6,7 +6,7 @@ Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (ab
 
 ## Results (600 runs each)
 
-Noise: a single win share at 600 runs near 50/50 has a 95% noise of about ±0.04, so the **gap between two such results is only reliable to about ±0.06**. The gaps quoted as "within about ±0.02" below are the observed gaps, not the noise. a teammate's check at 4,000 runs (`uv run --directory backend python scripts/validate_swarm.py --scenario mirror --runs 4000`) found the mirror gaps from 5 v 5 to 50 v 50 were 0.006 or less, so the conclusion holds, but a single gap of +0.06 (such as 10 v 2 cats) is about the size of the noise.
+Noise: a single win share at 600 runs near 50/50 has a 95% noise of about ±0.04, so the **gap between two such results is only reliable to about ±0.06**. The gaps quoted as "within about ±0.02" below are the observed gaps, not the noise. A teammate's check at 4,000 runs (`uv run --directory backend python scripts/validate_swarm.py --scenario mirror --runs 4000`) found the mirror gaps from 5 v 5 to 50 v 50 were 0.006 or less, so the conclusion holds, but a single gap of +0.06 (such as 10 v 2 cats) is about the size of the noise.
 
 | Kind of fight | Win share: swarm minus one-by-one | Duration | Survivors |
 |---|---|---|---|
