@@ -17,10 +17,10 @@ This document takes the project from "plan only" to a protected repo with a runn
 3. **GitHub Pro** is active (confirmed). M01 double-checks it.
 4. **Clone:** `git clone https://github.com/mlip3191/battleRoyale.git` then `cd battleRoyale`.
 5. **Create your `.env` with the course endpoints:**
-   - `cp .env.example .env` (Windows teammates: `copy .env.example .env`)
-   - Open `.env` and fill **every line marked `[required]`**: `COURSE_API_KEY`, each service URL as `http(s)://<host>:<port>` (chat 9001, embeddings 9002, document parsing 9005, image 9006, plus structured decisions, reranking, text-to-speech, and music from the course list), and the model names. A service with its own key gets an extra line `<SERVICE>_API_KEY=` (e.g. `TTS_API_KEY=`).
+   - In your own terminal (not in a Claude chat), run `npm run env:setup`. It asks for the course host and API key (the key is hidden) and writes `.env` with the ports and model names (DECISIONS D-03). In Claude Code, `/setup-env` walks you through it.
+   - By hand instead: `cp .env.example .env` (Windows: `copy .env.example .env`), then fill **every line marked `[required]`**.
    - **Leave `PROVIDER_MODE=mock` for now.** M06 tells you when to switch it to `live`.
-   - Check it: `node scripts/check-env.mjs` — lists anything missing or malformed and **never prints values**. Repeat until all required values are filled in.
+   - Check it: `npm run env:check` — lists anything missing or malformed and **never prints values**. Repeat until all required values are filled in.
    - Never paste these values into GitHub, a commit, an issue, a PR, or a Claude chat. `.env` is ignored by git.
 6. **Start Claude Code in the repo folder** (`claude`) and say "Read INIT.md and follow it." Have a few minutes free during M07 to run `claude setup-token`.
 
