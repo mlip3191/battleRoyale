@@ -779,6 +779,7 @@ def run(
         )
         factor, explainer = decision.factor, decision.explainer
     else:
+        # Probe-only: with explain=False this placeholder must never be shown to users.
         factor, explainer = "mass_kg", "Deciding factor not computed."
 
     return SimulationResult(
