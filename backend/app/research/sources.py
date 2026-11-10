@@ -20,6 +20,7 @@ WIKIDATA_API = "https://www.wikidata.org/w/api.php"
 WIKIDATA_PAGE = "https://www.wikidata.org/wiki/{entity}"
 RETRIES = 4
 BACKOFF_S = 2.0
+MAX_WAIT_S = 60.0
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 
 Sleep = Callable[[float], Awaitable[None]]
@@ -41,10 +42,11 @@ class SourceDocument:
     body: bytes
 
 
-# How long to wait before a retry: the server's Retry-After if it gave one, else backoff.
+# How long to wait before a retry: the server's Retry-After (capped) if given, else backoff.
 def _wait_s(response: httpx.Response | None, attempt: int) -> float:
     retry_after = response.headers.get("Retry-After", "") if response is not None else ""
-    return float(retry_after) if retry_after.isdigit() else BACKOFF_S * 2**attempt
+    wait = float(retry_after) if retry_after.isdigit() else BACKOFF_S * 2**attempt
+    return min(wait, MAX_WAIT_S)
 
 
 # GET a URL with retries; None means the page does not exist.

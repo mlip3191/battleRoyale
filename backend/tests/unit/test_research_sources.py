@@ -66,6 +66,23 @@ async def test_rate_limits_are_retried_using_retry_after() -> None:
     assert document is not None and waits == [7.0]
 
 
+async def test_a_very_long_retry_after_is_capped() -> None:
+    waits: list[float] = []
+    replies = [
+        httpx.Response(429, headers={"Retry-After": "9999"}),
+        httpx.Response(200, content=b"x"),
+    ]
+
+    async def record(seconds: float) -> None:
+        waits.append(seconds)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return replies.pop(0)
+
+    await fetch_article(client_with(handler), "Horse", sleep=record)
+    assert waits == [60.0]
+
+
 async def test_repeated_failures_raise_a_source_error() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(503)
