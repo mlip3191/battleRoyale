@@ -45,8 +45,9 @@ Notes:
 
 - The five showcase battles (PRODUCT_SPEC §9) use horse, duck, grizzly bear, gray wolf, honey badger, king cobra, Roman legionary, gorilla, and main battle tank. The showcase dragon is built by G09 from saltwater crocodile and African elephant.
 - `Gray wolf` and `Roman legionary` are redirects on Wikipedia, so the table lists the pages they lead to.
-- Ducks and geese are `amphibious` so they can be reached on water. The engine treats `air` and strictly `water` fighters as unable to reach each other in open water.
+- Ducks and geese are `amphibious` so they can be reached on water. This has a real cost on dry ground: in the engine's terrain table (PR #68), an amphibious fighter gets about ×0.8 speed, ×0.9 attack, and ×0.9 hit chance on arena, open field, forest, and urban terrain, and a little worse on mountains, so it affects the 100-duck showcase battle. The engine treats `air` and strictly `water` fighters as unable to reach each other in open water.
 - The Legionary, Knight, and Samurai articles describe the role more than the body. Expect body numbers for these three to come from category defaults unless G05 finds a better source.
+- Army ant is the page for the whole group, but the default variant is *Eciton burchellii*. Its mass and size need a species-level source, not the group article.
 
 ## Fighter IDs
 
@@ -103,7 +104,7 @@ Every value gets a `low` and `high`: the source's range if it gives one, otherwi
 - `attack_force_n`: the force that gives the engine's ramming damage, `RAM_DAMAGE_PER_MOMENTUM × mass × speed ÷ DAMAGE_PER_NEWTON`, using the sheet's own mass and speed. For a fighter with `crushing`, use a speed of at least `CRUSH_MIN_SPEED_MPS`.
 - `attacks_per_s`: the value of `RAM_ATTACKS_PER_S`.
 
-The `note` names the formula or constant and says the engine works out the real hit from them.
+The `note` names the formula or constant and says the engine works out the real hit from them. `RAM_DAMAGE_PER_MOMENTUM`, `RAM_ATTACKS_PER_S`, and `CRUSH_MIN_SPEED_MPS` are defined in PR #71 and are not on `main` yet.
 
 ## Category defaults
 
