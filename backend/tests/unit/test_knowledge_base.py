@@ -10,7 +10,7 @@ import pytest
 import sqlite_vec
 
 from app.db.connection import connect
-from app.db.migrate import apply_migrations
+from app.db.migrate import MIGRATIONS_DIR, apply_migrations
 from app.providers.mock.text import MockEmbedder
 from app.research.chunking import CHUNK_CHARS, OVERLAP_CHARS, chunk_text
 from app.research.kb_store import DocumentRecord, ensure_vector_table, store_document
@@ -47,7 +47,7 @@ def test_connection_uses_wal_foreign_keys_and_sqlite_vec(database: sqlite3.Conne
 
 def test_migrations_apply_once(database: sqlite3.Connection) -> None:
     assert apply_migrations(database) == []
-    assert count(database, "schema_migrations") == 1
+    assert count(database, "schema_migrations") == len(list(MIGRATIONS_DIR.glob("*.sql")))
 
 
 def test_a_failed_migration_leaves_nothing_behind(tmp_path: Path) -> None:
