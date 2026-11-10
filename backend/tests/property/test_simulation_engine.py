@@ -95,7 +95,7 @@ def test_event_log_never_exceeds_300_events():
 def test_one_v_one_thousand_runs_finish_under_one_second():
     bear, wolf = load_sheet("stat-sheet.json"), load_sheet("stat-sheet-gray-wolf.json")
     start = time.perf_counter()
-    run(matchup(), [bear, wolf], runs=1000)
+    run(matchup(), [bear, wolf], runs=1000, explain=False)  # the explanation is timed in F05's test
     assert time.perf_counter() - start < 1.0
 
 

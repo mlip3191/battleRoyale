@@ -1,0 +1,49 @@
+name: Feature
+description: New behavior or capability. Tip — in Claude Code, /new-issue fills this in for you.
+title: "Feature: "
+labels: ["type: feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep it to about a day of work (size S or M). Bigger than that? Split it into several issues.
+        Guide: docs/issues.md
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User story
+      description: Who wants this, what they want, and why.
+      placeholder: As a ___, I want ___ so that ___.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: Checkable statements. Someone else should be able to tick each one with a yes or no.
+      placeholder: |
+        - [ ] Typing "3 cats vs a dog" shows a confirmation card with "3 × cat" and "1 × dog"
+        - [ ] A count above 10,000 is clamped to 10,000 and the card says so
+    validations:
+      required: true
+  - type: textarea
+    id: areas
+    attributes:
+      label: Likely files or areas
+      description: Where the change probably lives (for example backend/app/intake/, frontend/src/pages/).
+    validations:
+      required: false
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What this issue deliberately does not do.
+    validations:
+      required: false
+  - type: input
+    id: depends-on
+    attributes:
+      label: Depends on
+      description: Issues that must be finished first, written as "Blocked by #12". Leave blank if none.
+    validations:
+      required: false
