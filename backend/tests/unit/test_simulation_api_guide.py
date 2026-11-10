@@ -218,7 +218,13 @@ def test_event_shapes_match_the_guides_table(results):
     approach = [e for e in forest if e.type == EventType.APPROACH]
     assert {(e.side, e.group_size, e.actor) for e in approach} == {(0, 1, None), (1, 6, None)}
     # single-fighter KO: side went down, actor is the fallen index, no target
-    kos = [e for e in results["1 v 1"].representative_log if e.type == EventType.KO]
+    # (a lone loser may run away instead of falling, so look at both small fights)
+    kos = [
+        e
+        for label in ("1 v 1", "1 v 6 in a forest")
+        for e in results[label].representative_log
+        if e.type == EventType.KO
+    ]
     assert kos and all(e.actor is not None and e.target is None for e in kos)
     # swarm: HIT and KO are group events for both sides, and there are no misses
     swarm = results["1 v 300 swarm"].representative_log
