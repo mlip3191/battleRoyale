@@ -6,12 +6,12 @@ Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (ab
 
 ## Results (600 runs each)
 
-Noise: a single win share at 600 runs near 50/50 has a 95% noise of about ±0.04, so the **gap between two such results is only reliable to about ±0.06**. The gaps quoted as "within ±0.02" below are the observed gaps, not the noise. a teammate's check at 4,000 runs (`uv run --directory backend python scripts/validate_swarm.py --scenario mirror --runs 4000`) found the mirror gaps from 5 v 5 to 50 v 50 were 0.006 or less, so the conclusion holds, but a single gap of +0.06 (such as 10 v 2 cats) is about the size of the noise.
+Noise: a single win share at 600 runs near 50/50 has a 95% noise of about ±0.04, so the **gap between two such results is only reliable to about ±0.06**. The gaps quoted as "within about ±0.02" below are the observed gaps, not the noise. a teammate's check at 4,000 runs (`uv run --directory backend python scripts/validate_swarm.py --scenario mirror --runs 4000`) found the mirror gaps from 5 v 5 to 50 v 50 were 0.006 or less, so the conclusion holds, but a single gap of +0.06 (such as 10 v 2 cats) is about the size of the noise.
 
 | Kind of fight | Win share: swarm minus one-by-one | Duration | Survivors |
 |---|---|---|---|
-| **One big target** (3-50 wolves vs a bear) | within ±0.02 | within ~10% | identical |
-| **Even and uneven matches of the same animal** (5 v 5 up to 125 v 100 wolves) | within ±0.02 | swarm fights last **about 2x longer** (14 s vs 6 s at 50 v 50) | swarm leaves **about 35% fewer** on both sides (22 vs 35 of 50) |
+| **One big target** (3-50 wolves vs a bear) | within about ±0.02 | within ~10% | identical |
+| **Even and uneven matches of the same animal** (5 v 5 up to 125 v 100 wolves) | within about ±0.02 | swarm fights last **about 2x longer** (14 s vs 6 s at 50 v 50) | swarm leaves **about 35% fewer** on both sides (22 vs 35 of 50) |
 | **Ranged** (10-50 archers vs half as many wolves) | within +0.02 | within ~10% | the loser's survivors are 50-60% lower in swarm |
 | **Many weak vs few strong** (10-100 cats vs a fifth as many wolves) | **+0.06 to +0.22** (swarm favors the crowd) | within ~15% | swarm has more crowd survivors and fewer wolves |
 
@@ -26,18 +26,16 @@ Full tables are printed by the script. Speed is the point of swarm mode, but tim
 
 ## Larger fights (above the swarm threshold)
 
-Every scenario above is 125 per side or fewer, but swarm mode only runs above 200 per side. These larger fights can be reproduced with `uv run --directory backend python scripts/validate_swarm.py --scenario large --runs 300` (opt-in: the one-by-one reference takes minutes). A teammate first ran them at 150-300 runs each (one-by-one vs swarm, win share of the first side):
+Every scenario above is 125 per side or fewer, but swarm mode only runs above 200 per side. These larger fights can be reproduced with `uv run --directory backend python scripts/validate_swarm.py --scenario large --runs 300` (opt-in because it is the slowest group, about 8 s at 300 runs). A teammate first ran them at 150-300 runs each (one-by-one vs swarm, win share of the first side):
 
-| Fight | Runs | One-by-one | Swarm | Gap |
-|---|---|---|---|---|
-| 250 v 250 wolves | 300 | 0.467 | 0.473 | +0.007 |
-| 312 v 250 wolves | 200 | 0.600 | 0.600 | 0.000 |
-| 300 wolves v 1 bear | 300 | 1.000 | 1.000 | 0.000 |
-| 300 cats v 60 wolves | 300 | 0.427 | 0.623 | **+0.197** |
-| 600 cats v 120 wolves | 150 | 0.533 | 0.693 | **+0.160** |
-| 400 archers v 200 wolves | 150 | 0.973 | 0.980 | +0.007 |
+| Fight | Runs | One-by-one | Swarm | Gap | Noise (95%) |
+|---|---|---|---|---|---|
+| 250 v 250 wolves | 300 | 0.467 | 0.473 | +0.007 | 0.080 (within noise) |
+| 300 cats v 60 wolves | 300 | 0.427 | 0.623 | **+0.197** | 0.079 |
+| 600 cats v 120 wolves | 300 | 0.503 | 0.650 | **+0.147** | 0.080 |
+| 400 archers v 200 wolves | 300 | 0.967 | 0.977 | +0.010 | 0.029 (within noise) |
 
-The conclusions hold at these sizes: matched, one-big-target and ranged fights agree, and a crowd of weak fighters against a few strong ones is overrated by 0.16 to 0.20.
+The conclusions hold at these sizes: matched, one-big-target and ranged fights agree, and a crowd of weak fighters against a few strong ones is overrated by about 0.15 to 0.20.
 
 ## What this means for the app
 
