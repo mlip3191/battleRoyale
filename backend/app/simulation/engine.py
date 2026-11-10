@@ -125,10 +125,15 @@ def run_once(
     events: list[FightEvent] = []
     # Leave room for the closing events so the log never passes the cap.
     room = c.MAX_LOG_EVENTS - c.CLOSING_EVENTS
+    # Hits and misses stop earlier, so the rest of the room is kept for knock-outs and retreats.
+    flow_room = int(room * c.LOG_FLOW_SHARE)
 
     def log(event: FightEvent) -> None:
-        if record_events and len(events) < room:
-            events.append(event)
+        if not record_events or len(events) >= room:
+            return
+        if event.type in (EventType.HIT, EventType.MISS) and len(events) >= flow_room:
+            return
+        events.append(event)
 
     closing = sides[0].speed_mps + sides[1].speed_mps
     if not (sides[0].can_attack or sides[1].can_attack) or closing <= 0:
