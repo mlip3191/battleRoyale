@@ -30,7 +30,8 @@ FRACTION_FOLLOWERS = {"a", "an", "of", "the"}
 QUANTITY_WORDS = ARTICLES | set(UNITS) | set(SCALES) | set(MULTIPLIERS) | {"and", "of"}
 # Digits with optional thousands commas, a decimal part, or a "/" fraction ("1,000", "1.5", "1/2").
 NUMBER_TOKEN = re.compile(r"^\d[\d,]*(?:\.\d+)?(?:/\d+)?$")
-TOKEN = re.compile(r"\d[\d,]*(?:\.\d+)?(?:/\d+)?|[a-z]+")
+# A token plus a trailing hyphen, if any ("three-" in "three-headed"), to spot descriptions.
+TOKEN = re.compile(r"(\d[\d,]*(?:\.\d+)?(?:/\d+)?|[a-z]+)(-?)")
 
 
 @dataclass(frozen=True)
@@ -58,12 +59,23 @@ def _next(tokens: list[str], index: int) -> str:
     return tokens[index + 1] if index + 1 < len(tokens) else ""
 
 
+# True when a number is hyphenated to a non-number word: "three-headed", "6-foot", "500-pound".
+def _is_description(tokens: list[str], hyphens: list[str], index: int) -> bool:
+    token, following = tokens[index], _next(tokens, index)
+    is_number = bool(NUMBER_TOKEN.match(token)) or token in UNITS
+    joins_number = following in UNITS or bool(NUMBER_TOKEN.match(following))
+    return is_number and bool(hyphens[index]) and bool(following) and not joins_number
+
+
 # Read the quantity at the start of one side's words: "a dozen house cats" -> 12.
 def read_count(raw: str) -> CountReading:
-    tokens = TOKEN.findall(raw.lower())
+    pairs = TOKEN.findall(raw.lower())
+    tokens, hyphens = [t for t, _ in pairs], [h for _, h in pairs]
     total = current = 0
     saw_number = saw_article = False
     for index, token in enumerate(tokens):
+        if _is_description(tokens, hyphens, index):
+            break
         if NUMBER_TOKEN.match(token):
             value = _digit_value(token)
             if value == "fraction":
@@ -115,13 +127,17 @@ IRREGULAR_PLURALS = {
     "rhinoceroses": "rhinoceros", "mantises": "mantis", "ibises": "ibis",
     "buffaloes": "buffalo", "mosquitoes": "mosquito", "tomatoes": "tomato",
     "potatoes": "potato", "heroes": "hero", "volcanoes": "volcano", "teeth": "tooth",
-    "feet": "foot", "dice": "die", "emus": "emu", "gnus": "gnu",
+    "feet": "foot", "dice": "die", "emus": "emu", "gnus": "gnu", "dingoes": "dingo",
+    "flamingoes": "flamingo", "torpedoes": "torpedo", "echoes": "echo", "viruses": "virus",
+    "zombies": "zombie", "pixies": "pixie", "genies": "genie", "cookies": "cookie",
+    "collies": "collie", "magpies": "magpie", "budgies": "budgie", "yorkies": "yorkie",
+    "movies": "movie", "brownies": "brownie", "rookies": "rookie", "goalies": "goalie",
 }  # fmt: skip
 # Words that are the same in singular and plural, or that only look plural.
 UNCHANGED = {
     "moose", "deer", "sheep", "fish", "bison", "salmon", "trout", "shrimp", "squid", "species",
     "series", "aircraft", "swine", "cattle", "rhinoceros", "mercedes", "news", "chaos",
-    "mantis", "ibis", "chassis", "atlas", "gas", "lens", "canvas",
+    "mantis", "ibis", "chassis", "atlas", "gas", "lens", "canvas", "triceratops", "cyclops",
 }  # fmt: skip
 # Singular endings that end in "s" and must keep it ("albatross", "walrus", "stegosaurus").
 KEEP_S_ENDINGS = ("ss", "us")
@@ -158,8 +174,9 @@ def normalize_entity(name: str) -> str:
 
 # "duck-sized", "school-bus-sized", "horse sized" -> the words before "sized".
 SIZED = re.compile(r"\b([a-z]+(?:-[a-z]+)*)[- ]sized\b")
-# "the size of a horse" -> "horse".
-SIZE_OF = re.compile(r"\b(?:the )?size of (?:an? |the )?([a-z]+)\b")
+# "the size of a school bus" -> "school bus": up to three words, stopping at a joining word.
+_SIZE_WORD = r"(?!(?:in|vs|versus|with|and|on|at|or)\b)[a-z]+(?:-[a-z]+)*"
+SIZE_OF = re.compile(rf"\b(?:the )?size of (?:an? |the )?({_SIZE_WORD}(?: {_SIZE_WORD}){{0,2}})\b")
 
 
 # "medium-sized dog" describes a size, not another entity, so these never become references.

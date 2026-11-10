@@ -70,6 +70,30 @@ def test_a_quarter_horse_is_a_breed_not_a_fraction() -> None:
     assert read_count("a quarter horse") == CountReading(1)
 
 
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "a three-headed dog",
+        "a 6-foot bear",
+        "a 500-pound gorilla",
+        "an eight-legged spider",
+        "a 20-ton truck",
+        "a 1.5-ton rhino",
+    ],
+)
+def test_a_number_hyphenated_to_a_word_is_a_description_not_a_count(raw: str) -> None:
+    assert read_count(raw) == CountReading(1)
+
+
+def test_a_count_before_a_hyphenated_description_is_kept() -> None:
+    assert read_count("3 six-foot bears") == CountReading(3)
+
+
+def test_hyphenated_number_words_still_count() -> None:
+    assert read_count("twenty-five bees") == CountReading(25)
+    assert read_count("ninety-nine red balloons") == CountReading(99)
+
+
 def test_number_words_after_the_name_are_ignored() -> None:
     assert read_count("a horse with three legs") == CountReading(1)
 
@@ -108,6 +132,14 @@ def test_counts_within_the_limit_are_unchanged() -> None:
         ("albatrosses", "albatross"),
         ("octopuses", "octopus"),
         ("bulldozers", "bulldozer"),
+        ("puppies", "puppy"),
+        ("dingoes", "dingo"),
+        ("flamingoes", "flamingo"),
+        ("viruses", "virus"),
+        ("zombies", "zombie"),
+        ("pixies", "pixie"),
+        ("genies", "genie"),
+        ("cookies", "cookie"),
     ],
 )
 def test_plurals_become_singular(word: str, singular: str) -> None:
@@ -133,6 +165,8 @@ def test_plurals_become_singular(word: str, singular: str) -> None:
         "goose",
         "toaster",
         "ox",
+        "triceratops",
+        "cyclops",
     ],
 )
 def test_singular_words_are_left_alone(word: str) -> None:
@@ -178,6 +212,10 @@ def test_a_name_made_only_of_quantity_words_normalizes_to_empty() -> None:
         ("an elephant-sized ant", "elephant"),
         ("a school-bus-sized spider", "school bus"),
         ("a duck the size of a horse", "horse"),
+        ("a spider the size of a school bus", "school bus"),
+        ("a spider the size of a school bus in the forest", "school bus"),
+        ("a duck the size of a horse vs a bear", "horse"),
+        ("a duck the size of a horse, angry", "horse"),
         ("ants-sized whale", "ant"),
     ],
 )
@@ -201,6 +239,7 @@ def test_duck_and_horse_swap_roles_on_each_side() -> None:
 def test_size_phrase_is_removed_from_a_name() -> None:
     assert strip_size_phrase("Duck-Sized Horse") == "horse"
     assert strip_size_phrase("duck the size of a horse") == "duck"
+    assert strip_size_phrase("spider the size of a school bus") == "spider"
 
 
 # --- Terrain ------------------------------------------------------------------------------
