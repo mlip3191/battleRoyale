@@ -1,0 +1,50 @@
+name: Bug
+description: Something is broken. Tip — in Claude Code, /new-issue fills this in for you.
+title: "Bug: "
+labels: ["type: bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never paste keys, passwords, or course endpoint hosts here, even inside error messages.
+        Guide: docs/issues.md
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, including any error message.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should happen
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run npm start
+        2. Type "..." in the matchup box
+        3. Click Fight
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag images here if it's something you can see. Optional.
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria
+      description: How we'll know it's fixed. Checkable statements.
+      placeholder: |
+        - [ ] Following the steps above shows ... instead of the error
+        - [ ] A test reproduces the bug and now passes
+    validations:
+      required: true
