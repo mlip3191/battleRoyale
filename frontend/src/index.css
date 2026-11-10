@@ -1,32 +1,60 @@
-/* Base styles; the broadcast look arrives with the front-end lane's tasks. */
+/* Late-night sports broadcast theme (D02). Plain CSS variables, no framework (DECISIONS D-11).
+   Text/background pairs are checked for WCAG AA (>= 4.5:1) in src/theme.test.ts. */
 :root {
-  --text: #1d1b22;
-  --bg: #ffffff;
-  --muted: #6b6375;
-  font:
-    18px/1.45 system-ui,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
-  color-scheme: light dark;
-}
+  --bg: #0b1026; /* studio navy */
+  --panel: #161d42; /* scoreboard panel */
+  --text: #f4f6ff;
+  --muted: #b8c1e8;
+  --neon: #3ee6ff; /* cyan scoreboard accent */
+  --hot: #ff6fb5; /* pink accent */
+  --banner: #ffd23f; /* lower-third gold */
+  --banner-text: #0b1026;
+  --danger: #ff8a8a;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #f2f0f5;
-    --bg: #16151a;
-    --muted: #a39cad;
-  }
+  --font-body: system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-score:
+    "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Impact, sans-serif;
+  --font-digits: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  font: 18px/1.45 var(--font-body);
+  color-scheme: dark;
 }
 
 body {
   margin: 0;
   color: var(--text);
-  background: var(--bg);
+  background: radial-gradient(ellipse at top, var(--panel), var(--bg) 60%) fixed;
+  min-height: 100vh;
 }
 
 main {
-  max-width: 48rem;
+  max-width: 60rem;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 1.5rem 1rem 4rem;
+}
+
+a {
+  color: var(--neon);
+}
+
+h1,
+h2 {
+  font-family: var(--font-score);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:focus-visible {
+  outline: 3px solid var(--neon);
+  outline-offset: 2px;
+}
+
+/* Anyone who asks for less motion gets none. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
