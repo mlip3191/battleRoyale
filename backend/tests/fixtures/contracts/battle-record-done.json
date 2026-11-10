@@ -26,7 +26,7 @@
   },
   "stat_sheets": [
     {
-      "fighter_id": "grizzly-bear--adult-male",
+      "fighter_id": "grizzly-bear",
       "display_name": "Grizzly bear - adult male",
       "media_name": "grizzly bear",
       "category": "mammal",
@@ -344,27 +344,17 @@
         "target": null,
         "group_size": 6,
         "damage": null,
-        "text_hint": "the pack fans out through the trees"
+        "text_hint": "closes in"
       },
       {
-        "t": 2.5,
+        "t": 0.0,
         "type": "approach",
         "side": 0,
-        "actor": 0,
+        "actor": null,
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "the bear rises on its hind legs"
-      },
-      {
-        "t": 4.1,
-        "type": "attack",
-        "side": 1,
-        "actor": 2,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "a wolf darts in for the flank"
+        "text_hint": "closes in"
       },
       {
         "t": 4.3,
@@ -374,77 +364,87 @@
         "target": 0,
         "group_size": 1,
         "damage": 6.5,
-        "text_hint": "bite lands on the hind leg"
+        "text_hint": "bite lands"
       },
       {
-        "t": 5.0,
-        "type": "attack",
-        "side": 0,
-        "actor": 0,
-        "target": 2,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "massive paw swipe"
-      },
-      {
-        "t": 5.2,
-        "type": "ko",
-        "side": 0,
-        "actor": 0,
-        "target": 2,
-        "group_size": 1,
-        "damage": 48.0,
-        "text_hint": "the wolf is knocked out of the fight"
-      },
-      {
-        "t": 9.8,
-        "type": "attack",
-        "side": 1,
-        "actor": null,
-        "target": 0,
-        "group_size": 3,
-        "damage": null,
-        "text_hint": "three wolves rush together"
-      },
-      {
-        "t": 10.1,
-        "type": "hit",
-        "side": 1,
-        "actor": null,
-        "target": 0,
-        "group_size": 3,
-        "damage": 21.0,
-        "text_hint": "bites land from all sides"
-      },
-      {
-        "t": 14.6,
+        "t": 4.9,
         "type": "miss",
         "side": 0,
         "actor": 0,
         "target": 4,
         "group_size": 1,
         "damage": null,
-        "text_hint": "the swipe catches only air"
+        "text_hint": "claw swipe misses"
+      },
+      {
+        "t": 5.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 2,
+        "group_size": 1,
+        "damage": 48.0,
+        "text_hint": "claw swipe lands"
+      },
+      {
+        "t": 5.0,
+        "type": "ko",
+        "side": 1,
+        "actor": 2,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 9.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 1,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.5,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 10.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 4,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.5,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 14.6,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 3,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "claw swipe misses"
       },
       {
         "t": 31.0,
         "type": "hit",
         "side": 1,
-        "actor": null,
+        "actor": 3,
         "target": 0,
-        "group_size": 5,
-        "damage": 30.0,
-        "text_hint": "the pack wears the bear down"
+        "group_size": 1,
+        "damage": 6.5,
+        "text_hint": "bite lands"
       },
       {
         "t": 52.4,
         "type": "ko",
-        "side": 1,
-        "actor": null,
-        "target": 0,
-        "group_size": 5,
+        "side": 0,
+        "actor": 0,
+        "target": null,
+        "group_size": 1,
         "damage": null,
-        "text_hint": "the bear goes down"
+        "text_hint": "goes down"
       },
       {
         "t": 52.4,
@@ -454,7 +454,7 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "the pack wins"
+        "text_hint": "the fight is over"
       }
     ]
   },
@@ -531,9 +531,9 @@
   ],
   "assets": [
     {
-      "asset_id": "sprite-grizzly-bear--adult-male",
+      "asset_id": "sprite-grizzly-bear",
       "kind": "sprite",
-      "url": "/media/sprites/grizzly-bear--adult-male.png",
+      "url": "/media/sprites/grizzly-bear.png",
       "prompt_hash": "3f9a1c0e5b7d2a46",
       "fallback": false
     },

@@ -1,0 +1,32 @@
+name: Chore
+description: Docs, process, setup, or maintenance. Tip — in Claude Code, /new-issue fills this in for you.
+title: "Chore: "
+labels: ["type: chore"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep it to about a day of work (size S or M). Guide: docs/issues.md
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs doing
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What goes wrong, or gets harder, if we don't do it.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance criteria (done when)
+      description: Checkable statements.
+      placeholder: |
+        - [ ] docs/onboarding.md explains how to run npm run doctor
+        - [ ] A teammate other than the author follows it and confirms in review
+    validations:
+      required: true
