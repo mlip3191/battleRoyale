@@ -1,0 +1,212 @@
+# Tuning set for the benchmark (G07). See docs/benchmark.md.
+
+matchups:
+- id: cnt-02
+  group: count
+  fighters:
+    - {entity: gray-wolf, count: 1, variant: null}
+    - {entity: grizzly-bear, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "1"
+  confidence: medium
+  expected_fair_count: [3, 10]
+  source: "obvious: a grizzly is far heavier than a wolf and only a pack can contest one"
+
+- id: cnt-03
+  group: count
+  fighters:
+    - {entity: house-cat, count: 1, variant: null}
+    - {entity: african-lion, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: medium
+  expected_fair_count: [8, 40]
+  source: "obvious: a lion is dozens of times a cat's weight, and cats wound it slowly"
+
+- id: cnt-05
+  group: count
+  fighters:
+    - {entity: roman-legionary, count: 1, variant: null}
+    - {entity: grizzly-bear, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "1"
+  confidence: medium
+  expected_fair_count: [2, 8]
+  source: "obvious: armed soldiers working together should bring down a bear with a small squad"
+
+- id: doc-01
+  group: documented
+  fighters:
+    - {entity: grizzly-bear, count: 1, variant: null}
+    - {entity: gray-wolf, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "0"
+  confidence: high
+  source: "https://en.wikipedia.org/w/index.php?title=Wolf&oldid=1384814257"
+  quote: "Brown bears typically dominate wolf packs in disputes over carcasses"
+
+- id: doc-02
+  group: documented
+  fighters:
+    - {entity: african-lion, count: 1, variant: null}
+    - {entity: african-elephant, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: high
+  source: "https://en.wikipedia.org/w/index.php?title=African_bush_elephant&oldid=1384293884"
+  quote: "Adult elephants are considered invulnerable to predation."
+
+- id: doc-03
+  group: documented
+  fighters:
+    - {entity: honey-badger, count: 1, variant: null}
+    - {entity: african-lion, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: medium
+  source: "https://en.wikipedia.org/w/index.php?title=Honey_badger&oldid=1381719656"
+  quote: "The honey badgers were preyed upon by larger predators such as spotted hyenas, leopards, and lions."
+
+- id: doc-06
+  group: documented
+  fighters:
+    - {entity: gray-wolf, count: 1, variant: null}
+    - {entity: golden-retriever, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "0"
+  confidence: medium
+  source: "https://en.wikipedia.org/w/index.php?title=Wolf&oldid=1384814257"
+  quote: "Shepherd dogs are sometimes killed by wolves."
+
+- id: doc-07
+  group: documented
+  fighters:
+    - {entity: bald-eagle, count: 1, variant: null}
+    - {entity: duck, count: 1, variant: null}
+  terrain: shoreline
+  expected_winner: "0"
+  confidence: high
+  source: "https://en.wikipedia.org/w/index.php?title=Bald_eagle&oldid=1384435626"
+  quote: "as such prey is relatively easy for the much larger eagles to catch and fly with"
+
+- id: doc-08
+  group: documented
+  fighters:
+    - {entity: goose, count: 1, variant: null}
+    - {entity: bald-eagle, count: 1, variant: null}
+  terrain: shoreline
+  expected_winner: "1"
+  confidence: medium
+  source: "https://en.wikipedia.org/w/index.php?title=Bald_eagle&oldid=1384435626"
+  quote: "with prey up to the size of Canada geese attacked and killed in mid-air"
+
+- id: doc-09
+  group: documented
+  fighters:
+    - {entity: saltwater-crocodile, count: 1, variant: null}
+    - {entity: horse, count: 1, variant: null}
+  terrain: shoreline
+  expected_winner: "0"
+  confidence: medium
+  source: "https://en.wikipedia.org/w/index.php?title=Saltwater_crocodile&oldid=1382108552"
+  quote: "Any type of livestock, such as chicken, sheep, pigs, horses and cattle"
+
+- id: obv-02
+  group: obvious
+  fighters:
+    - {entity: house-cat, count: 1, variant: null}
+    - {entity: bulldozer, count: 1, variant: null}
+  terrain: arena
+  expected_winner: "1"
+  confidence: high
+  source: "obvious: a cat cannot damage a steel crawler machine"
+
+- id: obv-03
+  group: obvious
+  fighters:
+    - {entity: main-battle-tank, count: 1, variant: null}
+    - {entity: duck, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "0"
+  confidence: high
+  source: "obvious: a duck cannot damage tank armor"
+
+- id: obv-04
+  group: obvious
+  fighters:
+    - {entity: toaster, count: 1, variant: null}
+    - {entity: grizzly-bear, count: 1, variant: null}
+  terrain: arena
+  expected_winner: "1"
+  confidence: high
+  source: "obvious: a toaster cannot attack and a bear can destroy it"
+
+- id: obv-06
+  group: obvious
+  fighters:
+    - {entity: duck, count: 1, variant: null}
+    - {entity: grizzly-bear, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: high
+  source: "obvious: a duck has no attack that can hurt a grizzly"
+
+- id: obv-07
+  group: obvious
+  fighters:
+    - {entity: gorilla, count: 1, variant: null}
+    - {entity: house-cat, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "0"
+  confidence: high
+  source: "obvious: an adult gorilla is far larger and stronger"
+
+- id: obv-08
+  group: obvious
+  fighters:
+    - {entity: house-mouse, count: 1, variant: null}
+    - {entity: african-lion, count: 1, variant: null}
+  terrain: arena
+  expected_winner: "1"
+  confidence: high
+  source: "obvious: a mouse cannot hurt a lion"
+
+- id: obv-11
+  group: obvious
+  fighters:
+    - {entity: main-battle-tank, count: 1, variant: null}
+    - {entity: roman-legionary, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "0"
+  confidence: high
+  source: "obvious: a sword cannot damage tank armor"
+
+- id: obv-12
+  group: obvious
+  fighters:
+    - {entity: duck, count: 1, variant: null}
+    - {entity: saltwater-crocodile, count: 1, variant: null}
+  terrain: shoreline
+  expected_winner: "1"
+  confidence: high
+  source: "obvious: a large crocodile easily kills a duck at the water's edge"
+
+- id: obv-14
+  group: obvious
+  fighters:
+    - {entity: bulldozer, count: 1, variant: null}
+    - {entity: gorilla, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "0"
+  confidence: high
+  source: "obvious: a gorilla cannot damage a steel crawler machine"
+
+- id: obv-15
+  group: obvious
+  fighters:
+    - {entity: honey-badger, count: 1, variant: null}
+    - {entity: grizzly-bear, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "1"
+  confidence: high
+  source: "obvious: a grizzly is more than twenty times heavier"
