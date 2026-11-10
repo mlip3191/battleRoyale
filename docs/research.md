@@ -95,7 +95,7 @@ These are sourced or labeled estimates. For each one we use the first of these t
 | `attack_force_n` | Force of one bite, strike, or blow | N | Wikipedia article text or the paper it cites (bite force is reported for some species) | Derived from other stats if a formula applies, else category default |
 | `attacks_per_s` | Attacks per second in a fight | per second | Rarely published; occasional behavior studies | Category default. Ramming and crushing machines use the engine's own rate (see below) |
 | `reach_m` | How far from its body it can land an attack | m | Rarely stated directly; sometimes horn, tusk, or weapon length in article text | Derived from size if a formula applies, else category default |
-| `endurance_s` | How long it can keep fighting. For a machine, its operating time before it stops | s | Rarely stated for animals. For vehicles, range and speed in article text | Vehicles: derived as range divided by speed. Others: category default |
+| `endurance_s` | How long it can keep fighting. For a machine, its operating time before it stops | s | Rarely stated for animals. For vehicles, range and speed in article text | Vehicles: derived as range divided by speed, with the range extracted using a verified quote and cited in the `note`; if there is no quote, category default. Others: category default |
 
 Every value gets a `low` and `high`: the source's range if it gives one, otherwise ±10% (high confidence), ±25% (medium), or ±50% (low, which includes all estimates and assumptions).
 
@@ -104,7 +104,7 @@ Every value gets a `low` and `high`: the source's range if it gives one, otherwi
 - `attack_force_n`: the force that gives the engine's ramming damage, `RAM_DAMAGE_PER_MOMENTUM × mass × speed ÷ DAMAGE_PER_NEWTON`, using the sheet's own mass and speed. For a fighter with `crushing`, use a speed of at least `CRUSH_MIN_SPEED_MPS`.
 - `attacks_per_s`: the value of `RAM_ATTACKS_PER_S`.
 
-The `note` names the formula or constant and says the engine works out the real hit from them. `RAM_DAMAGE_PER_MOMENTUM`, `RAM_ATTACKS_PER_S`, and `CRUSH_MIN_SPEED_MPS` are defined in PR #71 and are not on `main` yet.
+The `note` names the formula or constant and says the engine works out the real hit from them. `RAM_DAMAGE_PER_MOMENTUM`, `RAM_ATTACKS_PER_S`, and `CRUSH_MIN_SPEED_MPS` are defined in PR #71 and are not on `main` yet. Derived ram/crush values do not count toward G05's limit of 2 estimates; every `category_default` value does.
 
 ## Category defaults
 
