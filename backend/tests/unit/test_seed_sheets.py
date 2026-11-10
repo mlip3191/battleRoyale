@@ -75,6 +75,15 @@ class TestSeedSheet:
         for name, stat in load_sheet(path).stats.items():
             assert stat.low is not None and stat.high is not None, name
 
+    def test_derived_reach_follows_the_formula(self, path: Path) -> None:
+        sheet = load_sheet(path)
+        reach, size = sheet.stats[StatName.REACH], sheet.stats[StatName.SIZE]
+        if reach.method == "derived":
+            formula = 0.25 * size.value  # stored values are rounded to the centimetre
+            assert reach.value == pytest.approx(formula, abs=0.006)
+            assert reach.low == pytest.approx(0.75 * formula, abs=0.006)
+            assert reach.high == pytest.approx(1.25 * formula, abs=0.006)
+
     def test_at_most_two_physical_estimates(self, path: Path) -> None:
         sheet = load_sheet(path)
         estimates = [str(n) for n in PHYSICAL_STATS if sheet.stats[n].is_estimate]

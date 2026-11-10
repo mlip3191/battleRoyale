@@ -104,7 +104,7 @@
       "method": "hand_verified",
       "low": 1.5,
       "high": 2.4,
-      "note": "Tusk length."
+      "note": "Tusk length. Upper end of the stated range; the source gives no mean."
     },
     "armor_0_1": {
       "value": 0.45,
@@ -152,5 +152,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "6fd0610301b03a4b85b64f5d814983113d1828fec2d35b53ff3f5a76501929a1"
+  "sheet_hash": "b7116fa0a96d3544fd7af111489de8f57822948ff138cd2b628504f49875f99f"
 }

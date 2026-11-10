@@ -42,7 +42,7 @@
       "method": "hand_verified",
       "low": 1.05,
       "high": 1.6,
-      "note": "The source does not split by sex and lists the tail separately right after."
+      "note": "The source does not split by sex and lists the tail separately right after. Upper end of the stated range; the source gives no mean."
     },
     "top_speed_mps": {
       "value": 17.78,
@@ -146,5 +146,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "7cfed2860912dd3010caaf89e1780ab378015328a17b670131b69ea2bb983a6d"
+  "sheet_hash": "72e79b874aacbbfb8c03c0d810ce33c90611af6aac40ecd938f55ed07ae952b1"
 }

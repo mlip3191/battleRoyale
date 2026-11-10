@@ -25,7 +25,7 @@
       "method": "hand_verified",
       "low": 408.0,
       "high": 770.0,
-      "note": "Average adult males."
+      "note": "Average adult males. Upper end of the stated range; the source gives no mean."
     },
     "size_m": {
       "value": 4.5,
@@ -42,7 +42,7 @@
       "method": "hand_verified",
       "low": 4.0,
       "high": 4.5,
-      "note": "Average adult males."
+      "note": "Average adult males. Upper end of the stated range; the source gives no mean."
     },
     "top_speed_mps": {
       "value": 3.89,
@@ -146,5 +146,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "0c23bfc9c2b5879ffb511a3fde6bbbe8f988a9f80a4475701199edf63557ba20"
+  "sheet_hash": "06fa513fe408c910d52f8b9987c778b711855f3423313aec3035b34b17f6e413"
 }

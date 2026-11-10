@@ -43,7 +43,7 @@
       "method": "hand_verified",
       "low": 1.98,
       "high": 2.4,
-      "note": "Total length; the source does not say whether it is male-only."
+      "note": "Total length; the source does not say whether it is male-only. Upper end of the stated range; the source gives no mean."
     },
     "top_speed_mps": {
       "value": 13.33,
@@ -147,5 +147,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "99f8a450499c6d50d81d84bcc2772b9527f1a22f40083441ab6f88edead3fff9"
+  "sheet_hash": "931ca549fe7dbb68316b6c52e90ab4eb32173fbde43225d37c61ad97bf127a80"
 }
