@@ -1,0 +1,150 @@
+{
+  "fighter_id": "african-elephant",
+  "display_name": "African elephant",
+  "media_name": "African elephant",
+  "category": "mammal",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "tusks"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 6900.0,
+      "unit": "kg",
+      "source": {
+        "title": "African bush elephant",
+        "url": "https://en.wikipedia.org/w/index.php?title=African_bush_elephant&oldid=1384293884",
+        "quote": "with 90% of fully grown males under optimal conditions being between 3.04–3.36 m (10.0–11.0 ft) and 5.2–6.9 t (5.7–7.6 short tons)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 5200.0,
+      "high": 6900.0,
+      "note": "Converted from 6.9 t, the top of the range for fully grown males under optimal conditions; their average is 6.0 t."
+    },
+    "size_m": {
+      "value": 3.36,
+      "unit": "m",
+      "source": {
+        "title": "African bush elephant",
+        "url": "https://en.wikipedia.org/w/index.php?title=African_bush_elephant&oldid=1384293884",
+        "quote": "with 90% of fully grown males under optimal conditions being between 3.04–3.36 m (10.0–11.0 ft) and 5.2–6.9 t (5.7–7.6 short tons)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 3.04,
+      "high": 3.36,
+      "note": "Shoulder height; the article gives no body length."
+    },
+    "top_speed_mps": {
+      "value": 6.94,
+      "unit": "m/s",
+      "source": {
+        "title": "Elephant",
+        "url": "https://en.wikipedia.org/w/index.php?title=Elephant&oldid=1384533661",
+        "quote": "can reach a top speed of 25 km/h (16 mph)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 6.25,
+      "high": 7.63,
+      "note": "Converted from 25 km/h; for elephants generally. Range is the standard +/-10%."
+    },
+    "attack_force_n": {
+      "value": 3432.0,
+      "unit": "N",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 1716.0,
+      "high": 5148.0,
+      "note": "force = 350 kg x 9.81 m/s^2, the trunk's stated lifting limit, \"up to 350 kg (770 lb)\" (https://en.wikipedia.org/w/index.php?title=Elephant&oldid=1384533661). A lift, so it likely understates a charge or tusk blow. Range is +/-50%."
+    },
+    "attacks_per_s": {
+      "value": 1.5,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.75,
+      "high": 2.25,
+      "note": "No published attack rate found for this animal; category default."
+    },
+    "reach_m": {
+      "value": 2.4,
+      "unit": "m",
+      "source": {
+        "title": "African elephant",
+        "url": "https://en.wikipedia.org/w/index.php?title=African_elephant&oldid=1384502842",
+        "quote": "can be from 1.5 to 2.4 m (5–8 ft) long",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 1.5,
+      "high": 2.4,
+      "note": "Tusk length."
+    },
+    "armor_0_1": {
+      "value": 0.45,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.225,
+      "high": 0.675,
+      "note": "armor level 3: very thick hide."
+    },
+    "endurance_s": {
+      "value": 300.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "The only stamina figure found is a swim duration, not how long it can keep fighting; category default."
+    },
+    "aggression_0_1": {
+      "value": 0.7,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.35,
+      "high": 1.0,
+      "note": "aggression level 4: territorial, confident against most animals."
+    },
+    "group_tactics_0_1": {
+      "value": 0.5,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.25,
+      "high": 0.75,
+      "note": "group tactics level 3: family or herd that defends together."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "9a66914b081064c31e1599ffa0b16334cc5e4c35ad920d2d2a725c52a892aca2"
+}

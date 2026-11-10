@@ -16,8 +16,8 @@ PHYSICAL_STATS = [name for name in StatName if name not in ASSUMABLE_STATS]
 RUBRIC_NOTE = re.compile(r"^(aggression|group tactics|armor|durability) level (\d|M): \S")
 MAX_ESTIMATES = 2
 
-# Unit conversions a quote may be written in: as stored, km/h for m/s, cm for m, minutes for s.
-CONVERSIONS = {"m/s": (1.0, 3.6), "m": (1.0, 100.0), "s": (1.0, 1 / 60)}
+# Units a quote may use: as stored, km/h for m/s, cm for m, minutes for s, tonnes for kg.
+CONVERSIONS = {"m/s": (1.0, 3.6), "m": (1.0, 100.0), "s": (1.0, 1 / 60), "kg": (1.0, 0.001)}
 
 
 # Load one sheet file through the shared contract.
