@@ -12,6 +12,7 @@ This guide consolidates the project proposal and the team's setup standard into 
 | [PRODUCT_SPEC.md](PRODUCT_SPEC.md) | You want to know **what** the app does and how it's judged | Mike |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | You need the **structure**: modules, contracts, API, providers, edge cases | Mike |
 | [TEAM_PROCESS.md](TEAM_PROCESS.md) | You need the **rules**: branches, PRs, reviews, QA bot, secrets, CI | Mike |
+| [reviewing.md](reviewing.md) | You're about to **review a teammate's PR**: a one-screen checklist, no coding needed | Felipe |
 | [DECISIONS.md](DECISIONS.md) | Something is unclear or undecided | Mike |
 | [plan/LANES.md](plan/LANES.md) | You want the big picture of who does what, when | everyone |
 | `plan/lane-<n>-<name>.md` | You're starting a task: **every task has a ready-to-paste prompt** | each owner |
@@ -91,7 +92,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 
 **Every day after**
 
-14. **Review someone's PR:** ask Claude *"What can I review?"* Pick one; the agent drafts comments and fixes; you read them, say **send**, and approve only if it's ready (Claude asks separately).
+14. **Review someone's PR:** ask Claude *"What can I review?"* Pick one; the agent drafts comments and fixes; you read them, say **send**, and approve only if it's ready (Claude asks separately). The one-screen checklist is in [reviewing.md](reviewing.md).
 15. **Need new work tracked?** Type `/new-issue` (after A01).
 16. **Stuck more than 30 minutes?** Comment on your issue and @mention Mike (`@mlip3191`).
 
