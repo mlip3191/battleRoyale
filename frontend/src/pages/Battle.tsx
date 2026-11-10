@@ -1,4 +1,4 @@
-// The broadcast page frame (D02). The intro card, Phaser arena, and captions arrive with D05 and D07.
+// The broadcast page frame (D02) with the fight replay (D05). The intro card and captions arrive with D07.
 import { Link, useParams } from "react-router-dom";
 import { NOT_FOUND, useBattle } from "../api/useBattle.ts";
 import {
@@ -7,6 +7,7 @@ import {
   LowerThird,
   srOnly,
 } from "../components/Broadcast.tsx";
+import PhaserStage from "../game/PhaserStage.tsx";
 
 // A way out of any dead end.
 const BackHome = () => (
@@ -55,6 +56,13 @@ export default function Battle() {
           <ErrorPanel message="This fight was called off. Try another matchup." />
           <BackHome />
         </>
+      )}
+      {battle.status === "done" && battle.result && (
+        <PhaserStage
+          result={battle.result}
+          matchup={battle.matchup}
+          assets={battle.assets}
+        />
       )}
       {battle.status === "done" && (
         <p>
