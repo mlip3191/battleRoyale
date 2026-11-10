@@ -51,6 +51,7 @@ export default function Battle() {
       {(failed || (!battle && error)) && <BackHome />}
       {battle?.status === "done" && battle.result && (
         <PhaserStage
+          battleId={id}
           result={battle.result}
           matchup={battle.matchup}
           assets={battle.assets}

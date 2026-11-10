@@ -8,6 +8,7 @@ export class FakeObject {
   y: number;
   alpha = 1;
   angle = 0;
+  scaleX = 1;
   text: string;
   destroyed = false;
   constructor(x = 0, y = 0, text = "") {
@@ -44,7 +45,12 @@ export class FakeObject {
   setDepth() {
     return this;
   }
-  setScale() {
+  setAngle(angle: number) {
+    this.angle = angle;
+    return this;
+  }
+  setScale(x: number) {
+    this.scaleX = x;
     return this;
   }
   destroy() {
@@ -61,7 +67,22 @@ export class FakeGame {
   constructor(config: { scene: unknown[] } & Record<string, unknown>) {
     this.config = config;
     games.push(this);
+    // Boot each scene like Phaser does: load its images, then build it.
+    for (const scene of config.scene as Partial<
+      Record<"preload" | "create", () => void>
+    >[]) {
+      scene.preload?.();
+      scene.create?.();
+    }
   }
+}
+
+// What the scene passed to tweens.add. The fake never plays a tween; like Phaser, killAll stops
+// them without running onComplete.
+export interface FakeTween {
+  targets: FakeObject | FakeObject[];
+  onComplete?: () => void;
+  [prop: string]: unknown;
 }
 
 // The scene base class: just enough of add/make/textures/tweens/cameras for the battle scene.
@@ -69,8 +90,15 @@ export class FakeScene {
   textureKeys = new Set<string>();
   images: FakeObject[] = [];
   texts: FakeObject[] = [];
+  rects: FakeObject[] = [];
   load = { image: vi.fn() };
-  tweens = { add: vi.fn(), killAll: vi.fn() };
+  tweens = {
+    list: [] as FakeTween[],
+    add: vi.fn((tween: FakeTween) => {
+      this.tweens.list.push(tween);
+    }),
+    killAll: vi.fn(),
+  };
   cameras = { main: { shake: vi.fn() } };
   time = { delayedCall: vi.fn() };
   textures = {
@@ -91,7 +119,11 @@ export class FakeScene {
       this.texts.push(label);
       return label;
     },
-    rectangle: (x: number, y: number) => new FakeObject(x, y),
+    rectangle: (x: number, y: number) => {
+      const rect = new FakeObject(x, y);
+      this.rects.push(rect);
+      return rect;
+    },
   };
   make = {
     graphics: () => ({

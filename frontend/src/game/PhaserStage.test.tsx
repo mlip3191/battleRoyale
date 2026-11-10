@@ -87,6 +87,47 @@ test("mount, unmount, mount: the first game is destroyed and only the second run
   expect(games[1].destroy).not.toHaveBeenCalled();
 });
 
+test("a refreshed battle record with the same result does not restart the replay", async () => {
+  const onEvent = vi.fn();
+  // Each render gets brand-new objects with equal values, like a fresh fetch of the record.
+  const fresh = () => structuredClone(battle);
+  const el = (b: BattleRecord) => (
+    <PhaserStage
+      battleId="b1"
+      result={b.result as SimulationResult}
+      matchup={b.matchup}
+      assets={b.assets}
+      onEvent={onEvent}
+    />
+  );
+  const view = render(el(fresh()));
+  const scene = await sceneOf();
+  fireEvent.click(screen.getByRole("button", { name: "Play" }));
+  act(() => scene.update(0, 50));
+  view.rerender(el(fresh()));
+  view.rerender(el(fresh()));
+  await new Promise((r) => setTimeout(r, 20)); // give any restart time to happen
+  expect(games).toHaveLength(1);
+  expect(games[0].destroy).not.toHaveBeenCalled();
+  expect(scene.clock.playing).toBe(true);
+  expect(screen.getByRole("button", { name: "Pause" })).toBeTruthy();
+});
+
+test("a different result or battle starts a fresh replay", async () => {
+  const el = (id: string, r: SimulationResult) => (
+    <PhaserStage battleId={id} result={r} matchup={battle.matchup} />
+  );
+  const view = render(el("b1", result));
+  await sceneOf(0);
+  view.rerender(el("b1", { ...result, seed: result.seed + 1 }));
+  await sceneOf(1);
+  expect(games[0].destroy).toHaveBeenCalledTimes(1);
+  view.rerender(el("b2", { ...result, seed: result.seed + 1 }));
+  await sceneOf(2);
+  expect(games[1].destroy).toHaveBeenCalledTimes(1);
+  expect(games).toHaveLength(3);
+});
+
 test("unmounting before Phaser finishes loading never starts a game", async () => {
   render(stageEl()).unmount();
   await new Promise((r) => setTimeout(r, 20));

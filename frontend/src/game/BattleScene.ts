@@ -44,6 +44,7 @@ const MAX_FRAME_MS = 100; // a long pause (hidden tab) never jumps more than thi
 const BATTLEFIELD_KEY = "battlefield";
 const CROWD_KEY = "crowd-icon";
 const APPROACH_PX = 120; // how far each squad walks in when it closes in
+const RETREAT_PX = 90; // how far a retreat backs a squad off (never past where it started)
 const TEXT_FONT = "Arial Black, Impact, sans-serif";
 
 // One side on stage: its sprites, where they stand, and how many are still in the fight.
@@ -65,6 +66,12 @@ export function createBattleScene(P: typeof Phaser) {
     private readonly keys: Set<number>; // beat indexes shown in reduced motion
     private squads: [Squad, Squad] | null = null; // set once create() has built the stage
     private pending: Beat[] = []; // reduced motion: changes waiting for the next key frame
+    // Short-lived effects (banners, floating numbers, crowd markers), destroyed when they finish
+    // or on skip, because a killed tween never runs its onComplete.
+    private readonly transients = new Set<Destroyable>();
+    private endBanner: Phaser.GameObjects.Rectangle | null = null; // the banner that stays up
+    private skipQueued = false; // Skip pressed before create() built the stage
+    private skipping = false; // inside skipToEnd: show the final state only
 
     constructor(opts: BattleSceneOptions) {
       super({ key: SCENE_KEY });
@@ -88,6 +95,7 @@ export function createBattleScene(P: typeof Phaser) {
       this.makeCrowdIcon();
       this.squads = [this.buildSquad(0), this.buildSquad(1)];
       if (this.opts.reducedMotion) this.showKeyFrameNote();
+      if (this.skipQueued) this.skipToEnd();
     }
 
     play() {
@@ -103,16 +111,27 @@ export function createBattleScene(P: typeof Phaser) {
     }
 
     // Jump to the end: report every remaining event, then show the final state with no animation.
+    // Before create() has built the stage, the skip is queued and runs as soon as it exists.
     skipToEnd() {
-      const reached = this.clock.skipToEnd();
-      if (this.squads) {
-        this.tweens.killAll();
-        this.snapHome();
+      if (!this.squads) {
+        this.skipQueued = true;
+        return;
       }
+      this.skipQueued = false;
+      const reached = this.clock.skipToEnd();
+      this.skipping = true;
+      this.tweens.killAll();
+      this.clearTransients();
+      this.endBanner?.setScale(1, 1); // an end banner cut off while sliding in
+      this.snapHome();
+      // Reduced motion: beats already reported but held for the next key frame still count.
+      for (const held of this.pending) this.apply(held, true);
+      this.pending = [];
       for (const index of reached) {
         this.opts.onEvent(index);
         this.apply(this.clock.beats[index], true);
       }
+      this.skipping = false;
       this.opts.onFinish();
     }
 
@@ -369,10 +388,17 @@ export function createBattleScene(P: typeof Phaser) {
             ? side === 0
               ? -80
               : STAGE.width + 80
-            : spot.x + away * 90;
+            : this.backOff(side, spot.x, squad.layout.slots[i].x, away);
         this.moveTo(squad.sprites[i], spot.x, ms, instant);
       });
       if (beat.kind === "flee") squad.gone = true;
+    }
+
+    // A retreat backs off RETREAT_PX toward the squad's own edge, but never past its starting spot,
+    // so repeated retreats do not stack up.
+    private backOff(side: Side, x: number, startX: number, away: number) {
+      const backed = x + away * RETREAT_PX;
+      return side === 0 ? Math.max(startX, backed) : Math.min(startX, backed);
     }
 
     private endText(beat: Beat) {
@@ -383,6 +409,7 @@ export function createBattleScene(P: typeof Phaser) {
 
     // A gold lower-third banner across the stage; the end banner stays up.
     private banner(text: string, ms: number, instant: boolean, stay: boolean) {
+      if (this.skipping && !stay) return; // a skip shows only the final state
       const y = STAGE.height / 2;
       const box = this.add
         .rectangle(STAGE.width / 2, y, STAGE.width * 0.8, 84, 0xffd23f)
@@ -395,10 +422,12 @@ export function createBattleScene(P: typeof Phaser) {
         })
         .setOrigin(0.5)
         .setDepth(11);
+      if (stay) this.endBanner = box;
+      else this.track(box, label);
       if (instant) {
         if (!stay)
           this.time.delayedCall(Math.max(400, ms), () =>
-            [box, label].forEach((o) => o.destroy()),
+            this.dispose(box, label),
           );
         return;
       }
@@ -415,7 +444,7 @@ export function createBattleScene(P: typeof Phaser) {
           alpha: 0,
           delay: ms * 0.7,
           duration: ms * 0.3,
-          onComplete: () => [box, label].forEach((o) => o.destroy()),
+          onComplete: () => this.dispose(box, label),
         });
       }
     }
@@ -504,13 +533,33 @@ export function createBattleScene(P: typeof Phaser) {
       });
     }
 
-    // After a skip, put every sprite back on its spot (killed tweens can leave one mid-lunge).
+    // After a skip, put every sprite back on its spot, upright, and fully shown or gone
+    // (killed tweens can leave one mid-lunge or half-faded and tilted mid-fall).
     private snapHome() {
       for (const squad of this.squads!) {
         squad.sprites.forEach((sprite, i) =>
-          sprite.setPosition(squad.home[i].x, squad.home[i].y),
+          sprite
+            .setPosition(squad.home[i].x, squad.home[i].y)
+            .setAngle(0)
+            .setAlpha(squad.down[i] ? 0 : 1),
         );
       }
+    }
+
+    // Remember short-lived objects so a skip can remove them.
+    private track(...objects: Destroyable[]) {
+      for (const o of objects) this.transients.add(o);
+    }
+
+    // Destroy short-lived objects once (a tween's onComplete and a skip may both ask).
+    private dispose(...objects: Destroyable[]) {
+      for (const o of objects) {
+        if (this.transients.delete(o)) o.destroy();
+      }
+    }
+
+    private clearTransients() {
+      this.dispose(...this.transients);
     }
 
     private floatText(
@@ -530,12 +579,13 @@ export function createBattleScene(P: typeof Phaser) {
         })
         .setOrigin(0.5)
         .setDepth(5);
+      this.track(label);
       this.tweens.add({
         targets: label,
         y: y - 50,
         alpha: 0,
         duration: Math.max(250, ms),
-        onComplete: () => label.destroy(),
+        onComplete: () => this.dispose(label),
       });
     }
 
@@ -556,16 +606,19 @@ export function createBattleScene(P: typeof Phaser) {
         })
         .setOrigin(0, 0.5)
         .setDepth(6);
+      this.track(icon, label);
       this.tweens.add({
         targets: [icon, label],
         y: "-=24",
         alpha: 0,
         duration: Math.max(250, ms),
-        onComplete: () => [icon, label].forEach((o) => o.destroy()),
+        onComplete: () => this.dispose(icon, label),
       });
     }
   };
 }
+
+type Destroyable = { destroy(): void };
 
 // Damage is shown exactly as the log has it, trimmed to one decimal place.
 const formatDamage = (damage: number) =>
