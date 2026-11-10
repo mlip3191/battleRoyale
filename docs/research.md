@@ -90,7 +90,7 @@ These are sourced or labeled estimates. For each one we use the first of these t
 | Stat | What it means | Unit | Where it usually appears | If it is missing |
 |---|---|---|---|---|
 | `mass_kg` | Typical body weight, or vehicle or object weight | kg | Wikidata P2067; PanTHERIA `5-1_AdultBodyMass_g`; AnimalTraits body mass; Wikipedia article text | Category default |
-| `size_m` | Longest body dimension: head-and-body length, or height if the fighter is taller than it is long | m | Wikidata P2043 (length), P2048 (height); PanTHERIA `13-1_AdultHeadBodyLen_mm`; Wikipedia article text | Derived from mass if a formula applies, else category default |
+| `size_m` | Longest body dimension: head-and-body length, or height if the fighter is taller than it is long. If a source gives only shoulder height, use that and say so in the `note` | m | Wikidata P2043 (length), P2048 (height); PanTHERIA `13-1_AdultHeadBodyLen_mm`; Wikipedia article text | Derived from mass if a formula applies, else category default |
 | `top_speed_mps` | Fastest sustained movement on its home ground | m/s | Wikidata P2052; Wikipedia article text, usually in km/h or mph | Category default |
 | `attack_force_n` | Force of one bite, strike, or blow | N | Wikipedia article text or the paper it cites (bite force is reported for some species) | Derived from other stats if a formula applies, else category default |
 | `attacks_per_s` | Attacks per second in a fight | per second | Rarely published; occasional behavior studies | Category default. Ramming and crushing machines use the engine's own rate (see below) |
