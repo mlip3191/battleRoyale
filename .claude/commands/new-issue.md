@@ -17,7 +17,7 @@ What I want (may be empty): "$ARGUMENTS"
 - **Bug** (`type: bug`): something broken. Sections: What happened, What should happen, Steps to reproduce, Screenshots, Acceptance criteria.
 - **Chore** (`type: chore`): docs, process, setup, maintenance. Sections: What needs doing, Why, Acceptance criteria (done when).
 
-Use those exact section names as `### ` headings in the body, in that order, so the issue matches the web form. If an optional section has nothing to say, keep its heading and write `_No response_` under it.
+Use those exact section names as `### ` headings in the body, in that order, so the issue matches the web form. If an optional section has nothing to say, keep its heading and write `_No response_` under it. Start the title with the form name, like the web forms do: `Feature: ...`, `Bug: ...`, or `Chore: ...`.
 
 ## 3. Write acceptance criteria
 - Each one is a `- [ ]` checkbox that someone else can answer yes or no, with a concrete input and result (see the good-vs-weak table in `docs/issues.md`). Rewrite vague ones such as "works", "handles errors", or "is fast".

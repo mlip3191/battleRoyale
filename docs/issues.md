@@ -39,6 +39,8 @@ On GitHub, go to **Issues → New issue** and choose **Feature**, **Bug**, or **
 | Bug | Something is broken | What happened, what should happen, steps to reproduce, screenshots, acceptance criteria |
 | Chore | Docs, process, setup, maintenance | What needs doing, why, acceptance criteria (done when) |
 
+If you file an issue some other way (for example with `gh issue create`), use the same title prefix (`Feature:`, `Bug:`, or `Chore:`) and the same section headings as the matching form, so every issue reads the same way.
+
 Never paste keys, passwords, or course endpoint hosts into an issue, even inside an error message.
 
 ## Writing good acceptance criteria
