@@ -43,6 +43,8 @@ class SourceDocument:
     retrieved_at: datetime
     media_type: str
     body: bytes
+    pinned: bool
+    """True when the URL points at the exact revision that was downloaded."""
 
 
 # How long to wait before a retry: the server's Retry-After (capped) if given, else backoff.
@@ -104,6 +106,7 @@ async def fetch_article(
         retrieved_at=datetime.now(UTC),
         media_type="text/html",
         body=response.content,
+        pinned=revision is not None,
     )
 
 
@@ -133,6 +136,7 @@ async def fetch_wikidata(
         retrieved_at=datetime.now(UTC),
         media_type="application/json",
         body=json.dumps(entity, ensure_ascii=False).encode("utf-8"),
+        pinned=False,
     )
 
 
@@ -149,6 +153,7 @@ def save_raw(kb_dir: Path, fighter_id: str, name: str, document: SourceDocument)
         "license": document.license,
         "retrieved_at": document.retrieved_at.isoformat(),
         "media_type": document.media_type,
+        "pinned": document.pinned,
     }
     (folder / f"{name}.meta.json").write_text(
         json.dumps(details, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"

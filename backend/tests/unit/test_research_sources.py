@@ -114,6 +114,7 @@ async def test_an_article_with_no_revision_warns_that_its_link_is_not_pinned(
     with caplog.at_level("WARNING", logger="app.research.sources"):
         document = await fetch_article(client_with(handler), "Horse", sleep=no_sleep)
     assert document is not None and document.url.endswith("/wiki/Horse")
+    assert document.pinned is False
     assert "not pinned" in caplog.text
 
 
@@ -166,7 +167,8 @@ async def test_save_raw_writes_the_body_and_its_details(tmp_path: Path) -> None:
     path = save_raw(tmp_path, "horse", "wikipedia", document)
     assert path.read_bytes() == b"<p>x</p>"
     details = json.loads((tmp_path / "horse" / "wikipedia.meta.json").read_text(encoding="utf-8"))
-    assert set(details) == {"title", "url", "license", "retrieved_at", "media_type"}
+    assert set(details) == {"title", "url", "license", "retrieved_at", "media_type", "pinned"}
+    assert details["pinned"] is False
 
 
 def test_seed_list_matches_the_table_in_research_doc() -> None:
