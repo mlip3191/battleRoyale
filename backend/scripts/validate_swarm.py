@@ -130,7 +130,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     for name, fights in groups.items():
         if args.scenario not in ("all", name) or (args.scenario == "all" and name == "large"):
-            continue  # "large" runs only when asked for: it is the slowest group (about 8 s at 300 runs)
+            continue  # "large" is opt-in: the slowest group, about 8 s at 300 runs
         rows = [compare(label, a, na, b, nb, args.runs) for label, a, na, b, nb in fights]
         print(f"### {name}\n\n{table(rows)}\n")
     return 0
