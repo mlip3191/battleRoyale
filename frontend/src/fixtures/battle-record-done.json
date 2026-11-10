@@ -26,7 +26,7 @@
   },
   "stat_sheets": [
     {
-      "fighter_id": "grizzly-bear--adult-male",
+      "fighter_id": "grizzly-bear",
       "display_name": "Grizzly bear - adult male",
       "media_name": "grizzly bear",
       "category": "mammal",
@@ -531,9 +531,9 @@
   ],
   "assets": [
     {
-      "asset_id": "sprite-grizzly-bear--adult-male",
+      "asset_id": "sprite-grizzly-bear",
       "kind": "sprite",
-      "url": "/media/sprites/grizzly-bear--adult-male.png",
+      "url": "/media/sprites/grizzly-bear.png",
       "prompt_hash": "3f9a1c0e5b7d2a46",
       "fallback": false
     },
