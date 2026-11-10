@@ -22,6 +22,7 @@ def apply_migrations(connection: sqlite3.Connection, directory: Path = MIGRATION
 
 # Run one file and record it in a single transaction, so a failure leaves nothing behind.
 def _apply_one(connection: sqlite3.Connection, path: Path) -> None:
+    # executescript takes no parameters; the name is a repo file name and is escaped anyway.
     name = path.name.replace("'", "''")
     script = (
         f"BEGIN;\n{path.read_text(encoding='utf-8')}\n"

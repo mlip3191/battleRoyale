@@ -64,6 +64,11 @@ async def store_document(
         "SELECT content_hash FROM documents WHERE doc_id = ?", (record.doc_id,)
     ).fetchone()
     if row is not None and row[0] == digest:
+        with connection:  # same text, but its attribution may have changed
+            connection.execute(
+                "UPDATE documents SET title = ?, url = ?, license = ? WHERE doc_id = ?",
+                (record.title, record.url, record.license, record.doc_id),
+            )
         return False
     chunks = chunk_text(record.text)
     vectors = await embedder.embed([chunk.text for chunk in chunks]) if chunks else []

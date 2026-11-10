@@ -85,6 +85,11 @@ def test_chunks_keep_their_section_heading() -> None:
     ]
 
 
+def test_a_heading_ending_in_a_hash_keeps_it() -> None:
+    assert chunk_text("## Learning C#\nBody.")[0].heading == "Learning C#"
+    assert chunk_text("## Closed heading ##\nBody.")[0].heading == "Closed heading"
+
+
 def test_chunking_empty_text_and_bad_settings() -> None:
     assert chunk_text("   \n ") == []
     with pytest.raises(ValueError):
@@ -103,6 +108,24 @@ async def test_storing_a_document_twice_changes_nothing(database: sqlite3.Connec
         count(database, "chunks"),
         count(database, "chunks_vec"),
     ) == rows
+
+
+async def test_same_text_still_updates_its_attribution(database: sqlite3.Connection) -> None:
+    embedder = MockEmbedder()
+    await ensure_vector_table(database, embedder)
+    await store_document(database, RECORD, embedder)
+    newer = replace(RECORD, url="https://example.test/new", license="CC0 1.0")
+    assert await store_document(database, newer, embedder) is False
+    row = database.execute("SELECT url, license FROM documents").fetchone()
+    assert (row["url"], row["license"]) == ("https://example.test/new", "CC0 1.0")
+
+
+async def test_a_document_must_say_where_it_came_from(database: sqlite3.Connection) -> None:
+    embedder = MockEmbedder()
+    await ensure_vector_table(database, embedder)
+    with pytest.raises(sqlite3.IntegrityError):
+        await store_document(database, replace(RECORD, license=""), embedder)
+    assert count(database, "documents") == 0
 
 
 async def test_changed_text_replaces_the_old_passages(database: sqlite3.Connection) -> None:

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 CHUNK_CHARS = 800
 OVERLAP_CHARS = 100
-HEADING_LINE = re.compile(r"^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$")
+HEADING_LINE = re.compile(r"^#{1,6}[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$")
 
 
 @dataclass(frozen=True)

@@ -10,7 +10,8 @@ CREATE TABLE documents (
     license TEXT NOT NULL,
     retrieved_at TEXT NOT NULL,
     raw_text TEXT NOT NULL,
-    content_hash TEXT NOT NULL
+    content_hash TEXT NOT NULL,
+    CHECK (source <> '' AND url <> '' AND license <> '')
 );
 
 CREATE INDEX documents_by_fighter ON documents (fighter_id);
