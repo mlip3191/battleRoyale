@@ -1,0 +1,107 @@
+# Held-out set (G07). Never used to change constants. See docs/benchmark.md.
+
+matchups:
+- id: cnt-01
+  group: count
+  fighters:
+    - {entity: house-cat, count: 1, variant: null}
+    - {entity: gray-wolf, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: medium
+  expected_fair_count: [3, 12]
+  source: "obvious: a wolf is much heavier than a cat, so a handful to a dozen cats should even it"
+
+- id: cnt-04
+  group: count
+  fighters:
+    - {entity: duck, count: 1, variant: null}
+    - {entity: horse, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: medium
+  expected_fair_count: [20, 300]
+  source: "obvious: duck attacks are very weak, so it takes a large flock to matter"
+
+- id: doc-04
+  group: documented
+  fighters:
+    - {entity: honey-badger, count: 1, variant: null}
+    - {entity: king-cobra, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "0"
+  confidence: medium
+  source: "https://en.wikipedia.org/w/index.php?title=Honey_badger&oldid=1381719656"
+  quote: "such as cobras, young Central African rock python and South African springhare"
+
+- id: doc-05
+  group: documented
+  fighters:
+    - {entity: gray-wolf, count: 4, variant: null}
+    - {entity: horse, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "0"
+  confidence: medium
+  source: "https://en.wikipedia.org/w/index.php?title=Wolf&oldid=1384814257"
+  quote: "wild horses were among the most frequently consumed prey of North American wolves"
+
+- id: doc-10
+  group: documented
+  fighters:
+    - {entity: hippopotamus, count: 1, variant: null}
+    - {entity: african-lion, count: 1, variant: null}
+  terrain: shoreline
+  expected_winner: "0"
+  confidence: medium
+  source: "https://en.wikipedia.org/w/index.php?title=Hippopotamus&oldid=1382059641"
+  quote: "Cases where large lion prides have successfully preyed on adult hippos have been reported, but it is generally rare."
+
+- id: obv-01
+  group: obvious
+  fighters:
+    - {entity: house-cat, count: 1, variant: null}
+    - {entity: gray-wolf, count: 1, variant: null}
+  terrain: arena
+  expected_winner: "1"
+  confidence: high
+  source: "obvious: a wolf is many times heavier and hunts large prey"
+
+- id: obv-05
+  group: obvious
+  fighters:
+    - {entity: african-elephant, count: 1, variant: null}
+    - {entity: house-cat, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "0"
+  confidence: high
+  source: "obvious: the elephant is many times heavier"
+
+- id: obv-09
+  group: obvious
+  fighters:
+    - {entity: horse, count: 1, variant: null}
+    - {entity: duck, count: 1, variant: null}
+  terrain: arena
+  expected_winner: "0"
+  confidence: high
+  source: "obvious: a normal-sized horse is many times heavier than a duck"
+
+- id: obv-10
+  group: obvious
+  fighters:
+    - {entity: house-cat, count: 1, variant: null}
+    - {entity: roman-legionary, count: 1, variant: null}
+  terrain: arena
+  expected_winner: "1"
+  confidence: high
+  source: "obvious: an armed, armored soldier easily beats a cat"
+
+- id: obv-13
+  group: obvious
+  fighters:
+    - {entity: gray-wolf, count: 1, variant: null}
+    - {entity: african-elephant, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: high
+  source: "obvious: one wolf cannot hurt an adult bull elephant"
