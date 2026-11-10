@@ -112,21 +112,15 @@
       "note": "armor level 1: fur only."
     },
     "endurance_s": {
-      "value": 1200.0,
+      "value": 300.0,
       "unit": "s",
-      "source": {
-        "title": "Hunting behavior of gray wolves",
-        "url": "https://en.wikipedia.org/w/index.php?title=Hunting_behavior_of_gray_wolves&oldid=1358698251",
-        "quote": "can maintain rapid pursuit for at least 20 minutes",
-        "retrieved_at": "2026-11-10T00:00:00Z",
-        "license": "CC BY-SA 4.0"
-      },
-      "confidence": "medium",
-      "is_estimate": false,
-      "method": "hand_verified",
-      "low": 900.0,
-      "high": 1500.0,
-      "note": "Converted from 20 minutes. A minimum, and pursuit rather than fighting; range is +/-25%."
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "Category default (mammal). Wolves 'can maintain rapid pursuit for at least 20 minutes' (Hunting behavior of gray wolves), but that is a chase minimum, not fighting endurance."
     },
     "aggression_0_1": {
       "value": 0.5,
@@ -152,5 +146,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "3146b42b8402a58049dca339559b78749e90e855f4dda09b3e28a874be237162"
+  "sheet_hash": "7cfed2860912dd3010caaf89e1780ab378015328a17b670131b69ea2bb983a6d"
 }

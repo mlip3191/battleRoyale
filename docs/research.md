@@ -94,17 +94,17 @@ These are sourced or labeled estimates. For each one we use the first of these t
 | `top_speed_mps` | Fastest sustained movement on its home ground | m/s | Wikidata P2052; Wikipedia article text, usually in km/h or mph | Category default |
 | `attack_force_n` | Force of one bite, strike, or blow | N | Wikipedia article text or the paper it cites (bite force is reported for some species) | Derived from other stats if a formula applies, else category default |
 | `attacks_per_s` | Attacks per second in a fight | per second | Rarely published; occasional behavior studies | Category default. Ramming and crushing machines use the engine's own rate (see below) |
-| `reach_m` | How far from its body it can land an attack | m | Rarely stated directly; sometimes horn, tusk, or weapon length in article text | Derived from size if a formula applies, else category default |
+| `reach_m` | How far from its body it can land an attack | m | Rarely stated directly; a published horn, tusk, or weapon length counts as reach | Derived as `0.25 × size_m` (a lunging bite) when nothing better is published, else category default |
 | `endurance_s` | How long it can keep fighting. For a machine, its operating time before it stops | s | Rarely stated for animals. For vehicles, range and speed in article text | Vehicles: derived as range divided by speed, with the range extracted using a verified quote and cited in the `note`; if there is no quote, category default. Others: category default |
 
-Every value gets a `low` and `high`: the source's range if it gives one, otherwise ±10% (high confidence), ±25% (medium), or ±50% (low, which includes all estimates and assumptions).
+Every value gets a `low` and `high`: the source's range if it gives one, otherwise ±10% (high confidence), ±25% (medium), or ±50% (low, which includes all estimates and assumptions). When a source states a mean or typical figure, that figure is the `value`, and `low` and `high` keep the range.
 
 **Machines that ram or crush.** The engine computes their damage from mass and speed and uses a fixed attack rate (task F08), but the stat sheet still requires `attack_force_n` and `attacks_per_s`, and neither may be an `assumption` on a non-mythical fighter. Mark both `derived` and store:
 
 - `attack_force_n`: the force that gives the engine's ramming damage, `RAM_DAMAGE_PER_MOMENTUM × mass × speed ÷ DAMAGE_PER_NEWTON`, using the sheet's own mass and speed. For a fighter with `crushing`, use a speed of at least `CRUSH_MIN_SPEED_MPS`.
 - `attacks_per_s`: the value of `RAM_ATTACKS_PER_S`.
 
-The `note` names the formula or constant and says the engine works out the real hit from them. `RAM_DAMAGE_PER_MOMENTUM`, `RAM_ATTACKS_PER_S`, and `CRUSH_MIN_SPEED_MPS` are defined in PR #71 and are not on `main` yet. Derived ram/crush values do not count toward G05's limit of 2 estimates; every `category_default` value does.
+The `note` names the formula or constant and says the engine works out the real hit from them. `RAM_DAMAGE_PER_MOMENTUM`, `RAM_ATTACKS_PER_S`, and `CRUSH_MIN_SPEED_MPS` are defined in PR #71 and are not on `main` yet. Derived ram/crush values do not count toward G05's limit of 2 estimates; every `category_default` value does. The one exception, by PM decision on PR 139, is the duck and the honey badger, which may have 3 estimates, each labeled in its `note`.
 
 ## Category defaults
 
@@ -216,6 +216,7 @@ The sources approved in DECISIONS D-20. Licenses were checked against each sourc
 | **Wikidata** (live API) | Mass, length, height, and speed with property IDs and references; the "is this a real human?" check | CC0 | Entity link and property ID. Set `license` to `CC0 1.0` on these values |
 | **PanTHERIA** (Ecological Archives E090-184) | Adult body mass and head-body length for mammals | No copyright restrictions, per its metadata page; the authors ask to be cited | Cite Jones et al. 2009, *Ecology* 90:2648 |
 | **AnimalTraits** (animaltraits.org) | Body mass, including arthropods, reptiles, and birds | CC0 for the database; the paper is CC BY | Cite Herberstein et al. 2022, *Scientific Data* 9:265, and the original source the database names |
+| **Wroe, McHenry and Thomason 2005** (*Proc. R. Soc. B* 272:619, Table 1) | Canine bite force, one data row per animal, for hand-verified sheets | Publisher copyright, not an open license; approved by the PM for one short, attributed row per animal | Cite the paper and link its PMC page. Set `license` to say it is not openly licensed |
 | **TreeOfLife-10M taxonomy metadata** (`imageomics/TreeOfLife-10M`, optional) | Common name to scientific name and class, for matching names. The taxonomy CSV only, never the images | CC0 for the compilation; images vary, and we do not use them | Dataset name and link |
 
 **Not allowed:**
