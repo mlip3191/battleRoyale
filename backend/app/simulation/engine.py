@@ -132,6 +132,8 @@ def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] |
     Objects whose spines really hurt their attackers can end a fight by other means, so they are
     simulated.
     """
+    if max(side.count for side in sides) > c.SWARM_THRESHOLD:
+        return None  # swarm mode acts in coarse time steps, so the per-interval bound does not hold
     if any(side.spiky and side.damage > 0 for side in sides):
         return None  # spines that hurt can end a fight in ways the bound ignores
     stops = [
@@ -469,13 +471,23 @@ def _run_swarm(
             if sides[s].regen_per_s > 0 and n[s] > 0:
                 heal_hp = sides[s].regen_per_s * sides[s].max_hp * dt
                 front[s] = min(sides[s].max_hp, front[s] + heal_hp)
+        # Machines stop in order of their operating time, and the first to stop loses, as in the
+        # one-by-one engine (both stopping in the same step is not a mutual wipe-out).
+        for s in sorted((0, 1), key=lambda x: sides[x].endurance_s):
             if sides[s].body == Body.MACHINE and n[s] > 0 and t >= sides[s].endurance_s:
+                # It stopped at its exact operating time, which falls after the previous step.
+                stopped_at = sides[s].endurance_s
                 log(
                     FightEvent(
-                        t=t, type=EventType.KO, side=s, group_size=n[s], text_hint=OUT_OF_ACTION
+                        t=stopped_at,
+                        type=EventType.KO,
+                        side=s,
+                        group_size=n[s],
+                        text_hint=OUT_OF_ACTION,
                     )
                 )
                 n[s] = 0
+                return _outcome(n, stopped_at, events, record_events)
         if n[0] == 0 or n[1] == 0:
             return _outcome(n, t, events, record_events)
         # The sides act in random order each step, so equal swarms do not always wipe each
