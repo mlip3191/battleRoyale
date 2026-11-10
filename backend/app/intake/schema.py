@@ -5,7 +5,7 @@ and terrain, so these fields are deliberately lenient: a wrong type (say, a numb
 name belongs) is overridden by code instead of failing validation.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class ParsedFighter(BaseModel):
@@ -41,8 +41,9 @@ class ParsedMatchup(BaseModel):
 
     model_config = ConfigDict(extra="ignore", use_attribute_docstrings=True)
 
-    fighters: list[ParsedFighter] = Field(default_factory=list)
-    """Every side the model found (code rejects anything but two)."""
+    fighters: list[ParsedFighter]
+    """Every side the model found (code rejects anything but two). Required, so a bare `{}`
+    reply fails structured output instead of passing as an empty matchup."""
     terrain: str | None = None
     """The user's words for the battlefield, e.g. "the snow"; code maps it to a Terrain."""
     needs_clarification: Clarification | None = None
