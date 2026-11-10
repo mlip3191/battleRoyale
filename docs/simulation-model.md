@@ -93,6 +93,7 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 | mountain | water | x0.1 | x0.3 | x0.5 | stranded |
 | mountain | air | x0.9 | x1.0 | x0.95 | thin air and updrafts, small cost |
 | mountain | amphibious | x0.7 | x0.9 | x0.85 | rough rock is hard on soft bodies |
+
 - **`no_contest`.** If neither side can reach the other, `run()` returns immediately with outcome `no_contest`, zero probabilities, and an END event "no contest: neither can reach the other". The only unreachable pair is a flier against a strictly water-living fighter in open water (the swimmer is submerged and the flier is out of reach). On dry land a fish is stranded and reachable; in the shallows everyone is reachable.
 - **Morale, retreat, and flee.** When a side's lost share of total hit points passes its morale threshold (see constants), it retreats (RETREAT event) and stops attacking. If it is faster than the other side (after terrain) it escapes (FLEE event): the fight ends, the pursuer wins, and the runner counts as a survivor (a loss for its side, but alive). If it is not faster, it is caught and finishes the fight defenseless. Machines will never retreat (F08).
 - **Group tactics.** Two or more attackers on the same target (or, for ranged sides and swarms, a crowd of attackers) raise hit chance by `group_tactics_0_1 x 0.5`, capped by the normal hit-chance maximum.
