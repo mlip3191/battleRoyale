@@ -104,8 +104,6 @@ Here's a quick test: could a teammate who has never seen your idea tick each box
 | `accessibility` | A barrier for people with disabilities |
 | `re-review` | On a pull request: asks the QA bot to review it again after fixes |
 
-GitHub's built-in labels (`bug`, `enhancement`, `documentation`, `question`, `duplicate`, `invalid`, `wontfix`, `help wanted`) are left over from setup. Use the `type:` labels instead.
-
 ## How issues move across the board
 
 The GitHub Project board has five columns:
