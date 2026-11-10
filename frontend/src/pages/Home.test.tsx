@@ -202,3 +202,66 @@ test("every control is labeled and reachable with Tab", async () => {
     }
   }
 });
+
+test("Enter that confirms an IME word (Japanese, Chinese, Korean input) doesn't submit", () => {
+  const box = open();
+  fireEvent.change(box, { target: { value: "くま vs おおかみ" } });
+  fireEvent.keyDown(box, { key: "Enter", isComposing: true });
+  expect(api.postIntake).not.toHaveBeenCalled();
+});
+
+test("clarify without a pending id shows an error instead of sending a broken request", async () => {
+  api.postIntake.mockResolvedValue({ ...clarify, pending_id: null });
+  ask(open(), "a bear vs 6 wolves");
+  const card = await screen.findByRole("region", { name: "Quick question" });
+  fireEvent.click(within(card).getByRole("button", { name: "Grizzly bear" }));
+  expect(api.answerIntake).not.toHaveBeenCalled();
+  expect(within(card).getByRole("alert").textContent).toContain("got lost");
+});
+
+test("while an answer is on its way the buttons are off, so a double click sends one request", async () => {
+  api.postIntake.mockResolvedValue(clarify);
+  api.answerIntake.mockReturnValue(new Promise(() => {}));
+  ask(open(), "a bear vs 6 wolves");
+  const card = await screen.findByRole("region", { name: "Quick question" });
+  const option = within(card).getByRole("button", { name: "Grizzly bear" });
+  fireEvent.click(option);
+  fireEvent.click(option);
+  expect(api.answerIntake).toHaveBeenCalledTimes(1);
+  expect(option.hasAttribute("disabled")).toBe(true);
+  expect(within(card).getByRole("button", { name: "Sending…" })).toBeTruthy();
+});
+
+test("a failed answer keeps the question on screen with an error", async () => {
+  api.postIntake.mockResolvedValue(clarify);
+  api.answerIntake.mockRejectedValue(new Error("offline"));
+  ask(open(), "a bear vs 6 wolves");
+  const card = await screen.findByRole("region", { name: "Quick question" });
+  fireEvent.click(within(card).getByRole("button", { name: "Polar bear" }));
+  expect((await within(card).findByRole("alert")).textContent).toContain(
+    "couldn't reach the studio",
+  );
+  expect(within(card).getByText("Which kind of bear?")).toBeTruthy();
+  expect(
+    within(card)
+      .getByRole("button", { name: "Polar bear" })
+      .hasAttribute("disabled"),
+  ).toBe(false);
+});
+
+test("if starting the battle fails, the card shows an error and FIGHT! works again", async () => {
+  api.postIntake.mockResolvedValue(ok);
+  api.createBattle.mockRejectedValue(new Error("offline"));
+  ask(open(), "a grizzly bear vs 6 gray wolves");
+  const card = await screen.findByRole("region", { name: "Tonight's card" });
+  fireEvent.click(within(card).getByRole("button", { name: "FIGHT!" }));
+  expect((await within(card).findByRole("alert")).textContent).toContain(
+    "couldn't reach the studio",
+  );
+  expect(
+    within(card)
+      .getByRole("button", { name: "FIGHT!" })
+      .hasAttribute("disabled"),
+  ).toBe(false);
+  expect(screen.queryByText("broadcast page")).toBeNull();
+});

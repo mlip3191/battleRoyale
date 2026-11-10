@@ -37,11 +37,20 @@ export const TERRAINS = {
 const OFFLINE =
   "We couldn't reach the studio. Check your connection and try again.";
 
-// Where the desk is: waiting for input, talking to the backend, or showing intake's answer.
+const LOST_QUESTION =
+  "That question got lost on the way to the studio. Please send your matchup again.";
+
+// Where the desk is: waiting for input, talking to the backend, or showing intake's answer
+// (while an answer to its question is on its way, or after that answer failed).
 type Step =
   | { kind: "idle" }
   | { kind: "busy" }
-  | { kind: "result"; result: IntakeResult }
+  | {
+      kind: "result";
+      result: IntakeResult;
+      answering?: boolean;
+      error?: string;
+    }
   | { kind: "error"; message: string };
 
 export default function Home() {
@@ -62,6 +71,23 @@ export default function Home() {
     request
       .then((result) => setStep({ kind: "result", result }))
       .catch(() => setStep({ kind: "error", message: OFFLINE }));
+  };
+
+  // Answer the clarifying question. The card stays up (buttons off) while the answer is sent,
+  // and stays up with an error if it fails, so the question is never lost.
+  const answering = useRef(false);
+  const answer = (result: IntakeResult, reply: string) => {
+    if (answering.current) return;
+    if (!result.pending_id) {
+      setStep({ kind: "result", result, error: LOST_QUESTION });
+      return;
+    }
+    answering.current = true;
+    setStep({ kind: "result", result, answering: true });
+    answerIntake(result.pending_id, reply)
+      .then((next) => setStep({ kind: "result", result: next }))
+      .catch(() => setStep({ kind: "result", result, error: OFFLINE }))
+      .finally(() => (answering.current = false));
   };
 
   const submit = (e?: FormEvent) => {
@@ -90,7 +116,9 @@ export default function Home() {
           aria-describedby="matchup-hint"
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) submit(e);
+            // Enter fights; Shift+Enter adds a line; Enter that confirms an IME word does neither.
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing)
+              submit(e);
           }}
         />
         <span id="matchup-hint" className={styles.muted}>
@@ -132,9 +160,9 @@ export default function Home() {
       {result?.status === "clarify" && (
         <Clarify
           result={result}
-          onAnswer={(answer) =>
-            handle(answerIntake(result.pending_id ?? "", answer))
-          }
+          busy={step.kind === "result" && !!step.answering}
+          error={step.kind === "result" ? step.error : undefined}
+          onAnswer={(reply) => answer(result, reply)}
         />
       )}
       {result?.status === "ok" && result.matchup && (
@@ -164,9 +192,13 @@ export default function Home() {
 // One clarifying question: tap an option or type an answer.
 function Clarify({
   result,
+  busy,
+  error,
   onAnswer,
 }: {
   result: IntakeResult;
+  busy: boolean;
+  error?: string;
   onAnswer: (answer: string) => void;
 }) {
   const [own, setOwn] = useState("");
@@ -174,12 +206,14 @@ function Clarify({
     <section className={styles.card} aria-labelledby="clarify-title">
       <h2 id="clarify-title">Quick question</h2>
       <p>{result.question}</p>
+      {error && <ErrorPanel message={error} />}
       <div className={styles.row}>
         {result.options.map((option) => (
           <button
             key={option}
             type="button"
             className={styles.option}
+            disabled={busy}
             onClick={() => onAnswer(option)}
           >
             {option}
@@ -200,8 +234,8 @@ function Clarify({
           value={own}
           onChange={(e) => setOwn(e.target.value)}
         />
-        <button type="submit" className={styles.option}>
-          Answer
+        <button type="submit" className={styles.option} disabled={busy}>
+          {busy ? "Sending…" : "Answer"}
         </button>
       </form>
     </section>
