@@ -21,7 +21,7 @@ matchups:
   expected_winner: "1"
   confidence: medium
   expected_fair_count: [8, 40]
-  source: "obvious: a lion is dozens of times a cat's weight, and cats wound it slowly"
+  source: "obvious: a lion is many times heavier than a cat, and cats wound it slowly"
 
 - id: cnt-05
   group: count
@@ -209,4 +209,4 @@ matchups:
   terrain: forest
   expected_winner: "1"
   confidence: high
-  source: "obvious: a grizzly is more than twenty times heavier"
+  source: "obvious: a grizzly is many times heavier and far more heavily built"

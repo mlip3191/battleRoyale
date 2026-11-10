@@ -67,6 +67,12 @@ def test_fighters_come_from_the_seed_list() -> None:
 def test_entries_are_complete() -> None:
     for entry in ALL:
         assert len(entry["fighters"]) == 2, entry["id"]
+        for fighter in entry["fighters"]:
+            count = fighter["count"]
+            assert isinstance(count, int) and 1 <= count <= 10_000, entry["id"]
+            assert fighter["variant"] is None, entry["id"]  # default variant: plain slug
+        if entry["group"] == "count":
+            assert [f["count"] for f in entry["fighters"]] == [1, 1], entry["id"]
         assert entry["terrain"] in set(Terrain), entry["id"]
         assert entry["expected_winner"] in {"0", "1", "draw"}, entry["id"]
         assert entry["confidence"] in {"high", "medium"}, entry["id"]

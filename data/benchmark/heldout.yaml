@@ -10,7 +10,7 @@ matchups:
   expected_winner: "1"
   confidence: medium
   expected_fair_count: [3, 12]
-  source: "obvious: a wolf is several times a cat's weight, so a handful to a dozen cats should even it"
+  source: "obvious: a wolf is much heavier than a cat, so a handful to a dozen cats should even it"
 
 - id: cnt-04
   group: count
@@ -74,7 +74,7 @@ matchups:
   terrain: open_field
   expected_winner: "0"
   confidence: high
-  source: "obvious: the elephant is about a thousand times heavier"
+  source: "obvious: the elephant is many times heavier"
 
 - id: obv-09
   group: obvious
@@ -84,7 +84,7 @@ matchups:
   terrain: arena
   expected_winner: "0"
   confidence: high
-  source: "obvious: a normal-sized horse outweighs a duck by hundreds of times"
+  source: "obvious: a normal-sized horse is many times heavier than a duck"
 
 - id: obv-10
   group: obvious
