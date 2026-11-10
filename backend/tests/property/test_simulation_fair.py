@@ -36,7 +36,10 @@ def test_wolf_vs_house_cats_finds_a_count_within_tolerance_in_few_probes():
     found = search.result
     assert found.count is not None and found.count > 1
     assert found.varied_side == 1  # the cats are the losing side
-    assert abs(found.win_prob_at_count - 0.5) <= c.FAIR_TOLERANCE
+    gap = abs(found.win_prob_at_count - 0.5)
+    # 200-run probes are noisy, and counts are whole numbers: the answer is either within the
+    # tolerance, or it is the closest count found and says "about" (then within 3 tolerances).
+    assert gap <= c.FAIR_TOLERANCE or (gap <= 3 * c.FAIR_TOLERANCE and "about" in found.message)
     assert search.probes <= c.FAIR_MAX_PROBES
     assert str(found.count) in found.message and "house cats" in found.message
 

@@ -4,7 +4,7 @@ This is the answer to "where do your numbers come from?" Every constant lives in
 
 Honesty note: published studies say how strong a bite is or how fast an animal runs (that is what the stat sheets cite), but nothing in the literature gives a conversion from "newtons of bite force" to "hit points in a fight." Where a constant has no published source, it is labeled **assumption** below and was chosen so that results look sensible across the benchmark matchups. The benchmark (F07) is how we check that choice.
 
-## How a fight works (engine version 6)
+## How a fight works (engine version 7)
 
 1. **Sampling.** Each of the (default) 1,000 runs draws every stat uniformly between its `low` and `high` for each side, using a generator seeded from the matchup, both stat-sheet hashes, and `ENGINE_VERSION`. Uncertain inputs therefore spread the results.
 2. **Approach.** The sides start `START_DISTANCE_M` apart and close at the sum of their speeds. Each side can attack once the gap is within its own reach, so a long-reach attacker (a breath weapon) opens fire first.
@@ -16,7 +16,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 | Constant | Value | Meaning | Source / status |
 |---|---|---|---|
-| `ENGINE_VERSION` | 6 | Part of the seed; bump whenever results would change. | Bookkeeping |
+| `ENGINE_VERSION` | 7 | Part of the seed; bump whenever results would change. | Bookkeeping |
 | `TICK_S` | 0.1 s | Simulation time step. | Assumption (fine enough for attack rates up to ~10/s; event times only, the attack rate itself is exact) |
 | `MAX_FIGHT_S` | 600 s | A fight this long is a draw. | Design choice (DECISIONS / ARCHITECTURE §9) |
 | `MAX_LOG_EVENTS` | 300 | Cap on the replay log. | `SimulationResult` contract |
@@ -60,7 +60,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 - **Engagement limits (Lanchester linear law).** Each target can be attacked by at most `max_engagers = clamp((size_target / size_attacker)^2, 1, 8)` melee attackers at once. Extra attackers wait in a queue and join when a slot opens (an engaged attacker dies, or its target does). A bear (2.4 m) facing wolves (1.6 m) allows 2 wolves at a time; wolves facing the bear allow 1 each. Fighters with `weapon_ranged` use the **square law**: everyone engages. Lanchester (1916) derived both laws; the linear law is for fights where combatants pair off, the square law for fights where all concentrate fire.
 - **Size references.** For `size_reference` ("horse-sized duck"), the caller passes the reference entity's stat sheet to `run(..., reference_sheets=[...])`. Code computes `k = reference mass / own mass` from the sheets' central values. A resized fighter has mass ×k, hit points ∝ mass, strength and damage ×k^(2/3), size and reach ×k^(1/3), speed ×k^(1/6). Attack rate, armor, and behavior stats are unchanged (assumption). The result's first approach events carry the neutral phrase "scaled to horse size" for the UI and announcer. **Contract gap:** `SimulationResult` has no field for the scale factor; adding one is a `contract-change` for the PM, so for now `engine.scale_factors()` returns it and the phrase rides in `text_hint`.
-- **Swarm mode.** If either side has more than 200 individuals, each side becomes one group of identical fighters. Each 0.5 s step (longer later in the fight), the engaged attackers make attempts (binomial draws), hits are drawn, and damage is applied to one defender at a time, wasting overkill, as in the one-by-one engine. Sides act in random order within a step so mirror swarms are fair. Events are group events with `group_size`. Grouped fighters share one set of sampled stats, as individuals do.
+- **Swarm mode.** If either side has more than 200 individuals, each side becomes one group of identical fighters. Each 0.5 s step (longer later in the fight), the engaged attackers make attempts (binomial draws), hits are drawn, and the hits are spread at random over as many defenders as can be engaged at once (the same cap of 8 attackers per target as the one-by-one engine), so some defenders fall early and others late. Hits are whole hits, and overkill is wasted, as in the one-by-one engine. Sides act in random order within a step so mirror swarms are fair. Events are group events with `group_size`. Grouped fighters share one set of sampled stats, as individuals do.
 
 **Speed.** 1,000 runs of 100 v 1,000 take about 0.1 s, and 10,000 ants v 1 lion (a draw at 600 s, the slowest case) about 1 s. One-by-one fights cost roughly the number of attacks made, so big groups just under 200 per side are slow (about 17 s for 200 v 200 at 1,000 runs). Callers that run many fights (F05, F06) should lower the run count or the threshold for large groups.
 

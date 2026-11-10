@@ -456,6 +456,43 @@ def _apply_hits(
     return kills, left, full_hp - rest * dmg
 
 
+def _spread_hits(
+    hits: int,
+    dmg: float,
+    n: int,
+    front_hp: float,
+    full_hp: float,
+    g: int,
+    rng: random.Random,
+) -> tuple[int, int, float]:
+    """Spread `hits` at random over `g` parallel fronts of a bin of `n` fighters.
+
+    As in the one-by-one engine each hit picks its own defender, so some fronts take more hits
+    than others and die earlier. `front_hp` is the typical remaining hit points of a front.
+    Returns (kills, n_left, front_hp).
+    """
+    g = max(1, min(g, n))
+    if g == 1:
+        return _apply_hits(hits, dmg, n, front_hp, full_hp)
+    kills = 0
+    left_hits = hits
+    survivors_hp: list[float] = []  # fronts that took no kill
+    killers_hp: list[float] = []  # fronts that killed and started on a new fighter
+    for i in range(g):
+        mine = rng.binomialvariate(left_hits, 1.0 / (g - i)) if g - i > 1 else left_hits
+        left_hits -= mine
+        k, _, f = _apply_hits(mine, dmg, n, front_hp, full_hp)
+        kills += k
+        (killers_hp if k else survivors_hp).append(f)
+    kills = min(n, kills)
+    # A front that killed continues on a fresh fighter only if one is waiting; otherwise the
+    # front is gone and must not count towards the average.
+    alive_fronts = min(g, n - kills)
+    replaced = max(0, alive_fronts - len(survivors_hp))
+    hp_values = survivors_hp + killers_hp[:replaced]
+    return kills, n - kills, (sum(hp_values) / len(hp_values)) if hp_values else full_hp
+
+
 def _run_swarm(
     sides: list[Template],
     rng: random.Random,
@@ -474,6 +511,7 @@ def _run_swarm(
     bonus = [group_bonus(sides[0]), group_bonus(sides[1])]
     start_hp = [sides[s].max_hp * sides[s].count for s in (0, 1)]
     retreating: int | None = None
+    fronts = [1, 1]
     t = _tick_up(min(starts))
 
     while t <= c.MAX_FIGHT_S:
@@ -529,8 +567,10 @@ def _run_swarm(
                     text_hint=f"{plural_word(me.weapon_word)} land",
                 )
             )
-            kills, n[foe], front[foe] = _apply_hits(
-                hits, dmg[s], n[foe], front[foe], sides[foe].max_hp
+            g = n[foe] if me.ranged else min(n[foe], engaged)
+            fronts[foe] = max(1, min(g, n[foe]))
+            kills, n[foe], front[foe] = _spread_hits(
+                hits, dmg[s], n[foe], front[foe], sides[foe].max_hp, g, rng
             )
             if kills:
                 log(
@@ -542,7 +582,8 @@ def _run_swarm(
                         text_hint="go down" if kills > 1 else "goes down",
                     )
                 )
-            remaining = (n[foe] - 1) * sides[foe].max_hp + front[foe] if n[foe] else 0.0
+            g_eff = min(fronts[foe], n[foe])
+            remaining = (n[foe] - g_eff) * sides[foe].max_hp + g_eff * front[foe] if n[foe] else 0.0
             if (
                 retreating is None
                 and n[foe] > 0
@@ -581,8 +622,8 @@ def _run_swarm(
                         text_hint="spines jab back",
                     )
                 )
-                back, n[s], front[s] = _apply_hits(
-                    hits, spike[foe], n[s], front[s], sides[s].max_hp
+                back, n[s], front[s] = _spread_hits(
+                    hits, spike[foe], n[s], front[s], sides[s].max_hp, engaged, rng
                 )
                 if back:
                     log(
