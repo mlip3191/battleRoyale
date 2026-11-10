@@ -12,6 +12,7 @@ from app.models.simulation import EventType, FightEvent, SimulationResult
 from app.models.stats import StatSheet
 from app.models.terrain import Terrain
 from app.simulation import constants as c
+from app.simulation.decide import decide
 from app.simulation.fighters import (
     Template,
     apply_terrain,
@@ -490,14 +491,14 @@ def scale_factors(
 
 
 def _templates(
-    matchup: Matchup, sheets: list[StatSheet], rng: random.Random, ks: tuple[float, float]
+    matchup: Matchup,
+    sheets: list[StatSheet],
+    rng: random.Random,
+    ks: tuple[float, float],
+    use_terrain: bool = True,
 ) -> list[Template]:
-    return [
-        apply_terrain(
-            sample_template(sheets[s], matchup.fighters[s].count, rng, ks[s]), matchup.terrain
-        )
-        for s in (0, 1)
-    ]
+    sides = [sample_template(sheets[s], matchup.fighters[s].count, rng, ks[s]) for s in (0, 1)]
+    return [apply_terrain(t, matchup.terrain) for t in sides] if use_terrain else sides
 
 
 def _notes(matchup: Matchup, ks: tuple[float, float]) -> tuple[str, str]:
@@ -541,15 +542,35 @@ def _no_contest(
     )
 
 
+def _simulate(
+    matchup: Matchup,
+    sheets: list[StatSheet],
+    ks: tuple[float, float],
+    seed: int,
+    runs: int,
+    use_terrain: bool = True,
+) -> list[RunOutcome]:
+    """Run `runs` fights with a fixed seed (run k always uses the same random stream)."""
+    outcomes = []
+    for k in range(runs):
+        rng = run_rng(seed, k)
+        sides = _templates(matchup, sheets, rng, ks, use_terrain)
+        outcomes.append(run_once(sides, matchup.terrain, rng))
+    return outcomes
+
+
 def run(
     matchup: Matchup,
     stat_sheets: list[StatSheet],
     runs: int | None = None,
     reference_sheets: list[StatSheet | None] | None = None,
+    explain: bool = True,
 ) -> SimulationResult:
     """Run the fight many times and summarize it.
 
     `reference_sheets[s]` is the stat sheet of fighter s's `size_reference` entity, if any.
+    `explain=False` skips the deciding-factor analysis (about a dozen extra 200-run checks);
+    use it for quick probes such as the fair-fight search.
     """
     runs = get_settings().sim_runs if runs is None else runs
     if runs < 1:
@@ -559,11 +580,7 @@ def run(
     if not can_engage(matchup.terrain, stat_sheets[0].habitat, stat_sheets[1].habitat):
         return _no_contest(matchup, stat_sheets, seed, runs)
 
-    outcomes: list[RunOutcome] = []
-    for k in range(runs):
-        rng = run_rng(seed, k)
-        sides = _templates(matchup, stat_sheets, rng, ks)
-        outcomes.append(run_once(sides, matchup.terrain, rng))
+    outcomes = _simulate(matchup, stat_sheets, ks, seed, runs)
 
     wins = [sum(o.winner == s for o in outcomes) for s in (0, 1)]
     draws = runs - wins[0] - wins[1]
@@ -581,6 +598,21 @@ def run(
     sides = _templates(matchup, stat_sheets, rng, ks)
     replay = run_once(sides, matchup.terrain, rng, record_events=True, notes=_notes(matchup, ks))
 
+    if explain:
+        decision = decide(
+            matchup,
+            stat_sheets,
+            outcomes,
+            lambda m, sh, terrain, n, scaled=True: _simulate(
+                m, sh, ks if scaled else (1.0, 1.0), seed, n, terrain
+            ),
+            ks,
+        )
+        factor, explainer = decision.factor, decision.explainer
+    else:
+        # Probe-only: with explain=False this placeholder must never be shown to users.
+        factor, explainer = "mass_kg", "Deciding factor not computed."
+
     return SimulationResult(
         seed=seed,
         runs=runs,
@@ -593,7 +625,7 @@ def run(
         ),
         mean_duration_s=sum(o.duration_s for o in outcomes) / runs,
         outcome=outcome_name,
-        deciding_factor="mass_kg",
-        deciding_factor_explainer="Placeholder until the deciding-factor analysis (F05) is built.",
+        deciding_factor=factor,
+        deciding_factor_explainer=explainer,
         representative_log=replay.events,
     )

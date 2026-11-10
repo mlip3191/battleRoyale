@@ -11,7 +11,7 @@ NOISE = 0.02
 
 def win_share(count: int, foe_count: int) -> float:
     pack = make_sheet("pack", mass_kg=40, size_m=1.2)
-    result = run(matchup_of(count, foe_count), [pack, lion()], runs=500)
+    result = run(matchup_of(count, foe_count), [pack, lion()], runs=500, explain=False)
     return result.win_prob[0]
 
 

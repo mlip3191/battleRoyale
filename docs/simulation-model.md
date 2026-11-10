@@ -4,7 +4,7 @@ This is the answer to "where do your numbers come from?" Every constant lives in
 
 Honesty note: published studies say how strong a bite is or how fast an animal runs (that is what the stat sheets cite), but nothing in the literature gives a conversion from "newtons of bite force" to "hit points in a fight." Where a constant has no published source, it is labeled **assumption** below and was chosen so that results look sensible across the benchmark matchups. The benchmark (F07) is how we check that choice.
 
-## How a fight works (engine version 3)
+## How a fight works (engine version 4)
 
 1. **Sampling.** Each of the (default) 1,000 runs draws every stat uniformly between its `low` and `high` for each side, using a generator seeded from the matchup, both stat-sheet hashes, and `ENGINE_VERSION`. Uncertain inputs therefore spread the results.
 2. **Approach.** The sides start `START_DISTANCE_M` apart and close at the sum of their speeds, minus the longer reach.
@@ -16,7 +16,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 | Constant | Value | Meaning | Source / status |
 |---|---|---|---|
-| `ENGINE_VERSION` | 3 | Part of the seed; bump whenever results would change. | Bookkeeping |
+| `ENGINE_VERSION` | 4 | Part of the seed; bump whenever results would change. | Bookkeeping |
 | `TICK_S` | 0.1 s | Simulation time step. | Assumption (fine enough for attack rates up to ~10/s) |
 | `MAX_FIGHT_S` | 600 s | A fight this long is a draw. | Design choice (DECISIONS / ARCHITECTURE §9) |
 | `MAX_LOG_EVENTS` | 300 | Cap on the replay log. | `SimulationResult` contract |
@@ -39,6 +39,9 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `SWARM_STEP_GROWTH` | 0.1 | Swarm steps are at least this share of elapsed time. | **Assumption**: keeps 600 s swarm fights fast; early moments stay fine-grained |
 | `MORALE_FLOOR`, `MORALE_SPAN` | 0.2, 0.8 | A side retreats once it has lost `0.2 + 0.8 x aggression_0_1` of its total hit points (timid 20%, fully aggressive never). | **Assumption**; no source measures this. Aggression is itself an assumable stat on the sheet. |
 | `GROUP_TACTICS_BONUS` | 0.5 | With two or more attackers on one target, hit chance rises by up to this share at `group_tactics_0_1` = 1. | **Assumption** (cooperative hunting raises success in packs, e.g. Packer & Ruttan 1988, but no table gives a number) |
+| `DECIDING_RUNS` | 200 | Runs per one-at-a-time sensitivity check. | Design choice (ARCHITECTURE §9) |
+| `SURVIVOR_WEIGHT` | 0.5 | Weight of the favorite's average survivors next to its win share when ranking factors. | **Assumption**: keeps a lopsided fight (win share stuck at 100%) from hiding which factor matters most |
+| `MIN_EFFECT` | 0.02 | If no factor moves the favorite's score by at least this much, the verdict is "too close to call". | **Assumption** (about the noise of a 200-run check) |
 | `STRENGTH_SCALE_EXP` | 2/3 | Strength and damage scale as k^(2/3) when resized by k. | Muscle force follows cross-section area, so mass^(2/3): the square-cube law (Galileo 1638; Hill 1950, "The Dimensions of Animals and their Muscular Dynamics") |
 | `LENGTH_SCALE_EXP` | 1/3 | Size and reach scale as k^(1/3). | Geometric similarity: length = mass^(1/3) |
 | `SPEED_SCALE_EXP` | 1/6 | Top speed scales as k^(1/6). | Maximum running speed grows about mass^0.17 across mammals (Garland 1983, *J. Zoology*); simplified to 1/6 and applied to all movement. Garland also finds speed falls for the very largest animals, which this does not model |
@@ -87,9 +90,18 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 | mountain | water | x0.1 | x0.3 | x0.5 | stranded |
 | mountain | air | x0.9 | x1.0 | x0.95 | thin air and updrafts, small cost |
 | mountain | amphibious | x0.7 | x0.9 | x0.85 | rough rock is hard on soft bodies |
+
 - **`no_contest`.** If neither side can reach the other, `run()` returns immediately with outcome `no_contest`, zero probabilities, and an END event "no contest: neither can reach the other". The only unreachable pair is a flier against a strictly water-living fighter in open water (the swimmer is submerged and the flier is out of reach). On dry land a fish is stranded and reachable; in the shallows everyone is reachable.
 - **Morale, retreat, and flee.** When a side's lost share of total hit points passes its morale threshold (see constants), it retreats (RETREAT event) and stops attacking. If it is faster than the other side (after terrain) it escapes (FLEE event): the fight ends, the pursuer wins, and the runner counts as a survivor (a loss for its side, but alive). If it is not faster, it is caught and finishes the fight defenseless. Machines will never retreat (F08).
 - **Group tactics.** Two or more attackers on the same target (or, for ranged sides and swarms, a crowd of attackers) raise hit chance by `group_tactics_0_1 x 0.5`, capped by the normal hit-chance maximum.
+
+## The deciding factor and its explanation (F05)
+
+- **Method (one-at-a-time sensitivity).** For each of the ten stats, plus "numbers" and "terrain", we make that one factor equal for both sides, re-run the first 200 fights with the **same random seed**, and measure how much the favorite's score moves. The score is its win share plus half its average share of fighters left standing (so a fight where the favorite wins 100% either way still shows which factor mattered most). The largest mover is the deciding factor. Using the same seed means a factor that does nothing changes nothing, instead of adding noise.
+- **How a factor is equalized.** A stat becomes the average of the two sides' values and ranges. "Numbers" sets both counts to the smaller one. "Terrain" removes the terrain multipliers for both. Factors that are already equal are skipped. Results are cached within a run.
+- **Explanation.** A code template, never a language model. It quotes values straight from the stat sheets and the matchup counts, rounded to three significant figures; it never computes new numbers (a test checks that every number in an explainer is an input). If the deciding factor is aggression, teamwork, or armor, it adds "This rests on an assumption: behavior and armor are judgments, not measurements." Special cases: a stalemate (most runs drew) and "too close to call" (no factor moved the score by 0.02).
+- **Cost.** About a dozen extra 200-run simulations: 0.3 s for a 1 v 1, about 1 s for a 6 v 1, and about 3 s extra for 10,000 ants v 1 lion. `run(..., explain=False)` skips this analysis; use it for quick probes such as the fair-fight search.
+- **`summary()`** (`summary.py`) returns what the results page and the announcer need: win and draw percentages, average survivors, duration in seconds, the favorite (none for a draw, no contest, or an exact tie), and the deciding-factor text.
 
 ## Why probabilities are shown as "range"
 
@@ -97,7 +109,7 @@ The 95% interval is a Wilson score interval on the share of runs won. Because ev
 
 ## Not modeled yet
 
-Deciding-factor analysis (F05), machines and abilities (F08), and fatigue from `endurance_s`. The placeholder `deciding_factor` is always `mass_kg` (except `habitat` for a `no_contest`).
+Machines and abilities (F08, which will add "abilities" to the deciding-factor check), and fatigue from `endurance_s`. A `no_contest` reports `habitat` as its deciding factor.
 
 ## References
 
