@@ -1,0 +1,151 @@
+{
+  "fighter_id": "horse",
+  "display_name": "Horse",
+  "media_name": "horse",
+  "category": "mammal",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "hooves",
+    "teeth"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 500.0,
+      "unit": "kg",
+      "source": {
+        "title": "Horse",
+        "url": "https://en.wikipedia.org/w/index.php?title=Horse&oldid=1384350711",
+        "quote": "weighing from 500 to 600 kilograms (1,100 to 1,320 lb)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 500.0,
+      "high": 600.0,
+      "note": null
+    },
+    "size_m": {
+      "value": 1.57,
+      "unit": "m",
+      "source": {
+        "title": "Horse",
+        "url": "https://en.wikipedia.org/w/index.php?title=Horse&oldid=1384350711",
+        "quote": "usually start at about 15.2 hands (62 inches, 157 cm)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 1.57,
+      "high": 1.73,
+      "note": "Shoulder height; the article gives no body length. High is the taller end of the same sentence."
+    },
+    "top_speed_mps": {
+      "value": 13.33,
+      "unit": "m/s",
+      "source": {
+        "title": "Horse",
+        "url": "https://en.wikipedia.org/w/index.php?title=Horse&oldid=1384350711",
+        "quote": "the gallop, which averages 40 to 48 kilometres per hour (25 to 30 mph)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 11.11,
+      "high": 13.33,
+      "note": "Converted from 48 km/h, low from 40 km/h."
+    },
+    "attack_force_n": {
+      "value": 1924.0,
+      "unit": "N",
+      "source": {
+        "title": "Säkra häststall – hästens sparkbelastning på inredning och byggnadskonstruktioner",
+        "url": "https://pub.epsilon.slu.se/8162/",
+        "quote": "90% of the impacts had a maximum value below 1924 N and the highest one was 8722 N.",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "No license stated; one attributed sentence cited"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 1443.0,
+      "high": 2405.0,
+      "note": "von Wachenfelt, Nilsson and Ventorp 2011, SLU report 2011:20, English conclusions. About 500 stall kicks against a measuring wall, often unprovoked, not fighting; the peak was 8722 N and the authors think horses can kick harder. Range is +/-25%."
+    },
+    "attacks_per_s": {
+      "value": 1.5,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.75,
+      "high": 2.25,
+      "note": "No published attack rate found for this animal; category default."
+    },
+    "reach_m": {
+      "value": 0.39,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.29,
+      "high": 0.49,
+      "note": "reach = 0.25 x size_m, from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.15,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.075,
+      "high": 0.225,
+      "note": "armor level 1: fur, feathers, or bare skin."
+    },
+    "endurance_s": {
+      "value": 300.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "Category default (mammal). The gallop distance in the Gallop article is not fighting endurance (D-47)."
+    },
+    "aggression_0_1": {
+      "value": 0.3,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.15,
+      "high": 0.45,
+      "note": "aggression level 2: flees first, fights when cornered."
+    },
+    "group_tactics_0_1": {
+      "value": 0.3,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.15,
+      "high": 0.45,
+      "note": "group tactics level 2: lives in groups, but responds to danger by running and kicks alone."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "2ae8a3aea99c96ad4ab7ed50afd3527929be4229484eac9e864c4db25d5e0d3a"
+}

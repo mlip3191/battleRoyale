@@ -8,6 +8,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.models.stats import ASSUMABLE_STATS, StatName, StatSheet, StatValue
+from app.research.bite_force import average_carnivore_bite_n
 from app.research.sheet_hash import compute_sheet_hash
 
 FIGHTERS_DIR = Path(__file__).parents[3] / "data" / "seed" / "fighters"
@@ -15,6 +16,7 @@ SHEET_PATHS = sorted(FIGHTERS_DIR.glob("*.json"))
 PHYSICAL_STATS = [name for name in StatName if name not in ASSUMABLE_STATS]
 RUBRIC_NOTE = re.compile(r"^(aggression|group tactics|armor|durability) level (\d|M): \S")
 MAX_ESTIMATES = 2
+EXCEPTIONS = {"duck": 3, "honey-badger": 3}  # PM decision D-47 (2): these two may have 3
 
 # Units a quote may use: as stored, km/h for m/s, cm for m, minutes for s, tonnes for kg, and
 # kilograms of force for newtons.
@@ -84,10 +86,23 @@ class TestSeedSheet:
             assert reach.low == pytest.approx(0.75 * formula, abs=0.006)
             assert reach.high == pytest.approx(1.25 * formula, abs=0.006)
 
+    def test_derived_attack_force_comes_from_the_code_fit(self, path: Path) -> None:
+        sheet = load_sheet(path)
+        force = sheet.stats[StatName.ATTACK_FORCE]
+        if force.method == "derived" and "bite_force" in (force.note or ""):
+            expected = average_carnivore_bite_n(sheet.stats[StatName.MASS].value)
+            assert force.value == pytest.approx(expected, abs=0.5)
+
     def test_at_most_two_physical_estimates(self, path: Path) -> None:
         sheet = load_sheet(path)
         estimates = [str(n) for n in PHYSICAL_STATS if sheet.stats[n].is_estimate]
-        assert len(estimates) <= MAX_ESTIMATES, f"{path.stem} estimates: {estimates}"
+        allowed = EXCEPTIONS.get(path.stem, MAX_ESTIMATES)
+        assert len(estimates) <= allowed, f"{path.stem} estimates: {estimates}"
+
+
+def test_the_estimate_exception_covers_only_duck_and_honey_badger() -> None:
+    assert set(EXCEPTIONS) == {"duck", "honey-badger"}
+    assert all(limit == MAX_ESTIMATES + 1 for limit in EXCEPTIONS.values())
 
 
 def test_hand_verified_without_a_source_is_rejected() -> None:

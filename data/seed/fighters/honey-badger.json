@@ -1,0 +1,139 @@
+{
+  "fighter_id": "honey-badger",
+  "display_name": "Honey badger",
+  "media_name": "honey badger",
+  "category": "mammal",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "teeth",
+    "claws"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 16.0,
+      "unit": "kg",
+      "source": {
+        "title": "Honey badger",
+        "url": "https://en.wikipedia.org/w/index.php?title=Honey_badger&oldid=1381719656",
+        "quote": "In Africa, males weigh 9 to 16 kg (20 to 35 lb)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 9.0,
+      "high": 16.0,
+      "note": "Adult males in Africa. Upper end of the stated range; the source gives no mean."
+    },
+    "size_m": {
+      "value": 0.77,
+      "unit": "m",
+      "source": {
+        "title": "Honey badger",
+        "url": "https://en.wikipedia.org/w/index.php?title=Honey_badger&oldid=1381719656",
+        "quote": "55–77 cm (22–30 in) in body length",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 0.55,
+      "high": 0.77,
+      "note": "Body length without the tail; the source does not split by sex. Upper end of the stated range; the source gives no mean."
+    },
+    "top_speed_mps": {
+      "value": 12.0,
+      "unit": "m/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 6.0,
+      "high": 18.0,
+      "note": "No citable measured top speed found; sources online name no study. Category default."
+    },
+    "attack_force_n": {
+      "value": 272.0,
+      "unit": "N",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 136.0,
+      "high": 408.0,
+      "note": "force = average carnivore canine bite for this mass, computed in code by app.research.bite_force from the 31 living species in Wroe et al. 2005 Table 1 (https://pmc.ncbi.nlm.nih.gov/articles/PMC1564077/). Range is +/-50%."
+    },
+    "attacks_per_s": {
+      "value": 1.5,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.75,
+      "high": 2.25,
+      "note": "No published attack rate found for this animal; category default."
+    },
+    "reach_m": {
+      "value": 0.19,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.14,
+      "high": 0.24,
+      "note": "reach = 0.25 x size_m (lunging bite), from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.3,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.15,
+      "high": 0.45,
+      "note": "armor level 2: loose tough skin."
+    },
+    "endurance_s": {
+      "value": 300.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "No published figure for how long it can keep fighting; category default."
+    },
+    "aggression_0_1": {
+      "value": 0.9,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.45,
+      "high": 1.0,
+      "note": "aggression level 5: attacks animals larger than itself."
+    },
+    "group_tactics_0_1": {
+      "value": 0.1,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.05,
+      "high": 0.15,
+      "note": "group tactics level 1: solitary, fights alone."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "626b608f56818ac7b1e44a7487fa29a22062495b508bac52cea52cea2bf031c1"
+}
