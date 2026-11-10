@@ -71,8 +71,29 @@ export function getBattle(id: string) {
   return later(battleAt(id, Date.now() - started.get(id)!));
 }
 
-export const showcase = () =>
-  later([{ battle_id: done.battle_id, title: done.matchup.raw_text }]);
+// The five planned showcase battles (PRODUCT_SPEC §9) until Gunnar's G08 saves the real ones.
+// Every id plays the same pretend battle in fixtures mode.
+export const SHOWCASE: { battle_id: string; title: string }[] = [
+  {
+    battle_id: "showcase-horses-duck",
+    title: "100 duck-sized horses vs 1 horse-sized duck",
+  },
+  {
+    battle_id: done.battle_id,
+    title: "Grizzly bear vs 6 gray wolves (forest)",
+  },
+  { battle_id: "showcase-badger-cobra", title: "Honey badger vs king cobra" },
+  {
+    battle_id: "showcase-legionary-gorilla",
+    title: "Roman legionary vs gorilla",
+  },
+  {
+    battle_id: "showcase-dragon-tank",
+    title: "A dragon vs a main battle tank (open field)",
+  },
+];
+
+export const showcase = () => later(SHOWCASE);
 
 export const searchFighters = (q: string) =>
   later(

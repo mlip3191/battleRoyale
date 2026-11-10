@@ -32,7 +32,9 @@ test("every page has the broadcast header", () => {
 
 test("/ renders the home page", () => {
   at("/");
-  expect(screen.getByRole("heading", { name: "Battle Royale" })).toBeTruthy();
+  expect(
+    screen.getByRole("heading", { level: 1, name: "Who would win?" }),
+  ).toBeTruthy();
 });
 
 test("/battle/:id renders the broadcast frame", async () => {

@@ -115,6 +115,36 @@ describe("placeholders when images are missing", () => {
     expect(wolves.placeholder).toEqual({ color: SIDE_COLORS[1], initial: "G" });
   });
 
+  test("names match whole words only: an ant does not take an elephant's sprite", () => {
+    const antVsElephant = [{ entity: "ant" }, { entity: "elephant" }];
+    const elephantOnly = [
+      sprite("sprite-elephant", "/media/sprites/elephant.png"),
+    ];
+    expect(spriteUrls(elephantOnly, antVsElephant)).toEqual([
+      null,
+      "/media/sprites/elephant.png",
+    ]);
+    const giant = [sprite("s1", "/media/sprites/giant-squid.png")];
+    expect(spriteUrls(giant, antVsElephant)).toEqual([null, null]);
+  });
+
+  test("when two names fit one sprite, the more specific name owns it", () => {
+    const bears = [{ entity: "bear" }, { entity: "polar bear" }];
+    const polarOnly = [sprite("s1", "/media/sprites/polar-bear.png")];
+    expect(spriteUrls(polarOnly, bears)).toEqual([
+      null,
+      "/media/sprites/polar-bear.png",
+    ]);
+    const both = [
+      sprite("s1", "/media/sprites/polar-bear.png"),
+      sprite("s2", "/media/sprites/bear.png"),
+    ];
+    expect(spriteUrls(both, bears)).toEqual([
+      "/media/sprites/bear.png",
+      "/media/sprites/polar-bear.png",
+    ]);
+  });
+
   test("two unnamed sprites are taken in fighter order", () => {
     const two = [sprite("s1", "/media/a.png"), sprite("s2", "/media/b.png")];
     expect(spriteUrls(two, fighters)).toEqual(["/media/a.png", "/media/b.png"]);

@@ -1,5 +1,5 @@
 // The broadcast frame's building blocks, shared by every page.
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "./broadcast.module.css";
 
@@ -24,15 +24,35 @@ export function Header() {
 }
 
 // A TV-style name banner along the bottom third of the screen.
-export function LowerThird({ children }: { children: ReactNode }) {
-  return <div className={styles.lowerThird}>{children}</div>;
+// Pass decorative when a heading already says the same thing, so screen readers hear it once.
+export function LowerThird({
+  children,
+  decorative = false,
+}: {
+  children: ReactNode;
+  decorative?: boolean;
+}) {
+  return (
+    <div className={styles.lowerThird} aria-hidden={decorative || undefined}>
+      {children}
+    </div>
+  );
 }
 
 // A crawling news ticker shown while research runs; screen readers hear each update.
+// The status region is always rendered and starts empty; only its text changes, written after
+// mount, so screen readers already know the region when the first message arrives.
+// An empty message hides the ticker bar but keeps the region in place.
 export function LoadingTicker({ message }: { message: string }) {
+  const text = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (text.current) text.current.textContent = message;
+  }, [message]);
   return (
-    <div className={styles.ticker} role="status" aria-live="polite">
-      <span className={styles.tickerText}>{message}</span>
+    <div role="status" aria-live="polite">
+      <div className={styles.ticker}>
+        <span ref={text} className={styles.tickerText} />
+      </div>
     </div>
   );
 }
