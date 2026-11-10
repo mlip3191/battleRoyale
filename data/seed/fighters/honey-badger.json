@@ -12,21 +12,21 @@
   "lore": null,
   "stats": {
     "mass_kg": {
-      "value": 16.0,
+      "value": 9.0,
       "unit": "kg",
       "source": {
         "title": "Honey badger",
         "url": "https://en.wikipedia.org/w/index.php?title=Honey_badger&oldid=1381719656",
-        "quote": "In Africa, males weigh 9 to 16 kg (20 to 35 lb)",
+        "quote": "The mean weight of adult honey badgers from different areas has been reported at anywhere between 6.4 to 12 kg (14 to 26 lb), with a median of roughly 9 kg (20 lb), per various studies.",
         "retrieved_at": "2026-11-10T00:00:00Z",
         "license": "CC BY-SA 4.0"
       },
       "confidence": "high",
       "is_estimate": false,
       "method": "hand_verified",
-      "low": 9.0,
-      "high": 16.0,
-      "note": "Adult males in Africa. Upper end of the stated range; the source gives no mean."
+      "low": 6.4,
+      "high": 12.0,
+      "note": "Adult honey badgers of both sexes, from different areas. Value is the median the source states; low and high are the range of reported means. Males in Africa are heavier (9 to 16 kg)."
     },
     "size_m": {
       "value": 0.77,
@@ -54,18 +54,18 @@
       "method": "category_default",
       "low": 6.0,
       "high": 18.0,
-      "note": "No citable measured top speed found; sources online name no study. Category default."
+      "note": "No citable measured top speed found in the approved sources. Category default; one of the honey badger's 3 allowed estimates (D-47)."
     },
     "attack_force_n": {
-      "value": 272.0,
+      "value": 192.0,
       "unit": "N",
       "source": null,
       "confidence": "low",
       "is_estimate": false,
       "method": "derived",
-      "low": 136.0,
-      "high": 408.0,
-      "note": "force = average carnivore canine bite for this mass, computed in code by app.research.bite_force from the 31 living species in Wroe et al. 2005 Table 1 (https://pmc.ncbi.nlm.nih.gov/articles/PMC1564077/). Range is +/-50%."
+      "low": 96.0,
+      "high": 288.0,
+      "note": "force = 50.57 x mass_kg^0.6072, the average carnivore canine bite for this mass, computed in code by app.research.bite_force from the 31 living species in Wroe et al. 2005 Table 1 (https://pmc.ncbi.nlm.nih.gov/articles/PMC1564077/). Range is +/-50%."
     },
     "attacks_per_s": {
       "value": 1.5,
@@ -135,5 +135,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "626b608f56818ac7b1e44a7487fa29a22062495b508bac52cea52cea2bf031c1"
+  "sheet_hash": "1d220fd35e43f5002b97cdd9d97a59bd1729c842147d81993e952abdd0a6119c"
 }

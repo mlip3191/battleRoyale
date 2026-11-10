@@ -89,7 +89,8 @@ class TestSeedSheet:
     def test_derived_attack_force_comes_from_the_code_fit(self, path: Path) -> None:
         sheet = load_sheet(path)
         force = sheet.stats[StatName.ATTACK_FORCE]
-        if force.method == "derived" and "bite_force" in (force.note or ""):
+        if path.stem == "honey-badger":  # its bite is the one computed by app.research.bite_force
+            assert force.method == "derived"
             expected = average_carnivore_bite_n(sheet.stats[StatName.MASS].value)
             assert force.value == pytest.approx(expected, abs=0.5)
 

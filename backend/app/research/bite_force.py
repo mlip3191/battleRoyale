@@ -1,4 +1,8 @@
-"""Average carnivore bite force for a body mass, fitted in code to Wroe et al. 2005 (D-47)."""
+"""Average carnivore bite force for a body mass, fitted in code to Wroe et al. 2005 (D-47).
+
+The 31-row table below is from Wroe, McHenry and Thomason 2005, "Bite club", Proc. R. Soc. B
+272:619, Table 1. It is publisher-copyrighted and used with PM approval (D-47, PR 148).
+"""
 
 import math
 

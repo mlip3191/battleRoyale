@@ -14,7 +14,7 @@ def test_the_table_has_the_31_living_species() -> None:
     assert len(WROE_2005_LIVING) == 31
 
 
-def test_the_fit_matches_the_published_relationship() -> None:
+def test_the_fit_over_the_31_table_rows_is_pinned() -> None:
     assert SCALE == pytest.approx(50.57, abs=0.01)
     assert EXPONENT == pytest.approx(0.6072, abs=0.0001)
 

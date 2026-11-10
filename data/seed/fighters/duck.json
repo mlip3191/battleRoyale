@@ -11,21 +11,21 @@
   "lore": null,
   "stats": {
     "mass_kg": {
-      "value": 1.6,
+      "value": 1.14,
       "unit": "kg",
       "source": {
-        "title": "Mallard",
-        "url": "https://en.wikipedia.org/w/index.php?title=Mallard&oldid=1383243084",
-        "quote": "weighing 0.7–1.6 kg (1.5–3.5 lb)",
+        "title": "Air speeds of migrating birds observed by ornithodolite and compared with predictions from flight theory",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3730693/",
+        "quote": "Anas platyrhynchos Mallard 1.14 0.890 0.107 19.7 1.55 21",
         "retrieved_at": "2026-11-10T00:00:00Z",
-        "license": "CC BY-SA 4.0"
+        "license": "CC BY 3.0"
       },
       "confidence": "high",
       "is_estimate": false,
       "method": "hand_verified",
       "low": 0.7,
       "high": 1.6,
-      "note": "Upper end of the stated range; the source gives no mean."
+      "note": "Mean mass of the mallards measured (Table 1, the same row as the top speed). Low and high are the Mallard article's 0.7-1.6 kg range (https://en.wikipedia.org/w/index.php?title=Mallard&oldid=1383243084)."
     },
     "size_m": {
       "value": 0.65,
@@ -59,7 +59,7 @@
       "method": "hand_verified",
       "low": 17.73,
       "high": 21.67,
-      "note": "Airspeed in steady flight (Table 1); range is the standard +/-10%."
+      "note": "Airspeed in steady flight (Table 1); range is the standard +/-10%. A flight speed, used on every terrain; revisit when the showcases are calibrated."
     },
     "attack_force_n": {
       "value": 30.0,
@@ -140,5 +140,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "0e63f2023c350df00685bb2cae701e538dd018da47bf9a937767b576d3834e1f"
+  "sheet_hash": "6a950c3d22f13d1ca4b66db9c29324ddbf9dcb16727a7ce7f9543a99c25a364e"
 }
