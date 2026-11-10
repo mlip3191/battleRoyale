@@ -11,6 +11,7 @@ from app.models.terrain import Terrain
 
 ROOT = Path(__file__).parents[3]
 BENCHMARK_DIR = ROOT / "data" / "benchmark"
+# Reads the seed table in docs/research.md, so update this if that table changes shape.
 SLUG_ROW = re.compile(r"^\| \d+ \| `([a-z-]+)` \|", re.MULTILINE)
 MACHINES_AND_OBJECTS = {
     "main-battle-tank",

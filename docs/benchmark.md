@@ -43,7 +43,8 @@ The product target is at least 80% favorite-correct on the obvious cases in the 
 ## Known weaknesses
 
 - **Predation is not a duel.** Most documented cases say one animal preys on another, usually under conditions that favor the hunter. The benchmark treats that as evidence for a one-on-one fight, which is weaker than a direct statement, so most are `medium` confidence.
-- **Some quotes are about a broader group.** `doc-01` is about brown bears against wolf packs, `doc-04` is about cobras in general rather than the king cobra, and `doc-09` lists horses among livestock eaten "if given the opportunity".
+- **Some quotes are indirect or about a broader group.** `doc-01` is about brown bears against wolf packs, `doc-03` lists lions among several predators of the honey badger, `doc-04` is about cobras in general rather than the king cobra, `doc-05` is about wolves preying on wild horses, `doc-06` is about shepherd dogs rather than golden retrievers, `doc-09` lists horses among livestock eaten "if given the opportunity", and `doc-10` says lion prides rarely kill adult hippos, which is thin support for a one-on-one result.
+- **The random draw left two gaps in the held-out set.** `obv-01` and `cnt-01` are both house cat vs gray wolf, so they test nearly the same thing, and none of the 5 held-out obvious cases involves an object or machine. Replacing entries by hand would undo the point of the draw, so they stay.
 - **Count ranges are judgment calls.** No source measures how many house cats equal a wolf, so the ranges are deliberately wide.
 - **Fighters without hand-verified sheets.** Only 15 fighters get hand-verified sheets (G05). Matchups using the others can only be scored with research sheets or skipped.
 - **The set is small.** With 5 obvious cases held out, one miss moves that score by 20 points.
