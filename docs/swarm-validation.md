@@ -4,7 +4,9 @@ Fights where either side has more than 200 individuals run in **swarm mode** (ea
 
 Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (about 20 s; `--scenario cats` for one group, `--runs` to change the 600 runs per engine). Each fight is simulated twice with the same sheets, once forced through each engine.
 
-## Results (600 runs each; win-share noise is about ±0.02)
+## Results (600 runs each)
+
+Noise: a single win share at 600 runs near 50/50 has a 95% noise of about ±0.04, so the **gap between two such results is only reliable to about ±0.06**. The gaps quoted as "within ±0.02" below are the observed gaps, not the noise. Gunnar's check at 4,000 runs found the mirror gaps from 5 v 5 to 50 v 50 were 0.006 or less, so the conclusion holds, but a single gap of +0.06 (such as 10 v 2 cats) is about the size of the noise.
 
 | Kind of fight | Win share: swarm minus one-by-one | Duration | Survivors |
 |---|---|---|---|
@@ -13,7 +15,7 @@ Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (ab
 | **Ranged** (10-50 archers vs half as many wolves) | within +0.02 | within ~10% | the loser's survivors are 50-60% lower in swarm |
 | **Many weak vs few strong** (10-100 cats vs a fifth as many wolves) | **+0.06 to +0.22** (swarm favors the crowd) | within ~15% | swarm has more crowd survivors and fewer wolves |
 
-Full tables are printed by the script. Speed is the point of swarm mode: a 100 v 100 fight takes 2.8 s per 1,000 runs one by one and 0.19 s in swarm; 200 v 200 takes about 17 s one by one.
+Full tables are printed by the script. Speed is the point of swarm mode, but timings depend on the machine. On the author's laptop a 100 v 100 fight takes about 3 s per 1,000 runs one by one and 0.2 s in swarm; 200 v 200 takes about 17 s one by one. On Gunnar's machine 100 v 100 took about 9.8 s one by one and 0.67 s in swarm (about 3x slower, with the same ratio between the modes). Treat the stage budget in #91 with the slower numbers.
 
 ## Why they differ
 
@@ -21,6 +23,21 @@ Full tables are printed by the script. Speed is the point of swarm mode: a 100 v
 - **Swarm mode focuses every hit on one defender at a time.** Kills start immediately and both sides shrink together (like a continuous Lanchester decay), which makes fights longer and leaves fewer survivors on both sides.
 - **For a crowd against a few strong fighters** the focusing matters most: swarm mode lets dozens of cats pile onto one wolf at a time (more than the 8 that physically fit around it), so wolves die early and stop killing cats. In the one-by-one engine the cats spread over all wolves, who die later and kill many cats first.
 - **Where the models agree** is where focusing is physically forced anyway: one big target, or ranged fire.
+
+## Larger fights (above the swarm threshold)
+
+Every scenario above is 125 per side or fewer, but swarm mode only runs above 200 per side. Gunnar ran larger fights (one-by-one vs swarm, win share of the first side):
+
+| Fight | Runs | One-by-one | Swarm | Gap |
+|---|---|---|---|---|
+| 250 v 250 wolves | 300 | 0.467 | 0.473 | +0.007 |
+| 312 v 250 wolves | 200 | 0.600 | 0.600 | 0.000 |
+| 300 wolves v 1 bear | 300 | 1.000 | 1.000 | 0.000 |
+| 300 cats v 60 wolves | 300 | 0.427 | 0.623 | **+0.197** |
+| 600 cats v 120 wolves | 150 | 0.533 | 0.693 | **+0.160** |
+| 400 archers v 200 wolves | 150 | 0.973 | 0.980 | +0.007 |
+
+The conclusions hold at these sizes: matched, one-big-target and ranged fights agree, and a crowd of weak fighters against a few strong ones is overrated by 0.16 to 0.20.
 
 ## What this means for the app
 
