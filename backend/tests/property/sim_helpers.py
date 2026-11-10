@@ -43,13 +43,18 @@ def with_stat(sheet: StatSheet, name: StatName, value: float) -> StatSheet:
     return StatSheet.model_validate(data)
 
 
-def make_sheet(name: str, spread: float = 0.2, **stats: float) -> StatSheet:
+def make_sheet(
+    name: str, spread: float = 0.2, habitat: str | None = None, **stats: float
+) -> StatSheet:
     """A stand-in fighter: the gray wolf with some stats replaced (range = value +/- spread).
 
     Real sheets arrive with G05; these only exercise the engine.
     """
     data = copy.deepcopy(load_sheet("stat-sheet-gray-wolf.json").model_dump(mode="json"))
     data["sheet_hash"] = name
+    data["display_name"] = name.capitalize()
+    if habitat:
+        data["habitat"] = habitat
     for stat, value in stats.items():
         entry = data["stats"][stat]
         entry["value"] = float(value)
