@@ -54,6 +54,11 @@
   animation: crawl 12s linear infinite;
 }
 
+/* No message: hide the bar, but the status region around it stays for screen readers. */
+.ticker:has(.tickerText:empty) {
+  display: none;
+}
+
 .error {
   padding: 1rem 1.25rem;
   background: var(--panel);
