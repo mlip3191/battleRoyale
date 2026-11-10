@@ -279,6 +279,11 @@ class BattleRecord(BaseModel):
     assets: list[Asset] = []
     stages: list[StageStatus]
     status: Literal["running","done","failed"]
+
+# api.py (small HTTP replies, §6)
+class BattleCreated(BaseModel):  battle_id: str
+class ShowcaseBattle(BaseModel): battle_id: str; title: str
+class FighterMatch(BaseModel):   fighter_id: str; display_name: str; cached: bool
 ```
 
 ### The number rule, made precise
@@ -306,11 +311,11 @@ Unit conversion lives in code (`research/units.py`). The model returns the unit 
 | `GET /api/health` | — | `{status, provider_mode, providers: {name: up/down/mock}}` | M06 |
 | `POST /api/intake` | `{text}` | `IntakeResult` | A02 |
 | `POST /api/intake/{pending_id}/answer` | `{answer}` | `IntakeResult` | D08 |
-| `POST /api/battles` | `Matchup` | `202 {battle_id}` | A05 |
+| `POST /api/battles` | `Matchup` | `202 BattleCreated` `{battle_id}` | A05 |
 | `GET /api/battles/{id}` | — | `BattleRecord` (partial while running) | A05 |
-| `GET /api/battles?showcase=true` | — | `[{battle_id, title}]` for the five saved showcase battles | G08 |
+| `GET /api/battles?showcase=true` | — | `list[ShowcaseBattle]` `[{battle_id, title}]` for the five saved showcase battles | G08 |
 | `GET /api/battles/{id}/events` | — | Server-Sent Events: `StageStatus` updates; poll fallback every 1 s | A05 |
-| `GET /api/fighters?q=` | search text | `[{fighter_id, display_name, cached: bool}]` | G04 |
+| `GET /api/fighters?q=` | search text | `list[FighterMatch]` `[{fighter_id, display_name, cached: bool}]` | G04 |
 | `GET /api/fighters/{fighter_id}` | — | `StatSheet` | G04 |
 | `GET /media/{asset_id}` | — | file | A07/A08 |
 
