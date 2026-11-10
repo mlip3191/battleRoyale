@@ -13,7 +13,10 @@ from pydantic import ValidationError
 from app.config import get_settings
 from app.intake.rules import (
     IRREGULAR_PLURALS,
+    MULTIPLIERS,
+    SCALES,
     UNCHANGED,
+    UNITS,
     clamp_count,
     find_size_reference,
     map_terrain,
@@ -37,8 +40,17 @@ MAX_MODEL_ASSUMPTIONS = 3
 MAX_NOTE_CHARS = 200
 # Words that separate the sides of a matchup in the user's text.
 SIDE_SPLIT = re.compile(r"\s+(?:vs\.?|versus|v\.|against)\s+", re.I)
-# Errors a chat call may raise that mean "try again", not "the app is misconfigured".
-CALL_ERRORS = (ProviderError, httpx.HTTPError, TimeoutError, LookupError)
+# Errors a chat call may raise when the provider is unavailable (timeout, connection, server
+# error). Anything else, such as a missing mock fixture (LookupError), is a developer error and
+# must surface instead of looking like "please rephrase".
+CALL_ERRORS = (ProviderError, httpx.HTTPError, TimeoutError)
+# Spelled-out numbers the number rule catches in model-written text, as whole words. Left out on
+# purpose: "a"/"an" (articles), "no"/"none" (negation), "pair"/"couple" and fraction words
+# (common in descriptions), and "one" ("one swarm", "each one"), all too common in normal prose.
+_BIG_NUMBERS = set(SCALES) | (set(MULTIPLIERS) - {"pair", "couple"})  # thousand, hundred, dozen
+NUMBER_WORDS = (
+    (set(UNITS) - {"one"}) | _BIG_NUMBERS | {f"{w}s" for w in _BIG_NUMBERS} | {"zero"}
+)  # "hundreds", "thousands" count too
 
 REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it another way?"
 EXAMPLE_OPTIONS = [
@@ -59,6 +71,14 @@ SINGULAR_TO_PLURAL = {singular: plural for plural, singular in IRREGULAR_PLURALS
 
 class ModelReplyError(ValueError):
     """The model's reply could not be used; the message is fed back to it on the retry."""
+
+
+class IntakeUnavailable(RuntimeError):
+    """Every model call failed because the provider was unavailable; no reply came back at all.
+
+    Raised instead of the "please rephrase" result so an outage isn't blamed on the user's wording
+    (issue #142 item 4). The API layer maps it to a "try again in a moment" response (D08).
+    """
 
 
 # --- Prompt -------------------------------------------------------------------------------
@@ -133,15 +153,20 @@ def read_reply(reply: str, text: str) -> ParsedMatchup:
     return parsed
 
 
-# Ask the model, retrying once with the problem described; None if both tries fail.
+# Ask the model, retrying once with the problem described; None if the replies were unusable.
+# Raises IntakeUnavailable when no attempt got a reply at all (the provider is down).
 async def ask_model(chat: ChatLLM, text: str) -> ParsedMatchup | None:
     messages = build_messages(text)
     schema = ParsedMatchup.model_json_schema()
+    outage: Exception | None = None
+    got_reply = False
     for attempt in range(2):
         try:
             reply = await chat.complete(messages, prompt_name=PROMPT_NAME, json_schema=schema)
-        except CALL_ERRORS:
+        except CALL_ERRORS as error:
+            outage = error
             continue  # the call itself failed: the retry sends the same messages
+        got_reply = True
         try:
             return read_reply(reply, text)
         except ModelReplyError as error:
@@ -152,6 +177,8 @@ async def ask_model(chat: ChatLLM, text: str) -> ParsedMatchup | None:
                     {"role": "assistant", "content": reply},
                     {"role": "user", "content": f"{problem}\nReply again with JSON only."},
                 ]
+    if not got_reply:
+        raise IntakeUnavailable("The chat provider is unavailable; no reply came back.") from outage
     return None
 
 
@@ -242,9 +269,12 @@ def vague(parsed: ParsedMatchup) -> IntakeResult:
     return clarify(asked.question or REPHRASE_QUESTION, asked.options)
 
 
-# True if model-written text holds any digit; such text is dropped so the model never sets a number.
-def has_digit(text: str) -> bool:
-    return any(ch.isdigit() for ch in text)
+# True if model-written text holds a digit or a spelled-out number ("four thousand"); such text
+# is dropped so the model never sets a number. Whole words only: "often" and "weight" are fine.
+def has_number(text: str) -> bool:
+    if any(ch.isdigit() for ch in text):
+        return True
+    return any(word in NUMBER_WORDS for word in re.findall(r"[a-z]+", text.lower()))
 
 
 # One side, with every number decided by code; the second value lists its assumptions.
@@ -259,7 +289,7 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
     if clamp_note:
         notes.append(clamp_note)
     variant = (fighter.variant or "").strip()[:MAX_VARIANT_CHARS]
-    variant = None if not variant or has_digit(variant) else variant  # number rule
+    variant = None if not variant or has_number(variant) else variant  # number rule
     request = FighterRequest(
         entity=entity,
         count=count,
@@ -270,13 +300,14 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
     return request, notes
 
 
-# Model notes worth showing: short, non-empty, digit-free (number rule), a few at most.
+# Model notes worth showing: short, non-empty, number-free (number rule), a few at most.
 def _model_notes(parsed: ParsedMatchup) -> list[str]:
-    notes = [n.strip() for n in parsed.assumptions if n.strip() and not has_digit(n)]
+    notes = [n.strip() for n in parsed.assumptions if n.strip() and not has_number(n)]
     return [n[:MAX_NOTE_CHARS] for n in notes][:MAX_MODEL_ASSUMPTIONS]
 
 
-# Free text -> IntakeResult (ok, or clarify with one question). Never raises for bad input.
+# Free text -> IntakeResult (ok, or clarify with one question). Never raises for bad input;
+# raises IntakeUnavailable when the chat provider is down (an outage, not the user's wording).
 async def parse_matchup(text: str, *, chat: ChatLLM | None = None) -> IntakeResult:
     text = text.strip()
     if not text:

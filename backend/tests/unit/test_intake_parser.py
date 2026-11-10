@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
 import yaml
 
@@ -12,6 +13,8 @@ from app.intake.parser import (
     INPUT_END,
     INPUT_START,
     PROMPT_NAME,
+    IntakeUnavailable,
+    has_number,
     load_prompt,
     parse_matchup,
     typed_sides,
@@ -20,6 +23,7 @@ from app.models.matchup import IntakeResult
 from app.models.terrain import Terrain
 from app.providers.base import ChatMessage
 from app.providers.live.http import ProviderError
+from app.providers.mock.text import MockChatLLM
 from app.providers.registry import get_provider
 
 CASES_PATH = REPO_ROOT / "backend" / "tests" / "fixtures" / "providers" / "intake_cases.yaml"
@@ -146,10 +150,50 @@ async def test_invalid_output_retries_once_with_the_error_then_asks_to_rephrase(
     assert retry[3]["role"] == "user" and "not valid JSON" in retry[3]["content"]
 
 
-async def test_endpoint_down_retries_once_then_asks_to_rephrase() -> None:
+# Issue #142 item 4: an outage raises its own error instead of blaming the user's wording.
+async def test_endpoint_down_retries_once_then_raises_intake_unavailable() -> None:
     chat = FailingChat()
+    with pytest.raises(IntakeUnavailable):
+        await parse_matchup("a lion vs a tiger", chat=chat)
+    assert chat.calls == 2
+
+
+@pytest.mark.parametrize(
+    "error", [ProviderError("HTTP 503"), httpx.ConnectError("refused"), TimeoutError()]
+)
+async def test_every_kind_of_outage_raises_intake_unavailable(error: Exception) -> None:
+    class DownChat:
+        async def complete(self, messages: list[ChatMessage], **_: Any) -> str:
+            raise error
+
+    with pytest.raises(IntakeUnavailable):
+        await parse_matchup("a lion vs a tiger", chat=DownChat())
+
+
+# A reply that came back unusable is still "please rephrase", even if the other call failed.
+@pytest.mark.parametrize("fail_first", [True, False])
+async def test_one_bad_reply_and_one_outage_still_asks_to_rephrase(fail_first: bool) -> None:
+    class FlakyChat:
+        calls = 0
+
+        async def complete(self, messages: list[ChatMessage], **_: Any) -> str:
+            self.calls += 1
+            if (self.calls == 1) == fail_first:
+                raise ProviderError("HTTP 503")
+            return "not JSON"
+
+    chat = FlakyChat()
     result = await parse_matchup("a lion vs a tiger", chat=chat)
-    assert result.status == "clarify" and chat.calls == 2
+    assert result.status == "clarify" and "another way" in (result.question or "")
+    assert chat.calls == 2
+
+
+# Issue #142 item 6: a missing mock fixture is a developer error and must fail loudly.
+async def test_a_missing_mock_fixture_raises_instead_of_asking_to_rephrase(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(LookupError, match="No mock chat fixture"):
+        await parse_matchup("a lion vs a tiger", chat=MockChatLLM(fixture_dir=tmp_path))
 
 
 @pytest.mark.parametrize("text", ["", "   "])
@@ -288,6 +332,46 @@ async def test_a_typed_mirror_match_is_not_rejected() -> None:
     assert result.status == "ok" and result.matchup is not None
     assert [f.entity for f in result.matchup.fighters] == ["wolf", "wolf"]
     assert len(chat.calls) == 1
+
+
+# Issue #142 item 7: spelled-out numbers are dropped too, as whole words only.
+async def test_spelled_out_numbers_are_dropped_from_variant_and_assumptions() -> None:
+    text = "a moose vs a polar bear"
+    reply = {
+        "fighters": [
+            {"raw": "a moose", "entity": "moose", "variant": "weighs four thousand kilos"},
+            {"raw": "a polar bear", "entity": "polar bear", "variant": "often-fed adult"},
+        ],
+        "assumptions": [
+            "The moose weighs four thousand kilos.",
+            "Hundreds of kilos of muscle.",
+            "Someone often sees the bear's weight as its edge.",
+        ],
+    }
+    result = await parse_matchup(text, chat=CannedChat({text: [reply]}))
+    assert result.status == "ok" and result.matchup is not None
+    moose, bear = result.matchup.fighters
+    assert (moose.variant, bear.variant) == (None, "often-fed adult")
+    notes = " | ".join(result.matchup.assumptions).lower()
+    assert "thousand" not in notes and "hundreds" not in notes
+    assert "someone often sees the bear's weight as its edge." in notes
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("weighs four thousand kilos", True),
+        ("twenty-five km per hour", True),
+        ("a dozen tusks", True),
+        ("weighs 4000 kg", True),
+        ("Ants fight as one swarm.", False),  # "one" is left out: too common in prose
+        ("an adult male in his prime", False),
+        ("often seen alone; someone's weight", False),  # whole words only
+        ("no armor, none at all", False),
+    ],
+)
+def test_has_number_matches_whole_number_words(text: str, expected: bool) -> None:
+    assert has_number(text) is expected
 
 
 def test_the_prompt_says_variant_and_assumptions_have_no_numbers() -> None:
