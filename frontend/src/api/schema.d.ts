@@ -49,7 +49,7 @@ export interface components {
             kind: "sprite" | "battlefield" | "narration_audio" | "music";
             /**
              * Url
-             * @description Where the front end loads it, e.g. "/media/sprites/grizzly-bear--adult-male.png".
+             * @description Where the front end loads it, e.g. "/media/sprites/grizzly-bear.png".
              */
             url: string;
             /**
@@ -259,7 +259,7 @@ export interface components {
         FighterMatch: {
             /**
              * Fighter Id
-             * @description Stable fighter id, e.g. "grizzly-bear--adult-male".
+             * @description Stable fighter id, e.g. "grizzly-bear".
              */
             fighter_id: string;
             /**
@@ -631,7 +631,7 @@ export interface components {
         StatSheet: {
             /**
              * Fighter Id
-             * @description Stable slug, e.g. "grizzly-bear--adult-male".
+             * @description Stable slug, e.g. "grizzly-bear"; a non-default variant adds "--variant".
              */
             fighter_id: string;
             /**

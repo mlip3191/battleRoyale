@@ -207,7 +207,7 @@ class LoreProfile(BaseModel):              # mythical creatures only
     source: Source                         # the sentence in the myth's article that justifies the analogs and abilities
 
 class StatSheet(BaseModel):
-    fighter_id: str                        # slug: "grizzly-bear--adult-male"
+    fighter_id: str                        # slug: "grizzly-bear" (default variant; others add "--variant", e.g. "grizzly-bear--juvenile")
     display_name: str
     media_name: str                        # generic, brand-free name used in image/music prompts ("electric pickup truck")
     category: Literal["mammal","bird","reptile","amphibian","fish","insect","arachnid","mollusk","dinosaur",

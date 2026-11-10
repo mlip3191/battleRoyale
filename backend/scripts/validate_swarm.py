@@ -52,8 +52,8 @@ def scenarios() -> dict[str, list[tuple[str, StatSheet, int, StatSheet, int]]]:
     one_big = [(n, 1) for n in (3, 6, 12, 25, 50)]
     many_weak = [(n, max(n // 5, 1)) for n in (10, 25, 50, 100)]
     ranged = [(n, n // 2) for n in (10, 25, 50)]
-    # Sizes where swarm mode really runs (above 200 per side). Opt-in: the one-by-one reference
-    # takes minutes. `--scenario large --runs 300`.
+    # Sizes where swarm mode really runs (above 200 per side). Opt-in because it is the slowest
+    # group (about 8 s at 300 runs): `--scenario large --runs 300`.
     large = [(250, 250, wolf, wolf, "wolves"), (300, 60, cat, wolf, "(cats v wolves)")]
     large += [
         (600, 120, cat, wolf, "(cats v wolves)"),
@@ -130,7 +130,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     for name, fights in groups.items():
         if args.scenario not in ("all", name) or (args.scenario == "all" and name == "large"):
-            continue  # "large" runs only when asked for: its one-by-one reference takes minutes
+            continue  # "large" is opt-in: the slowest group, about 8 s at 300 runs
         rows = [compare(label, a, na, b, nb, args.runs) for label, a, na, b, nb in fights]
         print(f"### {name}\n\n{table(rows)}\n")
     return 0

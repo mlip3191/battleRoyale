@@ -61,6 +61,9 @@ def test_a_foregone_result_matches_the_full_simulation_exactly():
         )
         stream = run_rng(7, i)
         sides = _templates(matchup, [a, b], stream, (1.0, 1.0))
+        if max(s.count for s in sides) > c.SWARM_THRESHOLD:
+            assert _foregone(sides, _starts(sides)) is None  # swarm mode is never shortcut
+            continue
         if _foregone(sides, _starts(sides)) is None:
             continue
         checked += 1
@@ -133,7 +136,9 @@ def test_a_hopeless_stalemate_is_cheap_even_with_many_fast_attackers():
     )
     start = time.perf_counter()
     result = run(matchup_of(150, 5), [gnat, mountain], runs=1000, explain=False)
-    assert time.perf_counter() - start < 10.0  # minutes without the shortcut; slack for CI
+    assert (
+        time.perf_counter() - start < 10.0
+    )  # about 0.5 s with the shortcut, minutes without; slack for slow CI
     assert result.outcome == "draw" and result.mean_duration_s == c.MAX_FIGHT_S
 
 
@@ -219,3 +224,50 @@ def test_two_machines_that_both_stop_en_route_in_swarm_mode_the_first_to_stop_lo
         assert outcome.duration_s <= 5.0 + c.TICK_S  # at its operating time, not a step later
         stops = [e for e in outcome.events if e.text_hint.startswith("out of action")]
         assert [(e.side, e.group_size) for e in stops] == [(0, 250)]
+
+
+def test_machines_with_the_same_operating_time_in_swarm_mode_are_a_coin_flip():
+    twin = make_sheet(
+        "twin", body="machine", weapons=["ramming"], mass_kg=3, endurance_s=5,
+        attack_force_n=0, top_speed_mps=0.4, spread=0.0,
+    )  # fmt: skip
+    m = matchup_of(250, 250)
+    winners = set()
+    for k in range(12):
+        rng = run_rng(9, k)
+        sides = _templates(m, [twin, twin], rng, (1.0, 1.0))
+        winners.add(run_once(sides, m.terrain, rng, record_events=True).winner)
+    assert winners == {0, 1}
+
+
+def test_an_inert_fighter_never_moves_even_if_its_sheet_lists_a_speed():
+    def boulder(speed: float):
+        return make_sheet(
+            "boulder", body="inert", weapons=["crushing"], mass_kg=500, size_m=1.0,
+            top_speed_mps=speed, attack_force_n=5000, attacks_per_s=1.0, reach_m=1.0, spread=0.0,
+        )  # fmt: skip
+
+    goose = make_sheet(
+        "goose", mass_kg=4, size_m=0.8, top_speed_mps=0, attack_force_n=40, spread=0.0,
+        aggression_0_1=0.0,
+    )  # fmt: skip
+    moving = run(matchup_of(1, 1), [boulder(5), goose], runs=50, explain=False)
+    still = run(matchup_of(1, 1), [boulder(0), goose], runs=50, explain=False)
+    assert still.win_prob[0] == 0.0  # a boulder that stays put never reaches the goose
+    assert moving.win_prob == still.win_prob
+
+
+def test_a_machine_that_stops_exactly_at_the_time_limit_still_loses():
+    tank = make_sheet(
+        "tank", body="machine", weapons=["ramming"], mass_kg=3, endurance_s=c.MAX_FIGHT_S,
+        attack_force_n=0, spread=0.0,
+    )  # fmt: skip
+    boulder = make_sheet(
+        "boulder", body="inert", weapons=["none"], mass_kg=1_000_000, attack_force_n=0,
+        attacks_per_s=0, top_speed_mps=0, spread=0.0,
+    )  # fmt: skip
+    m = matchup_of(5, 5)
+    sides = _templates(m, [tank, boulder], run_rng(1, 0), (1.0, 1.0))
+    fast = run_once(sides, m.terrain, run_rng(2, 0))
+    full = run_once(sides, m.terrain, run_rng(2, 0), record_events=True)  # real simulation
+    assert (fast.winner, fast.survivors) == (full.winner, full.survivors) == (1, (0, 5))
