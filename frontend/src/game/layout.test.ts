@@ -90,7 +90,7 @@ describe("placeholders when images are missing", () => {
 
   test("with the fixture's sprites, each side uses its own image and no placeholder", () => {
     const [bear, wolves] = layoutStage(fighters, assets);
-    expect(bear.spriteUrl).toBe("/media/sprites/grizzly-bear--adult-male.png");
+    expect(bear.spriteUrl).toBe("/media/sprites/grizzly-bear.png");
     expect(wolves.spriteUrl).toBe("/media/sprites/gray-wolf.png");
     expect(bear.placeholder).toBeNull();
     expect(battlefieldUrl(assets)).toBe("/media/battlefields/forest.png");

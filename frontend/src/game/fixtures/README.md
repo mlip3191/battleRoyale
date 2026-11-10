@@ -2,7 +2,7 @@
 
 ## thousand-vs-one.json
 
-A real `SimulationResult` for 1,000 ducks against 1 lion, used to check the battle scene with a big crowd (the 50-sprite cap, the "× 1,000" badge, "more go down" summary KOs, and frame rate).
+A real `SimulationResult` for 1,000 ducks against 1 lion, used to check the battle scene with a big crowd (the 50-sprite cap, the "× 1,000" badge, and frame rate). It has 92 events, under the engine's 300-event cap, so it contains no "more go down" summary KOs.
 
 - **Made by:** the simulation engine at `ENGINE_VERSION = 5`, on the `docs-simulation-api-guide` branch (PR #74). `main` was still at an older engine version when it was made.
 - **Fighters:** the stand-in `duck()` and `lion()` sheets from `backend/tests/property/sim_helpers.py` (round numbers, not sourced), in an open field, via `matchup_of(1000, 1)`.
