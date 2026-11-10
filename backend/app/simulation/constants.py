@@ -5,7 +5,7 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-ENGINE_VERSION = 3
+ENGINE_VERSION = 4
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1
@@ -78,3 +78,13 @@ MORALE_SPAN = 0.8
 # Coordinated attacks: with two or more attackers on one target, hit chance rises by up to
 # this share at group_tactics_0_1 = 1 (assumption).
 GROUP_TACTICS_BONUS = 0.5
+
+# --- Deciding factor (F05) ---
+
+# Runs used for each one-at-a-time sensitivity check.
+DECIDING_RUNS = 200
+# Weight of the favorite's average survivors next to its win share when ranking factors, so a
+# lopsided fight (win share stuck at 100%) still shows which factor matters most (assumption).
+SURVIVOR_WEIGHT = 0.5
+# If no factor moves the favorite's results by at least this much, the fight is "too close".
+MIN_EFFECT = 0.02
