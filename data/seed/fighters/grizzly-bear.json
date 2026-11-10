@@ -1,0 +1,151 @@
+{
+  "fighter_id": "grizzly-bear",
+  "display_name": "Grizzly bear",
+  "media_name": "grizzly bear",
+  "category": "mammal",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "teeth",
+    "claws"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 389.0,
+      "unit": "kg",
+      "source": {
+        "title": "Grizzly bear",
+        "url": "https://en.wikipedia.org/w/index.php?title=Grizzly_bear&oldid=1383883054",
+        "quote": "with males weighing 389 kilograms (858 lb)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 139.0,
+      "high": 389.0,
+      "note": "Coastal Alaskan males; low is the northern interior Canada male figure, 139 kg, in the next sentence."
+    },
+    "size_m": {
+      "value": 2.4,
+      "unit": "m",
+      "source": {
+        "title": "Grizzly bear",
+        "url": "https://en.wikipedia.org/w/index.php?title=Grizzly_bear&oldid=1383883054",
+        "quote": "Average total length in this subspecies is between 198 cm (78 in) and 240 cm (94 in)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 1.98,
+      "high": 2.4,
+      "note": "Total length; the source does not say whether it is male-only. Upper end of the stated range; the source gives no mean."
+    },
+    "top_speed_mps": {
+      "value": 13.33,
+      "unit": "m/s",
+      "source": {
+        "title": "Grizzly bear",
+        "url": "https://en.wikipedia.org/w/index.php?title=Grizzly_bear&oldid=1383883054",
+        "quote": "the maximum speed reliably recorded at Yellowstone is 48 km/h (30 mph)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 12.0,
+      "high": 14.67,
+      "note": "Converted from 48 km/h; range is the standard +/-10%."
+    },
+    "attack_force_n": {
+      "value": 751.0,
+      "unit": "N",
+      "source": {
+        "title": "Bite club: comparative bite force in big biting mammals and the prediction of predatory behaviour in fossil taxa",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC1564077/",
+        "quote": "Ursus arctos Ursidae 26.96 16.28 128.8 751 78",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "Publisher copyright, not an open license; one data row cited"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 563.0,
+      "high": 939.0,
+      "note": "Canine bite force for Ursus arctos, of which the grizzly is a subspecies, estimated from a skull of a 128.8 kg bear, so it likely runs low; range is +/-25%."
+    },
+    "attacks_per_s": {
+      "value": 1.5,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.75,
+      "high": 2.25,
+      "note": "No published attack rate found for this animal; category default."
+    },
+    "reach_m": {
+      "value": 0.6,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.45,
+      "high": 0.75,
+      "note": "reach = 0.25 x size_m (lunging bite), from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.3,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.15,
+      "high": 0.45,
+      "note": "armor level 2: thick fur and fat."
+    },
+    "endurance_s": {
+      "value": 300.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "No published figure for how long it can keep fighting; category default."
+    },
+    "aggression_0_1": {
+      "value": 0.7,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.35,
+      "high": 1.0,
+      "note": "aggression level 4: territorial, confident against most animals."
+    },
+    "group_tactics_0_1": {
+      "value": 0.1,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.05,
+      "high": 0.15,
+      "note": "group tactics level 1: solitary, fights alone."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "931ca549fe7dbb68316b6c52e90ab4eb32173fbde43225d37c61ad97bf127a80"
+}
