@@ -8,6 +8,7 @@ a factor that does not matter changes nothing at all, instead of adding noise.
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from app.models.matchup import Matchup
@@ -51,8 +52,6 @@ def fmt(value: float) -> str:
     """Round a number to 3 significant figures without exponent notation."""
     if value == 0:
         return "0"
-    from decimal import Decimal
-
     text = format(Decimal(f"{value:.3g}"), "f")
     return text.rstrip("0").rstrip(".") if "." in text else text
 
@@ -138,6 +137,8 @@ def decide(
     if mods[0] != mods[1]:
         effect("terrain", matchup, sheets, False)
 
+    # When nothing mattered (or the fight was a stalemate), the factor named below is only a
+    # placeholder: the UI and the announcer must rely on the explainer text, not the factor name.
     if not cache:
         return Decision(StatName.MASS, _explain_even())
     factor = max(cache, key=lambda k: cache[k][1])

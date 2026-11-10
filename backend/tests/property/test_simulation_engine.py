@@ -92,13 +92,11 @@ def test_event_log_never_exceeds_300_events():
     assert result.representative_log[-1].type == EventType.END
 
 
-def test_one_v_one_thousand_runs_finish_within_the_simulate_budget():
-    # ARCHITECTURE section 4: the simulate stage (1,000 runs, with the explanation) takes at most
-    # 3 s. It takes about 0.5 s on a laptop and 1.4 s on a slower machine, so 1 s was too tight.
+def test_one_v_one_thousand_runs_finish_under_one_second():
     bear, wolf = load_sheet("stat-sheet.json"), load_sheet("stat-sheet-gray-wolf.json")
     start = time.perf_counter()
-    run(matchup(), [bear, wolf], runs=1000)
-    assert time.perf_counter() - start < 3.0
+    run(matchup(), [bear, wolf], runs=1000, explain=False)  # the explanation is timed in F05's test
+    assert time.perf_counter() - start < 1.0
 
 
 def test_zero_runs_is_a_clear_error():
