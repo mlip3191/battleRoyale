@@ -103,12 +103,12 @@ battleRoyale/
     │
     ▼
 [2 Research] per fighter: cache hit? ─yes─► StatSheet
-    │                      └no─► retrieve → rerank → extract (Structured) → verify → StatSheet
+    │                      └no─► retrieve → rerank → extract (chat, JSON schema) → verify → StatSheet
     ▼
 [3 Simulate] 1,000 seeded runs → SimulationResult + representative EventLog
     │
     ├──► [7 Summary + Fair fight]  (code only)          ──┐
-    ├──► [8 Next challenger]  LLM proposes → sim tests ───┤  text results ready → UI shows verdict
+    ├──► [8 Next challenger]  LLM ranks    → sim tests ───┤  text results ready → UI shows verdict
     ├──► [4 Intro script] + [5 Play-by-play script] (LLM) ┤
     │          └──► [5 TTS audio] [5 Music] (parallel) ───┤  media fills in progressively
     └──► [6 Sprites + battlefield] (image endpoint) ──────┘
@@ -279,15 +279,20 @@ class BattleRecord(BaseModel):
     assets: list[Asset] = []
     stages: list[StageStatus]
     status: Literal["running","done","failed"]
+
+# api.py (small HTTP replies, §6)
+class BattleCreated(BaseModel):  battle_id: str
+class ShowcaseBattle(BaseModel): battle_id: str; title: str
+class FighterMatch(BaseModel):   fighter_id: str; display_name: str; cached: bool
 ```
 
 ### The number rule, made precise
 
-The proposal says "no language model sets a number." Because the Structured Decisions model reads the evidence, the rule is:
+The proposal says "no language model sets a number." Because the chat model reads the evidence and extracts from it (D-41), the rule is:
 
 | Method | Who produces the value | Allowed when |
 |---|---|---|
-| `extracted` | Structured Decisions model copies a number **and** the exact quote it came from | Code verifies the number (after unit conversion) appears in `source.quote`, and the quote appears in the retrieved passage. Otherwise the value is rejected. |
+| `extracted` | Chat model (JSON-schema mode) copies a number **and** the exact quote it came from | Code verifies the number (after unit conversion) appears in `source.quote`, and the quote appears in the retrieved passage. Otherwise the value is rejected. |
 | `derived` | Code (e.g. size from mass via allometric formula) | An input stat exists; note says which formula |
 | `category_default` | Code, from `backend/app/research/defaults.py` | No evidence found. `is_estimate=True`, confidence `low` |
 | `hand_verified` | A teammate, in `data/seed/fighters/*.json` | Seed fighters only; source required |
@@ -306,11 +311,11 @@ Unit conversion lives in code (`research/units.py`). The model returns the unit 
 | `GET /api/health` | — | `{status, provider_mode, providers: {name: up/down/mock}}` | M06 |
 | `POST /api/intake` | `{text}` | `IntakeResult` | A02 |
 | `POST /api/intake/{pending_id}/answer` | `{answer}` | `IntakeResult` | D08 |
-| `POST /api/battles` | `Matchup` | `202 {battle_id}` | A05 |
+| `POST /api/battles` | `Matchup` | `202 BattleCreated` `{battle_id}` | A05 |
 | `GET /api/battles/{id}` | — | `BattleRecord` (partial while running) | A05 |
-| `GET /api/battles?showcase=true` | — | `[{battle_id, title}]` for the five saved showcase battles | G08 |
+| `GET /api/battles?showcase=true` | — | `list[ShowcaseBattle]` `[{battle_id, title}]` for the five saved showcase battles | G08 |
 | `GET /api/battles/{id}/events` | — | Server-Sent Events: `StageStatus` updates; poll fallback every 1 s | A05 |
-| `GET /api/fighters?q=` | search text | `[{fighter_id, display_name, cached: bool}]` | G04 |
+| `GET /api/fighters?q=` | search text | `list[FighterMatch]` `[{fighter_id, display_name, cached: bool}]` | G04 |
 | `GET /api/fighters/{fighter_id}` | — | `StatSheet` | G04 |
 | `GET /media/{asset_id}` | — | file | A07/A08 |
 
@@ -323,7 +328,7 @@ One adapter per course endpoint, each behind an interface:
 | Interface | Course endpoint | Port | Mock behavior |
 |---|---|---|---|
 | `ChatLLM.complete(messages, json_schema=None)` | Chat/Classification LLM | 9001 | canned responses keyed by prompt name + input hash, from `tests/fixtures/providers/` |
-| `StructuredLLM.extract(prompt, schema)` | Structured Decisions | `.env` | returns fixture stat extractions with quotes |
+| `StructuredLLM.decide(state, questions, *, prompt_name)` | Structured Decisions | 9010 | first option per question with equal odds, unless a fixture in `tests/fixtures/providers/structured/<prompt_name>.json` overrides it (D-41: decisions only; stat extraction uses `ChatLLM` with `json_schema`) |
 | `Embedder.embed(texts)` | Text Embeddings | 9002 | deterministic hash-based vectors (fixed dimension from config) |
 | `Reranker.rerank(query, passages)` | Multimodal Reranking | `.env` | keyword-overlap score |
 | `DocParser.parse(bytes, mime)` | Document Parsing | 9005 | returns plain text |

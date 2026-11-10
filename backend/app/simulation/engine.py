@@ -1,0 +1,484 @@
+"""The time-stepped combat loop: one fight, and many fights summarized."""
+
+import heapq
+import math
+import random
+from collections.abc import Callable
+from dataclasses import dataclass
+
+from app.config import get_settings
+from app.models.matchup import Matchup
+from app.models.simulation import EventType, FightEvent, SimulationResult
+from app.models.stats import StatSheet
+from app.models.terrain import Terrain
+from app.simulation import constants as c
+from app.simulation.fighters import (
+    Template,
+    damage_per_hit,
+    hit_chance,
+    max_engagers,
+    plural_word,
+    sample_template,
+    scale_factor,
+)
+from app.simulation.rng import make_seed, run_rng
+
+DRAW = 2
+
+
+@dataclass
+class RunOutcome:
+    """What happened in one fight."""
+
+    winner: int  # 0, 1, or DRAW
+    survivors: tuple[int, int]
+    duration_s: float
+    events: list[FightEvent]
+
+
+def _tick_up(t: float) -> float:
+    """Round a time up to the next tick boundary."""
+    return round(math.ceil(t / c.TICK_S - 1e-9) * c.TICK_S, 6)
+
+
+class _Pool:
+    """Lanchester linear law for one attacking side: each target takes only so many attackers.
+
+    Attackers that find every target full wait in a queue until a slot opens.
+    """
+
+    def __init__(self, n_targets: int, cap: int) -> None:
+        self.cap = cap
+        self.engaged: dict[int, set[int]] = {}
+        self.open = list(range(n_targets))  # targets with a free slot
+        self.pos = {t: k for k, t in enumerate(self.open)}
+        self.assign: dict[int, int] = {}
+        self.gone: set[int] = set()
+        self.waiting: list[int] = []
+
+    def _open_add(self, t: int) -> None:
+        if t not in self.pos:
+            self.pos[t] = len(self.open)
+            self.open.append(t)
+
+    def _open_remove(self, t: int) -> None:
+        k = self.pos.pop(t, None)
+        if k is None:
+            return
+        last = self.open.pop()
+        if k < len(self.open):
+            self.open[k] = last
+            self.pos[last] = k
+
+    def acquire(self, i: int, rng: random.Random) -> int | None:
+        """The target attacker `i` fights now, or None if every target is full."""
+        t = self.assign.get(i)
+        if t is not None:
+            if t not in self.gone:
+                return t
+            del self.assign[i]
+        if not self.open:
+            return None
+        t = self.open[rng.randrange(len(self.open))]
+        group = self.engaged.setdefault(t, set())
+        group.add(i)
+        self.assign[i] = t
+        if len(group) >= self.cap:
+            self._open_remove(t)
+        return t
+
+    def attacker_died(self, i: int) -> bool:
+        """Free the dead attacker's slot. True if a waiting attacker can now take it."""
+        t = self.assign.pop(i, None)
+        if t is None or t in self.gone:
+            return False
+        self.engaged[t].discard(i)
+        self._open_add(t)
+        return True
+
+    def target_died(self, t: int) -> None:
+        self.gone.add(t)
+        self._open_remove(t)
+        self.engaged.pop(t, None)
+
+
+def _approach_s(sides: list[Template]) -> float:
+    closing = sides[0].speed_mps + sides[1].speed_mps
+    reach = max(sides[0].reach_m, sides[1].reach_m)
+    return max(0.0, c.START_DISTANCE_M - reach) / closing
+
+
+def run_once(
+    sides: list[Template],
+    terrain: Terrain,
+    rng: random.Random,
+    record_events: bool = False,
+    notes: tuple[str, str] = ("", ""),
+) -> RunOutcome:
+    """Simulate one fight to the end (a side wiped out, or 600 s).
+
+    Time moves in 0.1 s ticks; the loop jumps straight to the next tick where someone acts.
+    Sides with more than 200 individuals run in groups (swarm mode). `notes` are short
+    neutral phrases added to the opening events (e.g. "scaled to horse size").
+    `terrain` is accepted now and used from F04 on.
+    """
+    events: list[FightEvent] = []
+    # Leave room for the closing events so the log never passes the cap.
+    room = c.MAX_LOG_EVENTS - c.CLOSING_EVENTS
+    # Hits and misses stop earlier, so the rest of the room is kept for knock-outs and retreats.
+    flow_room = int(room * c.LOG_FLOW_SHARE)
+
+    dropped_kos = [0, 0]  # knock-outs that did not fit, per side that went down
+
+    def log(event: FightEvent) -> None:
+        if not record_events:
+            return
+        full = len(events) >= room
+        if event.type == EventType.KO and full:
+            dropped_kos[event.side] += event.group_size or 1
+        elif full or (event.type in (EventType.HIT, EventType.MISS) and len(events) >= flow_room):
+            return
+        else:
+            events.append(event)
+
+    closing = sides[0].speed_mps + sides[1].speed_mps
+    if not (sides[0].can_attack or sides[1].can_attack) or closing <= 0:
+        alive = [sides[0].count, sides[1].count]
+        return _outcome(alive, c.MAX_FIGHT_S, events, record_events)
+
+    approach_s = _approach_s(sides)
+    for s in (0, 1):
+        hint = "closes in" + (f", {notes[s]}" if notes[s] else "")
+        log(
+            FightEvent(
+                t=0.0, type=EventType.APPROACH, side=s, group_size=sides[s].count, text_hint=hint
+            )
+        )
+
+    if max(sides[0].count, sides[1].count) > c.SWARM_THRESHOLD:
+        outcome = _run_swarm(sides, rng, approach_s, log, events, record_events)
+    else:
+        outcome = _run_individuals(sides, rng, approach_s, log, events, record_events)
+    _summarize_dropped_kos(outcome.events, dropped_kos)
+    return outcome
+
+
+def _summarize_dropped_kos(events: list[FightEvent], dropped: list[int]) -> None:
+    """Say how many knock-outs the full log left out: one group KO per side, before the ending."""
+    if not any(dropped) or not events:
+        return
+    closing = len(events)
+    while closing > 0 and events[closing - 1].type in (EventType.END, EventType.STALEMATE):
+        closing -= 1
+    t = events[-1].t
+    summary = [
+        FightEvent(t=t, type=EventType.KO, side=side, group_size=count, text_hint="more go down")
+        for side, count in enumerate(dropped)
+        if count
+    ]
+    events[closing:closing] = summary
+
+
+def _run_individuals(
+    sides: list[Template],
+    rng: random.Random,
+    approach_s: float,
+    log: Callable[[FightEvent], None],
+    events: list[FightEvent],
+    record_events: bool,
+) -> RunOutcome:
+    alive_list = [list(range(sides[0].count)), list(range(sides[1].count))]
+    alive_set = [set(a) for a in alive_list]
+    hp = [[sides[s].max_hp] * sides[s].count for s in (0, 1)]
+    hit_p = [hit_chance(sides[0], sides[1]), hit_chance(sides[1], sides[0])]
+    dmg = [damage_per_hit(sides[0], sides[1]), damage_per_hit(sides[1], sides[0])]
+    # Pools only matter for melee; ranged sides use the square law (everyone engages).
+    pools = [
+        None
+        if sides[s].ranged or not sides[s].can_attack
+        else _Pool(sides[1 - s].count, max_engagers(sides[s], sides[1 - s]))
+        for s in (0, 1)
+    ]
+
+    # Queue of (time, random tiebreak, side, fighter). Each fighter gets a random first strike.
+    queue: list[tuple[float, float, int, int]] = []
+    for s in (0, 1):
+        if not sides[s].can_attack:
+            continue
+        interval = 1.0 / sides[s].attacks_per_s
+        for i in alive_list[s]:
+            first = _tick_up(approach_s + rng.uniform(0.0, interval))
+            heapq.heappush(queue, (first, rng.random(), s, i))
+
+    while queue:
+        t, _, s, i = heapq.heappop(queue)
+        if t > c.MAX_FIGHT_S:
+            break
+        if i not in alive_set[s]:
+            continue
+        me, foe_side = sides[s], 1 - s
+        pool = pools[s]
+        if pool is None:
+            target = rng.choice(alive_list[foe_side])
+        else:
+            target = pool.acquire(i, rng)
+            if target is None:
+                pool.waiting.append(i)  # every target is full: wait for a free slot
+                continue
+        if rng.random() < hit_p[s]:
+            hp[foe_side][target] -= dmg[s]
+            log(
+                FightEvent(
+                    t=t,
+                    type=EventType.HIT,
+                    side=s,
+                    actor=i,
+                    target=target,
+                    damage=round(dmg[s], 1),
+                    text_hint=f"{me.weapon_word} lands",
+                )
+            )
+            if hp[foe_side][target] <= 0:
+                alive_list[foe_side].remove(target)
+                alive_set[foe_side].discard(target)
+                log(
+                    FightEvent(
+                        t=t, type=EventType.KO, side=foe_side, actor=target, text_hint="goes down"
+                    )
+                )
+                if not alive_list[foe_side]:
+                    alive = [len(alive_list[0]), len(alive_list[1])]
+                    return _outcome(alive, t, events, record_events)
+                if pool is not None:
+                    pool.target_died(target)
+                dead_pool = pools[foe_side]
+                if dead_pool is not None and dead_pool.attacker_died(target):
+                    # A slot opened for the dead fighter's side: wake one waiting attacker.
+                    while dead_pool.waiting:
+                        j = dead_pool.waiting.pop()
+                        if j in alive_set[foe_side]:
+                            heapq.heappush(
+                                queue, (_tick_up(t + c.TICK_S), rng.random(), foe_side, j)
+                            )
+                            break
+        else:
+            log(
+                FightEvent(
+                    t=t,
+                    type=EventType.MISS,
+                    side=s,
+                    actor=i,
+                    target=target,
+                    text_hint=f"{me.weapon_word} misses",
+                )
+            )
+        heapq.heappush(queue, (_tick_up(t + 1.0 / me.attacks_per_s), rng.random(), s, i))
+
+    # Clock ran out, or nobody can finish the other: a draw at the time limit.
+    alive = [len(alive_list[0]), len(alive_list[1])]
+    return _outcome(alive, c.MAX_FIGHT_S, events, record_events)
+
+
+def _apply_hits(
+    hits: int, dmg: float, n: int, front_hp: float, full_hp: float
+) -> tuple[int, int, float]:
+    """Focus-fire `hits` on a bin of `n` identical fighters. Returns (kills, n_left, front_hp).
+
+    Hits land on one fighter at a time; damage beyond a kill is wasted, as in the 1-by-1 engine.
+    """
+    first = max(1, math.ceil(front_hp / dmg - 1e-9))
+    if hits < first:
+        return 0, n, front_hp - hits * dmg
+    full = max(1, math.ceil(full_hp / dmg - 1e-9))
+    kills = min(n, 1 + (hits - first) // full)
+    left = n - kills
+    rest = (hits - first) % full
+    return kills, left, full_hp - rest * dmg
+
+
+def _run_swarm(
+    sides: list[Template],
+    rng: random.Random,
+    approach_s: float,
+    log: Callable[[FightEvent], None],
+    events: list[FightEvent],
+    record_events: bool,
+) -> RunOutcome:
+    """Aggregated fight for big groups: each side is one bin of identical fighters."""
+    n = [sides[0].count, sides[1].count]
+    front = [sides[0].max_hp, sides[1].max_hp]
+    hit_p = [hit_chance(sides[0], sides[1]), hit_chance(sides[1], sides[0])]
+    dmg = [damage_per_hit(sides[0], sides[1]), damage_per_hit(sides[1], sides[0])]
+    cap = [max_engagers(sides[0], sides[1]), max_engagers(sides[1], sides[0])]
+    t = _tick_up(approach_s)
+
+    while t <= c.MAX_FIGHT_S:
+        dt = max(c.SWARM_STEP_S, t * c.SWARM_STEP_GROWTH)
+        # The sides act in random order each step, so equal swarms do not always wipe each
+        # other out at the same instant (and neither side gets a built-in first strike).
+        order = (0, 1) if rng.random() < 0.5 else (1, 0)
+        for s in order:
+            me, foe = sides[s], 1 - s
+            if n[s] == 0 or not me.can_attack or n[foe] == 0:
+                continue
+            engaged = n[s] if me.ranged else min(n[s], n[foe] * cap[s])
+            rate = me.attacks_per_s * dt
+            whole = int(rate)
+            attempts = engaged * whole
+            if rate > whole:
+                attempts += rng.binomialvariate(engaged, rate - whole)
+            hits = rng.binomialvariate(attempts, hit_p[s]) if attempts else 0
+            if not hits or dmg[s] <= 0:
+                continue
+            log(
+                FightEvent(
+                    t=t,
+                    type=EventType.HIT,
+                    side=s,
+                    group_size=hits,
+                    damage=round(hits * dmg[s], 1),
+                    text_hint=f"{plural_word(me.weapon_word)} land",
+                )
+            )
+            kills, n[foe], front[foe] = _apply_hits(
+                hits, dmg[s], n[foe], front[foe], sides[foe].max_hp
+            )
+            if kills:
+                log(
+                    FightEvent(
+                        t=t,
+                        type=EventType.KO,
+                        side=foe,
+                        group_size=kills,
+                        text_hint="go down" if kills > 1 else "goes down",
+                    )
+                )
+        if n[0] == 0 or n[1] == 0:
+            return _outcome(n, t, events, record_events)
+        t = _tick_up(t + dt)
+    return _outcome(n, c.MAX_FIGHT_S, events, record_events)
+
+
+def _outcome(
+    alive: list[int], t: float, events: list[FightEvent], record_events: bool
+) -> RunOutcome:
+    survivors = (alive[0], alive[1])
+    if (survivors[0] and survivors[1]) or not (survivors[0] or survivors[1]):
+        winner = DRAW
+    else:
+        winner = 0 if survivors[0] else 1
+    if record_events:
+        if winner == DRAW:
+            events.append(
+                FightEvent(t=t, type=EventType.STALEMATE, side=0, text_hint="neither side can win")
+            )
+            hint = "fight ends in a draw"
+        else:
+            hint = "the fight is over"  # the narration step names the winner
+        end_side = 0 if winner == DRAW else winner
+        events.append(FightEvent(t=t, type=EventType.END, side=end_side, text_hint=hint))
+    return RunOutcome(winner, survivors, t, events)
+
+
+def wilson(successes: int, n: int, z: float = c.WILSON_Z) -> tuple[float, float]:
+    """95% Wilson score interval for a share."""
+    if n == 0:
+        return (0.0, 1.0)
+    p = successes / n
+    denom = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / denom
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
+    return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def scale_factors(
+    matchup: Matchup, sheets: list[StatSheet], reference_sheets: list[StatSheet | None] | None
+) -> tuple[float, float]:
+    """Scale factor k per side from `size_reference` ("horse-sized duck"); 1.0 when unset.
+
+    Computed here in code from the two sheets' masses, never by a model.
+    """
+    ks = [1.0, 1.0]
+    for s in (0, 1):
+        if matchup.fighters[s].size_reference is None:
+            continue
+        ref = reference_sheets[s] if reference_sheets else None
+        if ref is None:
+            raise ValueError(
+                f"fighter {s} has size_reference "
+                f"{matchup.fighters[s].size_reference!r} but no reference stat sheet was given"
+            )
+        ks[s] = scale_factor(sheets[s], ref)
+    return ks[0], ks[1]
+
+
+def _templates(
+    matchup: Matchup, sheets: list[StatSheet], rng: random.Random, ks: tuple[float, float]
+) -> list[Template]:
+    return [sample_template(sheets[s], matchup.fighters[s].count, rng, ks[s]) for s in (0, 1)]
+
+
+def _notes(matchup: Matchup, ks: tuple[float, float]) -> tuple[str, str]:
+    """Neutral phrases the announcer can use, e.g. "scaled to horse size"."""
+
+    def note(s: int) -> str:
+        ref = matchup.fighters[s].size_reference
+        return f"scaled to {ref} size" if ref and ks[s] != 1.0 else ""
+
+    return note(0), note(1)
+
+
+def run(
+    matchup: Matchup,
+    stat_sheets: list[StatSheet],
+    runs: int | None = None,
+    reference_sheets: list[StatSheet | None] | None = None,
+) -> SimulationResult:
+    """Run the fight many times and summarize it.
+
+    `reference_sheets[s]` is the stat sheet of fighter s's `size_reference` entity, if any.
+    """
+    runs = get_settings().sim_runs if runs is None else runs
+    if runs < 1:
+        raise ValueError("runs must be at least 1")
+    seed = make_seed(matchup, stat_sheets[0].sheet_hash, stat_sheets[1].sheet_hash)
+    ks = scale_factors(matchup, stat_sheets, reference_sheets)
+
+    outcomes: list[RunOutcome] = []
+    for k in range(runs):
+        rng = run_rng(seed, k)
+        sides = _templates(matchup, stat_sheets, rng, ks)
+        outcomes.append(run_once(sides, matchup.terrain, rng))
+
+    wins = [sum(o.winner == s for o in outcomes) for s in (0, 1)]
+    draws = runs - wins[0] - wins[1]
+    counts = {"win_0": wins[0], "win_1": wins[1], "draw": draws}
+    outcome_name = max(counts, key=lambda k: counts[k])
+    code = {"win_0": 0, "win_1": 1, "draw": DRAW}[outcome_name]
+
+    # Representative fight: closest to the median duration among runs with the top outcome.
+    same = sorted(
+        (k for k, o in enumerate(outcomes) if o.winner == code),
+        key=lambda k: outcomes[k].duration_s,
+    )
+    pick = same[len(same) // 2]
+    rng = run_rng(seed, pick)
+    sides = _templates(matchup, stat_sheets, rng, ks)
+    replay = run_once(sides, matchup.terrain, rng, record_events=True, notes=_notes(matchup, ks))
+
+    return SimulationResult(
+        seed=seed,
+        runs=runs,
+        win_prob=(wins[0] / runs, wins[1] / runs),
+        draw_prob=draws / runs,
+        win_prob_ci95=(wilson(wins[0], runs), wilson(wins[1], runs)),
+        mean_survivors=(
+            sum(o.survivors[0] for o in outcomes) / runs,
+            sum(o.survivors[1] for o in outcomes) / runs,
+        ),
+        mean_duration_s=sum(o.duration_s for o in outcomes) / runs,
+        outcome=outcome_name,
+        deciding_factor="mass_kg",
+        deciding_factor_explainer="Placeholder until the deciding-factor analysis (F05) is built.",
+        representative_log=replay.events,
+    )
