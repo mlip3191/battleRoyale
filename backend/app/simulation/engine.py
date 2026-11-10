@@ -40,6 +40,8 @@ class RunOutcome:
     survivors: tuple[int, int]
     duration_s: float
     events: list[FightEvent]
+    attacks: int = 0
+    """How many attacks were made (the work done; also used to test attack rates)."""
 
 
 def _tick_up(t: float) -> float:
@@ -221,7 +223,9 @@ def run_once(
     if max(sides[0].count, sides[1].count) > c.SWARM_THRESHOLD:
         outcome = _run_swarm(sides, rng, starts, log, events, record_events)
     else:
-        outcome = _run_individuals(sides, rng, starts, log, events, record_events)
+        counter = [0]
+        outcome = _run_individuals(sides, rng, starts, log, events, record_events, counter)
+        outcome.attacks = counter[0]
     _summarize_dropped_kos(outcome.events, dropped_kos)
     return outcome
 
@@ -252,6 +256,7 @@ def _run_individuals(
     log: Callable[[FightEvent], None],
     events: list[FightEvent],
     record_events: bool,
+    counter: list[int],
 ) -> RunOutcome:
     alive_list = [list(range(sides[0].count)), list(range(sides[1].count))]
     alive_set = [set(a) for a in alive_list]
@@ -278,12 +283,15 @@ def _run_individuals(
     # Queue of (time, random tiebreak, side, fighter). Each fighter gets a random first strike.
     # A negative fighter number -1 - i means "machine i runs out of operating time now".
     queue: list[tuple[float, float, int, int]] = []
+    # Exact (unrounded) time of each fighter's next attack. Only the event time is rounded to a
+    # tick, so rounding never accumulates and the long-run rate equals the sheet's.
+    due: dict[tuple[int, int], float] = {}
     for s in (0, 1):
         if sides[s].can_attack and starts[s] != math.inf:
             interval = 1.0 / sides[s].attacks_per_s
             for i in alive_list[s]:
-                first = _tick_up(starts[s] + rng.uniform(0.0, interval))
-                heapq.heappush(queue, (first, rng.random(), s, i))
+                due[(s, i)] = starts[s] + rng.uniform(0.0, interval)
+                heapq.heappush(queue, (_tick_up(due[(s, i)]), rng.random(), s, i))
         if sides[s].body == Body.MACHINE and sides[s].endurance_s <= c.MAX_FIGHT_S:
             for i in alive_list[s]:
                 heapq.heappush(queue, (sides[s].endurance_s, rng.random(), s, -1 - i))
@@ -313,7 +321,8 @@ def _run_individuals(
             while own.waiting:
                 j = own.waiting.pop()
                 if j in alive_set[side]:
-                    heapq.heappush(queue, (_tick_up(t + c.TICK_S), rng.random(), side, j))
+                    due[(side, j)] = t + c.TICK_S
+                    heapq.heappush(queue, (_tick_up(due[(side, j)]), rng.random(), side, j))
                     break
         return False
 
@@ -422,7 +431,9 @@ def _run_individuals(
                     text_hint=f"{me.weapon_word} misses",
                 )
             )
-        heapq.heappush(queue, (_tick_up(t + 1.0 / me.attacks_per_s), rng.random(), s, i))
+        counter[0] += 1
+        due[(s, i)] += 1.0 / me.attacks_per_s
+        heapq.heappush(queue, (_tick_up(due[(s, i)]), rng.random(), s, i))
 
     # Clock ran out, or nobody can finish the other: a draw at the time limit.
     return finish(c.MAX_FIGHT_S)
