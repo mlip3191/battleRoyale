@@ -114,13 +114,11 @@ def test_the_search_shrinks_the_count_when_the_first_probe_is_already_too_strong
 
 
 def test_a_rough_answer_says_about_and_reports_the_real_win_share():
-    # Search many matchups for one where whole numbers can't land inside the band.
-    for cats in range(2, 40):
-        found = fair_fight(matchup_of(cats, 1), [house_cat(), wolf()])
-        if found.count is not None and abs(found.win_prob_at_count - 0.5) > c.FAIR_TOLERANCE:
-            assert "about" in found.message
-            return
-    pytest.skip("every searched fight landed inside the band")
+    # 9 cats vs a wolf: no whole number of wolves lands inside the band, so the closest is returned.
+    found = fair_fight(matchup_of(9, 1), [house_cat(), wolf()])
+    assert found.count is not None
+    assert abs(found.win_prob_at_count - 0.5) > c.FAIR_TOLERANCE
+    assert "about" in found.message
 
 
 # --- test_challengers ----------------------------------------------------------------------------
