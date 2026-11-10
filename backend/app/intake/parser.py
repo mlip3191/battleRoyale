@@ -41,6 +41,7 @@ SIDE_SPLIT = re.compile(r"\s+(?:vs\.?|versus|v\.|against)\s+", re.I)
 CALL_ERRORS = (ProviderError, httpx.HTTPError, TimeoutError, LookupError)
 
 REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it another way?"
+COMMON_KIND_NOTE = "Still not sure which kind you meant, so we went with the most common one."
 EXAMPLE_OPTIONS = [
     "a grizzly bear vs 6 gray wolves",
     "a dozen house cats vs a golden retriever",
@@ -277,7 +278,10 @@ def _model_notes(parsed: ParsedMatchup) -> list[str]:
 
 
 # Free text -> IntakeResult (ok, or clarify with one question). Never raises for bad input.
-async def parse_matchup(text: str, *, chat: ChatLLM | None = None) -> IntakeResult:
+# ask=False is for the answer to a question (D08): a still-vague fighter is accepted with a note.
+async def parse_matchup(
+    text: str, *, chat: ChatLLM | None = None, ask: bool = True
+) -> IntakeResult:
     text = text.strip()
     if not text:
         return clarify("Who's fighting? Name two sides.", EXAMPLE_OPTIONS)
@@ -292,7 +296,7 @@ async def parse_matchup(text: str, *, chat: ChatLLM | None = None) -> IntakeResu
         problem = read_count(fighter.raw).problem
         if problem:
             return not_whole(text, fighter, problem)
-    if parsed.needs_clarification or len(parsed.fighters) < 2:
+    if len(parsed.fighters) < 2 or (ask and parsed.needs_clarification):
         return vague(parsed)
     max_count = get_settings().sim_max_count
     built = [build_fighter(f, max_count) for f in parsed.fighters]
@@ -300,6 +304,8 @@ async def parse_matchup(text: str, *, chat: ChatLLM | None = None) -> IntakeResu
     notes = _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
     if terrain_note:
         notes.append(terrain_note)
+    if parsed.needs_clarification:
+        notes.append(COMMON_KIND_NOTE)
     fighters = [request for request, _ in built]
     matchup = Matchup(
         fighters=fighters, terrain=terrain, raw_text=text, assumptions=list(dict.fromkeys(notes))
