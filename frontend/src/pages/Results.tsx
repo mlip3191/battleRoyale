@@ -21,6 +21,8 @@ export default function Results() {
   const result = battle?.result;
   const names = battle?.matchup.fighters.map((f) => f.raw) ?? [];
   const waiting = !error && (!battle || battle.status === "running");
+  // Only a fight with a winner has a champ for the next challenger to face.
+  const winner = result ? winnerOf(result) : null;
 
   return (
     <main>
@@ -50,11 +52,11 @@ export default function Results() {
       {battle?.fair_fight && result?.outcome !== "no_contest" && (
         <FairFightCard fairFight={battle.fair_fight} matchup={battle.matchup} />
       )}
-      {battle?.challenger && result && (
+      {battle?.challenger && winner !== null && (
         <NextChallengerCard
           challenger={battle.challenger}
           matchup={battle.matchup}
-          winner={winnerOf(result)}
+          winner={winner}
         />
       )}
       {battle && battle.stat_sheets.length > 0 && (

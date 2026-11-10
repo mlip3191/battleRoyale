@@ -13,6 +13,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import done from "../fixtures/battle-record-done.json";
 import dragonSheet from "../fixtures/stat-sheet-dragon.json";
 import * as client from "../api/client.ts";
+import { NOT_FOUND } from "../api/useBattle.ts";
 import type { BattleRecord, StatSheet } from "../api/client.ts";
 import Results from "./Results.tsx";
 
@@ -70,12 +71,44 @@ test("every stat on the page shows a source link or an estimate tag", () => {
 test("win % is shown with its range, plus the deciding-factor explainer", () => {
   show(record);
   const verdict = screen.getByRole("region", { name: "Winner: 6 gray wolves" });
-  expect(verdict.textContent).toContain("38% (35–41%)");
-  expect(verdict.textContent).toContain("55% (52–58%)");
+  expect(verdict.textContent).toContain("38% (range 35–41%)");
+  expect(verdict.textContent).toContain("55% (range 52–58%)");
   expect(verdict.textContent).toContain("Draw7%");
   expect(verdict.textContent).toContain(
     record.result!.deciding_factor_explainer,
   );
+});
+
+test("averages over many runs are rounded to one decimal, and duration sits outside the draw row", () => {
+  const result = {
+    ...record.result!,
+    mean_survivors: [0.38, 2.738] as [number, number],
+    mean_duration_s: 41.237,
+  };
+  show({ ...record, result });
+  const verdict = screen.getByRole("region", { name: "Winner: 6 gray wolves" });
+  expect(verdict.textContent).toContain("about 0.4 left standing on average");
+  expect(verdict.textContent).toContain("about 2.7 left standing on average");
+  expect(verdict.textContent).toContain("Fights last about 41.2 s on average.");
+  expect(verdict.textContent).not.toMatch(/2\.738|41\.237/);
+  const draw = within(verdict).getByText("Draw").parentElement!;
+  expect(draw.textContent).not.toContain("Fights last");
+});
+
+test("a stalemate's explainer is shown as written", () => {
+  const explainer =
+    "Neither side could hurt the other, so it ended in a stalemate.";
+  show({
+    ...record,
+    result: {
+      ...record.result!,
+      outcome: "draw",
+      deciding_factor_explainer: explainer,
+    },
+  });
+  expect(
+    screen.getByRole("region", { name: "It's a draw" }).textContent,
+  ).toContain(explainer);
 });
 
 test("fair fight: shows the count", () => {
@@ -101,6 +134,39 @@ test("fair fight: shows the no-fair-fight message when there is no count", () =>
   const card = screen.getByRole("region", { name: "No fair fight" });
   expect(card.textContent).toContain(message);
   expect(card.textContent).not.toContain("Tested with");
+});
+
+test("fair fight: varying side 0 names side 0's fighter", () => {
+  show({
+    ...record,
+    fair_fight: {
+      varied_side: 0,
+      count: 2,
+      win_prob_at_count: 0.51,
+      message: "About 2 grizzly bears make it a coin flip.",
+    },
+  });
+  const card = screen.getByRole("region", { name: "Fair fight" });
+  expect(card.textContent).toContain(
+    `Tested with 2 × ${record.matchup.fighters[0].entity}: 51% win chance.`,
+  );
+});
+
+test("fair fight: an 'about' count with no tested chance shows the count only", () => {
+  const message = "About 40 gray wolves; we couldn't pin it closer.";
+  show({
+    ...record,
+    fair_fight: {
+      varied_side: 1,
+      count: 40,
+      win_prob_at_count: null,
+      message,
+    },
+  });
+  const card = screen.getByRole("region", { name: "Fair fight" });
+  expect(card.textContent).toContain(message);
+  expect(card.textContent).toContain("Tested with 40 × gray wolf.");
+  expect(card.textContent).not.toContain("win chance");
 });
 
 test("'Fight them!' posts a new battle with the winner vs the suggestion", async () => {
@@ -134,9 +200,13 @@ test("'Fight them!' failing keeps the card and says so", async () => {
   expect(screen.getByRole("button", { name: "Fight them!" })).toBeTruthy();
 });
 
-test("a draw has no winner to send on, so no 'Fight them!' button", () => {
+test("a draw shows the odds but no winner and no next challenger", () => {
   show({ ...record, result: { ...record.result!, outcome: "draw" } });
-  expect(screen.getByRole("heading", { name: "It's a draw" })).toBeTruthy();
+  const verdict = screen.getByRole("region", { name: "It's a draw" });
+  expect(verdict.textContent).toContain("38% (range 35–41%)");
+  expect(verdict.textContent).toContain("Draw7%");
+  expect(screen.queryByText(/Winner/)).toBeNull();
+  expect(screen.queryByRole("region", { name: /Next challenger/ })).toBeNull();
   expect(screen.queryByRole("button", { name: "Fight them!" })).toBeNull();
 });
 
@@ -152,6 +222,22 @@ test("no contest: shows the explainer, no percentages, and no fair fight", () =>
   expect(verdict.textContent).toContain(result.deciding_factor_explainer);
   expect(verdict.textContent).not.toMatch(/%/);
   expect(screen.queryByRole("region", { name: /fair fight/i })).toBeNull();
+  expect(screen.queryByRole("region", { name: /Next challenger/ })).toBeNull();
+});
+
+test("an unknown battle says 'Battle not found'", () => {
+  show(null, NOT_FOUND);
+  const alert = screen.getByRole("alert");
+  expect(alert.textContent).toContain("Battle not found");
+  expect(screen.queryByRole("status")?.textContent ?? "").not.toContain(
+    "Tallying",
+  );
+});
+
+test("a network error is shown and the ticker stops", () => {
+  show(null, "We lost the feed. Check your connection.");
+  expect(screen.getByRole("alert").textContent).toContain("lost the feed");
+  expect(screen.queryByRole("region", { name: "Sources" })).toBeNull();
 });
 
 test("headings are in order: page, sections, then one per fighter", () => {

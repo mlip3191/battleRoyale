@@ -14,11 +14,15 @@ import styles from "./verdict.module.css";
 // A probability as a whole percent, e.g. 0.62 -> "62%".
 const pct = (p: number) => `${Math.round(p * 100)}%`;
 
-// One side's win chance with its 95% interval, e.g. "62% (58–66%)".
+// One side's win chance with its 95% interval, labeled, e.g. "62% (range 58–66%)".
 export const winRange = (result: SimulationResult, side: 0 | 1) => {
   const [low, high] = result.win_prob_ci95[side];
-  return `${pct(result.win_prob[side])} (${Math.round(low * 100)}–${pct(high)})`;
+  return `${pct(result.win_prob[side])} (range ${Math.round(low * 100)}–${pct(high)})`;
 };
+
+// An average over many runs, to one decimal place, e.g. 2.738 -> "2.7".
+export const average = (value: number) =>
+  value.toLocaleString("en-US", { maximumFractionDigits: 1 });
 
 // The side that won, or null for a draw or no contest.
 export const winnerOf = (result: SimulationResult) =>
@@ -52,20 +56,21 @@ export function VerdictBanner({
               <dt>{names[side]}</dt>
               <dd className={styles.value}>{winRange(result, side)}</dd>
               <dd className={styles.muted}>
-                {result.mean_survivors[side].toLocaleString("en-US")} left
-                standing on average
+                about {average(result.mean_survivors[side])} left standing on
+                average
               </dd>
             </div>
           ))}
           <div>
             <dt>Draw</dt>
             <dd className={styles.value}>{pct(result.draw_prob)}</dd>
-            <dd className={styles.muted}>
-              fights last {result.mean_duration_s.toLocaleString("en-US")} s on
-              average
-            </dd>
           </div>
         </dl>
+      )}
+      {result.outcome !== "no_contest" && (
+        <p className={styles.muted}>
+          Fights last about {average(result.mean_duration_s)} s on average.
+        </p>
       )}
       <p>
         <strong>Deciding factor:</strong> {result.deciding_factor_explainer}
@@ -124,7 +129,7 @@ export function NextChallengerCard({
 }: {
   challenger: ChallengerSuggestion;
   matchup: Matchup;
-  winner: 0 | 1 | null;
+  winner: 0 | 1;
 }) {
   const [starting, setStarting] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -152,16 +157,14 @@ export function NextChallengerCard({
       {failed && (
         <ErrorPanel message="We couldn't book that fight. Check your connection and try again." />
       )}
-      {winner !== null && (
-        <button
-          type="button"
-          className={styles.fight}
-          onClick={() => fight(winner)}
-          disabled={starting}
-        >
-          {starting ? "Ringing the bell…" : "Fight them!"}
-        </button>
-      )}
+      <button
+        type="button"
+        className={styles.fight}
+        onClick={() => fight(winner)}
+        disabled={starting}
+      >
+        {starting ? "Ringing the bell…" : "Fight them!"}
+      </button>
     </section>
   );
 }
