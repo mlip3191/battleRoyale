@@ -65,6 +65,17 @@ export interface components {
             fallback: boolean;
         };
         /**
+         * BattleCreated
+         * @description Reply to POST /api/battles (202): the id to follow the new battle with.
+         */
+        BattleCreated: {
+            /**
+             * Battle Id
+             * @description Id of the battle that just started, e.g. "b-7f3k2q".
+             */
+            battle_id: string;
+        };
+        /**
          * BattleRecord
          * @description Everything about one battle; filled in stage by stage while it runs.
          */
@@ -240,6 +251,27 @@ export interface components {
              * @description Short neutral description for narration, e.g. "bite lands".
              */
             text_hint: string;
+        };
+        /**
+         * FighterMatch
+         * @description One row of GET /api/fighters?q=: a fighter whose name matches the search text.
+         */
+        FighterMatch: {
+            /**
+             * Fighter Id
+             * @description Stable fighter id, e.g. "grizzly-bear--adult-male".
+             */
+            fighter_id: string;
+            /**
+             * Display Name
+             * @description Name shown to the user.
+             */
+            display_name: string;
+            /**
+             * Cached
+             * @description True when a stat sheet is already saved, so the battle can skip research.
+             */
+            cached: boolean;
         };
         /**
          * FighterRequest
@@ -434,6 +466,22 @@ export interface components {
              * @default null
              */
             at_event: number | null;
+        };
+        /**
+         * ShowcaseBattle
+         * @description One row of GET /api/battles?showcase=true: a saved showcase battle.
+         */
+        ShowcaseBattle: {
+            /**
+             * Battle Id
+             * @description Id of the saved battle.
+             */
+            battle_id: string;
+            /**
+             * Title
+             * @description Matchup title shown on the home page, e.g. "Grizzly bear vs Gray wolf".
+             */
+            title: string;
         };
         /**
          * SimulationResult
