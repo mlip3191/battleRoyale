@@ -77,12 +77,28 @@ export function SourceBadge({
   );
 }
 
-// The honesty tag for a stat without a plain source; null when the source badge says it all.
+// The honesty tag, mapped from how the stat was made; null when the source badge says it all.
 export function statTag(stat: StatValue) {
   if (stat.method === "assumption") return "assumption";
   if (stat.is_estimate) return "estimate";
-  if (!stat.source) return stat.method === "derived" ? "derived" : "estimate";
-  return null;
+  if (stat.method === "derived") return "derived";
+  if (stat.source) return null;
+  return stat.method.replace("_", " ");
+}
+
+// A stat value with every digit the data has (number rule: the UI never rounds a stat).
+// Thousands separators are kept only when the digits and the number stay exactly the same.
+export function formatExact(value: number) {
+  const plain = String(value);
+  const grouped = value.toLocaleString("en-US", {
+    maximumSignificantDigits: 21,
+  });
+  const digits = (text: string) =>
+    text.replace(/[^0-9]/g, "").replace(/^0+|0+$/g, "");
+  const same =
+    Number(grouped.replaceAll(",", "")) === value &&
+    digits(grouped) === digits(plain.split("e")[0]);
+  return same ? grouped : plain;
 }
 
 // Whether a stat counts toward the "lots of guesses" banner.
@@ -96,7 +112,7 @@ function StatRow({ name, stat }: { name: string; stat: StatValue }) {
     <tr>
       <th scope="row">{STAT_LABELS[name] ?? name}</th>
       <td className={styles.value}>
-        {stat.value.toLocaleString("en-US")} {stat.unit}
+        {formatExact(stat.value)} {stat.unit}
       </td>
       <td>
         {stat.source && (
@@ -141,12 +157,13 @@ export function LoreCard({ lore }: { lore: LoreProfile }) {
 export function StatSheetCard({ sheet }: { sheet: StatSheet }) {
   const stats = Object.entries(sheet.stats);
   const guesses = stats.filter(([, s]) => isGuess(s)).length;
+  const allAssumed = stats.every(([, s]) => s.method === "assumption");
   return (
     <article className={styles.card}>
       <h3>{sheet.display_name}</h3>
       {sheet.lore ? (
         <p className={styles.banner}>
-          Legendary fighter: every stat is an assumption
+          Legendary fighter{allAssumed && ": every stat is an assumption"}
         </p>
       ) : (
         guesses > MAX_GUESSES && (
