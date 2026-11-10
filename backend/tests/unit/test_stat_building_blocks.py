@@ -105,6 +105,11 @@ def test_a_source_range_wins_and_must_contain_the_value() -> None:
         range_for(StatName.MASS, 60, Confidence.HIGH, 25, 54)
 
 
+def test_one_end_of_a_range_alone_falls_back_to_the_spread() -> None:
+    assert range_for(StatName.MASS, 100, Confidence.HIGH, source_low=80) == (90.0, 110.0)
+    assert range_for(StatName.MASS, 100, Confidence.HIGH, source_high=150) == (90.0, 110.0)
+
+
 def test_zero_to_one_stats_never_exceed_one() -> None:
     assert range_for(StatName.AGGRESSION, 0.9, Confidence.LOW) == (0.45, 1.0)
 

@@ -58,7 +58,7 @@ FACTORS: dict[str, dict[str, float]] = {
         "feet": 0.3048,
         "in": 0.0254,
         "inch": 0.0254,
-        "inche": 0.0254,
+        "inche": 0.0254,  # not a typo: what _normalize makes of "inches"
         "yd": 0.9144,
         "yard": 0.9144,
     },

@@ -36,6 +36,7 @@ def range_for(
     source_low: float | None = None,
     source_high: float | None = None,
 ) -> tuple[float, float]:
+    # A source that gives only one end of a range is treated as giving none: the spread applies.
     if source_low is not None and source_high is not None:
         if not source_low <= value <= source_high:
             raise ValueError(f"{stat}: value {value} is outside its range")
