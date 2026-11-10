@@ -85,6 +85,7 @@ You are the build assistant for **Battle Royale: The Science-Backed Fight Simula
 
 **Goal:** Configure the repo so it's safe before any code lands.
 **Read first:** TEAM_PROCESS Step 0; DECISIONS D-01.
+**Note (2026-11-10):** the "private repo" steps below are superseded by DECISIONS D-48. The repo is now public, and secret scanning and push protection are on.
 
 **Do this:** For each change, show Mike the exact `gh` command first and run it only after he confirms. If a command fails or isn't available for this account, stop and give the exact click path in the GitHub web UI instead.
 
@@ -351,7 +352,7 @@ Run the smoke script; show Mike `docs/providers.md` and confirm with him that it
 - Run `backend/scripts/smoke_providers.py` whenever an endpoint changes.
 - Merge Dependabot PRs after CI and Secret scan pass (they need your approval for lockfiles).
 - Check Actions minutes weekly (Settings → Billing). **Downgrade plan (D-34)** if fewer than ~600 minutes remain: (1) stop manual macOS runs; (2) switch the Windows CI jobs to on-demand and edit the ruleset so only the two ubuntu checks plus Secret scan and Critical files approval are required; (3) run Windows CI by hand before milestones. Keep the ruleset JSON for step 2 ready in `docs/build-log.md` so the switch takes one command.
-- **Instructor access (your call, whenever you choose):** the overview requires adding the instructor as a collaborator on a private repo. GitHub invitations expire after 7 days, so invite close to when he'll look, or re-check and re-send. Claude doesn't send this.
+- **Instructor access (your call, whenever you choose):** the overview requires adding the instructor as a collaborator on a private repo. GitHub invitations expire after 7 days, so invite close to when he'll look, or re-check and re-send. Claude doesn't send this. (Since D-48 the repo is public, so he can read it anytime; Mike still sends the collaborator invite at code complete, Nov 25.)
 - Squash-merged local branches can't be deleted by Claude (`git branch -D` is denied); clean them up yourself occasionally, or ignore them.
 
 ---
