@@ -61,9 +61,27 @@
   color: var(--text);
 }
 
+.error h1,
 .error h2 {
   margin-top: 0;
+  font-size: 1.5rem;
   color: var(--danger);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* With motion off the ticker stops crawling, so let long messages wrap instead of being cut off. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker {
+    white-space: normal;
+  }
 }
 
 @keyframes slide-in {

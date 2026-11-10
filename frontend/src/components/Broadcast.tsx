@@ -1,18 +1,24 @@
 // The broadcast frame's building blocks, shared by every page.
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import styles from "./broadcast.module.css";
 
-// Top bar with the show's name; the logo links home.
+// Class for text only screen readers see (e.g. a page heading the design doesn't show).
+export const srOnly = styles.srOnly;
+
+// Top bar with the show's name; the logo links home. "LIVE" shows only during a broadcast.
 export function Header() {
+  const onAir = /^\/battle\/[^/]+\/?$/.test(useLocation().pathname);
   return (
     <header className={styles.header}>
       <Link to="/" className={styles.logo}>
         BATTLE ROYALE
       </Link>
-      <span className={styles.live} aria-hidden="true">
-        ● LIVE
-      </span>
+      {onAir && (
+        <span className={styles.live} aria-hidden="true">
+          ● LIVE
+        </span>
+      )}
     </header>
   );
 }
@@ -31,17 +37,20 @@ export function LoadingTicker({ message }: { message: string }) {
   );
 }
 
-// A friendly error box instead of a blank screen.
+// A friendly error box instead of a blank screen. Pages with no other heading pass level 1.
 export function ErrorPanel({
   title = "Technical difficulties",
   message,
+  level = 2,
 }: {
   title?: string;
   message: string;
+  level?: 1 | 2;
 }) {
+  const Heading = level === 1 ? "h1" : "h2";
   return (
     <section className={styles.error} role="alert">
-      <h2>{title}</h2>
+      <Heading>{title}</Heading>
       <p>{message}</p>
     </section>
   );

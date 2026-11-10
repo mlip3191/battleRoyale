@@ -38,8 +38,17 @@ test("/ renders the home page", () => {
 test("/battle/:id renders the broadcast frame", async () => {
   at("/battle/b-7f3k2q");
   expect(
-    await screen.findByText("a grizzly bear vs 6 gray wolves in a forest"),
+    await screen.findByRole("heading", {
+      level: 1,
+      name: "a grizzly bear vs 6 gray wolves in a forest",
+    }),
   ).toBeTruthy();
+  expect(screen.getByText("● LIVE")).toBeTruthy();
+});
+
+test("the LIVE badge shows only during a broadcast", () => {
+  at("/");
+  expect(screen.queryByText("● LIVE")).toBeNull();
 });
 
 test("/battle/:id/results renders the results frame", () => {

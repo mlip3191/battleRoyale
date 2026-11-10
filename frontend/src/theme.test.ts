@@ -16,7 +16,7 @@ function luminance(hex: string) {
 }
 
 // Contrast ratio between two colors, from 1:1 to 21:1.
-export function contrast(a: string, b: string) {
+function contrast(a: string, b: string) {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
@@ -43,6 +43,6 @@ test.each(pairs)("--%s on --%s meets WCAG AA (4.5:1)", (fg, bg) => {
 
 test("animations stop when the user prefers reduced motion", () => {
   expect(css).toMatch(
-    /@media \(prefers-reduced-motion: reduce\)[\s\S]*animation: none !important/,
+    /@media \(prefers-reduced-motion: reduce\)\s*\{[^}]*\{[^}]*animation:\s*none\s*!important/,
   );
 });
