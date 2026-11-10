@@ -10,7 +10,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 2. **Approach.** The sides start `START_DISTANCE_M` apart and close at the sum of their speeds, minus the longer reach.
 3. **Combat.** Time moves in 0.1 s ticks (the loop jumps straight to the next tick where someone acts). Every fighter attacks at `attacks_per_s`, starting at a random point in its first interval so neither side gets a built-in first strike. Each attack picks a random living enemy, hits with a probability from speed and size, and deals damage reduced by armor.
 4. **End.** A side with no fighters left loses. A fight still going at `MAX_FIGHT_S` (600 s) is a **draw**. If neither side can damage the other, or nobody can close the distance, it is also a draw (the dedicated `no_contest` handling comes with F04/F08).
-5. **Summary.** Win and draw shares, 95% Wilson intervals, mean survivors and duration. The representative fight is re-run with the event log on: the run closest to the median duration among the most common outcome, capped at 300 events. Hits and misses fill only the first half, so knock-outs always have room; a fight with very many knock-outs can still drop the latest ones, so never count KOs in the log to find survivors.
+5. **Summary.** Win and draw shares, 95% Wilson intervals, mean survivors and duration. The representative fight is re-run with the event log on: the run closest to the median duration among the most common outcome, capped at 300 events. Hits and misses fill only about the first half, so knock-outs have room; knock-outs that still do not fit are summed into one "more go down" event per side (its `group_size`) just before the ending, so the KO sizes add up to the number of fighters who fell.
 
 ## Constants
 
@@ -30,7 +30,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `HIT_MIN`, `HIT_MAX` | 0.05, 0.95 | Clamp on hit chance. | **Assumption**: no fight is a certainty |
 | `MIN_SPEED_MPS` | 0.1 m/s | Floor on speed in ratios. | Numerical safeguard |
 | `MIN_MASS_KG`, `MIN_SIZE_M` | 1e-6 kg, 1e-3 m | Smallest sampled mass and size. | Numerical safeguards |
-| `CLOSING_EVENTS` | 2 | Log slots kept free for the closing events (a stalemate and the end). | Bookkeeping |
+| `CLOSING_EVENTS` | 4 | Log slots kept free for the closing events: a stalemate, the end, and one "more go down" knock-out per side summarizing the falls that did not fit. | Bookkeeping |
 | `LOG_FLOW_SHARE` | 0.5 | Share of the replay log that hits and misses may fill; the rest is kept for knock-outs, retreats and escapes, so a crowded fight still shows fighters going down. | Bookkeeping |
 | `WILSON_Z` | 1.96 | z for a 95% interval. | Standard statistics (Wilson 1927) |
 | `MAX_ENGAGERS` | 8 | Most melee attackers that can surround one target. | Geometry: about 6 neighbors fit around a circle of equal size, 8 allows for smaller attackers stacking. **Assumption** (cap from ARCHITECTURE §9) |
