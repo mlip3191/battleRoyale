@@ -51,7 +51,7 @@ Notes:
 ## Fighter IDs
 
 - The default variant uses the plain slug: `grizzly-bear`.
-- Any other variant adds two hyphens and the variant: `grizzly-bear--juvenile`.
+- Any other variant adds two hyphens and the variant, in lowercase with hyphens for spaces: `grizzly-bear--juvenile`, or "Adult female" as `grizzly-bear--adult-female`.
 - File names, the benchmark, and every table keyed by fighter use this ID.
 
 ## Default variants
@@ -98,7 +98,12 @@ These are sourced or labeled estimates. For each one we use the first of these t
 
 Every value gets a `low` and `high`: the source's range if it gives one, otherwise ±10% (high confidence), ±25% (medium), or ±50% (low, which includes all estimates and assumptions).
 
-**Machines that ram or crush.** The engine computes their damage from mass and speed and uses a fixed attack rate (task F08), but the stat sheet still requires `attack_force_n` and `attacks_per_s`, and neither may be an `assumption` on a non-mythical fighter. Mark them `derived`, with a note saying the engine's ramming formula replaces them.
+**Machines that ram or crush.** The engine computes their damage from mass and speed and uses a fixed attack rate (task F08), but the stat sheet still requires `attack_force_n` and `attacks_per_s`, and neither may be an `assumption` on a non-mythical fighter. Mark both `derived` and store:
+
+- `attack_force_n`: the force that gives the engine's ramming damage, `RAM_DAMAGE_PER_MOMENTUM × mass × speed ÷ DAMAGE_PER_NEWTON`, using the sheet's own mass and speed. For a fighter with `crushing`, use a speed of at least `CRUSH_MIN_SPEED_MPS`.
+- `attacks_per_s`: the value of `RAM_ATTACKS_PER_S`.
+
+The `note` names the formula or constant and says the engine works out the real hit from them.
 
 ## Category defaults
 
@@ -116,8 +121,8 @@ Used only when no evidence is found (`method: category_default`, `is_estimate: t
 | mollusk | 0.2 | 0.2 | 0.2 | 2 | 0.5 | 0.05 | 600 |
 | dinosaur | 1000 | 5 | 8 | 5000 | 0.8 | 1.2 | 180 |
 | human_archetype | 70 | 1.75 | 8 | 400 | 1 | 1 | 600 |
-| vehicle | 3000 | 5 | 25 | see machines note | see machines note | 1 | 3600 |
-| machine | 1000 | 3 | 5 | see machines note | see machines note | 1 | 3600 |
+| vehicle | 3000 | 5 | 25 | derived (see machines note) | derived (see machines note) | 1 | 3600 |
+| machine | 1000 | 3 | 5 | derived (see machines note) | derived (see machines note) | 1 | 3600 |
 | plant | 50 | 3 | 0 | 0 | 0 | 0 | 600 |
 | object, other | 1 | 0.3 | 0 | 0 | 0 | 0 | 600 |
 
@@ -125,7 +130,7 @@ Objects and plants last the full 600-second fight limit and cannot attack unless
 
 ## The three behavioral stats
 
-No source measures these, so they are `assumption` values set from the rubrics below. The `note` cites the level and the reason, for example `aggression level 4: territorial apex predator`. Pick the level first; the value follows from it.
+No source measures these, so they are `assumption` values set from the rubrics below. Every `note` uses the same pattern, `<stat> level <N or M>: <reason>`, where the stat is `aggression`, `group tactics`, `armor`, or `durability`. For example: `aggression level 4: territorial apex predator`. Pick the level first; the value follows from it.
 
 ### Aggression (`aggression_0_1`)
 
@@ -166,9 +171,9 @@ How much of a blow the body turns aside.
 | 4 | 0.6 | Bony plates in the skin, or metal body armor | Saltwater crocodile |
 | 5 | 0.8 | A full hard shell, or full plate | Aldabra giant tortoise; a knight in plate |
 
-### Durability (`armor_0_1`), machines and objects
+### Durability (`armor_0_1`), machines, objects, and plants
 
-Machines and objects use this scale instead, and the `note` says `durability level`. It has no animal examples because it only applies to non-living fighters.
+Machines, objects, and plants use this scale instead, and the `note` says `durability level`. It has no animal examples because it only applies to non-living fighters.
 
 | Level | Value | Description | Example |
 |---|---|---|---|
@@ -193,8 +198,8 @@ G04 uses these when there is no hand-verified sheet. Mythical creatures are excl
 | arachnid | 3 | 1 | Armor 2 |
 | mollusk | 2 | 1 | Armor 3 |
 | dinosaur | 4 | 2 | Armor 3 |
-| human_archetype | 4 | 4 | Armor 3 |
-| vehicle | M | 2 | Durability 4 |
+| human_archetype | 4 | 4 | Armor 4 |
+| vehicle | M | 2 | Durability 3 |
 | machine | M | 2 | Durability 3 |
 | plant, object, other | 0 | 0 | Durability 2 |
 
