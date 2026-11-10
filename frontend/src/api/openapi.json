@@ -60,7 +60,7 @@
             "type": "string"
           },
           "url": {
-            "description": "Where the front end loads it, e.g. \"/media/sprites/grizzly-bear--adult-male.png\".",
+            "description": "Where the front end loads it, e.g. \"/media/sprites/grizzly-bear.png\".",
             "title": "Url",
             "type": "string"
           },
@@ -415,7 +415,7 @@
         "description": "One row of GET /api/fighters?q=: a fighter whose name matches the search text.",
         "properties": {
           "fighter_id": {
-            "description": "Stable fighter id, e.g. \"grizzly-bear--adult-male\".",
+            "description": "Stable fighter id, e.g. \"grizzly-bear\".",
             "title": "Fighter Id",
             "type": "string"
           },
@@ -1076,7 +1076,7 @@
         "description": "Everything the simulation knows about one fighter, with a source for every number.",
         "properties": {
           "fighter_id": {
-            "description": "Stable slug, e.g. \"grizzly-bear--adult-male\".",
+            "description": "Stable slug, e.g. \"grizzly-bear\"; a non-default variant adds \"--variant\".",
             "title": "Fighter Id",
             "type": "string"
           },
