@@ -2,7 +2,7 @@
 
 The five showcase battles (PRODUCT_SPEC §9) run through the engine before the real stat sheets exist, to find problems early. Reproduce with `uv run --directory backend python scripts/showcase_dry_run.py` (about 25 s; `--runs` to shorten).
 
-**Read this first.** Only the grizzly and the gray wolf are real sheets (contract fixtures with Wikipedia citations). Every other fighter is a **stand-in with round numbers** from common reference values. They are not sourced, they are not for display, and the results below say how the *engine* behaves, not what the final demo will show. G05 and G09 will replace the stand-ins.
+**Read this first.** Only the grizzly and the gray wolf are real sheets (the hand-verified G05 seed sheets in `data/seed/fighters/`, with Wikipedia and Wroe 2005 citations). Every other fighter is a **stand-in with round numbers** from common reference values. They are not sourced, they are not for display, and the results below say how the *engine* behaves, not what the final demo will show. G05 and G09 will replace the stand-ins.
 
 | Stand-in | Mass kg | Size m | Speed m/s | Attack N | Attacks/s | Reach m | Armor | Aggression | Teamwork |
 |---|---|---|---|---|---|---|---|---|---|
@@ -15,15 +15,15 @@ The five showcase battles (PRODUCT_SPEC §9) run through the engine before the r
 | Dragon | 6,000 | 10.9 | 12 | 60,000 | 0.5 | 4.0 | 0.7 | 0.9 | 0.1 |
 | Main battle tank (machine, rams) | 60,000 | 10 | 18 | 0 (ramming) | 0.4 | 1.0 | 0.9 | 0 | 0 |
 
-## Results (1,000 runs each, with the deciding-factor analysis and fair-fight search)
+## Results (1,000 runs each, engine version 6, with the deciding-factor analysis and fair-fight search)
 
 | Battle | Verdict | Sensible? | Time |
 |---|---|---|---|
-| 100 duck-sized horses vs 1 horse-sized duck (open field) | Duck wins 100% (about 103 s) | Yes; the explanation now credits the scaling (finding 1, fixed) | 7.4 s |
-| Grizzly vs 6 wolves (forest) | Grizzly 53% / wolves 47%, about 18 s | Yes: a close, believable fight. Fair fight is 6 wolves | 1.4 s |
-| Honey badger vs king cobra | Badger wins 100% in about 3 s | Overconfident: the cobra can't hurt it (finding 2) | 1.1 s |
-| Roman legionary vs gorilla (forest) | Gorilla 99.9% | Yes. A fair fight needs about 5 legionaries, a nice talking point | 0.6 s |
-| A dragon vs a main battle tank (open field) | Tank wins 100% (about 83 s) | Possible, but a foregone conclusion (finding 3) | 4.6 s |
+| 100 duck-sized horses vs 1 horse-sized duck (open field) | Duck wins 100% (about 94 s). A fair fight needs 275 horses | Yes; the explanation credits the scaling (finding 1, fixed) | 4.4 s |
+| Grizzly vs 6 wolves (forest) | **Wolves 76% / grizzly 24%**, about 36 s, "numbers decided it". A fair fight needs about 2 grizzlies | Yes, but it changed with the real sheets (finding 5) | 1.4 s |
+| Honey badger vs king cobra | Badger wins 100% in about 3 s | Overconfident: the cobra can't hurt it (finding 2) | 0.9 s |
+| Roman legionary vs gorilla (forest) | Gorilla 100% | Yes. A fair fight needs about 4 legionaries, a nice talking point | 0.4 s |
+| A dragon vs a main battle tank (open field) | Tank wins 100% (about 84 s) | Possible, but a foregone conclusion (finding 3) | 2.1 s |
 
 ## Findings
 
@@ -52,7 +52,12 @@ Hit points scale with mass (10 hp per kg), so the tank has 600,000. The dragon's
 Armor barely matters because damage is dominated by the hit-point pool. (The what-if rows above are one-off runs with edited constants or sheet values; this script does not produce them.) If we want a real contest, the lever is the breath constant (`BREATH_DAMAGE_N`, an assumption) or how a machine's hit points scale. If we only want to show "legends and machines play by the same rules," a tank win is fine; the fair-fight line ("about 6 dragons against 1 tank") is a good demo moment either way. **Decided (D-43):** wait for G09's real dragon sheet; a tank win is acceptable for the demo; no constant changes until then.
 
 ### 4. Speed
-The duck/horse battle took 7.4 s end to end (101 fighters one by one, the deciding-factor analysis, and the fair-fight search, which goes into swarm mode above 200 horses). That is fine for a pre-generated showcase battle, but not for a live user. Live runs of groups near 100 per side will be slow; see [swarm-validation.md](swarm-validation.md) (arrives with #75; the fix for swarm accuracy is tracked in #76).
+The duck/horse battle took 4.4 s end to end (101 fighters one by one, the deciding-factor analysis, and the fair-fight search, which goes into swarm mode above 200 horses). That is fine for a pre-generated showcase battle, but not for a live user. Live runs of groups near 100 per side will be slow; see [swarm-validation.md](swarm-validation.md) (arrives with #75; the fix for swarm accuracy is tracked in #76).
+
+### 5. Showcase battle 2 flips with the real grizzly and wolf sheets
+The earlier stand-in run (contract fixtures, engine version 5) gave grizzly 53% / wolves 47%. With engine version 6 (exact attack schedule, #84) and Gunnar's hand-verified seed sheets (G05, #139), the same fight is **wolves 76% / grizzly 24%**, about 36 s, and the explainer says numbers decided it. The same engine on the old contract fixtures gives 49% / 51%, so most of the shift comes from the sheets: the real wolf is 40 kg (the stated mean), runs at 17.8 m/s, bites at 593 N and has group tactics 0.8, against a 389 kg adult male grizzly.
+- It is still plausible and explainable ("a crowd can wear down even a tougher fighter"), and the fair-fight search works on it ("about 2 grizzly bears against 6 gray wolves").
+- The demo narrative for battle 2 should expect the wolves to win, or the matchup count can be tuned (4 wolves would be closer). That is a showcase-calibration call (#136), not an engine change.
 
 ## What this does not check
 Real sheets, real sources, the announcer, sprites, and the UI. It only checks that the engine produces a sensible, explainable verdict for each demo battle.
