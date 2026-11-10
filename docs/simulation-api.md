@@ -84,7 +84,7 @@ print(fair.message)
 
 | Case | What you see | What to do |
 |---|---|---|
-| **No contest** (flier vs swimmer in open water; two objects that can't hurt anyone) | `outcome == "no_contest"`, probabilities 0, one END event with a joke-able hint | Skip the sports commentary; show the explainer. `fair_fight` returns `count=None` with an explanation |
+| **No contest** (flier vs swimmer in open water; two objects that can't hurt anyone) | `outcome == "no_contest"`, probabilities 0, one END event whose hint is "no contest: neither can reach the other" or "no contest: nobody can hurt anybody" | Skip the sports commentary; show the explainer. `fair_fight` returns `count=None` with an explanation |
 | **Draw / stalemate** | `outcome == "draw"` | There is no favorite (`summary.favorite is None`); the explainer says it was a stalemate |
 | **A side flees** | RETREAT then FLEE: the runner escapes, the other side wins, and the runner is counted among the survivors. RETREAT **without** FLEE means the runner is too slow to get away and the fight continues | The log tells the story |
 | **A machine runs out of operating time** | a KO event with the hint "out of action: its operating time ran out" | Narrate it as breaking down, not dying |
@@ -135,7 +135,7 @@ Weapon words: bite, claw swipe, goring thrust, kick, venom strike, squeeze, tusk
 - Call `run` once per battle with the default 1,000 runs. Pass `explain=False` for anything you do in a loop.
 - Pass the `result` you already have to `fair_fight` so it does not re-simulate.
 - Fair-fight and challenger probes use 200 runs each by design.
-- One-by-one fights cost roughly the number of attacks made, so groups just under 200 per side are slow (200 v 200 takes ~17 s at 1,000 runs). If you let users type big numbers, cap the run count there, or ask me to lower the swarm threshold.
+- One-by-one fights cost roughly the number of attacks made, so groups just under 200 per side are slow (200 v 200 takes ~17 s at 1,000 runs). If you let users type big numbers, cap the run count there, or ask the simulation owner (Felipe) to lower the swarm threshold.
 - Run the engine off the event loop (a thread or task): it is CPU-bound Python.
 
 ## Known gaps
