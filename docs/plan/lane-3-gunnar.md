@@ -204,7 +204,7 @@ Task G08 from docs/plan/lane-3-gunnar.md.
 2. backend/scripts/import_showcase.py, called automatically at backend startup: if the database has no battles, load data/showcase/ into it so the battles and their media appear without any endpoint calls.
    Also: in live mode, if the knowledge base is empty, the backend tells the user on startup to run `npm run ingest` (add that root script; it runs ingest_seed). Add the step to README "For the instructor".
 3. A "Showcase" row on the Home page is Dillon's; give him a GET /api/battles?showcase=true route (list of battle_id and title) and tell him in the PR.
-4. Fresh-clone check on my Windows machine: clone the repo into a new folder, follow README "For the instructor" exactly (copy .env.example to .env, fill it, node scripts/check-env.mjs, npm run setup, npm start), open http://localhost:8000, and confirm the showcase battles play. Then repeat with PROVIDER_MODE=mock and an empty .env to confirm the app still opens. Write down every step that was unclear and fix the README.
+4. Fresh-clone check on my Windows machine: clone the repo into a new folder, follow README "For the instructor" exactly (npm run env:setup and enter the course host and key, npm run env:check, npm run setup, npm start), open http://localhost:8000, and confirm the showcase battles play. Then repeat with PROVIDER_MODE=mock and an empty .env to confirm the app still opens. Write down every step that was unclear and fix the README.
 5. Tests: export then import round-trips identical records; import skips when battles already exist.
 Mike repeats step 4 on his Mac during review.
 ```

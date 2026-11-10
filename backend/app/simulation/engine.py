@@ -130,9 +130,20 @@ def run_once(
     events: list[FightEvent] = []
     # Leave room for the closing events so the log never passes the cap.
     room = c.MAX_LOG_EVENTS - c.CLOSING_EVENTS
+    # Hits and misses stop earlier, so the rest of the room is kept for knock-outs and retreats.
+    flow_room = int(room * c.LOG_FLOW_SHARE)
+
+    dropped_kos = [0, 0]  # knock-outs that did not fit, per side that went down
 
     def log(event: FightEvent) -> None:
-        if record_events and len(events) < room:
+        if not record_events:
+            return
+        full = len(events) >= room
+        if event.type == EventType.KO and full:
+            dropped_kos[event.side] += event.group_size or 1
+        elif full or (event.type in (EventType.HIT, EventType.MISS) and len(events) >= flow_room):
+            return
+        else:
             events.append(event)
 
     closing = sides[0].speed_mps + sides[1].speed_mps
@@ -150,8 +161,27 @@ def run_once(
         )
 
     if max(sides[0].count, sides[1].count) > c.SWARM_THRESHOLD:
-        return _run_swarm(sides, rng, approach_s, log, events, record_events)
-    return _run_individuals(sides, rng, approach_s, log, events, record_events)
+        outcome = _run_swarm(sides, rng, approach_s, log, events, record_events)
+    else:
+        outcome = _run_individuals(sides, rng, approach_s, log, events, record_events)
+    _summarize_dropped_kos(outcome.events, dropped_kos)
+    return outcome
+
+
+def _summarize_dropped_kos(events: list[FightEvent], dropped: list[int]) -> None:
+    """Say how many knock-outs the full log left out: one group KO per side, before the ending."""
+    if not any(dropped) or not events:
+        return
+    closing = len(events)
+    while closing > 0 and events[closing - 1].type in (EventType.END, EventType.STALEMATE):
+        closing -= 1
+    t = events[-1].t
+    summary = [
+        FightEvent(t=t, type=EventType.KO, side=side, group_size=count, text_hint="more go down")
+        for side, count in enumerate(dropped)
+        if count
+    ]
+    events[closing:closing] = summary
 
 
 def _run_individuals(

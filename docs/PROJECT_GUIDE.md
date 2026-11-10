@@ -48,7 +48,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 
 1. **Install and log in:** Git, GitHub CLI (`gh auth login`), Claude Code (`claude`), Node 26, uv.
 2. **Clone:** `git clone https://github.com/mlip3191/battleRoyale.git`, `cd battleRoyale`.
-3. **Fill `.env`:** copy `.env.example` to `.env`; add the course endpoint URLs (D-03). Never paste them anywhere else — they're public URLs, so anyone holding them could use the course's quota.
+3. **Fill `.env`:** in your own terminal, run `npm run env:setup`; it asks for the course host and key (hidden) and writes `.env` (D-03). Never paste them anywhere else — they're public URLs, so anyone holding them could use the course's quota.
 4. **GitHub Pro is confirmed** for the team (D-01; M01 re-checks it). D-03, D-05, D-06, and D-08 are decided; remaining open items are in [DECISIONS.md](DECISIONS.md).
 5. **Open Claude Code in the repo and say: "Read INIT.md and follow it."** ([INIT.md](../INIT.md)) It runs M01–M08 one at a time, stops for your confirmation, and tells you when to click something in GitHub. In order:
    - **M01** GitHub settings: confirm Pro, make the repo private, squash-only merges, Dependabot, read-only Actions token, allowed-actions list.
@@ -78,7 +78,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
    Windows only: `git config --global core.longpaths true`
 5. **Clone and enter the project:** `git clone https://github.com/mlip3191/battleRoyale.git` then `cd battleRoyale`.
 6. **Switch on the secret guard:** `git config core.hooksPath .githooks` (the setup check does this for you after D01).
-7. **Create your `.env`:** copy `.env.example` to `.env` (Mac: `cp .env.example .env`, Windows: `copy .env.example .env`) and fill in every `[required]` line with the course endpoint URLs, ports, and keys you already have; then run `node scripts/check-env.mjs` (it never shows values). Values everyone already has.
+7. **Create your `.env`:** in your own terminal (Terminal, PowerShell, or VS Code → Terminal → New Terminal), run `npm run env:setup`. It asks for the course host and API key from the course endpoint list (the key is hidden as you type), writes `.env` with the right ports and model names, and checks it. Check again anytime with `npm run env:check` (it never shows values). In Claude Code, `/setup-env` walks you through it. Never paste the key into a chat, issue, or PR.
 8. **Start Claude Code** in the folder (`claude`) and say: *"Read CLAUDE.md and docs/PROJECT_GUIDE.md and explain the project to me in plain English. Then run npm run setup and npm run dev and tell me if it works."*
 
 **Day 2 — your first task**
