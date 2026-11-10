@@ -31,7 +31,7 @@ Then it gives you the new issue's link. New issues land in **Backlog**.
 
 ## The other way: the GitHub website
 
-On GitHub, go to **Issues → New issue** and choose **Feature**, **Bug**, or **Chore**. Blank issues are turned off, so every issue uses a form. Each form adds its type label for you. Acceptance criteria are required in all three forms.
+On GitHub, go to **Issues → New issue** and choose **Feature**, **Bug**, or **Chore**. Blank issues are turned off, so every issue uses a form. Each form adds its type label for you. Acceptance criteria are required in all three forms. You don't need to add size, lane, wave, or an assignee yourself: the PM sets them at triage.
 
 | Form | Use it when | It asks for |
 |---|---|---|

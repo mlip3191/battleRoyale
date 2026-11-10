@@ -17,7 +17,7 @@ What I want (may be empty): "$ARGUMENTS"
 - **Bug** (`type: bug`): something broken. Sections: What happened, What should happen, Steps to reproduce, Screenshots, Acceptance criteria.
 - **Chore** (`type: chore`): docs, process, setup, maintenance. Sections: What needs doing, Why, Acceptance criteria (done when).
 
-Use those exact section names as `### ` headings in the body, in that order, so the issue matches the web form.
+Use those exact section names as `### ` headings in the body, in that order, so the issue matches the web form. If an optional section has nothing to say, keep its heading and write `_No response_` under it.
 
 ## 3. Write acceptance criteria
 - Each one is a `- [ ]` checkbox that someone else can answer yes or no, with a concrete input and result (see the good-vs-weak table in `docs/issues.md`). Rewrite vague ones such as "works", "handles errors", or "is fast".
@@ -42,7 +42,7 @@ Show each issue exactly as it will be created: title, labels, assignee (only if 
 
 ## 7. Create it (only after a clear yes)
 For each issue:
-1. Write the body to `.claude/tmp/new-issue-<short-name>.md`.
+1. Tell me to expect two Approve prompts (one for saving the draft, one for creating the issue), then write the body to `.claude/tmp/new-issue-<short-name>.md`.
 2. Run `gh issue create --title "<title>" --body-file .claude/tmp/new-issue-<short-name>.md --label "<label>"` (one `--label` per label, plus `--assignee <login>` only if I asked for one). For a split, create them in order and fill each "Blocked by #<n>" with the real number of the issue just created.
 3. Report each new issue's number and link. Say that it lands in Backlog and the PM triages it (moves it to Ready).
 
