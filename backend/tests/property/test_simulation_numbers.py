@@ -146,7 +146,8 @@ def test_duck_sized_horses_vs_horse_sized_duck_is_explainable():
 
 def timed(matchup, sheets, runs=1000):
     start = time.perf_counter()
-    result = run(matchup, sheets, runs=runs)
+    # explain=False: these timings are for the simulation itself (F05 times the full run).
+    result = run(matchup, sheets, runs=runs, explain=False)
     return result, time.perf_counter() - start
 
 

@@ -5,7 +5,7 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-ENGINE_VERSION = 3
+ENGINE_VERSION = 6
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1
@@ -78,3 +78,44 @@ MORALE_SPAN = 0.8
 # Coordinated attacks: with two or more attackers on one target, hit chance rises by up to
 # this share at group_tactics_0_1 = 1 (assumption).
 GROUP_TACTICS_BONUS = 0.5
+
+# --- Deciding factor (F05) ---
+
+# Runs used for each one-at-a-time sensitivity check.
+DECIDING_RUNS = 200
+# Weight of the favorite's average survivors next to its win share when ranking factors, so a
+# lopsided fight (win share stuck at 100%) still shows which factor matters most (assumption).
+SURVIVOR_WEIGHT = 0.5
+# If no factor moves the favorite's results by at least this much, the fight is "too close".
+MIN_EFFECT = 0.02
+
+# --- Fair-fight search (F06) ---
+
+# Runs per probe of the fair-fight search and per next-challenger duel.
+FAIR_RUNS = 200
+# A fight is "fair" when the varied side's win share is within this of 50%.
+FAIR_TOLERANCE = 0.05
+# Most probes one search may use, and the largest count it will try.
+FAIR_MAX_PROBES = 20
+FAIR_MAX_COUNT = 10_000
+
+# --- Machines, objects, and mythical abilities (F08) ---
+
+# Ramming and crushing: damage per hit = RAM_DAMAGE_PER_MOMENTUM * mass * speed (momentum, kg*m/s).
+# Momentum is the physical measure of how hard a moving mass hits; the conversion to hit points
+# is an assumption (same role as DAMAGE_PER_NEWTON).
+RAM_DAMAGE_PER_MOMENTUM = 0.005
+# A ramming or crushing vehicle makes one pass every 2.5 s (assumption).
+RAM_ATTACKS_PER_S = 0.4
+# Crushing needs weight, not speed: speed is floored at this for the momentum formula (assumption).
+CRUSH_MIN_SPEED_MPS = 1.0
+
+# Breath weapon: a ranged attack. Damage is the larger of the fighter's melee damage and this many
+# newton-equivalents x DAMAGE_PER_NEWTON; it reaches this far (all assumptions: legends give no
+# numbers).
+BREATH_DAMAGE_N = 100_000.0
+BREATH_RANGE_M = 15.0
+# Regeneration heals this share of max hit points per second (assumption).
+REGEN_SHARE_PER_S = 0.002
+# Heads used when a creature has extra_heads but its legend names no verified number (ARCH §9).
+DEFAULT_HEADS = 3

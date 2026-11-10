@@ -263,7 +263,7 @@
   "description": "Everything the simulation knows about one fighter, with a source for every number.",
   "properties": {
     "fighter_id": {
-      "description": "Stable slug, e.g. \"grizzly-bear--adult-male\".",
+      "description": "Stable slug, e.g. \"grizzly-bear\"; a non-default variant adds \"--variant\".",
       "title": "Fighter Id",
       "type": "string"
     },
