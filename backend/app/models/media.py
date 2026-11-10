@@ -13,7 +13,7 @@ class Asset(Contract):
     kind: Literal["sprite", "battlefield", "narration_audio", "music"]
     """What the file is."""
     url: str
-    """Where the front end loads it, e.g. "/media/sprites/grizzly-bear--adult-male.png"."""
+    """Where the front end loads it, e.g. "/media/sprites/grizzly-bear.png"."""
     prompt_hash: str
     """Hash of the prompt that made it, used for caching."""
     fallback: bool = False

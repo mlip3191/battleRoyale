@@ -3,7 +3,7 @@
   "description": "One row of GET /api/fighters?q=: a fighter whose name matches the search text.",
   "properties": {
     "fighter_id": {
-      "description": "Stable fighter id, e.g. \"grizzly-bear--adult-male\".",
+      "description": "Stable fighter id, e.g. \"grizzly-bear\".",
       "title": "Fighter Id",
       "type": "string"
     },
