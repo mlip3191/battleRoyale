@@ -5,7 +5,7 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-ENGINE_VERSION = 5
+ENGINE_VERSION = 6
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1
