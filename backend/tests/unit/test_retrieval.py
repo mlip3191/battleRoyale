@@ -73,6 +73,11 @@ class ShortReranker:
         return [1.0]
 
 
+class GarbledReranker:
+    async def rerank(self, query: str, passages: list[str]) -> list[float]:
+        raise ValueError("Expecting value: line 1 column 1 (char 0)")
+
+
 async def test_retrieve_returns_only_that_fighters_passages(database: sqlite3.Connection) -> None:
     passages = await retrieve(database, MockEmbedder(), "gray-wolf", "weight")
     assert [p.text for p in passages] == ["Wolves weigh 40 kg."]
@@ -102,10 +107,10 @@ async def test_a_failing_reranker_keeps_vector_order_and_logs(
     database: sqlite3.Connection, caplog: pytest.LogCaptureFixture
 ) -> None:
     passages = await retrieve(database, MockEmbedder(), "grizzly-bear", "anything")
-    for reranker in (FailingReranker(), ShortReranker()):
+    for reranker in (FailingReranker(), ShortReranker(), GarbledReranker()):
         with caplog.at_level(logging.WARNING, logger="app.research.retrieve"):
             assert await rerank(reranker, "speed", passages) == passages[:TOP_N]
-    assert caplog.text.count("kept vector order") == 2
+    assert caplog.text.count("kept vector order") == 3
 
 
 async def test_rerank_of_nothing_is_nothing() -> None:
@@ -177,6 +182,21 @@ async def test_live_reranker_returns_scores_in_input_order() -> None:
     assert await reranker.rerank("q", ["a", "b"]) == [0.1, 0.9]
     await reranker.rerank("q", ["a", "b"])
     assert calls.count("/v1/models") == 1
+
+
+async def test_live_reranker_rejects_a_duplicated_index() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/rerank"}]})
+        rows = [
+            {"index": 0, "relevance_score": 0.5},
+            {"index": 1, "relevance_score": 0.4},
+            {"index": 1, "relevance_score": 0.9},
+        ]
+        return httpx.Response(200, json={"results": rows})
+
+    with pytest.raises(ProviderError, match="every passage"):
+        await live_reranker(handler).rerank("q", ["a", "b"])
 
 
 async def test_live_reranker_rejects_a_reply_missing_a_passage() -> None:

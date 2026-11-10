@@ -71,7 +71,7 @@ async def rerank(
         scores = await reranker.rerank(query, [passage.text for passage in passages])
         if len(scores) != len(passages):
             raise ProviderError("reranker returned the wrong number of scores")
-    except (ProviderError, httpx.HTTPError) as error:
+    except (ProviderError, httpx.HTTPError, ValueError) as error:  # ValueError: reply not JSON
         logger.warning("Reranker unavailable (%s); kept vector order.", type(error).__name__)
         return passages[:top_n]
     order = sorted(range(len(passages)), key=lambda i: (-scores[i], i))

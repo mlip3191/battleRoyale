@@ -41,7 +41,7 @@ class LiveReranker:
             raise ProviderError(
                 "Live 'reranker' reply had no results[].relevance_score."
             ) from error
-        if sorted(scores) != list(range(len(passages))):
+        if len(reply["results"]) != len(passages) or sorted(scores) != list(range(len(passages))):
             raise ProviderError("Live 'reranker' reply did not score every passage once.")
         return [scores[index] for index in range(len(passages))]
 
