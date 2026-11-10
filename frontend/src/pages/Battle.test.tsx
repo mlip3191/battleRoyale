@@ -1,4 +1,4 @@
-// The Battle page's five visible states, with useBattle mocked so each state is set directly.
+// The Battle page's visible states, with useBattle mocked so each state is set directly.
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, expect, test, vi } from "vitest";
@@ -19,6 +19,16 @@ vi.mock("../api/useBattle.ts", async (original) => ({
 
 afterEach(cleanup);
 
+// The app's routes for battle b1, opened at the given address.
+const page = (path: string) => (
+  <MemoryRouter initialEntries={[path]}>
+    <Routes>
+      <Route path="/battle/:id" element={<Battle />} />
+      <Route path="/battle/:id/results" element={<Results />} />
+    </Routes>
+  </MemoryRouter>
+);
+
 // Show the page for battle b1 with the given hook result.
 function show(
   battle: unknown,
@@ -26,14 +36,7 @@ function show(
   path = "/battle/b1",
 ) {
   state.value = { battle, error };
-  render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/battle/:id" element={<Battle />} />
-        <Route path="/battle/:id/results" element={<Results />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+  return render(page(path));
 }
 
 const asRecord = (r: unknown) => r as BattleRecord;
@@ -86,6 +89,26 @@ test("failed: says the fight was called off and links home", () => {
   expect(backHome().getAttribute("href")).toBe("/");
 });
 
+test("failed with an error too: shows only one alert", () => {
+  show({ ...asRecord(running), status: "failed" }, RETRYING);
+  const alerts = screen.getAllByRole("alert");
+  expect(alerts).toHaveLength(1);
+  expect(alerts[0].textContent).toContain("called off");
+  expect(backHome().getAttribute("href")).toBe("/");
+});
+
+test("the ticker's status region stays mounted while the battle loads and runs", () => {
+  const { rerender } = show(null);
+  const region = screen.getByRole("status");
+  state.value = { battle: running, error: null };
+  rerender(page("/battle/b1"));
+  expect(screen.getByRole("status")).toBe(region);
+  state.value = { battle: done, error: null };
+  rerender(page("/battle/b1"));
+  expect(screen.getByRole("status")).toBe(region);
+  expect(region.textContent).toBe("");
+});
+
 test("done: links to this battle's results", () => {
   show(done);
   const link = screen.getByRole("link", { name: "See the results" });
@@ -97,6 +120,15 @@ test("the page has a heading for screen readers", () => {
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
     asRecord(done).matchup.raw_text,
   );
+});
+
+test("screen readers hear the matchup once: the banner is decorative", () => {
+  show(done);
+  const copies = screen.getAllByText(asRecord(done).matchup.raw_text);
+  const heard = copies.filter((el) => !el.closest('[aria-hidden="true"]'));
+  expect(copies).toHaveLength(2);
+  expect(heard).toHaveLength(1);
+  expect(heard[0].tagName).toBe("H1");
 });
 
 test("results page links back to this battle's broadcast", () => {

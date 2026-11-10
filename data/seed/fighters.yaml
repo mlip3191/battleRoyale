@@ -1,0 +1,213 @@
+# The 30 seed fighters, copied from the table in docs/research.md (a test keeps them in sync).
+
+fighters:
+  - id: grizzly-bear
+    display_name: Grizzly bear
+    variant: Adult male
+    category: mammal
+    body: living
+    habitat: land
+    article: Grizzly bear
+  - id: gray-wolf
+    display_name: Gray wolf
+    variant: Adult male
+    category: mammal
+    body: living
+    habitat: land
+    article: Wolf
+  - id: african-lion
+    display_name: African lion
+    variant: Adult male
+    category: mammal
+    body: living
+    habitat: land
+    article: Lion
+  - id: house-cat
+    display_name: House cat
+    variant: Adult domestic cat
+    category: mammal
+    body: living
+    habitat: land
+    article: Cat
+  - id: golden-retriever
+    display_name: Golden retriever
+    variant: Adult male
+    category: mammal
+    body: living
+    habitat: land
+    article: Golden Retriever
+  - id: african-elephant
+    display_name: African elephant
+    variant: Adult bull, savanna
+    category: mammal
+    body: living
+    habitat: land
+    article: African elephant
+  - id: horse
+    display_name: Horse
+    variant: Adult domestic riding horse
+    category: mammal
+    body: living
+    habitat: land
+    article: Horse
+  - id: hippopotamus
+    display_name: Hippopotamus
+    variant: Adult male, common hippo
+    category: mammal
+    body: living
+    habitat: amphibious
+    article: Hippopotamus
+  - id: chimpanzee
+    display_name: Chimpanzee
+    variant: Adult male, common chimpanzee
+    category: mammal
+    body: living
+    habitat: land
+    article: Chimpanzee
+  - id: gorilla
+    display_name: Gorilla
+    variant: Adult male, western lowland
+    category: mammal
+    body: living
+    habitat: land
+    article: Gorilla
+  - id: honey-badger
+    display_name: Honey badger
+    variant: Adult male
+    category: mammal
+    body: living
+    habitat: land
+    article: Honey badger
+  - id: house-mouse
+    display_name: House mouse
+    variant: Adult
+    category: mammal
+    body: living
+    habitat: land
+    article: House mouse
+  - id: bald-eagle
+    display_name: Bald eagle
+    variant: Adult female
+    category: bird
+    body: living
+    habitat: air
+    article: Bald eagle
+  - id: duck
+    display_name: Duck
+    variant: Adult mallard
+    category: bird
+    body: living
+    habitat: amphibious
+    article: Mallard
+  - id: goose
+    display_name: Goose
+    variant: Adult Canada goose
+    category: bird
+    body: living
+    habitat: amphibious
+    article: Canada goose
+  - id: saltwater-crocodile
+    display_name: Saltwater crocodile
+    variant: Adult male
+    category: reptile
+    body: living
+    habitat: amphibious
+    article: Saltwater crocodile
+  - id: king-cobra
+    display_name: King cobra
+    variant: Adult
+    category: reptile
+    body: living
+    habitat: land
+    article: King cobra
+  - id: great-white-shark
+    display_name: Great white shark
+    variant: Adult female
+    category: fish
+    body: living
+    habitat: water
+    article: Great white shark
+  - id: army-ant
+    display_name: Army ant
+    variant: Eciton burchellii worker
+    category: insect
+    body: living
+    habitat: land
+    article: Army ant
+  - id: honey-bee
+    display_name: Honey bee
+    variant: Western honey bee worker
+    category: insect
+    body: living
+    habitat: air
+    article: Western honey bee
+  - id: tyrannosaurus-rex
+    display_name: Tyrannosaurus rex
+    variant: Adult
+    category: dinosaur
+    body: living
+    habitat: land
+    article: Tyrannosaurus
+  - id: triceratops
+    display_name: Triceratops
+    variant: Adult
+    category: dinosaur
+    body: living
+    habitat: land
+    article: Triceratops
+  - id: roman-legionary
+    display_name: Roman legionary
+    variant: Imperial era, sword and shield
+    category: human_archetype
+    body: living
+    habitat: land
+    article: Legionary
+  - id: medieval-knight
+    display_name: Medieval knight
+    variant: Plate armor, on foot
+    category: human_archetype
+    body: living
+    habitat: land
+    article: Knight
+  - id: samurai
+    display_name: Samurai
+    variant: Armored, on foot
+    category: human_archetype
+    body: living
+    habitat: land
+    article: Samurai
+  - id: main-battle-tank
+    display_name: Main battle tank
+    variant: Generic modern tank, ramming and crushing only
+    category: vehicle
+    body: machine
+    habitat: land
+    article: Main battle tank
+  - id: bulldozer
+    display_name: Bulldozer
+    variant: Medium crawler
+    category: vehicle
+    body: machine
+    habitat: land
+    article: Bulldozer
+  - id: pickup-truck
+    display_name: Pickup truck
+    variant: Full-size
+    category: vehicle
+    body: machine
+    habitat: land
+    article: Pickup truck
+  - id: toaster
+    display_name: Toaster
+    variant: Two-slice household toaster
+    category: object
+    body: inert
+    habitat: land
+    article: Toaster
+  - id: saguaro-cactus
+    display_name: Saguaro cactus
+    variant: Mature plant
+    category: plant
+    body: inert
+    habitat: land
+    article: Saguaro

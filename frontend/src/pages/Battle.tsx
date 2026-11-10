@@ -19,56 +19,50 @@ export default function Battle() {
   const { id = "" } = useParams();
   const { battle, error } = useBattle(id);
 
-  if (!battle) {
-    return (
-      <main>
-        <h1 className={srOnly}>Battle</h1>
-        {error ? (
-          <>
-            <ErrorPanel
-              title={error === NOT_FOUND ? "Battle not found" : undefined}
-              message={error}
-            />
-            <BackHome />
-          </>
-        ) : (
-          <LoadingTicker message="Warming up the studio lights…" />
-        )}
-      </main>
-    );
-  }
+  const failed = battle?.status === "failed";
+  const running = battle?.stages.find((s) => s.status === "running");
+  const first = battle?.matchup.fighters[0]?.entity ?? "the fighters";
+  // One ticker for every state, so its status region stays mounted and only its text changes.
+  const tickerMessage = !battle
+    ? error
+      ? ""
+      : "Warming up the studio lights…"
+    : battle.status === "running"
+      ? (running?.detail ?? `Researching the ${first}…`)
+      : "";
 
-  const running = battle.stages.find((s) => s.status === "running");
-  const first = battle.matchup.fighters[0]?.entity ?? "the fighters";
   return (
     <main>
-      <h1 className={srOnly}>{battle.matchup.raw_text}</h1>
-      <LowerThird>{battle.matchup.raw_text}</LowerThird>
-      {error && <ErrorPanel message={error} />}
-      {battle.status === "running" && (
-        <LoadingTicker
-          message={running?.detail ?? `Researching the ${first}…`}
-        />
+      <h1 className={srOnly}>{battle ? battle.matchup.raw_text : "Battle"}</h1>
+      {battle && <LowerThird decorative>{battle.matchup.raw_text}</LowerThird>}
+      {/* At most one alert: a called-off fight says so, otherwise show the fetch error. */}
+      {failed ? (
+        <ErrorPanel message="This fight was called off. Try another matchup." />
+      ) : (
+        error && (
+          <ErrorPanel
+            title={error === NOT_FOUND ? "Battle not found" : undefined}
+            message={error}
+          />
+        )
       )}
-      {battle.status === "failed" && (
-        <>
-          <ErrorPanel message="This fight was called off. Try another matchup." />
-          <BackHome />
-        </>
-      )}
-      {battle.status === "done" && (
+      <LoadingTicker message={tickerMessage} />
+      {(failed || (!battle && error)) && <BackHome />}
+      {battle?.status === "done" && (
         <p>
           The verdict is in.{" "}
           <Link to={`/battle/${id}/results`}>See the results</Link>
         </p>
       )}
-      <ol aria-label="Show progress">
-        {battle.stages.map((s) => (
-          <li key={s.stage}>
-            {s.stage}: {s.status}
-          </li>
-        ))}
-      </ol>
+      {battle && (
+        <ol aria-label="Show progress">
+          {battle.stages.map((s) => (
+            <li key={s.stage}>
+              {s.stage}: {s.status}
+            </li>
+          ))}
+        </ol>
+      )}
     </main>
   );
 }
