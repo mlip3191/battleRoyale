@@ -112,7 +112,7 @@ If a fighter has a `size_reference` and no reference sheet is given, `run` raise
 | `hit` | `side` is the **attacker's** side, `actor` the attacker, `target` the one hit; `damage` is the hit. **Swarm hits:** `actor` and `target` are `None`, `group_size` is how many hit, and `damage` is the group total | "bite lands" (swarm: "bites land"), "blast lands", "ram lands", and so on (weapon words below) |
 | `hit` (spines) | **Swapped:** `side` is the **defender's** side, `actor` the spiny defender, `target` the attacker it hurt | "spines jab back" |
 | `miss` | Like `hit`; `damage` is `None`. Swarm fights have no MISS events | "bite misses", "blast misses", and so on |
-| `ko` | `side` is the side that **went down** (or the machine that broke), `actor` is the fallen fighter's index, `target` is `None`; swarm: `actor` is `None` and `group_size` is how many fell | "goes down" / "go down"; "out of action: its operating time ran out" |
+| `ko` | `side` is the side that **went down** (or the machine that broke), `actor` is the fallen fighter's index, `target` is `None`; swarm: `actor` is `None` and `group_size` is how many fell | "goes down" / "go down"; "more go down" (a summary of falls that did not fit in the log, see below); "out of action: its operating time ran out" |
 | `retreat` | `side` is the side that ran; `group_size` is how many were left | "breaks and runs" / "break and run" |
 | `flee` | `side` is the side that got away | "escapes" / "escape" |
 | `stalemate` | `side` is 0 | "neither side can win" |
@@ -127,7 +127,7 @@ Weapon words: bite, claw swipe, goring thrust, kick, venom strike, squeeze, tusk
 - **`damage`** is in hit points (relative, not real units): per hit for single fighters, the group total for swarm hits, `None` on misses and knock-outs.
 - **`EventType.ATTACK`** exists in the contract but is never emitted.
 - **Time:** events are in time order, `t` in simulated seconds, and all fall within 600 s.
-- **Length and cut-off:** the log has at most 300 events. After about 298 events from the fight itself, later hits and knock-outs are dropped, but the closing events are always added. If `len(log) >= 299` the log may be cut off, so never count KOs to work out who survived; use `outcome` and `mean_survivors`, and treat the log as a highlight reel.
+- **Length and summary:** the log has at most 300 events. Hits and misses fill only about the first half, so knock-outs keep their room. Knock-outs that still do not fit are summed into one extra KO event per side, with `group_size` set to how many fell and the hint "more go down", placed just before the ending. So the `group_size` values of a log's KO events (counting 1 where it is `None`) add up to the number of fighters who fell. Retreats and escapes can still be dropped from a very crowded log, so use `outcome` and `mean_survivors` for the result, and treat the log as a highlight reel.
 - **Who won:** read `outcome` (or `summary(...).favorite`). The END event's `side` is the winner only when there is one (0 for a draw or no contest).
 
 ## Speed and good habits
