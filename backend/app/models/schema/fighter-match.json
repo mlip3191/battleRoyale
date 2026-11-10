@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "One row of GET /api/fighters?q=: a fighter whose name matches the search text.",
+  "properties": {
+    "fighter_id": {
+      "description": "Stable fighter id, e.g. \"grizzly-bear--adult-male\".",
+      "title": "Fighter Id",
+      "type": "string"
+    },
+    "display_name": {
+      "description": "Name shown to the user.",
+      "title": "Display Name",
+      "type": "string"
+    },
+    "cached": {
+      "description": "True when a stat sheet is already saved, so the battle can skip research.",
+      "title": "Cached",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "fighter_id",
+    "display_name",
+    "cached"
+  ],
+  "title": "FighterMatch",
+  "type": "object"
+}
