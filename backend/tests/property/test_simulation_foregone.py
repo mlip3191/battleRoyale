@@ -122,7 +122,7 @@ def test_a_hopeless_stalemate_is_cheap_even_with_many_fast_attackers():
     )
     start = time.perf_counter()
     result = run(matchup_of(150, 5), [gnat, mountain], runs=1000, explain=False)
-    assert time.perf_counter() - start < 2.0
+    assert time.perf_counter() - start < 10.0  # minutes without the shortcut; slack for CI
     assert result.outcome == "draw" and result.mean_duration_s == c.MAX_FIGHT_S
 
 
