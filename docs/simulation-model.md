@@ -111,6 +111,17 @@ The 95% interval is a Wilson score interval on the share of runs won. Because ev
 
 Machines and abilities (F08, which will add "abilities" to the deciding-factor check), and fatigue from `endurance_s`. A `no_contest` reports `habitat` as its deciding factor.
 
+## Tournament bracket (#113)
+
+`run_tournament(stat_sheets, terrain=ARENA, runs=None, explain=True)` in `tournament.py` runs eight fighters through a single-elimination bracket: 4 matches, then 2, then the final.
+
+- **Seeding.** The order of the list is the seeding (first = top seed). Round 1 pairs seeds 1 v 8, 4 v 5, 2 v 7 and 3 v 6, so the top seeds cannot meet before the semifinals. The winners of matches 1 and 2 meet in one semifinal and the winners of 3 and 4 in the other.
+- **No new randomness.** Every match is an ordinary 1 v 1 `run(...)`, seeded from the two fighters, the terrain and `ENGINE_VERSION` as usual. The same eight sheets, terrain and run count always give the same bracket and champion. `Tournament.seed` is a fingerprint of the entrants, terrain and engine version.
+- **Who goes through.** The match verdict's winner. For a draw or a `no_contest`, the fighter with the higher win share goes through (`decided_by = "better_odds"`), and if that is level too, the higher seed (`"seed"`). Each match says which rule decided it.
+- **Errors.** Anything other than exactly eight fighters, or the same fighter twice, raises a `ValueError` with a plain message.
+- **Cost.** Seven 1 v 1 matches: about 1 s in total with the default 1,000 runs and the deciding-factor analysis. `explain=False` is faster, but its deciding factor is a placeholder.
+- **Not changed.** Single-battle results and `ENGINE_VERSION` are untouched. The API, narration and UI come later (#114 to #117).
+
 ## References
 
 - Lanchester, F. W. (1916). *Aircraft in Warfare: The Dawn of the Fourth Arm.*
