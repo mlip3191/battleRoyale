@@ -1,10 +1,10 @@
 # Simulation Model: where our numbers come from
 
-This is the answer to "where do your numbers come from?" Every constant lives in `backend/app/simulation/constants.py`. The stat sheets (sourced, cited) say *what a fighter is*; these constants say *how a fight turns those stats into hits and hit points*. **No language model sets any of these numbers.**
+This is the answer to "where do your numbers come from?" Every constant lives in `backend/app/simulation/constants.py`, except the terrain table, which lives in `backend/app/simulation/terrain.py`. Each one is listed here with its source or an "assumption" label. The stat sheets (sourced, cited) say *what a fighter is*; these constants say *how a fight turns those stats into hits and hit points*. **No language model sets any of these numbers.**
 
 Honesty note: published studies say how strong a bite is or how fast an animal runs (that is what the stat sheets cite), but nothing in the literature gives a conversion from "newtons of bite force" to "hit points in a fight." Where a constant has no published source, it is labeled **assumption** below and was chosen so that results look sensible across the benchmark matchups. The benchmark (F07) is how we check that choice.
 
-## How a fight works (engine version 2)
+## How a fight works (engine version 3)
 
 1. **Sampling.** Each of the (default) 1,000 runs draws every stat uniformly between its `low` and `high` for each side, using a generator seeded from the matchup, both stat-sheet hashes, and `ENGINE_VERSION`. Uncertain inputs therefore spread the results.
 2. **Approach.** The sides start `START_DISTANCE_M` apart and close at the sum of their speeds, minus the longer reach.
@@ -16,7 +16,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 | Constant | Value | Meaning | Source / status |
 |---|---|---|---|
-| `ENGINE_VERSION` | 2 | Part of the seed; bump whenever results would change. | Bookkeeping |
+| `ENGINE_VERSION` | 3 | Part of the seed; bump whenever results would change. | Bookkeeping |
 | `TICK_S` | 0.1 s | Simulation time step. | Assumption (fine enough for attack rates up to ~10/s) |
 | `MAX_FIGHT_S` | 600 s | A fight this long is a draw. | Design choice (DECISIONS / ARCHITECTURE §9) |
 | `MAX_LOG_EVENTS` | 300 | Cap on the replay log. | `SimulationResult` contract |
@@ -37,6 +37,8 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `SWARM_THRESHOLD` | 200 | A side with more individuals than this runs in groups. | Design choice (ARCHITECTURE §9); chosen for speed |
 | `SWARM_STEP_S` | 0.5 s | Shortest swarm step. | **Assumption** |
 | `SWARM_STEP_GROWTH` | 0.1 | Swarm steps are at least this share of elapsed time. | **Assumption**: keeps 600 s swarm fights fast; early moments stay fine-grained |
+| `MORALE_FLOOR`, `MORALE_SPAN` | 0.2, 0.8 | A side retreats once it has lost `0.2 + 0.8 x aggression_0_1` of its total hit points (timid 20%, fully aggressive never). | **Assumption**; no source measures this. Aggression is itself an assumable stat on the sheet. |
+| `GROUP_TACTICS_BONUS` | 0.5 | With two or more attackers on one target, hit chance rises by up to this share at `group_tactics_0_1` = 1. | **Assumption** (cooperative hunting raises success in packs, e.g. Packer & Ruttan 1988, but no table gives a number) |
 | `STRENGTH_SCALE_EXP` | 2/3 | Strength and damage scale as k^(2/3) when resized by k. | Muscle force follows cross-section area, so mass^(2/3): the square-cube law (Galileo 1638; Hill 1950, "The Dimensions of Animals and their Muscular Dynamics") |
 | `LENGTH_SCALE_EXP` | 1/3 | Size and reach scale as k^(1/3). | Geometric similarity: length = mass^(1/3) |
 | `SPEED_SCALE_EXP` | 1/6 | Top speed scales as k^(1/6). | Maximum running speed grows about mass^0.17 across mammals (Garland 1983, *J. Zoology*); simplified to 1/6 and applied to all movement. Garland also finds speed falls for the very largest animals, which this does not model |
@@ -49,13 +51,53 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 **Speed.** 1,000 runs of 100 v 1,000 take about 0.1 s, and 10,000 ants v 1 lion (a draw at 600 s, the slowest case) about 1 s. One-by-one fights cost roughly the number of attacks made, so big groups just under 200 per side are slow (about 17 s for 200 v 200 at 1,000 runs). Callers that run many fights (F05, F06) should lower the run count or the threshold for large groups.
 
+## Terrain, habitat, and behavior (F04)
+
+- **Terrain table.** `terrain.py` gives every Terrain x Habitat pair (28 rows, each commented) a speed, attack, and hit multiplier. Water-only fighters on dry land are stranded (speed x0.1, attack x0.3, hit x0.5); land fighters in deep water are crippled (speed x0.2, attack x0.4, hit x0.5); the shoreline lets both engage weakly (land x0.7/0.8/0.8, water x0.5/0.6/0.7). All values are **assumptions** chosen for clear, sensible handicaps; they are not measured.
+
+The full table (each row is a multiplier on that fighter's speed, attack damage and hit chance; every value is an **assumption**, not a measurement):
+
+| Terrain | Habitat | Speed | Attack | Hit | Reason (all values are assumptions) |
+|---|---|---|---|---|---|
+| arena | land | x1.0 | x1.0 | x1.0 | home ground for land animals |
+| arena | water | x0.1 | x0.3 | x0.5 | stranded: gasping, can barely move or bite |
+| arena | air | x0.8 | x1.0 | x0.95 | walls limit flight a little |
+| arena | amphibious | x0.8 | x0.9 | x0.9 | amphibians are clumsy but fine on land |
+| open field | land | x1.0 | x1.0 | x1.0 | baseline |
+| open field | water | x0.1 | x0.3 | x0.5 | stranded on dry land |
+| open field | air | x1.0 | x1.0 | x1.0 | open sky: fliers are unhindered |
+| open field | amphibious | x0.8 | x0.9 | x0.9 | amphibious animal out of the water |
+| forest | land | x0.9 | x1.0 | x1.0 | undergrowth costs a little speed |
+| forest | water | x0.1 | x0.3 | x0.5 | stranded |
+| forest | air | x0.6 | x1.0 | x0.85 | branches block flight paths and dives |
+| forest | amphibious | x0.8 | x0.9 | x0.9 | damp ground helps a little, no more |
+| water | land | x0.2 | x0.4 | x0.5 | deep water: paddling, no footing (heavy penalty) |
+| water | water | x1.0 | x1.0 | x1.0 | home ground for fish and swimmers |
+| water | air | x1.0 | x1.0 | x1.0 | fliers hover over the surface freely |
+| water | amphibious | x0.9 | x1.0 | x1.0 | swimming amphibians are nearly at home |
+| shoreline | land | x0.7 | x0.8 | x0.8 | wading slows footing |
+| shoreline | water | x0.5 | x0.6 | x0.7 | shallows restrict a swimmer's movement |
+| shoreline | air | x1.0 | x1.0 | x1.0 | open air above the shallows |
+| shoreline | amphibious | x1.0 | x1.0 | x1.0 | amphibians' favorite ground |
+| urban | land | x1.0 | x1.0 | x0.95 | hard ground, some cover |
+| urban | water | x0.1 | x0.3 | x0.5 | stranded |
+| urban | air | x0.8 | x1.0 | x0.9 | buildings clutter the air |
+| urban | amphibious | x0.8 | x0.9 | x0.9 | out of its element |
+| mountain | land | x0.85 | x1.0 | x0.95 | slopes cost speed |
+| mountain | water | x0.1 | x0.3 | x0.5 | stranded |
+| mountain | air | x0.9 | x1.0 | x0.95 | thin air and updrafts, small cost |
+| mountain | amphibious | x0.7 | x0.9 | x0.85 | rough rock is hard on soft bodies |
+- **`no_contest`.** If neither side can reach the other, `run()` returns immediately with outcome `no_contest`, zero probabilities, and an END event "no contest: neither can reach the other". The only unreachable pair is a flier against a strictly water-living fighter in open water (the swimmer is submerged and the flier is out of reach). On dry land a fish is stranded and reachable; in the shallows everyone is reachable.
+- **Morale, retreat, and flee.** When a side's lost share of total hit points passes its morale threshold (see constants), it retreats (RETREAT event) and stops attacking. If it is faster than the other side (after terrain) it escapes (FLEE event): the fight ends, the pursuer wins, and the runner counts as a survivor (a loss for its side, but alive). If it is not faster, it is caught and finishes the fight defenseless. Machines will never retreat (F08).
+- **Group tactics.** Two or more attackers on the same target (or, for ranged sides and swarms, a crowd of attackers) raise hit chance by `group_tactics_0_1 x 0.5`, capped by the normal hit-chance maximum.
+
 ## Why probabilities are shown as "range"
 
 The 95% interval is a Wilson score interval on the share of runs won. Because every run draws different stats, the shares already blend in input uncertainty: when the stat ranges are narrow the fight's outcome is more predictable, so the win share moves toward 0 or 1 and the interval narrows (tested in `tests/property/test_simulation_engine.py`). The interval does *not* separately model uncertainty in the constants above.
 
 ## Not modeled yet
 
-Terrain and morale (F04), deciding-factor analysis (F05), machines and abilities (F08), and fatigue from `endurance_s`. The placeholder `deciding_factor` in v1 is always `mass_kg`.
+Deciding-factor analysis (F05), machines and abilities (F08), and fatigue from `endurance_s`. The placeholder `deciding_factor` is always `mass_kg` (except `habitat` for a `no_contest`).
 
 ## References
 
@@ -64,4 +106,5 @@ Terrain and morale (F04), deciding-factor analysis (F05), machines and abilities
 - Garland, T. (1983). The relation between maximal running speed and body mass in terrestrial mammals. *Journal of Zoology* 199, 157-170.
 - Kleiber, M. (1932). Body size and metabolism. *Hilgardia* 6, 315-353.
 - West, G. B., Brown, J. H. & Enquist, B. J. (1997). A general model for the origin of allometric scaling laws in biology. *Science* 276, 122-126.
+- Packer, C. & Ruttan, L. (1988). The evolution of cooperative hunting. *The American Naturalist* 132, 159-198.
 - Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. *JASA* 22, 209-212.
