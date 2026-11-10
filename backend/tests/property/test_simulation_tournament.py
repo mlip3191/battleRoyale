@@ -5,7 +5,7 @@ import pytest
 from app.models.matchup import FighterRequest, Matchup
 from app.models.terrain import Terrain
 from app.simulation.engine import run
-from app.simulation.tournament import ROUND_ONE_PAIRS, run_tournament
+from app.simulation.tournament import ROUND_ONE_PAIRS, _winning_side, run_tournament
 from tests.property.sim_helpers import make_sheet
 
 RUNS = 40
@@ -98,13 +98,22 @@ def test_a_clear_favorite_is_decided_by_the_simulation():
 
 
 def test_a_stalemate_still_sends_someone_through_and_says_how():
-    # Nobody here can hurt anybody, so every match is a no contest: the higher seed goes through.
+    # Nobody here can hurt anybody, so every match is level: the higher seed goes through.
     harmless = [
         make_sheet(f"soft{n}", mass_kg=50, attack_force_n=0, attacks_per_s=0) for n in range(8)
     ]
     t = tournament(harmless)
     assert all(m.decided_by == "seed" for r in t.rounds for m in r)
     assert t.champion == harmless[0]
+
+
+def test_a_draw_with_unequal_win_shares_sends_the_better_odds_fighter_through():
+    # A draw where the lower seed has the higher win share: the better odds go through.
+    result = tournament().rounds[0][0].result
+    drawn = result.model_copy(update={"outcome": "draw", "win_prob": (0.2, 0.3)})
+    assert _winning_side(drawn) == (1, "better_odds")
+    level = result.model_copy(update={"outcome": "draw", "win_prob": (0.25, 0.25)})
+    assert _winning_side(level) == (0, "seed")
 
 
 @pytest.mark.parametrize("count", [0, 1, 7, 9, 16])
