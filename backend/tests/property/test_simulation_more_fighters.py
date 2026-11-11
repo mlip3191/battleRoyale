@@ -53,5 +53,7 @@ def crowd_share(count: int, foes: int) -> float:
 )
 def test_adding_fighters_never_lowers_win_probability_in_swarm_mode_either(base, extra, foes):
     assert base + extra > c.SWARM_THRESHOLD
-    # 150 runs each, so the noise on a gap is about 0.11: this guards against a real reversal.
+    # 150 runs each: the standard error of a gap is 0.03 to 0.06, so 0.12 is about 2 standard errors
+    # at the worst row. This guards against a real reversal (it is a monotonic check, not an
+    # accuracy check: D-45's swarm-vs-one-by-one parity is tested elsewhere).
     assert crowd_share(base + extra, foes) >= crowd_share(base, foes) - 0.12
