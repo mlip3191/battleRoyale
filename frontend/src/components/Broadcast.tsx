@@ -1,5 +1,5 @@
 // The broadcast frame's building blocks, shared by every page.
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import styles from "./broadcast.module.css";
 
@@ -43,16 +43,30 @@ export function LowerThird({
 // The status region is always rendered and starts empty; only its text changes, written after
 // mount, so screen readers already know the region when the first message arrives.
 // An empty message hides the ticker bar but keeps the region in place.
+// The crawl can be paused (WCAG 2.2.2); the button sits outside the status region so it is not
+// announced with each update, and it hides when reduced motion already stops the crawl.
 export function LoadingTicker({ message }: { message: string }) {
   const text = useRef<HTMLSpanElement>(null);
+  const [paused, setPaused] = useState(false);
   useEffect(() => {
     if (text.current) text.current.textContent = message;
   }, [message]);
   return (
-    <div role="status" aria-live="polite">
-      <div className={styles.ticker}>
-        <span ref={text} className={styles.tickerText} />
+    <div className={styles.tickerBox}>
+      <div role="status" aria-live="polite">
+        <div className={`${styles.ticker} ${paused ? styles.paused : ""}`}>
+          <span ref={text} className={styles.tickerText} />
+        </div>
       </div>
+      {message && (
+        <button
+          type="button"
+          className={styles.tickerPause}
+          onClick={() => setPaused(!paused)}
+        >
+          {paused ? "Resume ticker" : "Pause ticker"}
+        </button>
+      )}
     </div>
   );
 }

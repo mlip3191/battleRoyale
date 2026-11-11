@@ -1,8 +1,9 @@
 // The shared broadcast pieces: the ticker's live region and the decorative banner option.
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, expect, test } from "vitest";
 import { LoadingTicker, LowerThird } from "./Broadcast.tsx";
+import css from "./broadcast.module.css?raw";
 
 afterEach(cleanup);
 
@@ -35,4 +36,28 @@ test("a decorative banner is hidden from screen readers; a normal one is not", (
     "true",
   );
   expect(screen.getByText("Heard too").hasAttribute("aria-hidden")).toBe(false);
+});
+
+test("the moving ticker can be paused and resumed (WCAG 2.2.2), outside the status region", () => {
+  const { container } = render(<LoadingTicker message="Researching" />);
+  const pause = screen.getByRole("button", { name: "Pause ticker" });
+  expect(screen.getByRole("status").contains(pause)).toBe(false);
+  fireEvent.click(pause);
+  expect(container.querySelector('[class*="paused"]')).not.toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Resume ticker" }));
+  expect(container.querySelector('[class*="paused"]')).toBeNull();
+});
+
+test("an empty ticker has no pause button", () => {
+  render(<LoadingTicker message="" />);
+  expect(screen.queryByRole("button")).toBeNull();
+});
+
+test("reduced motion: the ticker wraps instead of crawling, and its pause button hides", () => {
+  const reduced = css.slice(css.indexOf("@media (prefers-reduced-motion"));
+  expect(reduced).toMatch(/\.ticker\s*{\s*white-space:\s*normal/);
+  expect(reduced).toMatch(/\.tickerPause\s*{\s*display:\s*none/);
+  expect(css).toMatch(
+    /\.paused \.tickerText\s*{\s*animation-play-state:\s*paused/,
+  );
 });
