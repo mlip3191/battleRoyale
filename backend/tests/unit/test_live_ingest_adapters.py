@@ -8,11 +8,19 @@ import pytest
 
 from app.config import Settings
 from app.providers import base
-from app.providers.live.doc_parser import LiveDocParser, split_pieces, strip_markup
+from app.providers.live.doc_parser import (
+    MAX_TOKENS,
+    PIECE_CHARS,
+    LiveDocParser,
+    clean_reply,
+    split_pieces,
+    strip_markup,
+)
 from app.providers.live.embedder import BATCH_SIZE, LiveEmbedder
 from app.providers.live.http import ProviderError
 from app.providers.registry import get_provider, service_config
 
+MODEL_CONTEXT_TOKENS = 8192  # the course parser's max_model_len, from its /v1/models reply
 DECOY_HOST = "course.test"
 DECOY_KEY = "decoy-key"
 Handler = Callable[[httpx.Request], httpx.Response]
@@ -182,6 +190,40 @@ async def test_parser_skips_the_endpoint_for_plain_text() -> None:
         raise AssertionError("no request expected")
 
     assert await parser_with(handler).parse(b"plain", "text/plain") == "plain"
+
+
+def test_a_full_piece_and_its_reply_fit_the_models_context() -> None:
+    # Measured live on Wikipedia HTML: about 2.8 characters per token, so 2.5 is a safe bound.
+    assert PIECE_CHARS / 2.5 + MAX_TOKENS <= MODEL_CONTEXT_TOKENS
+
+
+def test_strip_markup_drops_footnote_marks_and_link_tags() -> None:
+    html = '<p>Weighs <a href="/x">500</a> kg<sup id="r">[1]</sup> <span>total</span></p>'
+    assert strip_markup(html) == "<p>Weighs 500 kg total</p>"
+
+
+def test_clean_reply_removes_leftover_tags_and_entities() -> None:
+    assert clean_reply("<p>173&#160;cm &amp; 500 kg</p>") == "173 cm & 500 kg"
+
+
+def test_clean_reply_keeps_comparisons_that_look_like_tags() -> None:
+    assert clean_reply("mass < 5 kg and speed > 3") == "mass < 5 kg and speed > 3"
+
+
+async def test_a_cut_off_piece_is_retried_as_two_smaller_pieces() -> None:
+    sizes: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        content = json.loads(request.content)["messages"][0]["content"]
+        piece = content.split("<document>\n")[1].split("\n</document>")[0]
+        sizes.append(len(piece))
+        return chat_reply("part", "length" if len(piece) > 2_000 else "stop")
+
+    page = ("<p>" + "x" * 90 + "</p>") * 30  # about 2,900 characters, one piece
+    assert await parser_with(handler).parse(page.encode(), "text/html") == "part\npart"
+    assert sizes[0] == len(page) and all(size <= 2_000 for size in sizes[1:])
 
 
 async def test_parser_refuses_a_cut_off_reply() -> None:

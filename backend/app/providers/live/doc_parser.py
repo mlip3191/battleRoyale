@@ -1,5 +1,6 @@
 """Live DocParser: turns fetched HTML into plain text on the course document parsing endpoint."""
 
+import html as html_text
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -15,17 +16,30 @@ if TYPE_CHECKING:
 PROMPT_PATH = Path(__file__).parents[3] / "prompts" / "doc-parse-html.md"
 # Converting a long page piece takes far longer than a normal call, so it has its own limit.
 PARSE_TIMEOUT_S = 120.0
-PIECE_CHARS = 12_000
-MAX_TOKENS = 6_000
+# The model handles 8,192 tokens in all, so a full piece plus its reply must fit inside that.
+PIECE_CHARS = 9_000
+MAX_TOKENS = 4_000
+MIN_PIECE_CHARS = 1_500
 PLAIN_TYPES = {"text/plain", "application/json", "application/xml"}
-DROPPED_BLOCKS = re.compile(r"<(script|style)\b.*?</\1>|<!--.*?-->", re.DOTALL | re.IGNORECASE)
+DROPPED_BLOCKS = re.compile(r"<(script|style|sup)\b.*?</\1>|<!--.*?-->", re.DOTALL | re.IGNORECASE)
 TAG_ATTRIBUTES = re.compile(r"<(/?[a-zA-Z][a-zA-Z0-9]*)\b[^>]*>")
+INLINE_TAGS = re.compile(r"</?(a|span|abbr)>", re.IGNORECASE)
+ANY_TAG = re.compile(r"</?[a-zA-Z][a-zA-Z0-9]*\s*/?>")
 CLOSING_TAG = re.compile(r"</\s*document\s*>", re.IGNORECASE)
 
 
-# Remove scripts, styles, comments, and tag attributes, which hold no article text.
+class CutOffReply(ProviderError):
+    """The parser ran out of room before finishing, so its reply is incomplete."""
+
+
+# Remove what holds no article text: scripts, styles, footnote marks, comments, attributes, links.
 def strip_markup(html: str) -> str:
-    return TAG_ATTRIBUTES.sub(r"<\1>", DROPPED_BLOCKS.sub("", html))
+    return INLINE_TAGS.sub("", TAG_ATTRIBUTES.sub(r"<\1>", DROPPED_BLOCKS.sub("", html)))
+
+
+# The model often echoes some HTML, so remove any tags and entities left in its reply.
+def clean_reply(text: str) -> str:
+    return html_text.unescape(ANY_TAG.sub(" ", text)).replace("\xa0", " ").strip()
 
 
 # Split text into pieces of at most limit characters, ending on a tag where possible.
@@ -57,7 +71,17 @@ class LiveDocParser:
         if kind != "text/html":
             raise ProviderError(f"Live 'doc_parser' cannot read {kind} documents yet.")
         pieces = split_pieces(strip_markup(data.decode("utf-8", errors="replace")))
-        return "\n".join([await self._parse_piece(piece) for piece in pieces])
+        return "\n".join([await self._parse_or_split(piece) for piece in pieces])
+
+    # Convert a piece; if the reply is cut off, retry it as two smaller pieces.
+    async def _parse_or_split(self, piece: str) -> str:
+        try:
+            return await self._parse_piece(piece)
+        except CutOffReply:
+            if len(piece) <= MIN_PIECE_CHARS:
+                raise
+        halves = split_pieces(piece, limit=len(piece) // 2 + 1)
+        return "\n".join([await self._parse_or_split(half) for half in halves])
 
     # Convert one piece, refusing a cut-off reply so no text is silently lost.
     async def _parse_piece(self, piece: str) -> str:
@@ -83,10 +107,10 @@ class LiveDocParser:
         except (KeyError, IndexError, TypeError) as error:
             raise ProviderError("Live 'doc_parser' reply had no message content.") from error
         if choice.get("finish_reason") == "length":
-            raise ProviderError("Live 'doc_parser' reply was cut off at the token limit.")
+            raise CutOffReply("Live 'doc_parser' reply was cut off at the token limit.")
         if not isinstance(text, str):
             raise ProviderError("Live 'doc_parser' reply content was not text.")
-        return text
+        return clean_reply(text)
 
     # The parser has no model setting, so ask the endpoint once and remember the answer.
     async def _model_name(self) -> str:
