@@ -41,7 +41,7 @@ SIDE_SPLIT = re.compile(r"\s+(?:vs\.?|versus|v\.|against)\s+", re.I)
 CALL_ERRORS = (ProviderError, httpx.HTTPError, TimeoutError, LookupError)
 
 REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it another way?"
-COMMON_KIND_NOTE = "Still not sure which kind you meant, so we went with the most common one."
+COMMON_KIND_NOTE = "Still not sure which kind you meant, so we'll use the most common one."
 EXAMPLE_OPTIONS = [
     "a grizzly bear vs 6 gray wolves",
     "a dozen house cats vs a golden retriever",

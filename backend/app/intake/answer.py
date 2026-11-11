@@ -27,9 +27,21 @@ def merge_answer(original: str, answer: str) -> str:
     lead = lead[1:] if lead and lead[0].lower() in ARTICLES else lead
     # "bear vs wolf" + "grizzly bear" -> "grizzly bear vs wolf" (also matches "bears").
     word = re.compile(rf"\b{re.escape(last)}(?:e?s)?\b", re.I)
-    if lead and len(word.findall(original)) == 1:
-        return word.sub(lambda match: " ".join([*lead, match.group(0)]), original, count=1)
+    matches = list(word.finditer(original))
+    if lead and len(matches) == 1:
+        lead = _drop_repeated_words(lead, original[: matches[0].start()].split())
+        if lead:
+            return word.sub(lambda match: " ".join([*lead, match.group(0)]), original, count=1)
     return f"{original} ({answer})"
+
+
+# Drop the answer's leading words that already sit just before the match, e.g. the "3" in
+# "3 bears" + "3 grizzly bears", so the merge reads "3 grizzly bears", not "3 3 grizzly bears".
+def _drop_repeated_words(lead: list[str], before: list[str]) -> list[str]:
+    for size in range(min(len(lead), len(before)), 0, -1):
+        if [w.lower() for w in lead[:size]] == [w.lower() for w in before[-size:]]:
+            return lead[size:]
+    return lead
 
 
 # Re-parse once with the answer. Still vague -> the parser assumes the most common kind and says
@@ -38,5 +50,5 @@ async def resolve_answer(pending: PendingQuestion, answer: str, chat: ChatLLM) -
     text = merge_answer(pending.original_text, answer)
     result = await parse_matchup(text, chat=chat, ask=False)
     if result.status == "clarify":
-        return IntakeResult(status="blocked", blocked_reason="other", message=START_OVER)
+        return IntakeResult(status="blocked", blocked_reason="nonsense", message=START_OVER)
     return result

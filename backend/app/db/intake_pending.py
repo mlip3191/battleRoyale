@@ -7,6 +7,7 @@ import uuid
 from dataclasses import dataclass
 
 PENDING_TTL_SECONDS = 30 * 60
+MAX_QUESTION_CHARS = 500
 
 
 @dataclass(frozen=True)
@@ -18,20 +19,29 @@ class PendingQuestion:
     options: list[str]
 
 
+# Drop questions older than 30 minutes, so the table never grows without bound.
+def _purge_expired(connection: sqlite3.Connection, now: float) -> None:
+    connection.execute(
+        "DELETE FROM intake_pending WHERE created_at < ?", (now - PENDING_TTL_SECONDS,)
+    )
+
+
 # Save a question and return the new pending_id the front end sends back with the answer.
 def save_pending(
     connection: sqlite3.Connection, pending: PendingQuestion, now: float | None = None
 ) -> str:
-    pending_id = f"p-{uuid.uuid4().hex[:12]}"
+    now = time.time() if now is None else now
+    _purge_expired(connection, now)
+    pending_id = f"p-{uuid.uuid4().hex}"
     connection.execute(
         "INSERT INTO intake_pending (pending_id, original_text, question, options, created_at) "
         "VALUES (?, ?, ?, ?, ?)",
         (
             pending_id,
             pending.original_text,
-            pending.question,
+            pending.question[:MAX_QUESTION_CHARS],
             json.dumps(pending.options),
-            time.time() if now is None else now,
+            now,
         ),
     )
     connection.commit()
@@ -42,8 +52,7 @@ def save_pending(
 def take_pending(
     connection: sqlite3.Connection, pending_id: str, now: float | None = None
 ) -> PendingQuestion | None:
-    cutoff = (time.time() if now is None else now) - PENDING_TTL_SECONDS
-    connection.execute("DELETE FROM intake_pending WHERE created_at < ?", (cutoff,))
+    _purge_expired(connection, time.time() if now is None else now)
     row = connection.execute(
         "DELETE FROM intake_pending WHERE pending_id = ? "
         "RETURNING original_text, question, options",

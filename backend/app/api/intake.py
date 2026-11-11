@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 from app.db.connection import connect
 from app.db.intake_pending import PendingQuestion, save_pending, take_pending
@@ -31,7 +31,8 @@ class IntakeRequest(BaseModel):
 class IntakeAnswer(BaseModel):
     """Body of POST /api/intake/{pending_id}/answer."""
 
-    answer: str = Field(max_length=200)
+    # Blank answers are refused (422) before the question is used up.
+    answer: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 
 
 # The app database with migrations applied; async so it opens on the thread that uses it.
@@ -57,9 +58,9 @@ Chat = Annotated[ChatLLM, Depends(get_chat)]
 @router.post("")
 async def start_intake(body: IntakeRequest, db: Db, chat: Chat) -> IntakeResult:
     result = await parse_matchup(body.text, chat=chat)
-    if result.status != "clarify":
+    if result.status != "clarify" or not result.question:
         return result
-    pending = PendingQuestion(body.text.strip(), result.question or "", result.options)
+    pending = PendingQuestion(body.text.strip(), result.question, result.options)
     return result.model_copy(update={"pending_id": save_pending(db, pending)})
 
 

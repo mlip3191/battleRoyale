@@ -13,7 +13,13 @@ from fastapi.testclient import TestClient
 from app.api.intake import EXPIRED_MESSAGE, get_chat, get_db
 from app.config import Settings
 from app.db.connection import connect
-from app.db.intake_pending import PENDING_TTL_SECONDS, PendingQuestion, save_pending
+from app.db.intake_pending import (
+    MAX_QUESTION_CHARS,
+    PENDING_TTL_SECONDS,
+    PendingQuestion,
+    save_pending,
+    take_pending,
+)
 from app.db.migrate import apply_migrations
 from app.intake.answer import START_OVER, merge_answer
 from app.intake.parser import COMMON_KIND_NOTE, INPUT_END, INPUT_START
@@ -138,6 +144,7 @@ def test_an_unusable_answer_ends_with_a_message_not_a_question(client: TestClien
     pending_id = ask_which_bear(client)
     body = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "gibberish"}).json()
     assert body["status"] == "blocked" and body["message"] == START_OVER
+    assert body["blocked_reason"] == "nonsense"
     assert body["question"] is None and body["pending_id"] is None
 
 
@@ -165,6 +172,39 @@ def test_pending_question_expires_after_30_minutes(client: TestClient, db_path: 
     assert client.post(f"/api/intake/{fresh}/answer", json={"answer": "grizzly bear"}).is_success
 
 
+@pytest.mark.parametrize("answer", ["   ", "x" * 201])
+def test_blank_or_long_answers_get_422_and_keep_the_question(
+    client: TestClient, answer: str
+) -> None:
+    pending_id = ask_which_bear(client)
+    response = client.post(f"/api/intake/{pending_id}/answer", json={"answer": answer})
+    assert response.status_code == 422
+    retry = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "grizzly bear"})
+    assert retry.status_code == 200 and retry.json()["status"] == "ok"
+
+
+def test_text_over_2000_characters_gets_422(client: TestClient, chat: ScriptedChat) -> None:
+    response = client.post("/api/intake", json={"text": "a" * 2001})
+    assert response.status_code == 422 and chat.texts == []
+
+
+def test_saving_purges_expired_questions_and_caps_the_question(db_path: Path) -> None:
+    connection = connect(db_path)
+    apply_migrations(connection)
+    now = time.time()
+    old = save_pending(
+        connection, PendingQuestion("a", "Q?", []), now=now - PENDING_TTL_SECONDS - 1
+    )
+    long_question = PendingQuestion("bear vs wolf", "Which? " * 200, ["grizzly bear"])
+    fresh = save_pending(connection, long_question, now=now)
+    count = connection.execute("SELECT COUNT(*) FROM intake_pending").fetchone()[0]
+    taken = take_pending(connection, fresh, now=now)
+    connection.close()
+    assert count == 1 and old != fresh  # the expired row went when the new one was saved
+    assert len(fresh) == len("p-") + 32  # a full uuid, not a shortened one
+    assert taken is not None and len(taken.question) == MAX_QUESTION_CHARS
+
+
 def test_both_routes_are_in_openapi(client: TestClient) -> None:
     paths = client.get("/openapi.json").json()["paths"]
     for path in ("/api/intake", "/api/intake/{pending_id}/answer"):
@@ -177,6 +217,8 @@ def test_both_routes_are_in_openapi(client: TestClient) -> None:
     [
         ("bear vs wolf", "grizzly bear", "grizzly bear vs wolf"),
         ("3 bears vs a wolf", "a polar bear", "3 polar bears vs a wolf"),
+        ("3 bears vs a wolf", "3 grizzly bears", "3 grizzly bears vs a wolf"),
+        ("a bear vs a wolf", "a grizzly bear", "a grizzly bear vs a wolf"),
         ("a bear", "a goose", "a bear vs a goose"),
         ("a vs b vs c", "a vs c", "a vs c"),
         ("bear vs wolf", "the big one", "bear vs wolf (the big one)"),
