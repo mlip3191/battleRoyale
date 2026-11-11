@@ -58,7 +58,7 @@ Every change follows the same loop. Claude Code does the typing; you make the de
 2. **Start it:** *"Start work on issue #n."* Claude makes a branch named `issue-<n>-short-description`, explains its plan, and waits for your yes.
 3. **Change and check:** Claude makes the change and runs `npm run check` (lint, types, tests, build). It won't commit if that fails.
 4. **Open a PR** that says `Closes #n` and explains the change in plain English. CI, the Secret scan, and the advisory QA bot run on it.
-5. **Get a review:** your default reviewer is in docs/plan/LANES.md ("Review pairing"). Fix what they ask, then merge once they approve and all checks pass.
+5. **Get a review:** your default reviewer is in docs/plan/LANES.md ("Review pairing"). Fix what they ask, then merge once they approve and all checks pass. (The PM, or Gunnar as backup, may merge it for you after an @mention: D-49.)
 6. **Review someone else:** *"What can I review?"* or `/review <n>`. Nothing is posted until you say send. The one-screen checklist is in [reviewing.md](reviewing.md).
 
 ## 5. Cheat sheet: what to say to Claude Code

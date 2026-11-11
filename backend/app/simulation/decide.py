@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 from app.models.matchup import Matchup
 from app.models.stats import ASSUMABLE_STATS, StatName, StatSheet
 from app.simulation import constants as c
+from app.simulation.fighters import effective_habitat
 from app.simulation.terrain import modifier
 
 if TYPE_CHECKING:
@@ -133,9 +134,12 @@ def decide(
         # A size reference ('horse-sized duck') matters on its own: drop the scaling and re-run.
         effect("scaling", matchup, sheets, True, scaled=False)
 
-    mods = [modifier(matchup.terrain, s.habitat) for s in sheets]
+    mods = [modifier(matchup.terrain, effective_habitat(s)) for s in sheets]
     if mods[0] != mods[1]:
         effect("terrain", matchup, sheets, False)
+
+    if any(s.lore and s.lore.abilities for s in sheets):
+        effect("abilities", matchup, [_without_abilities(s) for s in sheets], True)
 
     # When nothing mattered (or the fight was a stalemate), the factor named below is only a
     # placeholder: the UI and the announcer must rely on the explainer text, not the factor name.
@@ -150,6 +154,8 @@ def decide(
     if len(base) - wins[0] - wins[1] > max(wins):
         return Decision(shown, _explain_stalemate())  # most runs were draws: nobody "won"
     if size < c.MIN_EFFECT:
+        if base_won >= 0.9:
+            return Decision(shown, _explain_comfortable(sheets[fav].display_name))
         return Decision(shown, _explain_even())
     return Decision(shown, _explain(key, matchup, sheets, fav, signed >= 0))
 
@@ -174,8 +180,20 @@ def _explain_scaling(matchup: Matchup, sheets: list[StatSheet], fav: int, helped
     return f"{sheets[fav].display_name} came out ahead in spite of the scaling: {pair}."
 
 
+def _without_abilities(sheet: StatSheet) -> StatSheet:
+    """The same fighter with every legendary power removed (for the sensitivity check)."""
+    if sheet.lore is None or not sheet.lore.abilities:
+        return sheet
+    lore = sheet.lore.model_copy(update={"abilities": [], "heads": None})
+    return sheet.model_copy(update={"lore": lore})
+
+
 def _explain_stalemate() -> str:
     return "A stalemate: neither side could finish the other before the time limit."
+
+
+def _explain_comfortable(fav_name: str) -> str:
+    return f"{fav_name} wins comfortably: no single stat or circumstance was decisive."
 
 
 def _explain_even() -> str:
@@ -191,20 +209,39 @@ def _explain(
     counts = (matchup.fighters[fav].count, matchup.fighters[foe].count)
 
     if key == "numbers":
+        pair = f"{counts[0]} {fav_name} against {counts[1]} {foe_name}"
+        if not helped:
+            return (
+                f"{fav_name} came out ahead in spite of the head count: {pair}. "
+                "A crowd can wear down even a tougher fighter, but here it was not enough."
+            )
         return (
-            f"Numbers decided it: {counts[0]} {fav_name} against {counts[1]} {foe_name}. "
+            f"Numbers decided it: {pair}. "
             "A crowd can wear down even a tougher fighter, and a lone fighter can only face "
             "so many at once."
+        )
+    if key == "abilities":
+        owner = fav if helped else foe
+        powers = sheets[owner].lore.abilities if sheets[owner].lore else []
+        names = ", ".join(p.value.replace("_", " ") for p in powers)
+        if helped:
+            return f"Legendary powers decided it: according to legend, {fav_name} has {names}."
+        return (
+            f"{fav_name} came out ahead in spite of {foe_name}'s legendary powers "
+            f"(according to legend: {names})."
         )
     if key == "scaling":
         return _explain_scaling(matchup, sheets, fav, helped)
     if key == "terrain":
         terrain = matchup.terrain.value.replace("_", " ")
-        who = fav_name if helped else foe_name
-        return (
-            f"The ground decided it: the {terrain} suits the {who} "
-            f"({sheets[fav if helped else foe].habitat.value} mover) better."
-        )
+        if not helped:
+            mover = effective_habitat(sheets[foe]).value
+            return (
+                f"{fav_name} came out ahead in spite of the ground: the {terrain} suits "
+                f"the {foe_name} ({mover} mover) better."
+            )
+        mover = effective_habitat(sheets[fav]).value
+        return f"The ground decided it: the {terrain} suits the {fav_name} ({mover} mover) better."
 
     label, lower, unit = _STAT_TEXT[key]
     vf = fmt(sheets[fav].stats[key].value)

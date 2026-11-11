@@ -33,6 +33,11 @@ async def no_sleep(seconds: float) -> None:
     pass
 
 
+def test_user_agent_says_who_we_are_as_wikimedia_policy_requires() -> None:
+    assert "github.com/mlip3191/battleRoyale" in USER_AGENT
+    assert "@" not in USER_AGENT  # the project's link, never a personal email
+
+
 async def test_article_uses_a_pinned_url_and_a_project_user_agent() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["User-Agent"] == USER_AGENT

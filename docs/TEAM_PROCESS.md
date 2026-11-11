@@ -33,14 +33,14 @@ Phase 0 runs as tasks **M01 → M08** in [INIT.md](../INIT.md), in that order �
 
 ### Create the repository
 
-The repo exists: **github.com/mlip3191/battleRoyale**, owned by Mike's personal account, and is being made **private** with GitHub Pro (DECISIONS D-01). Task M01 applies these settings:
+The repo exists: **github.com/mlip3191/battleRoyale**, owned by Mike's personal account. It started **private** with GitHub Pro (DECISIONS D-01) and has been **public** since 2026-11-10 (D-48). Task M01 applied these settings:
 
 - [ ] Settings, General, Pull Requests: squash merging only; "Always suggest updating pull request branches" and "Automatically delete head branches" on.
-- [ ] Settings, Code security: Dependabot alerts and security updates on. GitHub secret scanning and push protection are **not available** for private repos on personal accounts (they need GitHub Secret Protection on an organization), so the gitleaks **Secret scan** workflow (Step 8) and the local git hook are our secret checks.
+- [ ] Settings, Code security: Dependabot alerts and security updates on. GitHub secret scanning and push protection are **on** (GitHub turns them on for public repos, D-48). The gitleaks **Secret scan** workflow (Step 8) and the local git hook still run too, and catch formats GitHub doesn't know.
 - [ ] Settings, Actions, General: only GitHub-made actions plus anthropics/claude-code-action, oven-sh/setup-bun (used inside the Claude action), gitleaks/gitleaks-action, astral-sh/setup-uv; workflow permissions "Read repository contents"; "Allow GitHub Actions to create and approve pull requests" off.
 - [ ] A pinned "Team board" issue for announcements and weekly check-ins; review requests go through GitHub's reviewer request (DECISIONS D-21).
 
-Personal-account repos give every collaborator the same Write role, which matches this process. Branch protection on a private personal repo needs **GitHub Pro** (free with the GitHub Student Developer Pack) — turn Pro on before making the repo private, or protection silently stops being enforced. Private repos also use GitHub Actions minutes (Pro: 3,000 a month; Windows minutes count double and macOS ten times), so PR checks run on Linux and Windows, and macOS runs only on demand (before milestones).
+Personal-account repos give every collaborator the same Write role, which matches this process. Branch protection works on a public repo on any plan. While the repo was private, it needed **GitHub Pro**, and Actions minutes were billed (Pro: 3,000 a month; Windows minutes counted double). When Actions stopped for a billing reason on 2026-11-10, CI stopped too, which led to D-48. On the public repo, GitHub-hosted Actions minutes are free. PR checks run on Linux and Windows, and macOS runs only on demand (before milestones).
 
 ### PM prerequisites
 
@@ -54,7 +54,7 @@ Personal-account repos give every collaborator the same Write role, which matche
 
 ## Step 2: Branch Protection and Pull Request Workflow
 
-No one pushes directly to main. Every change goes through a feature branch and a pull request. Any teammate can review and approve; once approved, the author merges it into main.
+No one pushes directly to main. Every change goes through a feature branch and a pull request. Any teammate can review and approve; once approved, the author merges it into main (or the PM, or Gunnar as backup, after @mentioning you: D-49).
 
 ### GitHub settings (PM does this once)
 
@@ -96,7 +96,9 @@ Also set up:
 
 6.  Claude pushes the branch and opens a pull request linked to the issue ("Closes \#\<number\>").
 
-7.  Any teammate reviews and either requests changes or approves. Once approved, the author merges the pull request into main.
+7.  Any teammate reviews and either requests changes or approves. Once approved, the author merges the pull request into main (or the PM, or Gunnar as backup, after @mentioning you: D-49).
+
+    **When someone else merges your PR:** you'll get an @mention on the PR saying why (usually to unblock other work). Run `git switch main && git pull`, and start your next branch from the updated `main`. If you still had changes for that PR, put them in a new PR. If you had a PR stacked on it, check that it now targets `main` and is still open.
 
 ### Review and merge rules
 
@@ -106,7 +108,7 @@ Also set up:
 
 - If changes are requested, the author fixes them on the same branch, pushes, and re-requests review from the same reviewer. To have the advisory QA bot look again, add the `re-review` label.
 
-- Before merging, the author confirms: approved, all required checks green, and no meaningful pushes since the approval (if there were, ask the reviewer to look again). If GitHub reports a conflict with main, ask Claude to update the branch.
+- Before merging, whoever merges (normally the author) confirms: approved, all required checks green, and no meaningful pushes since the approval (if there were, ask the reviewer to look again). If GitHub reports a conflict with main, ask Claude to update the branch.
 
 ### Protect critical files
 
@@ -332,7 +334,7 @@ People on two computers repeat the installs on both, log in to GitHub and Claude
 
 4.  Run /review on a teammate's PR to practice reviewing (the guide: [reviewing.md](reviewing.md)).
 
-5.  Once your PR is approved, merge it.
+5.  Once your PR is approved, merge it. (The PM, or Gunnar as backup, may merge it for you after an @mention, to unblock others: D-49.)
 
 ### 5. Cheat sheet
 
@@ -424,7 +426,7 @@ CLAUDE.md tells Claude the rules; settings and hooks enforce them, so a non-code
 
 ## Step 8: Secrets, Keys, and .gitignore
 
-A leaked key can't be un-leaked. Once it is pushed, assume someone has it, even in a private repo, and replace it. The team uses four layers so one mistake is caught by the next.
+A leaked key can't be un-leaked. Once it is pushed, assume someone has it (the repo is public), and replace it. The team uses four layers so one mistake is caught by the next.
 
 | Layer                                    | What it catches                                                                                               | Can it be skipped?                                           |
 |------------------------------------------|---------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|
@@ -498,13 +500,13 @@ Local hooks can be skipped or never switched on, so a workflow (.github/workflow
 
 - This repo belongs to a personal account, so gitleaks needs no license key. (An organization-owned repo would need a free key saved as GITLEAKS_LICENSE.)
 
-- GitHub push protection isn't available for this private personal repo, so a key is only caught after it is pushed (by Secret scan) unless the local hook stops it first. That makes the hook (`npm run doctor` checks it is on) essential, and any leak means replacing the key.
+- GitHub push protection is on (public repo, D-48), so a push containing a key format GitHub recognizes is blocked. Other formats are only caught after the push (by Secret scan) unless the local hook stops them first. So the hook still matters (`npm run doctor` checks it is on), and any leak means replacing the key.
 
 ### If a key leaks
 
 1.  Tell the PM right away by direct message. Say where the key is; don't paste it.
 
-2.  The PM revokes the key at the provider and creates a new one before doing anything else. Assume it is compromised, even in a private repo.
+2.  The PM revokes the key at the provider and creates a new one before doing anything else. Assume it is compromised: the repo is public.
 
 3.  The PM checks the provider's usage page for anything unexpected.
 
