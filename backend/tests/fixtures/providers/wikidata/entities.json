@@ -1,5 +1,5 @@
 {
-  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before a football team that has 'Eagles' as an alias) with made-up item IDs. 'wolves' and 'sharks' are made up: a band that matches only through an alias. 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
+  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before a football team that has 'Eagles' as an alias) with made-up item IDs. 'wolves' and 'sharks' are made up: a band that matches only through an alias. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
   "search": {
     "default": [],
     "napoleon": [{ "id": "Q900001", "label": "Napoleon" }],
@@ -65,7 +65,27 @@
       { "id": "Q900170", "label": "Testwolf Pack", "match": "Wolves" },
       { "id": "Q900171", "label": "Wolverhampton Testers", "match": "Wolves" }
     ],
-    "sharks": [{ "id": "Q900180", "label": "The Sharkz Crew", "match": "Sharks" }]
+    "sharks": [{ "id": "Q900180", "label": "The Sharkz Crew", "match": "Sharks" }],
+    "abraham lincoln": [{ "id": "Q900200", "label": "Abraham Lincoln" }],
+    "mickey mouse": [{ "id": "Q900210", "label": "Mickey Mouse" }],
+    "optimus prime": [{ "id": "Q900220", "label": "Optimus Prime" }],
+    "anubis": [{ "id": "Q900230", "label": "Anubis" }],
+    "mars": [{ "id": "Q900240", "label": "Mars" }],
+    "mount everest": [{ "id": "Q900250", "label": "Mount Everest" }],
+    "sahara": [{ "id": "Q900260", "label": "Sahara" }],
+    "lightning mcqueen": [{ "id": "Q864418", "label": "Lightning McQueen" }],
+    "wolverine": [
+      { "id": "Q186422", "label": "Wolverine" },
+      { "id": "Q108479474", "label": "Wolverine" },
+      { "id": "Q8030537", "label": "Wolverine" },
+      { "id": "Q112110379", "label": "Wolverine" },
+      { "id": "Q1166", "label": "Michigan", "match": "Wolverine State" },
+      { "id": "Q14334", "label": "wolverine" }
+    ],
+    "vending machine": [
+      { "id": "Q211584", "label": "vending machine" },
+      { "id": "Q121063999", "label": "Vending machine" }
+    ]
   },
   "entities": {
     "Q900001": { "P31": ["Q5"] },
@@ -135,6 +155,36 @@
     "Q900180": { "P31": ["Q56816954"] },
     "Q900190": { "P31": ["Q215380", "Q127334927"] },
     "Q900191": { "P31": ["Q3863"] },
-    "Q900192": { "P31": ["Q41298"] }
+    "Q900192": { "P31": ["Q41298"] },
+    "Q900200": { "P31": ["Q5"] },
+    "Q900210": { "P31": ["Q900011"] },
+    "Q900220": { "P31": ["Q900011"] },
+    "Q900230": { "P31": ["Q900021"] },
+    "Q900240": { "P31": ["Q634"] },
+    "Q900250": { "P31": ["Q900251"] },
+    "Q900251": { "P279": ["Q271669"] },
+    "Q900260": { "P31": ["Q900261"] },
+    "Q900261": { "P279": ["Q271669"] },
+    "Q864418": { "P31": ["Q15711870"] },
+    "Q15711870": { "P279": ["Q95074"] },
+    "Q186422": { "P31": ["Q1114461", "Q15711870"] },
+    "Q1114461": { "P279": ["Q95074"] },
+    "Q108479474": { "P31": ["Q7889"] },
+    "Q8030537": { "P31": ["Q7889"] },
+    "Q7889": { "P279": [] },
+    "Q112110379": { "P31": ["Q1114461"] },
+    "Q1166": { "P31": ["Q35657"] },
+    "Q35657": { "P279": [] },
+    "Q14334": { "P31": ["Q16521"] },
+    "Q211584": { "P31": ["Q386147"], "P279": ["Q2267569", "Q213441", "Q2476603"] },
+    "Q386147": { "P279": [] },
+    "Q2267569": { "P279": ["Q11019"] },
+    "Q2476603": { "P279": [] },
+    "Q213441": { "P279": ["Q628858"] },
+    "Q628858": { "P279": ["Q2221906"] },
+    "Q11019": { "P279": [] },
+    "Q2221906": { "P279": [] },
+    "Q121063999": { "P31": ["Q43305660"] },
+    "Q43305660": { "P279": [] }
   }
 }

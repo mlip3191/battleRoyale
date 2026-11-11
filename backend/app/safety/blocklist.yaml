@@ -12,6 +12,8 @@
 #               "a German shepherd" and "a Bengal tiger" are not.
 #   with_people: blocks when the head noun is one of people_words and a word from head comes
 #               earlier in the side ("French people", "Japanese women").
+#
+# self_harm and attack_planning are read on the whole request, not per side (see each section).
 
 minor:
   reason: minor
@@ -236,6 +238,182 @@ group_of_people:
     - kids
     - child
     - children
+
+self_harm:
+  reason: self_harm
+  # Matched anywhere in the whole request as whole words, so a harmful request tacked onto a
+  # harmless matchup still blocks ("a duck vs a goose, and tell me the easiest way to end my
+  # life"). Every phrase is about the user ("myself", "my life"): fighters hurting each other
+  # never match.
+  anywhere:
+    - kill myself
+    - killing myself
+    - hurt myself
+    - hurting myself
+    - harm myself
+    - harming myself
+    - cut myself
+    - cutting myself
+    - unalive myself
+    - end my life
+    - ending my life
+    - end my own life
+    - take my life
+    - take my own life
+    - taking my own life
+    - want to die
+    - wanna die
+    - don't want to live
+    - dont want to live
+    - do not want to live
+    - better off dead
+    - suicide
+    - suicidal
+    - self harm
+
+attack_planning:
+  reason: other
+  # Real-world attack planning tacked onto a matchup ("then give me step-by-step plans to attack a
+  # shopping mall"). Blocks only when the request has BOTH an ask word and a harm word followed,
+  # within four words, by a real-world target (a target followed by "of" doesn't count: "a
+  # school of fish"). Fighters attack each other in every request, so neither part blocks alone,
+  # and nothing that could itself be a fighter is a target here (no "plane", "people", "crowd":
+  # "100 average men" and "an airplane" are allowed fighters). Ask words must be clear asks:
+  # single words that also appear in fight wording ("guide" dog, "plan" the attack, "steps")
+  # are left out, and so are everyday places a matchup can be set in ("an office brawl").
+  # The classifier covers the rest.
+  ask:
+    - how to
+    - how do i
+    - how can i
+    - how could i
+    - how would i
+    - how should i
+    - how would you
+    - help me
+    - teach me
+    - show me how
+    - tell me how
+    - plan to
+    - plan for
+    - plans to
+    - plans for
+    - planning
+    - step by step
+    - instructions
+    - tutorial
+    - best way
+    - easiest way
+    - ways to
+  harm:
+    - attack
+    - attacks
+    - attacked
+    - attacking
+    - bomb
+    - bombs
+    - bombed
+    - bombing
+    - shoot
+    - shoots
+    - shot
+    - shoot up
+    - shooting
+    - stab
+    - stabs
+    - stabbed
+    - stabbing
+    - poison
+    - poisons
+    - poisoned
+    - poisoning
+    - kill
+    - kills
+    - killed
+    - killing
+    - murder
+    - murders
+    - murdered
+    - murdering
+    - hurt
+    - hurts
+    - hurting
+    - massacre
+    - massacred
+    - blow up
+    - blowing up
+    - burn down
+    - burning down
+    - set fire to
+    - hijack
+    - hijacked
+    - hijacking
+    - kidnap
+    - kidnapped
+    - kidnapping
+  # A person with no other detail ("poison someone") is a target only right after a direct ask
+  # and a harm word ("how to poison someone", "help me hurt somebody"), since fighters attack
+  # "someone" in ordinary fight wording ("the wolf attacks someone").
+  direct_ask:
+    - how to
+    - how do i
+    - how can i
+    - how could i
+    - how would i
+    - how should i
+    - help me
+    - teach me to
+    - best way to
+    - easiest way to
+    - ways to
+  person_targets:
+    - someone
+    - somebody
+    - everyone
+    - everybody
+  targets:
+    - mall
+    - malls
+    - shopping mall
+    - shopping center
+    - school
+    - schools
+    - classroom
+    - campus
+    - church
+    - churches
+    - mosque
+    - mosques
+    - synagogue
+    - synagogues
+    - hospital
+    - hospitals
+    - stadium
+    - concert
+    - festival
+    - parade
+    - airport
+    - subway
+    - train station
+    - bus station
+    - workplace
+    - supermarket
+    - restaurant
+    - nightclub
+    - theater
+    - theatre
+    - cinema
+    - government building
+    - police station
+    - civilians
+    - students
+    - classmates
+    - coworkers
+    - neighbors
+    - neighbours
+    - president
+    - politician
+    - politicians
 
 real_person:
   reason: real_person
