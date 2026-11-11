@@ -98,7 +98,7 @@ Also set up:
 
 7.  Any teammate reviews and either requests changes or approves. Once approved, the author merges the pull request into main (or the PM, or Gunnar as backup, after @mentioning you: D-49).
 
-    **When someone else merges your PR:** you'll get an @mention on the PR saying why (usually to unblock other work). Run `git switch main && git pull`, and start your next branch from the updated `main`. If you still had changes for that PR, put them in a new PR.
+    **When someone else merges your PR:** you'll get an @mention on the PR saying why (usually to unblock other work). Run `git switch main && git pull`, and start your next branch from the updated `main`. If you still had changes for that PR, put them in a new PR. If you had a PR stacked on it, check that it now targets `main` and is still open.
 
 ### Review and merge rules
 
@@ -108,7 +108,7 @@ Also set up:
 
 - If changes are requested, the author fixes them on the same branch, pushes, and re-requests review from the same reviewer. To have the advisory QA bot look again, add the `re-review` label.
 
-- Before merging, the author confirms: approved, all required checks green, and no meaningful pushes since the approval (if there were, ask the reviewer to look again). If GitHub reports a conflict with main, ask Claude to update the branch.
+- Before merging, whoever merges (normally the author) confirms: approved, all required checks green, and no meaningful pushes since the approval (if there were, ask the reviewer to look again). If GitHub reports a conflict with main, ask Claude to update the branch.
 
 ### Protect critical files
 

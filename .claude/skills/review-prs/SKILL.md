@@ -139,7 +139,7 @@ Only consider approval if **all** are true; otherwise explain which one fails an
 
 Then ask, as its own question:
 
-> **Approve PR #<n> now?** Your approval lets <author> merge it into main.
+> **Approve PR #<n> now?** Your approval lets it be merged into main (by <author>, or the PM or backup under D-49).
 > - **Approve**
 > - **Not yet**
 
