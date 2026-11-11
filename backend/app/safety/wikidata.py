@@ -5,6 +5,8 @@ kind item matched too, and creative works while another exact match is left), re
 (P31 and P279, then P279 up to two more levels), and blocks it if they include a class in
 wikidata_classes.yaml. A band blocks only when typed as "the" + its label, or as its bare label
 when that is not a common word ("Beatles" blocks, "Eagles" does not: "eagle" is an animal).
+A common noun ("a wolverine": an article or count, no capitals) is judged by its first kind item
+when one matched (the animal, not the comic-book character ranked above it).
 Results are cached in SQLite. This layer fails open: if Wikidata is slow or down, it gives no
 verdict and the rules and classifier still decide. gate.py runs it alongside the classifier.
 """
@@ -49,7 +51,10 @@ TIMEOUT_S = 2.5
 """Most time one name's lookup may take (all its calls together); no retries."""
 PARENT_LEVELS = 2
 """How many P279 (subclass of) levels to climb above the entity's own classes."""
-SEARCH_LIMIT = 5
+SEARCH_LIMIT = 10
+"""Search results read per query. Only the kind pick for common nouns looks past PICK_LIMIT."""
+PICK_LIMIT = 5
+"""Search results the top pick (and a band's common-word check) choose from, as since part 2."""
 MAX_IDS_PER_CALL = 50
 MATCH_TTL = timedelta(days=30)
 NO_MATCH_TTL = timedelta(days=7)
@@ -80,13 +85,18 @@ class EntityClasses:
 class NameCheck:
     """What Wikidata says about one name; qid is None when nothing matched exactly. band is True
     when the picked item is a band (its block then depends on how the name was typed, see
-    names_band); common is True when that band's name is also a common word ("Eagles")."""
+    names_band); common is True when that band's name is also a common word ("Eagles").
+    kind_qid, kind_label and kind_reason describe the first kind item among the exact matches
+    when the top pick is not itself a kind; a name typed as a common noun is judged by it."""
 
     qid: str | None
     label: str | None
     reason: BlockedReason | None
     band: bool = False
     common: bool = False
+    kind_qid: str | None = None
+    kind_label: str | None = None
+    kind_reason: BlockedReason | None = None
 
 
 class WikidataLookup(Protocol):
@@ -115,6 +125,9 @@ class ClassMap:
     """Classes marked band: true (musical group, rock band, girl group, ...)."""
     kinds: frozenset[str] = frozenset()
     """kind_matches: P31 classes that make an item a kind of thing (taxon, ...)."""
+    individuals_only: frozenset[str] = frozenset()
+    """Classes marked individuals_only: they block only an item that is not a kind of thing
+    (the city Paris is a geographic location; the kind "vending machine" is not)."""
 
     # True when an item's P31 is non-empty and only name/meta classes (family name, etc.).
     def is_name_item(self, classes: EntityClasses) -> bool:
@@ -134,11 +147,17 @@ class ClassMap:
         return kind and not self.is_demoted(classes)
 
     # The first blocked reason among these class IDs (file order), skipping instance-only ones
-    # unless allowed.
-    def reason_for(self, qids: Iterable[str], *, direct: bool) -> BlockedReason | None:
+    # unless direct, and individuals-only ones when the item is a kind of thing.
+    def reason_for(
+        self, qids: Iterable[str], *, direct: bool, individual: bool = True
+    ) -> BlockedReason | None:
         found = set(qids)
         for qid, reason in self.reasons.items():
-            if qid in found and (direct or qid not in self.instance_only):
+            if qid not in found:
+                continue
+            if (direct or qid not in self.instance_only) and (
+                individual or qid not in self.individuals_only
+            ):
                 return reason
         return None
 
@@ -148,7 +167,7 @@ class ClassMap:
 def load_class_map(path: Path = CLASSES_PATH) -> ClassMap:
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     reasons: dict[str, BlockedReason] = {}
-    instance_only, bands = set[str](), set[str]()
+    instance_only, bands, individuals = set[str](), set[str](), set[str]()
     for entry in data["classes"]:
         if entry["reason"] not in BLOCKED_REASONS:
             raise ValueError(f"{path.name}: unknown reason '{entry['reason']}' for {entry['qid']}.")
@@ -157,6 +176,8 @@ def load_class_map(path: Path = CLASSES_PATH) -> ClassMap:
             instance_only.add(entry["qid"])
         if entry.get("band"):
             bands.add(entry["qid"])
+        if entry.get("individuals_only"):
+            individuals.add(entry["qid"])
     name_items = frozenset(entry["qid"] for entry in data.get("skip_matches") or [])
     demoted = frozenset(entry["qid"] for entry in data.get("demote_matches") or []) | bands
     kinds = frozenset(entry["qid"] for entry in data.get("kind_matches") or [])
@@ -168,6 +189,7 @@ def load_class_map(path: Path = CLASSES_PATH) -> ClassMap:
         demoted,
         frozenset(bands),
         kinds,
+        frozenset(individuals),
     )
 
 
@@ -210,20 +232,28 @@ def exact_matches(query: str, candidates: Sequence[Candidate]) -> list[Candidate
     return [c for c in candidates if wanted in (c.label.casefold(), c.matched_text.casefold())]
 
 
-# The exact match to judge, with its own classes, in search order, passing over: name and meta
-# items (the family name "Moon", the given name "Thor"); a band when a kind item also matched
-# (the band "Grizzly Bear" for the animal) or when its label is not the query (a band that only
-# matched an alias); and creative works, used only if nothing else fits (the magazine "Dragon").
-# A band otherwise keeps its search rank, so "the Beatles" the band beats the asteroid
-# "8749 Beatles". Every match's classes must be known, or the pick is unsafe.
-async def top_exact_match(
-    query: str, lookup: WikidataLookup, class_map: ClassMap
-) -> tuple[Candidate, EntityClasses] | None:
-    matches = exact_matches(query, await lookup.search(query))
+Match = tuple[Candidate, EntityClasses]
+
+
+# Exact matches among the first `limit` search results, with their own classes, in search order.
+# Every match's classes must be known, or a pick from them is unsafe.
+async def _exact_with_classes(
+    query: str, results: Sequence[Candidate], lookup: WikidataLookup, limit: int
+) -> list[Match]:
+    matches = exact_matches(query, results[:limit])
     if not matches:
-        return None
+        return []
     found = await _classes_of(lookup, list(dict.fromkeys(c.qid for c in matches)))
-    usable = [(m, found[m.qid]) for m in matches if not class_map.is_name_item(found[m.qid])]
+    return [(m, found[m.qid]) for m in matches]
+
+
+# The exact match to judge, in search order, passing over: name and meta items (the family name
+# "Moon", the given name "Thor"); a band when a kind item also matched (the band "Grizzly Bear"
+# for the animal) or when its label is not the query (a band that only matched an alias); and
+# creative works, used only if nothing else fits (the magazine "Dragon"). A band otherwise keeps
+# its search rank, so "the Beatles" the band beats the asteroid "8749 Beatles".
+def top_exact_match(query: str, matches: Sequence[Match], class_map: ClassMap) -> Match | None:
+    usable = [(m, own) for m, own in matches if not class_map.is_name_item(own)]
     has_kind = any(class_map.is_kind(own) for _, own in usable)
     fallback: tuple[Candidate, EntityClasses] | None = None
     for match, own in usable:
@@ -235,6 +265,12 @@ async def top_exact_match(
         else:
             fallback = fallback or (match, own)
     return fallback
+
+
+# The first kind item among the exact matches (name items never are kinds): what a common noun
+# means ("a wolverine" is the animal even when the comic-book character ranks first).
+def first_kind_match(matches: Sequence[Match], class_map: ClassMap) -> Match | None:
+    return next(((m, own) for m, own in matches if class_map.is_kind(own)), None)
 
 
 # A label or query lowercased, punctuation dropped as in lookup_query, without a leading "the".
@@ -265,32 +301,61 @@ async def is_common_word(query: str, lookup: WikidataLookup, class_map: ClassMap
     singular = " ".join([*words[:-1], singular_word(words[-1])]) if words else query
     if singular == query:
         return False
-    matches = exact_matches(singular, await lookup.search(singular))
-    if not matches:
-        return False
-    found = await _classes_of(lookup, list(dict.fromkeys(c.qid for c in matches)))
-    return any(class_map.is_kind(found[m.qid]) for m in matches)
+    results = await lookup.search(singular)
+    matches = await _exact_with_classes(singular, results, lookup, PICK_LIMIT)
+    return any(class_map.is_kind(own) for _, own in matches)
 
 
-# Ask Wikidata about one query: top exact match, then its classes up to PARENT_LEVELS higher;
-# for a band, also whether its name is a common word.
-async def resolve(query: str, lookup: WikidataLookup, class_map: ClassMap) -> NameCheck:
-    picked = await top_exact_match(query, lookup, class_map)
-    if picked is None:
-        return NameCheck(None, None, None)
-    match, own = picked
-    reason = class_map.reason_for(own.instance_of, direct=True)
+# The blocked reason for an item: its own classes, then P279 up to PARENT_LEVELS higher.
+# individuals_only classes count only for an item that is not a kind of thing.
+async def class_reason(
+    own: EntityClasses, lookup: WikidataLookup, class_map: ClassMap
+) -> BlockedReason | None:
+    individual = not class_map.is_kind(own)
+    reason = class_map.reason_for(own.instance_of, direct=True, individual=individual)
     level, seen = set(own.instance_of) | set(own.subclass_of), set[str]()
     for climbed in range(PARENT_LEVELS + 1):
-        reason = reason or class_map.reason_for(level, direct=False)
+        reason = reason or class_map.reason_for(level, direct=False, individual=individual)
         if reason or climbed == PARENT_LEVELS or not level:
             break
         seen |= level
         parents = await _classes_of(lookup, sorted(level))
         level = {p for c in parents.values() for p in c.subclass_of} - seen
-    band = class_map.is_band(own)
+    return reason
+
+
+# Ask Wikidata about one query: the top exact match among the first PICK_LIMIT results and its
+# reason; for a band, whether its name is a common word; and, when that pick is not a kind of
+# thing, the first kind item among all SEARCH_LIMIT results and its reason (for common nouns).
+async def resolve(query: str, lookup: WikidataLookup, class_map: ClassMap) -> NameCheck:
+    results = await lookup.search(query)
+    matches = await _exact_with_classes(query, results, lookup, SEARCH_LIMIT)
+    head = results[:PICK_LIMIT]
+    picked = top_exact_match(query, [(m, own) for m, own in matches if m in head], class_map)
+    kind = None if picked and class_map.is_kind(picked[1]) else first_kind_match(matches, class_map)
+    if picked is None and kind is None:
+        return NameCheck(None, None, None)
+    reason, kind_reason = await asyncio.gather(
+        class_reason(picked[1], lookup, class_map) if picked else _no_reason(),
+        class_reason(kind[1], lookup, class_map) if kind else _no_reason(),
+    )
+    band = picked is not None and class_map.is_band(picked[1])
     common = band and await is_common_word(query, lookup, class_map)
-    return NameCheck(match.qid, match.label, reason, band, common)
+    return NameCheck(
+        picked[0].qid if picked else None,
+        picked[0].label if picked else None,
+        reason,
+        band,
+        common,
+        kind[0].qid if kind else None,
+        kind[0].label if kind else None,
+        kind_reason,
+    )
+
+
+# No reason (stands in for a class walk that isn't needed).
+async def _no_reason() -> BlockedReason | None:
+    return None
 
 
 # Classes for every requested item; an item Wikidata sends back missing or empty means the walk
@@ -349,7 +414,8 @@ class WikidataCache:
             connection = self._connect()
             try:
                 row = connection.execute(
-                    "SELECT qid, label, reason, band, band_common, classes_version, checked_at "
+                    "SELECT qid, label, reason, band, band_common, kind_qid, kind_label, "
+                    "kind_reason, classes_version, checked_at "
                     "FROM wikidata_safety_cache WHERE query = ?",
                     (query,),
                 ).fetchone()
@@ -360,11 +426,13 @@ class WikidataCache:
             return None
         if row is None or row["classes_version"] != classes_version:
             return None
-        if not self._fresh(row["checked_at"], MATCH_TTL if row["qid"] else NO_MATCH_TTL):
+        matched = row["qid"] or row["kind_qid"]
+        if not self._fresh(row["checked_at"], MATCH_TTL if matched else NO_MATCH_TTL):
             return None
         return NameCheck(
-            row["qid"], row["label"], row["reason"], bool(row["band"]), bool(row["band_common"])
-        )
+            row["qid"], row["label"], row["reason"], bool(row["band"]), bool(row["band_common"]),
+            row["kind_qid"], row["kind_label"], row["kind_reason"],
+        )  # fmt: skip
 
     # True when checked_at is a readable, time-zoned moment no later than now and within ttl.
     def _fresh(self, checked_at: object, ttl: timedelta) -> bool:
@@ -386,10 +454,12 @@ class WikidataCache:
                 with connection:
                     connection.execute(
                         "INSERT OR REPLACE INTO wikidata_safety_cache "
-                        "(query, qid, label, reason, band, band_common, classes_version, "
-                        "checked_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        "(query, qid, label, reason, band, band_common, kind_qid, kind_label, "
+                        "kind_reason, classes_version, checked_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         (query, check.qid, check.label, check.reason, int(check.band),
-                         int(check.common), classes_version, self.now().isoformat()),
+                         int(check.common), check.kind_qid, check.kind_label, check.kind_reason,
+                         classes_version, self.now().isoformat()),
                     )  # fmt: skip
             finally:
                 connection.close()
@@ -525,9 +595,11 @@ async def _check_one(
 
 # Check fighter names (each side's entity and raw text) against Wikidata. Returns a block from
 # the "wikidata" layer, or ALLOWED, which here means "no objection": no match, nothing blocked,
-# or Wikidata unavailable. real_person only counts for names that read as proper names (see
-# lookup_query): "a Napoleon" counts, "a napoleon" does not. A band also needs one of the typed
-# names to name it (names_band): "the Eagles" and "Beatles" count; "Eagles" and "eagles" do not.
+# or Wikidata unavailable. A name typed as a common noun (not proper, see lookup_query) is judged
+# by the first kind item when one matched: "a wolverine" is the animal. real_person only counts
+# for names that read as proper names: "a Napoleon" counts, "a napoleon" does not. A band also
+# needs one of the typed names to name it (names_band): "the Eagles" and "Beatles" count;
+# "Eagles" and "eagles" do not.
 async def check_names(
     names: Sequence[str],
     *,
@@ -551,7 +623,13 @@ async def check_names(
         *(_check_one(q, lookup, cache, class_map) for q in proper_by_query)
     )
     for (query, proper), check in zip(proper_by_query.items(), checks, strict=True):
-        if check is None or check.reason is None:
+        if check is None:
+            continue
+        if not proper and check.kind_qid is not None:
+            if check.kind_reason is not None:
+                return blocked(check.kind_reason, "wikidata")
+            continue
+        if check.reason is None:
             continue
         if check.reason == "real_person" and not proper:
             continue

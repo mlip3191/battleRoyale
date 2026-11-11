@@ -3,6 +3,7 @@
 # A name is blocked when its top exact Wikidata match is an instance (P31) or subclass (P279) of
 # one of these classes, directly or up to two P279 levels higher. instance_only classes match
 # only the entity's own P31 (so the class "Roman legionary" is never a real person).
+# individuals_only classes match only an item that is not a kind of thing (see kind_matches).
 #
 # Bump classes_version whenever this list changes: cached lookups from an older version are
 # ignored, so the change takes effect at once.
@@ -17,7 +18,10 @@
 # only to a kind item, and the cache stores whether the pick was a band.
 # Version 5 (A04 part 3a fix round 2): the cache also stores whether a band's name is a common
 # word, which changes how cached band picks block.
-classes_version: 5
+# Version 6 (A04 part 3b): geographic location is individuals_only (live "vending machine" is a
+# subclass of shop -> workplace -> geographic location), and the cache also stores the first
+# kind item for common nouns ("a wolverine": the animal, not the comic-book character).
+classes_version: 6
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed
@@ -209,9 +213,15 @@ classes:
   - qid: Q523
     label: star
     reason: out_of_scope
+  # individuals_only: blocks only an item that is not a kind of thing (no P279, no kind P31).
+  # Individual places reach it (live Paris, London, Antarctica, Times Square, the Mississippi
+  # River); kinds of objects can too, through Wikidata's "place of business" classes (live
+  # "vending machine" -> shop -> workplace -> geographic location), and must stay allowed. Kinds
+  # of landforms ("a mountain", "a desert") still block through landform below.
   - qid: Q2221906
     label: geographic location
     reason: out_of_scope
+    individuals_only: true
   - qid: Q271669
     label: landform
     reason: out_of_scope
