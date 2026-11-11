@@ -91,3 +91,23 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
   Dry run: issue #52, PR #53.
   Ruleset "main protection" (id 26832578) read back: PR with 1 approval; required checks = 4 CI + Secret scan + Critical files approval; force push and deletion blocked; no bypass; D-26's four options off. Team board: #54 (pinned).
 - Kickoff call held 2026-11-09: all five attended; everyone's `npm run env:check` shows all ok and `npm run setup` works. Recap on the Team board (#54). No weekly meeting: written Done / Doing / Blocked check-ins on #54 instead.
+
+## Milestones
+
+### MS-1 walking skeleton (due Sat Nov 14), started Nov 10, final on Nov 14
+
+- **What works (Nov 10):**
+  - **Engine:** F02–F06 and F08 plus the tournament bracket (F07, the benchmark runner, is still a draft). That's the seeded 1 v 1 and group engine, swarm mode, terrain, machines, objects and mythical abilities, the deciding-factor explainer and the fair-fight search.
+  - **Intake parser (A02):** live-tested.
+  - **Knowledge base:** storage, downloaders and retrieval with the reranker (G02, G03), plus 7 hand-verified seed sheets (G05).
+  - **Front end:** app shell, intake page and results page, on fixtures.
+  - **Still to land for MS-1:** the A05 stub path from matchup to verdict, the D05 battle stage and the A04 safety gate.
+  - **Totals:** 62 PRs merged and 58 issues closed.
+- **What changed from the plan:**
+  - **D-48:** the repo is public, after GitHub Actions stopped on the private repo for billing.
+  - **D-44:** venom is resolved after the fight.
+  - **D-45:** swarm mode was fixed to match the one-by-one engine.
+  - **D-46:** plain-slug fighter IDs.
+  - **D-47:** seed-sheet labeling rules.
+  - **The board:** the "PR linked → In review" automation was turned on (#172).
+- **Screenshot:** _(add on Nov 14: the matchup → verdict flow on mocks)_
