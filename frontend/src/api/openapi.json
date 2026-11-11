@@ -117,312 +117,133 @@
           }
         }
       }
+    },
+    "/api/battles": {
+      "post": {
+        "tags": [
+          "battles"
+        ],
+        "summary": "Create Battle",
+        "operationId": "create_battle_api_battles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Matchup"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BattleCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/battles/{battle_id}": {
+      "get": {
+        "tags": [
+          "battles"
+        ],
+        "summary": "Read Battle",
+        "operationId": "read_battle_api_battles__battle_id__get",
+        "parameters": [
+          {
+            "name": "battle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Battle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BattleRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/battles/{battle_id}/events": {
+      "get": {
+        "tags": [
+          "battles"
+        ],
+        "summary": "Battle Events",
+        "operationId": "battle_events_api_battles__battle_id__events_get",
+        "parameters": [
+          {
+            "name": "battle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Battle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
-      "FighterRequest": {
-        "additionalProperties": false,
-        "description": "One side of the matchup, as understood from the user's words.",
-        "properties": {
-          "entity": {
-            "description": "Normalized name of the fighter, e.g. \"grizzly bear\".",
-            "title": "Entity",
-            "type": "string"
-          },
-          "count": {
-            "default": 1,
-            "description": "How many of them fight on this side (1 to 10,000).",
-            "maximum": 10000,
-            "minimum": 1,
-            "title": "Count",
-            "type": "integer"
-          },
-          "variant": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Which kind, e.g. \"adult male\" or \"polar\"; empty when not specified.",
-            "title": "Variant"
-          },
-          "size_reference": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Another entity this fighter is sized like (\"horse-sized duck\" -> \"horse\"). Only a name,\nnever a number: code computes the scale factor from both stat sheets' mass_kg.",
-            "title": "Size Reference"
-          },
-          "raw": {
-            "description": "The user's own words for this fighter.",
-            "title": "Raw",
-            "type": "string"
-          }
-        },
-        "required": [
-          "entity",
-          "raw"
-        ],
-        "title": "FighterRequest",
-        "type": "object"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "IntakeAnswer": {
-        "properties": {
-          "answer": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Answer"
-          }
-        },
-        "type": "object",
-        "required": [
-          "answer"
-        ],
-        "title": "IntakeAnswer",
-        "description": "Body of POST /api/intake/{pending_id}/answer."
-      },
-      "IntakeRequest": {
-        "properties": {
-          "text": {
-            "type": "string",
-            "maxLength": 2000,
-            "title": "Text"
-          }
-        },
-        "type": "object",
-        "required": [
-          "text"
-        ],
-        "title": "IntakeRequest",
-        "description": "Body of POST /api/intake."
-      },
-      "IntakeResult": {
-        "additionalProperties": false,
-        "description": "Intake's answer: a matchup, a clarifying question, or a block.",
-        "properties": {
-          "status": {
-            "description": "ok = ready to research; clarify = ask the user first; blocked = refused.",
-            "enum": [
-              "ok",
-              "clarify",
-              "blocked"
-            ],
-            "title": "Status",
-            "type": "string"
-          },
-          "matchup": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Matchup"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "The parsed matchup when status is ok."
-          },
-          "question": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "The clarifying question when status is clarify.",
-            "title": "Question"
-          },
-          "options": {
-            "default": [],
-            "description": "Two to four suggested answers to the question.",
-            "items": {
-              "type": "string"
-            },
-            "title": "Options",
-            "type": "array"
-          },
-          "pending_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Id to send back with the user's answer to a clarifying question.",
-            "title": "Pending Id"
-          },
-          "blocked_reason": {
-            "anyOf": [
-              {
-                "enum": [
-                  "real_person",
-                  "minor",
-                  "sexual",
-                  "hate",
-                  "self_harm",
-                  "copyrighted_character",
-                  "deity",
-                  "weapon",
-                  "out_of_scope",
-                  "nonsense",
-                  "other"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Why the request was refused. deity = named gods or religious figures; weapon = modern\nfirearms, explosives, WMD; out_of_scope = abstract ideas, places, landforms,\ncelestial bodies.",
-            "title": "Blocked Reason"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "description": "Friendly text shown to the user.",
-            "title": "Message"
-          }
-        },
-        "required": [
-          "status"
-        ],
-        "title": "IntakeResult",
-        "type": "object"
-      },
-      "Matchup": {
-        "additionalProperties": false,
-        "description": "A parsed battle request: exactly two sides on one terrain.",
-        "properties": {
-          "fighters": {
-            "description": "The two sides (the MVP supports exactly two).",
-            "items": {
-              "$ref": "#/components/schemas/FighterRequest"
-            },
-            "maxItems": 2,
-            "minItems": 2,
-            "title": "Fighters",
-            "type": "array"
-          },
-          "terrain": {
-            "$ref": "#/components/schemas/Terrain",
-            "default": "arena",
-            "description": "Where they fight; the arena when the user didn't say."
-          },
-          "raw_text": {
-            "description": "The user's full request, word for word.",
-            "title": "Raw Text",
-            "type": "string"
-          },
-          "assumptions": {
-            "default": [],
-            "description": "Choices intake made for the user, e.g. \"Assumed adult male grizzly\".",
-            "items": {
-              "type": "string"
-            },
-            "title": "Assumptions",
-            "type": "array"
-          }
-        },
-        "required": [
-          "fighters",
-          "raw_text"
-        ],
-        "title": "Matchup",
-        "type": "object"
-      },
-      "Terrain": {
-        "description": "The battlefield; it changes who can reach whom and how fast they move.",
-        "enum": [
-          "arena",
-          "open_field",
-          "forest",
-          "water",
-          "shoreline",
-          "urban",
-          "mountain"
-        ],
-        "title": "Terrain",
-        "type": "string"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
-      },
       "Ability": {
         "description": "Special powers of mythical creatures; each has one documented engine effect.",
         "enum": [
@@ -805,33 +626,74 @@
         "title": "FightEvent",
         "type": "object"
       },
-      "FighterMatch": {
+      "FighterRequest": {
         "additionalProperties": false,
-        "description": "One row of GET /api/fighters?q=: a fighter whose name matches the search text.",
+        "description": "One side of the matchup, as understood from the user's words.",
         "properties": {
-          "fighter_id": {
-            "description": "Stable fighter id, e.g. \"grizzly-bear\".",
-            "title": "Fighter Id",
+          "entity": {
+            "description": "Normalized name of the fighter, e.g. \"grizzly bear\".",
+            "title": "Entity",
             "type": "string"
           },
-          "display_name": {
-            "description": "Name shown to the user.",
-            "title": "Display Name",
-            "type": "string"
+          "count": {
+            "default": 1,
+            "description": "How many of them fight on this side (1 to 10,000).",
+            "maximum": 10000,
+            "minimum": 1,
+            "title": "Count",
+            "type": "integer"
           },
-          "cached": {
-            "description": "True when a stat sheet is already saved, so the battle can skip research.",
-            "title": "Cached",
-            "type": "boolean"
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Which kind, e.g. \"adult male\" or \"polar\"; empty when not specified.",
+            "title": "Variant"
+          },
+          "size_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Another entity this fighter is sized like (\"horse-sized duck\" -> \"horse\"). Only a name,\nnever a number: code computes the scale factor from both stat sheets' mass_kg.",
+            "title": "Size Reference"
+          },
+          "raw": {
+            "description": "The user's own words for this fighter.",
+            "title": "Raw",
+            "type": "string"
           }
         },
         "required": [
-          "fighter_id",
-          "display_name",
-          "cached"
+          "entity",
+          "raw"
         ],
-        "title": "FighterMatch",
+        "title": "FighterRequest",
         "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "Habitat": {
         "description": "Where the fighter can move.",
@@ -843,6 +705,144 @@
         ],
         "title": "Habitat",
         "type": "string"
+      },
+      "IntakeAnswer": {
+        "properties": {
+          "answer": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Answer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answer"
+        ],
+        "title": "IntakeAnswer",
+        "description": "Body of POST /api/intake/{pending_id}/answer."
+      },
+      "IntakeRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "IntakeRequest",
+        "description": "Body of POST /api/intake."
+      },
+      "IntakeResult": {
+        "additionalProperties": false,
+        "description": "Intake's answer: a matchup, a clarifying question, or a block.",
+        "properties": {
+          "status": {
+            "description": "ok = ready to research; clarify = ask the user first; blocked = refused.",
+            "enum": [
+              "ok",
+              "clarify",
+              "blocked"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "matchup": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Matchup"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The parsed matchup when status is ok."
+          },
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The clarifying question when status is clarify.",
+            "title": "Question"
+          },
+          "options": {
+            "default": [],
+            "description": "Two to four suggested answers to the question.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "pending_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Id to send back with the user's answer to a clarifying question.",
+            "title": "Pending Id"
+          },
+          "blocked_reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "real_person",
+                  "minor",
+                  "sexual",
+                  "hate",
+                  "self_harm",
+                  "copyrighted_character",
+                  "deity",
+                  "weapon",
+                  "out_of_scope",
+                  "nonsense",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Why the request was refused. deity = named gods or religious figures; weapon = modern\nfirearms, explosives, WMD; out_of_scope = abstract ideas, places, landforms,\ncelestial bodies.",
+            "title": "Blocked Reason"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Friendly text shown to the user.",
+            "title": "Message"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "IntakeResult",
+        "type": "object"
       },
       "LoreProfile": {
         "additionalProperties": false,
@@ -900,6 +900,47 @@
           "source"
         ],
         "title": "LoreProfile",
+        "type": "object"
+      },
+      "Matchup": {
+        "additionalProperties": false,
+        "description": "A parsed battle request: exactly two sides on one terrain.",
+        "properties": {
+          "fighters": {
+            "description": "The two sides (the MVP supports exactly two).",
+            "items": {
+              "$ref": "#/components/schemas/FighterRequest"
+            },
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Fighters",
+            "type": "array"
+          },
+          "terrain": {
+            "$ref": "#/components/schemas/Terrain",
+            "default": "arena",
+            "description": "Where they fight; the arena when the user didn't say."
+          },
+          "raw_text": {
+            "description": "The user's full request, word for word.",
+            "title": "Raw Text",
+            "type": "string"
+          },
+          "assumptions": {
+            "default": [],
+            "description": "Choices intake made for the user, e.g. \"Assumed adult male grizzly\".",
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "fighters",
+          "raw_text"
+        ],
+        "title": "Matchup",
         "type": "object"
       },
       "Script": {
@@ -975,28 +1016,6 @@
           "text"
         ],
         "title": "ScriptLine",
-        "type": "object"
-      },
-      "ShowcaseBattle": {
-        "additionalProperties": false,
-        "description": "One row of GET /api/battles?showcase=true: a saved showcase battle.",
-        "properties": {
-          "battle_id": {
-            "description": "Id of the saved battle.",
-            "title": "Battle Id",
-            "type": "string"
-          },
-          "title": {
-            "description": "Matchup title shown on the home page, e.g. \"Grizzly bear vs Gray wolf\".",
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "battle_id",
-          "title"
-        ],
-        "title": "ShowcaseBattle",
         "type": "object"
       },
       "SimulationResult": {
@@ -1482,6 +1501,110 @@
           "method"
         ],
         "title": "StatValue",
+        "type": "object"
+      },
+      "Terrain": {
+        "description": "The battlefield; it changes who can reach whom and how fast they move.",
+        "enum": [
+          "arena",
+          "open_field",
+          "forest",
+          "water",
+          "shoreline",
+          "urban",
+          "mountain"
+        ],
+        "title": "Terrain",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "FighterMatch": {
+        "additionalProperties": false,
+        "description": "One row of GET /api/fighters?q=: a fighter whose name matches the search text.",
+        "properties": {
+          "fighter_id": {
+            "description": "Stable fighter id, e.g. \"grizzly-bear\".",
+            "title": "Fighter Id",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Name shown to the user.",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "cached": {
+            "description": "True when a stat sheet is already saved, so the battle can skip research.",
+            "title": "Cached",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "fighter_id",
+          "display_name",
+          "cached"
+        ],
+        "title": "FighterMatch",
+        "type": "object"
+      },
+      "ShowcaseBattle": {
+        "additionalProperties": false,
+        "description": "One row of GET /api/battles?showcase=true: a saved showcase battle.",
+        "properties": {
+          "battle_id": {
+            "description": "Id of the saved battle.",
+            "title": "Battle Id",
+            "type": "string"
+          },
+          "title": {
+            "description": "Matchup title shown on the home page, e.g. \"Grizzly bear vs Gray wolf\".",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "battle_id",
+          "title"
+        ],
+        "title": "ShowcaseBattle",
         "type": "object"
       }
     }
