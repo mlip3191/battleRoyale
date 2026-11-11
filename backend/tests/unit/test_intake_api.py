@@ -1,5 +1,6 @@
 """The intake routes on a scripted chat model: ok, one question then ok, and expiry (D08)."""
 
+import asyncio
 import json
 import sqlite3
 import time
@@ -10,7 +11,8 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.intake import EXPIRED_MESSAGE, get_chat, get_db
+from app.api import intake as intake_api
+from app.api.intake import EXPIRED_MESSAGE, UNAVAILABLE_MESSAGE, get_chat, get_db
 from app.config import Settings
 from app.db.connection import connect
 from app.db.intake_pending import (
@@ -18,6 +20,7 @@ from app.db.intake_pending import (
     MAX_QUESTION_CHARS,
     PENDING_TTL_SECONDS,
     PendingQuestion,
+    restore_pending,
     save_pending,
     take_pending,
 )
@@ -26,6 +29,7 @@ from app.intake.answer import START_OVER, merge_answer
 from app.intake.parser import COMMON_KIND_NOTE, INPUT_END, INPUT_START
 from app.main import create_app
 from app.providers.base import ChatMessage
+from app.providers.live.http import ProviderError
 
 
 def side(raw: str, entity: str) -> dict[str, Any]:
@@ -55,12 +59,20 @@ REPLIES: dict[str, Any] = {
 
 
 class ScriptedChat:
-    """Stand-in chat model that replies from REPLIES and remembers each text it saw."""
+    """Stand-in chat model that replies from REPLIES and remembers each text it saw.
+
+    Set `down` to make every call fail like an outage, or `delay` to make each call slow.
+    """
 
     def __init__(self) -> None:
         self.texts: list[str] = []
+        self.down = False
+        self.delay = 0.0
 
     async def complete(self, messages: list[ChatMessage], **_: Any) -> str:
+        if self.down:
+            raise ProviderError("chat endpoint unavailable")
+        await asyncio.sleep(self.delay)
         content = messages[1]["content"]
         text = content.removeprefix(f"{INPUT_START}\n").removesuffix(f"\n{INPUT_END}")
         self.texts.append(text)
@@ -233,3 +245,74 @@ def test_both_routes_are_in_openapi(client: TestClient) -> None:
 )
 def test_merge_answer(original: str, answer: str, merged: str) -> None:
     assert merge_answer(original, answer) == merged
+
+
+# --- Safety (A04 runs inside parse_matchup), outages, and the 25 s deadline ---------------------
+
+
+def test_unsafe_first_text_is_blocked_and_saves_no_question(
+    client: TestClient, db_path: Path, chat: ScriptedChat
+) -> None:
+    body = client.post("/api/intake", json={"text": "a toddler vs a goose"}).json()
+    assert body["status"] == "blocked" and body["blocked_reason"] == "minor"
+    assert body["matchup"] is None and body["pending_id"] is None
+    assert pending_rows(db_path) == 0 and chat.texts == []  # code rules ran before any model call
+
+
+def test_unsafe_answer_is_blocked_and_asks_nothing_more(
+    client: TestClient, db_path: Path, chat: ScriptedChat
+) -> None:
+    pending_id = ask_which_bear(client)
+    body = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "a toddler"}).json()
+    assert body["status"] == "blocked" and body["blocked_reason"] == "minor"
+    assert body["matchup"] is None and body["question"] is None and body["pending_id"] is None
+    assert pending_rows(db_path) == 0 and chat.texts == ["bear vs wolf"]
+
+
+def test_an_outage_on_the_first_text_is_a_503_not_a_500(
+    client: TestClient, db_path: Path, chat: ScriptedChat
+) -> None:
+    chat.down = True
+    response = client.post("/api/intake", json={"text": "bear vs wolf"})
+    assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
+    assert pending_rows(db_path) == 0
+
+
+def test_an_outage_on_the_answer_is_a_503_and_keeps_the_question(
+    client: TestClient, db_path: Path, chat: ScriptedChat
+) -> None:
+    pending_id = ask_which_bear(client)
+    chat.down = True
+    response = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "grizzly bear"})
+    assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
+    assert pending_rows(db_path) == 1
+    chat.down = False  # the retry with the same id works once the model is back
+    retry = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "grizzly bear"})
+    assert retry.status_code == 200 and retry.json()["status"] == "ok"
+
+
+def test_a_slow_model_hits_the_deadline_on_both_routes(
+    client: TestClient, db_path: Path, chat: ScriptedChat, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    assert intake_api.INTAKE_DEADLINE_SECONDS == 25.0
+    pending_id = ask_which_bear(client)
+    monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", 0.05)
+    chat.delay = 1.0
+    first = client.post("/api/intake", json={"text": "a grizzly bear vs a gray wolf"})
+    assert first.status_code == 503 and first.json()["detail"] == UNAVAILABLE_MESSAGE
+    answer = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "grizzly bear"})
+    assert answer.status_code == 503 and pending_rows(db_path) == 1  # the question is kept
+
+
+def test_a_restored_question_keeps_its_id_and_age(db_path: Path) -> None:
+    connection = connect(db_path)
+    apply_migrations(connection)
+    now = time.time()
+    question = PendingQuestion("bear vs wolf", "Which bear?", ["grizzly bear"])
+    pending_id = save_pending(connection, question, now=now - PENDING_TTL_SECONDS + 5)
+    taken = take_pending(connection, pending_id, now=now)
+    assert taken is not None
+    restore_pending(connection, pending_id, taken)
+    later = take_pending(connection, pending_id, now=now + 10)  # past the original 30 minutes
+    connection.close()
+    assert later is None

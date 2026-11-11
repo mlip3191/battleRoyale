@@ -1,17 +1,18 @@
 """Intake routes (ARCHITECTURE §6): read a matchup, and take the answer to one question (D08)."""
 
+import asyncio
 import sqlite3
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, StringConstraints
 
 from app.db.connection import connect
-from app.db.intake_pending import PendingQuestion, save_pending, take_pending
+from app.db.intake_pending import PendingQuestion, restore_pending, save_pending, take_pending
 from app.db.migrate import apply_migrations
 from app.intake.answer import resolve_answer
-from app.intake.parser import parse_matchup
+from app.intake.parser import IntakeUnavailable, parse_matchup
 from app.models.matchup import IntakeResult
 from app.providers.base import ChatLLM
 from app.providers.registry import get_provider
@@ -20,6 +21,9 @@ router = APIRouter(prefix="/api/intake", tags=["intake"])
 EXPIRED_MESSAGE = (
     "That question has expired or was already answered. Please type your matchup again."
 )
+UNAVAILABLE_MESSAGE = "Our matchup desk is having trouble right now. Please try again in a moment."
+# Whole-request limit for reading a matchup (Adam's live timings: median 6.9 s, max 19.4 s).
+INTAKE_DEADLINE_SECONDS = 25.0
 
 
 class IntakeRequest(BaseModel):
@@ -54,10 +58,19 @@ Db = Annotated[sqlite3.Connection, Depends(get_db)]
 Chat = Annotated[ChatLLM, Depends(get_chat)]
 
 
+# Run one intake step under the deadline; an outage or a timeout becomes a plain 503, never a 500.
+async def within_deadline[T](step: Awaitable[T]) -> T:
+    try:
+        async with asyncio.timeout(INTAKE_DEADLINE_SECONDS):
+            return await step
+    except (IntakeUnavailable, TimeoutError) as error:
+        raise HTTPException(status_code=503, detail=UNAVAILABLE_MESSAGE) from error
+
+
 # Read the user's text; when a question is needed, save it and hand back its pending_id.
 @router.post("")
 async def start_intake(body: IntakeRequest, db: Db, chat: Chat) -> IntakeResult:
-    result = await parse_matchup(body.text, chat=chat)
+    result = await within_deadline(parse_matchup(body.text, chat=chat))
     if result.status != "clarify" or not result.question:
         return result
     pending = PendingQuestion(body.text.strip(), result.question, result.options)
@@ -70,4 +83,8 @@ async def answer_intake(pending_id: str, body: IntakeAnswer, db: Db, chat: Chat)
     pending = take_pending(db, pending_id)
     if pending is None:
         raise HTTPException(status_code=404, detail=EXPIRED_MESSAGE)
-    return await resolve_answer(pending, body.answer, chat)
+    try:
+        return await within_deadline(resolve_answer(pending, body.answer, chat))
+    except HTTPException:
+        restore_pending(db, pending_id, pending)  # not the user's fault: keep the question
+        raise

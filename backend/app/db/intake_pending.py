@@ -18,6 +18,7 @@ class PendingQuestion:
     original_text: str
     question: str
     options: list[str]
+    created_at: float | None = None  # set when read back, so a restored question keeps its age
 
 
 # Drop questions older than 30 minutes, so the table never grows without bound.
@@ -56,10 +57,30 @@ def take_pending(
     _purge_expired(connection, time.time() if now is None else now)
     row = connection.execute(
         "DELETE FROM intake_pending WHERE pending_id = ? "
-        "RETURNING original_text, question, options",
+        "RETURNING original_text, question, options, created_at",
         (pending_id,),
     ).fetchone()
     connection.commit()
     if row is None:
         return None
-    return PendingQuestion(row["original_text"], row["question"], json.loads(row["options"]))
+    options = json.loads(row["options"])
+    return PendingQuestion(row["original_text"], row["question"], options, row["created_at"])
+
+
+# Put a taken question back under the same id and age (the model was down), so a retry works.
+def restore_pending(
+    connection: sqlite3.Connection, pending_id: str, pending: PendingQuestion
+) -> None:
+    created_at = time.time() if pending.created_at is None else pending.created_at
+    connection.execute(
+        "INSERT OR IGNORE INTO intake_pending "
+        "(pending_id, original_text, question, options, created_at) VALUES (?, ?, ?, ?, ?)",
+        (
+            pending_id,
+            pending.original_text[:MAX_ORIGINAL_CHARS],
+            pending.question[:MAX_QUESTION_CHARS],
+            json.dumps(pending.options),
+            created_at,
+        ),
+    )
+    connection.commit()
