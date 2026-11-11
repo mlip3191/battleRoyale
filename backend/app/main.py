@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse
 
+from app.api.intake import router as intake_router
 from app.config import REPO_ROOT, Settings, get_settings
 from app.models import contract_schemas
 from app.providers.health import provider_statuses
@@ -40,6 +41,7 @@ def create_app(settings: Settings | None = None, frontend_dist: Path = FRONTEND_
             "providers": await provider_statuses(settings),
         }
 
+    app.include_router(intake_router)
     if frontend_dist.is_dir():
         _serve_frontend(app, frontend_dist.resolve())
     app.openapi = lambda: _openapi_with_contracts(app)

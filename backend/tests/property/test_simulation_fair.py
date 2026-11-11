@@ -5,7 +5,7 @@ import pytest
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.engine import run
-from app.simulation.fair import fair_fight, fair_fight_search, plural, test_challengers
+from app.simulation.fair import _how_even, fair_fight, fair_fight_search, plural, test_challengers
 from tests.property.sim_helpers import ant, lion, load_sheet, make_sheet, matchup_of
 
 
@@ -160,3 +160,14 @@ def test_test_challengers_is_not_collected_as_a_test():
 def test_challenger_win_probability_is_the_challengers_not_the_winners():
     (weak,) = test_challengers(wolf(), [house_cat()], terrain=Terrain.ARENA)
     assert weak.tested_win_prob == pytest.approx(0.0, abs=0.05)
+
+
+def test_the_challenger_wording_follows_the_named_thresholds():
+    tol, slight, eps = c.FAIR_TOLERANCE, c.CHALLENGER_SLIGHT_GAP, 1e-6  # eps: stay off float edges
+    assert _how_even(0.5 + tol - eps) == _how_even(0.5 - tol + eps) == "a coin flip"
+    assert _how_even(0.5 + tol + eps) == "a slight favorite"
+    assert _how_even(0.5 - tol - eps) == "a slight underdog"
+    assert _how_even(0.5 + slight - eps) == "a slight favorite"
+    assert _how_even(0.5 - slight + eps) == "a slight underdog"
+    assert _how_even(0.5 + slight + eps) == "a clear favorite"
+    assert _how_even(0.5 - slight - eps) == "a clear underdog"
