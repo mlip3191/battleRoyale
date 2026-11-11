@@ -3,6 +3,7 @@
 import heapq
 import math
 import random
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -517,6 +518,8 @@ def _spread_tracked(
         reserve += fronts[g:]
         fronts = fronts[:g]
     fresh = n - len(fronts) - len(reserve)  # defenders still at full health
+    if not reserve:
+        fronts += [full_hp] * (g - len(fronts))
     while len(fronts) < g:
         if reserve and (fresh <= 0 or rng.random() < len(reserve) / (len(reserve) + fresh)):
             fronts.append(reserve.pop(rng.randrange(len(reserve))))
@@ -526,15 +529,30 @@ def _spread_tracked(
     kills = 0
     # Attackers stay on their targets, so each front gets a steady share of the hits: an equal
     # split, with the remainder going to random fronts (no fresh random draw per front per step).
+    # Fronts with the same hit points are handled together, which is what makes this fast: after
+    # an equal split most fronts are identical.
     share, extra = divmod(hits, g)
-    lucky = set(rng.sample(range(g), extra)) if extra else set()
     survivors: list[float] = []  # fronts that took no kill
     killers: list[float] = []  # fronts that killed and started on a new fighter
-    for i in range(g):
-        mine = share + (1 if i in lucky else 0)
-        k, _, f = _apply_hits(mine, dmg, n, fronts[i], full_hp)
-        kills += k
-        (killers if k else survivors).append(f)
+    groups = list(Counter(fronts).items())  # (hit points, how many fronts have them)
+    fronts_left, extra_left = g, extra
+    for position, (hp, size) in enumerate(groups):
+        if position == len(groups) - 1:
+            lucky = extra_left  # the leftover hits all land on the last group
+        elif extra_left:
+            low = max(0, extra_left - (fronts_left - size))
+            lucky = min(
+                size, extra_left, max(low, rng.binomialvariate(size, extra_left / fronts_left))
+            )
+        else:
+            lucky = 0
+        extra_left -= lucky
+        fronts_left -= size
+        for count, mine in ((size - lucky, share), (lucky, share + 1)):
+            if count:
+                k, _, f = _apply_hits(mine, dmg, n, hp, full_hp)
+                kills += k * count
+                (killers if k else survivors).extend([f] * count)
     kills = min(kills, n - len(survivors))  # fronts that took no kill are still alive
     n_left = n - kills
     # A front that killed continues on a fresh fighter only if one is still waiting.

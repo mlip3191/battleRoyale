@@ -13,11 +13,11 @@ In brackets, what it was before the fixes.
 | Kind of fight | Win share: swarm minus one-by-one | Duration | Survivors |
 |---|---|---|---|
 | **One big target** (3-50 wolves vs a bear) | -0.012 to +0.007 | 0.98-0.99x | about 1.0x |
-| **Even and uneven matches of the same animal** (5 v 5 up to 125 v 100 wolves) | -0.012 to +0.013 | 0.97-1.03x (was about 2x) | 0.97-1.00x (was about 0.65x) |
-| **Ranged** (10-50 archers vs half as many wolves) | +0.007 to +0.020 | 0.88-0.96x | about 1.0x (was 0.4-0.5x for the loser) |
-| **Many weak vs few strong** (10-100 cats vs a fifth as many wolves) | -0.015 to +0.007 at 600 runs; -0.012 to 0.000 at 3,000 runs (noise 0.025). Was +0.06 to +0.22, then -0.04 to -0.06 before swarm mode remembered wounded defenders | 0.92-0.96x | 0.98-1.01x (crowd), 1.03-1.07x (wolves) |
+| **Even and uneven matches of the same animal** (5 v 5 up to 125 v 100 wolves) | -0.023 to +0.008 | 0.96-1.04x (was about 2x) | 0.96-1.00x (was about 0.65x) |
+| **Ranged** (10-50 archers vs half as many wolves) | +0.003 to +0.015 | 0.92-0.96x | about 1.0x (was 0.4-0.5x for the loser) |
+| **Many weak vs few strong** (10-100 cats vs a fifth as many wolves) | -0.023 to +0.012 at 600 runs; -0.021 to -0.003 at 3,000 runs (noise 0.025); -0.009 to -0.003 at 8,000 runs (noise 0.015). Was +0.06 to +0.22, then -0.04 to -0.06 before swarm mode remembered wounded defenders | 0.90-1.00x | 0.95-1.00x (crowd), 1.05-1.07x (wolves) |
 
-Full tables are printed by the script. Speed is the point of swarm mode, but timings depend on the machine. After the replay-event speedup (#160), on the author's laptop a 100 v 100 fight of wolves takes about 1.7 s per 1,000 runs one by one, and 200 v 200 takes about 3.1 s (3.5 s with the deciding-factor analysis). Uneven fights are much slower one by one: 150 cats v 1 elephant took about 32 s with the analysis. **Swarm mode got slower with this change**: spreading each hit over the defenders costs time the old smooth model did not, so a 201 v 201 fight takes about 1.8 s per 1,000 runs in swarm mode (it took 0.14 s with the old model), 300 v 300 about 3.3 s, and 1,000 v 1,000 about 9.5 s; 10,000 ants v 1 lion is still 0.6 s because the lone lion has only a few fronts. On a teammate's machine, runs took about 3x longer than on the author's laptop, and CI runners are 2 to 3 times slower. Treat the stage budget in #91 with the slower numbers.
+Full tables are printed by the script. Speed is the point of swarm mode, but timings depend on the machine. After the replay-event speedup (#160), on the author's laptop a 100 v 100 fight of wolves takes about 1.7 s per 1,000 runs one by one, and 200 v 200 takes about 3.1 s (3.5 s with the deciding-factor analysis). Uneven fights are much slower one by one: 150 cats v 1 elephant took about 32 s with the analysis. **Swarm mode is slower than the old smooth model**: spreading each hit over the defenders costs time the old model did not. A first version of the new model took 2.3 s for 201 v 201 and 12.8 s for 1,000 v 1,000; handling fronts with identical hit points together (they are most of them after an equal split) brought it to about 0.5 to 0.9 s and 1.3 to 1.9 s per 1,000 runs. For comparison the old model took 0.14 s and 0.16 s. With the deciding-factor analysis a 201 v 201 fight takes about 0.7 s, 600 cats v 120 wolves about 1.9 s, and 10,000 ants v 1 lion about 1.7 s. On a teammate's machine, runs took about 3x longer than on the author's laptop, and CI runners are 2 to 3 times slower. The decision on when to use swarm mode is D-50 (by expected work, #183).
 
 ## What was wrong, and how swarm mode works now
 
@@ -25,7 +25,7 @@ Full tables are printed by the script. Speed is the point of swarm mode, but tim
 - **Each hit picks its own defender, as in the one-by-one engine.** The attackers' hits are spread at random over as many defenders as can be engaged at once (the cap of 8 per target still applies), so some defenders die early and others late. This removed the crowd-versus-few-strong overrating.
 - **Fronts that die with nobody to replace them no longer count.** The group's average hit points used to include dead fronts, so survivors looked healthier and the end of every fight dragged on (about 2.5x too long when hunting down a side that had broken). `tests/property/test_simulation_swarm_parity.py` guards this.
 - **Wounded defenders are remembered between steps.** The first version of this fix averaged the hit points of all fronts at the end of every step, so every front looked equally hurt and deaths were delayed (the crowd was underrated by 0.04 to 0.06). Swarm mode now keeps each wounded defender's hit points, keeps the fronts being fought from one step to the next (attackers stay on their target until it falls, as in the one-by-one engine), and splits each step's hits evenly across the fronts, with the remainder going to random fronts. Wounds never heal when fewer fronts are fought; those defenders wait in a reserve. A first attempt that re-drew a random front for every hit every step made matched groups last 12 to 33% too long, which is why the split is even.
-- **Where the models still differ:** every kind of fight is now within about ±0.02 at 600 runs and ±0.012 at 3,000 runs, down from -0.04 to -0.06 for crowd v few strong, so the ±0.03 target in D-45 is met. Swarm mode is still a different model (it does not follow individual attackers), so it can drift in cases not in the script, and it is much slower than the old smooth model (see the timings above).
+- **Where the models still differ:** every kind of fight is now within about ±0.025 at 600 runs and the cats rows within ±0.009 at 8,000 runs, down from -0.04 to -0.06 for crowd v few strong, so the ±0.03 target in D-45 is met. Swarm mode is still a different model (it does not follow individual attackers), so it can drift in cases not in the script, and it is much slower than the old smooth model (see the timings above).
 
 ## Larger fights (above the swarm threshold)
 
@@ -33,12 +33,12 @@ Every scenario above is 125 per side or fewer, but swarm mode only runs above 20
 
 | Fight | Runs | One-by-one | Swarm | Gap |
 |---|---|---|---|---|
-| 250 v 250 wolves | 300 | 0.467 | 0.473 | +0.007 |
+| 250 v 250 wolves | 0.547 | 0.537 | -0.010 | 0.080 (within noise) |
 | 312 v 250 wolves | 200 | 0.600 | 0.600 | 0.000 |
 | 300 wolves v 1 bear | 300 | 1.000 | 1.000 | 0.000 |
-| 300 cats v 60 wolves | 300 | 0.427 | 0.623 | **+0.197** |
-| 600 cats v 120 wolves | 150 | 0.533 | 0.693 | **+0.160** |
-| 400 archers v 200 wolves | 150 | 0.973 | 0.980 | +0.007 |
+| 300 cats v 60 wolves | 0.453 | 0.447 | -0.007 | 0.080 (within noise) |
+| 600 cats v 120 wolves | 0.530 | 0.537 | +0.007 | 0.080 (within noise) |
+| 400 archers v 200 wolves | 0.940 | 0.950 | +0.010 | 0.038 (within noise) |
 
 The conclusions held at these sizes before the fixes: matched, one-big-target and ranged fights agreed, and a crowd of weak fighters against a few strong ones was overrated by 0.16 to 0.20.
 
@@ -56,7 +56,7 @@ Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 
 ## What this means for the app
 
 - **Win probabilities from swarm mode are trustworthy** to about ±0.02 for every kind of fight in the validation script, including a crowd of weak fighters against a few strong ones.
-- **Duration and survivor counts from swarm mode are now close** to the one-by-one engine's (durations 0.86 to 1.03x, survivors within a few percent), so a fight at 201 per side reads like the same fight at 199.
+- **Duration and survivor counts from swarm mode are now close** to the one-by-one engine's (durations 0.86 to 1.04x, survivors within a few percent), so a fight at 201 per side reads like the same fight at 199.
 - **Fair-fight search:** probes above 200 per side use swarm mode, and their answers are now as reliable as those below.
 - **F07 benchmark:** "count" cases above 200 per side are fine to include; still flag any swarm-mode matchup in the report.
-- **Lowering the threshold does not save time the way it used to.** Swarm mode is accurate at every size, but it is now much slower than the old smooth model (a 201 v 201 fight takes about 1.8 s per 1,000 runs instead of 0.14 s), so swarm mode costs about as much as a 150 v 150 fight one by one (2.4 s). The cost of a fight depends on how many fronts are fought and how long it lasts, not only on the head count (see the timings above and #91).
+- **Swarm mode is cheaper than a long one-by-one fight, not free.** A 201 v 201 fight costs about 0.5 to 0.9 s per 1,000 runs instead of 0.14 s, but 150 cats v 1 elephant costs about 32 s one by one, so D-50 (#183) chooses swarm mode by expected work, not head count. Every fight that newly switches must agree with the one-by-one engine within ±0.03.
