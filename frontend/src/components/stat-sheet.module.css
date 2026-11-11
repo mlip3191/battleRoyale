@@ -1,0 +1,116 @@
+/* Stat sheet cards, source badges, the lore card, and the sources list (D04). */
+.card {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--panel);
+  border-left: 6px solid var(--neon);
+}
+
+.card h3 {
+  margin-top: 0;
+}
+
+.value {
+  font-family: var(--font-digits);
+  color: var(--neon);
+}
+
+.muted,
+.note,
+.url {
+  color: var(--muted);
+}
+
+.note {
+  display: block;
+}
+
+.url {
+  overflow-wrap: anywhere;
+}
+
+.banner {
+  padding: 0.4rem 0.8rem;
+  background: var(--banner);
+  color: var(--banner-text);
+  font-weight: 700;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--bg);
+}
+
+.badge {
+  position: relative;
+}
+
+.dot {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+}
+
+.high {
+  background: var(--neon);
+}
+
+.medium {
+  background: var(--banner);
+}
+
+.low {
+  background: var(--hot);
+}
+
+/* The quote appears while the source link is hovered or focused. */
+.quote {
+  display: none;
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  top: 1.6rem;
+  width: min(22rem, 80vw);
+  padding: 0.5rem 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--neon);
+  font-size: 0.9rem;
+}
+
+.badge:hover .quote,
+.badge:focus-within .quote {
+  display: block;
+}
+
+.tag {
+  margin-left: 0.35rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--hot);
+  border-radius: 999px;
+  color: var(--hot);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.abilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.figure {
+  margin: 0 0 1rem;
+  font-style: italic;
+}
