@@ -12,7 +12,7 @@ Every decision that shapes the build, with its status. **Open** items need Mike'
 | Felipe Cervino | `felcervino` | Windows | 4 — Simulation & analytics |
 | Dillon Smart | `dilloncsmart` | Windows | 5 — Front end & battle stage |
 
-**Group A** · MBAX 6418 AI Business Solutions · Instructor: David Dobolyi. The overview requires adding the instructor as a collaborator on a private repo; Mike does that by hand when he chooses (invitations expire after 7 days).
+**Group A** · MBAX 6418 AI Business Solutions · Instructor: David Dobolyi. The overview requires adding the instructor as a collaborator. The repo is public since D-48, so he can read it anytime; Mike still sends the collaborator invite by hand at code complete, Nov 25 (invitations expire after 7 days).
 
 ## Open — need an answer
 
