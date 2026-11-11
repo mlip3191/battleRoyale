@@ -124,7 +124,46 @@ def _starts(sides: list[Template]) -> list[float]:
     return out
 
 
-def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] | None:
+def expected_work(sides: list[Template]) -> float:
+    """Attacks both sides are expected to make in one fight, from stats only (D-50).
+
+    Roughly attackers engaged x attack rate x fight length. It uses no clock or timing, so the
+    same matchup always gives the same answer on every machine. The fight lasts until the faster
+    side would wear the other down (total hit points / damage rate), but never past the time
+    limit or a machine's operating time. It is an estimate, not a bound: it ignores approach
+    time, morale and the thinning of the attackers as defenders fall.
+    """
+    rates: list[float] = []
+    times: list[float] = []
+    for s in (0, 1):
+        me, foe = sides[s], sides[1 - s]
+        if not me.can_attack or me.count == 0:
+            rates.append(0.0)
+            times.append(math.inf)
+            continue
+        engaged = me.count if me.ranged else min(me.count, foe.count * max_engagers(me, foe))
+        rate = engaged * me.attacks_per_s
+        hits_per_s = rate * hit_chance(me, foe)
+        # Every defender takes its own hits and overkill is wasted, so count the hits needed to
+        # remove each one, not total hit points (a cat falls to one blow from an elephant).
+        hits_needed = foe.count * max(1, math.ceil(foe.max_hp / max(damage_per_hit(me, foe), 1e-9)))
+        rates.append(rate)
+        times.append(hits_needed / hits_per_s if hits_per_s > 0 else math.inf)
+    stops = [side.endurance_s for side in sides if side.body == Body.MACHINE]
+    duration = min(*times, c.MAX_FIGHT_S, *stops)
+    return sum(rates) * duration
+
+
+def use_swarm(sides: list[Template]) -> bool:
+    """Swarm mode for big groups (the ceiling) or for fights with too much work (D-50)."""
+    return max(side.count for side in sides) > c.SWARM_THRESHOLD or (
+        expected_work(sides) > c.SWARM_WORK_BUDGET
+    )
+
+
+def _foregone(
+    sides: list[Template], starts: list[float], swarm: bool | None = None
+) -> tuple[int, float] | None:
     """(winner, end time) when the fight's result is certain without simulating it, else None.
 
     The certainty is an exact upper bound, not an estimate: every fighter attacks at most once
@@ -135,7 +174,7 @@ def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] |
     Objects whose spines really hurt their attackers can end a fight by other means, so they are
     simulated.
     """
-    if max(side.count for side in sides) > c.SWARM_THRESHOLD:
+    if max(side.count for side in sides) > c.SWARM_THRESHOLD if swarm is None else swarm:
         return None  # swarm mode acts in coarse time steps, so the per-interval bound does not hold
     if any(side.spiky and side.damage > 0 for side in sides):
         return None  # spines that hurt can end a fight in ways the bound ignores
@@ -169,11 +208,14 @@ def run_once(
     rng: random.Random,
     record_events: bool = False,
     notes: tuple[str, str] = ("", ""),
+    swarm: bool | None = None,
 ) -> RunOutcome:
     """Simulate one fight to the end (a side wiped out, or 600 s).
 
     Time moves in 0.1 s ticks; the loop jumps straight to the next tick where someone acts.
-    Sides with more than 200 individuals run in groups (swarm mode). `notes` are short
+    Sides with more than 200 individuals run in groups (swarm mode); so do fights with too much
+    work (D-50), which the caller decides once per matchup and passes as `swarm`
+    (None means decide by head count alone). `notes` are short
     neutral phrases added to the opening events (e.g. "scaled to horse size").
     Terrain modifiers are already applied to `sides` (see `_templates`). A side that loses too
     much of its hit points retreats; if it is faster than its pursuers it escapes. Machines
@@ -203,7 +245,7 @@ def run_once(
         alive = [sides[0].count, sides[1].count]
         return _outcome(alive, c.MAX_FIGHT_S, events, record_events)
 
-    sure = None if record_events else _foregone(sides, starts)
+    sure = None if record_events else _foregone(sides, starts, swarm)
     if sure is not None:
         # A certain result: skip the (possibly enormous) simulation. The replay of a
         # representative fight is still simulated in full, so the log shows real events.
@@ -226,7 +268,7 @@ def run_once(
                 )
             )
 
-    if max(sides[0].count, sides[1].count) > c.SWARM_THRESHOLD:
+    if max(sides[0].count, sides[1].count) > c.SWARM_THRESHOLD if swarm is None else swarm:
         outcome = _run_swarm(sides, rng, starts, log, events, record_events)
     else:
         counter = [0]
@@ -560,7 +602,7 @@ def _run_swarm(
     t = _tick_up(min(starts))
 
     while t <= c.MAX_FIGHT_S:
-        dt = max(c.SWARM_STEP_S, t * c.SWARM_STEP_GROWTH)
+        dt = min(max(c.SWARM_STEP_S, t * c.SWARM_STEP_GROWTH), c.SWARM_STEP_MAX_S)
         for s in (0, 1):
             if sides[s].regen_per_s > 0 and n[s] > 0:
                 heal_hp = sides[s].regen_per_s * sides[s].max_hp * dt
@@ -819,6 +861,23 @@ def _no_contest(
     )
 
 
+def _swarm_for(
+    matchup: Matchup, sheets: list[StatSheet], ks: tuple[float, float], use_terrain: bool = True
+) -> bool:
+    """Whether this matchup runs in swarm mode: decided once, from the sheets' central values.
+
+    Every run of a matchup uses the same mode (sampling each run's stats could flip it near the
+    budget), and the decision depends only on the inputs (D-50).
+    """
+    central = [
+        sample_template(sheets[s], matchup.fighters[s].count, random.Random(0), ks[s], central=True)
+        for s in (0, 1)
+    ]
+    if use_terrain:
+        central = [apply_terrain(t, matchup.terrain) for t in central]
+    return use_swarm(central)
+
+
 def _simulate(
     matchup: Matchup,
     sheets: list[StatSheet],
@@ -828,11 +887,12 @@ def _simulate(
     use_terrain: bool = True,
 ) -> list[RunOutcome]:
     """Run `runs` fights with a fixed seed (run k always uses the same random stream)."""
+    swarm = _swarm_for(matchup, sheets, ks, use_terrain)
     outcomes = []
     for k in range(runs):
         rng = run_rng(seed, k)
         sides = _templates(matchup, sheets, rng, ks, use_terrain)
-        outcomes.append(run_once(sides, matchup.terrain, rng))
+        outcomes.append(run_once(sides, matchup.terrain, rng, swarm=swarm))
     return outcomes
 
 
@@ -883,7 +943,14 @@ def run(
     pick = same[len(same) // 2]
     rng = run_rng(seed, pick)
     sides = _templates(matchup, stat_sheets, rng, ks)
-    replay = run_once(sides, matchup.terrain, rng, record_events=True, notes=_notes(matchup, ks))
+    replay = run_once(
+        sides,
+        matchup.terrain,
+        rng,
+        record_events=True,
+        notes=_notes(matchup, ks),
+        swarm=_swarm_for(matchup, stat_sheets, ks),
+    )
 
     if explain:
         decision = decide(

@@ -293,6 +293,6 @@ def test_a_machine_that_stops_late_in_the_fight_stops_in_swarm_mode_too(
     results = {}
     for label, threshold in (("one by one", 10**9), ("swarm", 0)):
         monkeypatch.setattr(c, "SWARM_THRESHOLD", threshold)
-        out = run_once(sides, m.terrain, run_rng(2, 0), record_events=True)
+        out = run_once(sides, m.terrain, run_rng(2, 0), record_events=True, swarm=label == "swarm")
         results[label] = (out.winner, out.survivors, round(out.duration_s, 1))
     assert results["swarm"] == results["one by one"] == (1, (0, 250), operating_time)

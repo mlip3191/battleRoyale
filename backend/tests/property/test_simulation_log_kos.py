@@ -7,9 +7,12 @@ from app.simulation.rng import run_rng
 from tests.property.sim_helpers import make_sheet, matchup_of
 
 
-def test_a_crowded_fight_still_shows_fighters_going_down():
+def test_a_crowded_fight_still_shows_fighters_going_down(monkeypatch):
     # Aggression 1.0 means nobody breaks and runs, so the fight goes on to the last fall.
     wolf = make_sheet("wolf", mass_kg=40, size_m=1.0, attack_force_n=700, aggression_0_1=1.0)
+    # This fight is too much work for the budget (D-50) and would run in swarm mode, with grouped
+    # events. Force one by one: the test is about the individual log reaching its 300-event cap.
+    monkeypatch.setattr(c, "SWARM_WORK_BUDGET", float("inf"))
     result = run(matchup_of(150, 150), [wolf, wolf], runs=3)
     log = result.representative_log
     kinds = [e.type for e in log]

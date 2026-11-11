@@ -29,6 +29,7 @@ from tests.property.sim_helpers import FIXTURES, make_sheet, matchup_of  # noqa:
 
 ALWAYS_INDIVIDUAL = 10**9  # a threshold no fight reaches
 ALWAYS_SWARM = 0
+NO_WORK_BUDGET = float("inf")  # with the head-count threshold, keeps a fight one by one (D-50)
 
 
 def sheet(name: str) -> StatSheet:
@@ -42,6 +43,10 @@ def scenarios() -> dict[str, list[tuple[str, StatSheet, int, StatSheet, int]]]:
         attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=1.0,
     )  # fmt: skip
     archer = make_sheet("archer", weapons=["weapon_ranged"], reach_m=8)
+    elephant = make_sheet(
+        "elephant", mass_kg=5000, size_m=3.2, top_speed_mps=11, attack_force_n=20000,
+        attacks_per_s=0.5, reach_m=2.0, armor_0_1=0.5,
+    )  # fmt: skip
 
     def fights(a, b, sizes, label):
         """`sizes` is a list of (count of a, count of b); `label` names the two fighters."""
@@ -59,6 +64,11 @@ def scenarios() -> dict[str, list[tuple[str, StatSheet, int, StatSheet, int]]]:
         (600, 120, cat, wolf, "(cats v wolves)"),
         (400, 200, archer, wolf, "(archers v wolves)"),
     ]
+    # Fights under 200 per side that D-50 sends to swarm mode because of their estimated work: big
+    # even fights, a crowd against one huge target, and a ranged crowd. `--scenario work`.
+    work = fights(wolf, wolf, [(150, 150), (200, 200)], "wolves")
+    work += fights(cat, elephant, [(50, 1), (100, 1), (150, 1)], "(cats v elephant)")
+    work += fights(archer, wolf, [(100, 50), (150, 75)], "(archers v wolves)")
     return {
         "mirror": fights(wolf, wolf, even, "wolves"),
         "uneven": fights(wolf, wolf, uneven, "wolves"),
@@ -66,6 +76,7 @@ def scenarios() -> dict[str, list[tuple[str, StatSheet, int, StatSheet, int]]]:
         "cats": fights(cat, wolf, many_weak, "(cats v wolves)"),
         "ranged": fights(archer, wolf, ranged, "(archers v wolves)"),
         "large": [(f"{na} v {nb} {label}", a, na, b, nb) for na, nb, a, b, label in large],
+        "work": work,
     }
 
 
@@ -82,15 +93,15 @@ def compare(label: str, a: StatSheet, na: int, b: StatSheet, nb: int, runs: int)
     matchup = matchup_of(na, nb)
     results, seconds = [], []
     # Changes a module-level constant and restores it in `finally`; not safe to run in threads.
-    saved = c.SWARM_THRESHOLD
+    saved = (c.SWARM_THRESHOLD, c.SWARM_WORK_BUDGET)
     try:
-        for threshold in (ALWAYS_INDIVIDUAL, ALWAYS_SWARM):
-            c.SWARM_THRESHOLD = threshold
+        for threshold, budget in ((ALWAYS_INDIVIDUAL, NO_WORK_BUDGET), (ALWAYS_SWARM, saved[1])):
+            c.SWARM_THRESHOLD, c.SWARM_WORK_BUDGET = threshold, budget
             start = time.perf_counter()
             results.append(run(matchup, [a, b], runs=runs, explain=False))
             seconds.append(time.perf_counter() - start)
     finally:
-        c.SWARM_THRESHOLD = saved
+        c.SWARM_THRESHOLD, c.SWARM_WORK_BUDGET = saved
     return Row(label, results[0], results[1], (seconds[0], seconds[1]))
 
 
@@ -129,8 +140,10 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     for name, fights in groups.items():
-        if args.scenario not in ("all", name) or (args.scenario == "all" and name == "large"):
-            continue  # "large" is opt-in: the slowest group, about 8 s at 300 runs
+        if args.scenario not in ("all", name) or (
+            args.scenario == "all" and name in ("large", "work")
+        ):
+            continue  # "large" and "work" are opt-in: the slowest groups (a few seconds each fight)
         rows = [compare(label, a, na, b, nb, args.runs) for label, a, na, b, nb in fights]
         print(f"### {name}\n\n{table(rows)}\n")
     return 0

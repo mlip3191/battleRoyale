@@ -5,7 +5,7 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-ENGINE_VERSION = 7
+ENGINE_VERSION = 8
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1
@@ -54,11 +54,20 @@ WILSON_Z = 1.96
 MAX_ENGAGERS = 8
 # A side with more individuals than this is simulated in groups instead of one by one.
 SWARM_THRESHOLD = 200
+# D-50: a fight also runs in swarm mode when its estimated work (attacks both sides make during the
+# expected fight, from stats only) is above this, even with fewer than SWARM_THRESHOLD per side.
+# Chosen so the one-by-one engine stays within the 3 s Simulate budget (assumption, calibrated
+# against measured timings in docs/swarm-validation.md).
+SWARM_WORK_BUDGET = 2000.0
 # Shortest swarm step. Swarm fights act in coarse steps, not per-fighter events.
 SWARM_STEP_S = 0.5
 # Steps lengthen as a fight goes on: at least this share of the elapsed time (assumption:
 # keeps long swarm fights fast while early, decisive moments stay finely resolved).
 SWARM_STEP_GROWTH = 0.1
+# ...but never longer than this (assumption). Without a cap a long, slow fight (150 cats against
+# one elephant) takes steps of 30 s or more and the crowd is overrated by 0.13; see
+# docs/swarm-validation.md.
+SWARM_STEP_MAX_S = 3.0
 
 # Square-cube scaling when a fighter is resized by factor k = reference mass / own mass.
 # Strength (muscle cross-section) scales with area: k ** (2/3).

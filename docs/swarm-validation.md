@@ -2,9 +2,9 @@
 
 Fights where either side has more than 200 individuals run in **swarm mode** (each side is one group; see [simulation-model.md](simulation-model.md)). Swarm mode exists for speed, but it is a different model from the one-by-one engine, so this page measures how far apart they are. The one-by-one engine is the reference.
 
-Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (about 10 s; `--scenario cats` for one group, `--runs` to change the 600 runs per engine). Each fight is simulated twice with the same sheets, once forced through each engine. The table has a **Noise (95%)** column (`1.96 x sqrt(2 p (1-p) / runs)`, with p the one-by-one win share) and marks gaps that are within it. The numbers below were re-run on this branch (merged with `main`) at engine version 7 and reproduce (the script is seeded); if the engine version changes, re-run the script and refresh the tables, since a new version reshuffles every run's random stream.
+Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (about 10 s; `--scenario cats` for one group, `--runs` to change the 600 runs per engine). Each fight is simulated twice with the same sheets, once forced through each engine. The table has a **Noise (95%)** column (`1.96 x sqrt(2 p (1-p) / runs)`, with p the one-by-one win share) and marks gaps that are within it. The numbers below were re-run on this branch (merged with `main`) at engine version 8 and reproduce (the script is seeded); if the engine version changes, re-run the script and refresh the tables, since a new version reshuffles every run's random stream.
 
-## Results (600 runs each, after the #76 fixes and #84, engine version 7)
+## Results (600 runs each, after the #76 fixes and #84, engine version 8)
 
 Noise: a single win share at 600 runs near 50/50 has a 95% noise of about ±0.04, so the **gap between two such results is only reliable to about ±0.06** (the table printed by the script has a noise column and marks gaps within it). A teammate's check at 4,000 runs (`uv run --directory backend python scripts/validate_swarm.py --scenario mirror --runs 4000`) found the mirror gaps from 5 v 5 to 50 v 50 were 0.006 or less on the earlier engine.
 
@@ -42,7 +42,7 @@ Every scenario above is 125 per side or fewer, but swarm mode only runs above 20
 
 The conclusions held at these sizes before the fixes: matched, one-big-target and ranged fights agreed, and a crowd of weak fighters against a few strong ones was overrated by 0.16 to 0.20.
 
-**After the #76 fixes** (`--scenario large --runs 300`, engine version 7; win share of the first side, one-by-one then swarm, from the script's own output):
+**After the #76 fixes** (`--scenario large --runs 300`, engine version 8; win share of the first side, one-by-one then swarm, from the script's own output):
 
 | Fight | One-by-one | Swarm | Gap | Noise (95%) |
 |---|---|---|---|---|
@@ -60,3 +60,21 @@ Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 
 - **Fair-fight search:** probes above 200 per side use swarm mode, and their answers are now as reliable as those below.
 - **F07 benchmark:** "count" cases above 200 per side are fine to include; still flag any swarm-mode matchup in the report.
 - **Swarm mode is cheaper than a long one-by-one fight, not free.** A 201 v 201 fight costs about 0.5 to 0.9 s per 1,000 runs instead of 0.14 s, but 150 cats v 1 elephant costs about 32 s one by one, so D-50 (#183) chooses swarm mode by expected work, not head count. Every fight that newly switches must agree with the one-by-one engine within ±0.03.
+
+## Fights that switch to swarm mode because of their work (D-50, #183)
+
+`--scenario work --runs 600`, engine version 8: fights under 200 per side whose estimated work is above `SWARM_WORK_BUDGET`, swarm minus one-by-one (win share of the first side):
+
+| Fight | Win-share gap | Duration | One-by-one time | Swarm time |
+|---|---|---|---|---|
+| 150 v 150 wolves | +0.002 | 1.05x | 1.5 s | 0.23 s |
+| 200 v 200 wolves | +0.007 | 1.03x | 1.8 s | 0.23 s |
+| 50 cats v 1 elephant | -0.010 | 0.96x | 2.6 s | 0.37 s |
+| 100 cats v 1 elephant | +0.000 | 1.00x | 5.3 s | 0.65 s |
+| 150 cats v 1 elephant | +0.015 | 1.00x | 6.0 s | 0.71 s |
+| 100 archers v 50 wolves | +0.007 | 0.93x | 0.4 s | 0.09 s |
+| 150 archers v 75 wolves | +0.018 | 0.96x | 0.7 s | 0.09 s |
+
+(Times are for 600 runs without the analysis, on the author's laptop.) With the deciding-factor analysis, 150 cats v 1 elephant takes about 2.8 s in swarm mode, against about 32 s one by one.
+
+**A time-step cap was needed for these.** Swarm steps used to grow to 10% of the elapsed time, so a 500 s fight took steps of 50 s, and 150 cats v 1 elephant overrated the crowd by +0.13 (100 v 1: +0.08). `SWARM_STEP_MAX_S` caps the step at 3 s: the gaps above are with the cap (+0.015 and +0.000), and fights shorter than about 30 s are unaffected. Steps of 2 s, 4 s and 5 s gave +0.010, +0.015 and +0.030 for 150 v 1 and 3.6, 2.3 and 1.9 s with the analysis; 3 s was the best balance.

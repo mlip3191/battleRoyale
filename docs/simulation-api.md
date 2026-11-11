@@ -18,7 +18,7 @@ from app.simulation.summary import summary
 | `test_challengers(winner_sheet, candidates, terrain)` | `list[ChallengerSuggestion]`, closest to 50/50 first (may be **empty**: candidates that cannot meet the winner are dropped; `entity` is a display name, not a `fighter_id`) | The "next challenger" step | ~0.3 s for 8 candidates |
 | `summary(result, names)` | `Summary` | The numbers the UI and announcer need | instant |
 
-Timings are typical on a dev laptop at `ENGINE_VERSION 7`; expect similar or faster.
+Timings are typical on a dev laptop at `ENGINE_VERSION 8`; expect similar or faster.
 
 All calls are **deterministic**: the same matchup, sheets, and engine version always give the identical result (the seed is built from the matchup, both `sheet_hash` values, and `ENGINE_VERSION`). That is what lets "same battle requested twice" return the cached answer.
 

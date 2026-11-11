@@ -24,6 +24,9 @@ def both(monkeypatch, sheets, na, nb, runs=RUNS):
     results = []
     for threshold in (ALWAYS_INDIVIDUAL, ALWAYS_SWARM):
         monkeypatch.setattr(c, "SWARM_THRESHOLD", threshold)
+        monkeypatch.setattr(
+            c, "SWARM_WORK_BUDGET", float("inf") if threshold else c.SWARM_WORK_BUDGET
+        )
         results.append(run(matchup_of(na, nb), sheets, runs=runs, explain=False))
     return results
 
@@ -155,3 +158,101 @@ def test_identical_fronts_are_processed_as_one_group(monkeypatch):
     rng = random.Random(0)
     _spread_tracked(1000, 1.0, 5000, ([], []), 100.0, 400, rng)  # 2.5 hits each: 400 fronts
     assert len(calls) <= 2
+
+
+# --- D-50: swarm mode is chosen by expected work, not only by head count (#183) -------------------
+
+
+def _fight(sheets, na, nb):
+    from app.simulation.engine import _swarm_for
+
+    return _swarm_for(matchup_of(na, nb), sheets, (1.0, 1.0))
+
+
+def elephant():
+    return make_sheet(
+        "elephant", mass_kg=5000, size_m=3.2, top_speed_mps=11, attack_force_n=20000,
+        attacks_per_s=0.5, reach_m=2.0, armor_0_1=0.5,
+    )  # fmt: skip
+
+
+def small_cat():
+    return make_sheet(
+        "cat", mass_kg=4.5, size_m=0.46, top_speed_mps=13, attack_force_n=80,
+        attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=1.0,
+    )  # fmt: skip
+
+
+def test_cheap_fights_stay_one_by_one():
+    assert not _fight([wolf(), load_sheet("stat-sheet.json")], 1, 1)
+    assert not _fight([wolf(), wolf()], 50, 50)
+    assert not _fight([wolf(), wolf()], 100, 100)
+
+
+def test_a_crowd_against_one_huge_target_goes_to_swarm_mode_below_200():
+    assert _fight([small_cat(), elephant()], 150, 1)  # 32 s one by one, with the analysis
+    assert _fight([small_cat(), elephant()], 50, 1)
+    assert _fight([wolf(), wolf()], 150, 150)  # even, but too much work
+
+
+def test_the_head_count_ceiling_still_applies():
+    assert _fight([wolf(), wolf()], c.SWARM_THRESHOLD + 1, 1)
+
+
+def test_the_choice_depends_only_on_the_inputs():
+    results = {_fight([small_cat(), elephant()], 150, 1) for _ in range(5)}
+    assert results == {True}
+
+
+def test_the_expected_work_tracks_the_real_cost():
+    """The estimate is only useful if it grows with the fight's real cost."""
+    from app.simulation.engine import expected_work
+    from app.simulation.fighters import apply_terrain, sample_template
+
+    def work(sheets, na, nb):
+        m = matchup_of(na, nb)
+        sides = [
+            apply_terrain(
+                sample_template(
+                    sheets[s], m.fighters[s].count, random.Random(0), 1.0, central=True
+                ),
+                m.terrain,
+            )
+            for s in (0, 1)
+        ]
+        return expected_work(sides)
+
+    small = work([wolf(), wolf()], 50, 50)
+    big = work([wolf(), wolf()], 200, 200)
+    assert small < c.SWARM_WORK_BUDGET < big
+    assert work([small_cat(), elephant()], 150, 1) > 3 * work([small_cat(), elephant()], 50, 1) / 2
+
+
+def test_a_fight_sent_to_swarm_mode_by_its_work_agrees_with_one_by_one(monkeypatch):
+    """The accuracy bar of D-45 for the fights that newly switch (150 cats v 1 elephant)."""
+    one, swarm = both(monkeypatch, [small_cat(), elephant()], 150, 1, runs=200)
+    assert abs(swarm.win_prob[0] - one.win_prob[0]) <= 0.08  # 200 runs: noise about 0.07
+    assert swarm.mean_duration_s == pytest.approx(one.mean_duration_s, rel=0.2)
+
+
+def test_swarm_steps_never_get_longer_than_the_cap_however_long_the_fight(monkeypatch):
+    """Without the cap a 500 s fight takes 50 s steps and overrates the crowd by +0.13 (#183)."""
+    from app.simulation.engine import _templates, run_once
+    from app.simulation.rng import run_rng
+
+    matchup = matchup_of(150, 1)
+    sides = _templates(matchup, [small_cat(), elephant()], run_rng(1, 0), (1.0, 1.0))
+    steps = []
+    real = engine._spread_tracked
+
+    def counting(hits, dmg, n, hurt, full_hp, g, rng):
+        if full_hp == sides[1].max_hp:  # the cats' hits on the elephant: one call per step
+            steps.append(1)
+        return real(hits, dmg, n, hurt, full_hp, g, rng)
+
+    monkeypatch.setattr(engine, "_spread_tracked", counting)
+    out = run_once(sides, matchup.terrain, run_rng(2, 0), swarm=True)
+    assert c.SWARM_STEP_MAX_S <= 5.0  # 5 s already overrated 150 v 1 by +0.03 (docs)
+    assert out.duration_s > 200  # a long fight, where the old steps were longest
+    # The first 30 s use finer steps; after that no step is longer than the cap.
+    assert len(steps) >= (out.duration_s - 40) / c.SWARM_STEP_MAX_S
