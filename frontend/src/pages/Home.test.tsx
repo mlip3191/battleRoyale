@@ -325,6 +325,18 @@ test("a 404 without a server message still says the question was lost", async ()
   expect(screen.queryByRole("region", { name: "Quick question" })).toBeNull();
 });
 
+test('a 404 from no route at all (a bare "Not Found") says the question was lost', async () => {
+  await viaFetch((url) =>
+    url.endsWith("/answer")
+      ? json({ detail: "Not Found" }, 404)
+      : json(clarify),
+  );
+  tapOption((await question()).card);
+  const alert = await screen.findByRole("alert");
+  expect(alert.textContent).toContain("got lost");
+  expect(alert.textContent).not.toContain("Not Found");
+});
+
 test("a 500 on an answer still shows the offline message and keeps the card", async () => {
   api.postIntake.mockResolvedValue(clarify);
   api.answerIntake.mockRejectedValue(new client.ApiError(500, "Server error"));
@@ -404,4 +416,57 @@ test("a slow answer to the question shows the still-working line too", async () 
   expect(screen.getByRole("status").textContent).toBe("Still sizing them up…");
   await act(async () => reply(ok));
   expect(screen.getByRole("status").textContent).toBe("");
+});
+
+test("a second request after a slow one starts its own 5 s wait", async () => {
+  const replies: ((response: Response) => void)[] = [];
+  await viaFetch(
+    () => new Promise<Response>((resolve) => replies.push(resolve)),
+  );
+  vi.useFakeTimers();
+  const box = open();
+  const status = screen.getByRole("status");
+
+  ask(box, "a goose vs a toaster");
+  await act(() => vi.advanceTimersByTimeAsync(5_100));
+  expect(status.textContent).toBe("Still sizing them up…");
+  await act(async () => {
+    replies[0](Response.json(ok));
+    await vi.advanceTimersByTimeAsync(0);
+  });
+  expect(status.textContent).toBe("");
+
+  ask(box, "a goose vs a kettle");
+  await act(() => vi.advanceTimersByTimeAsync(4_900));
+  expect(status.textContent).toBe("");
+  await act(() => vi.advanceTimersByTimeAsync(200));
+  expect(status.textContent).toBe("Still sizing them up…");
+});
+
+test("when two intake calls overlap, the first reply doesn't hide the line for the second", async () => {
+  let replyAnswer: (result: client.IntakeResult) => void = () => {};
+  api.postIntake.mockResolvedValueOnce(clarify);
+  api.answerIntake.mockReturnValue(
+    new Promise((resolve) => (replyAnswer = resolve)),
+  );
+  const { box, card } = await question();
+  api.postIntake.mockReturnValue(new Promise(() => {}));
+  vi.useFakeTimers();
+  tapOption(card);
+  fireEvent.keyDown(box, { key: "Enter" });
+  expect(api.postIntake).toHaveBeenCalledTimes(2);
+
+  await act(() => vi.advanceTimersByTimeAsync(1_000));
+  await act(async () => replyAnswer(ok));
+  await act(() => vi.advanceTimersByTimeAsync(4_100));
+  expect(screen.getByRole("status").textContent).toBe("Still sizing them up…");
+});
+
+test("leaving the page mid-wait stops the still-working timer", async () => {
+  await viaFetch(() => new Promise<Response>(() => {}));
+  vi.useFakeTimers();
+  ask(open(), "a goose vs a toaster");
+  expect(vi.getTimerCount()).toBe(1);
+  cleanup();
+  expect(vi.getTimerCount()).toBe(0);
 });

@@ -36,13 +36,20 @@ export class ApiError extends Error {
   }
 }
 
+// Longest server message we keep; anything longer isn't one of our short plain-language lines.
+const MAX_DETAIL = 300;
+
 // The text `detail` of an error reply (FastAPI's {"detail": "..."}), or null if it has none.
 async function errorDetail(response: Response): Promise<string | null> {
   try {
     const body: unknown = await response.json();
     const detail =
       body && typeof body === "object" && "detail" in body ? body.detail : null;
-    return typeof detail === "string" && detail.trim() ? detail : null;
+    return typeof detail === "string" &&
+      detail.trim() &&
+      detail.length <= MAX_DETAIL
+      ? detail
+      : null;
   } catch {
     return null; // not JSON (a proxy page, an empty body): no message to show
   }

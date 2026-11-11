@@ -56,6 +56,10 @@ function failureMessage(error: unknown) {
 const isLostQuestion = (error: unknown): error is ApiError =>
   error instanceof ApiError && error.status === 404;
 
+// The server's own lost-question words; a bare "Not Found" (a 404 from no route at all) isn't one.
+const lostMessage = (error: ApiError) =>
+  error.detail && error.detail !== "Not Found" ? error.detail : LOST_QUESTION;
+
 // Where the desk is: waiting for input, talking to the backend, or showing intake's answer
 // (while an answer to its question is on its way, or after that answer failed).
 type Step =
@@ -74,7 +78,7 @@ export default function Home() {
   const [step, setStep] = useState<Step>({ kind: "idle" });
   const [showcase, setShowcase] = useState<ShowcaseBattle[]>([]);
   const [slow, setSlow] = useState(false);
-  const slowTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const slowTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
   const box = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -83,13 +87,25 @@ export default function Home() {
       .catch(() => setShowcase([]));
   }, []);
 
-  // Wait for one intake call; past SLOW_MS, show the still-working line until it settles.
+  // Leaving the page stops every still-working timer.
+  useEffect(() => {
+    const timers = slowTimers.current;
+    return () => {
+      timers.forEach(clearTimeout);
+      timers.clear();
+    };
+  }, []);
+
+  // Wait for one intake call; past SLOW_MS, show the still-working line. Each call has its own
+  // timer, and the line goes only when no call is left waiting, so overlapping calls don't
+  // hide it early.
   const wait = (request: Promise<IntakeResult>) => {
-    clearTimeout(slowTimer.current);
-    slowTimer.current = setTimeout(() => setSlow(true), SLOW_MS);
+    const timers = slowTimers.current;
+    const timer = setTimeout(() => setSlow(true), SLOW_MS);
+    timers.add(timer);
     return request.finally(() => {
-      clearTimeout(slowTimer.current);
-      setSlow(false);
+      clearTimeout(timer);
+      if (timers.delete(timer) && timers.size === 0) setSlow(false);
     });
   };
 
@@ -120,7 +136,7 @@ export default function Home() {
       .catch((error: unknown) =>
         setStep(
           isLostQuestion(error)
-            ? { kind: "error", message: error.detail ?? LOST_QUESTION }
+            ? { kind: "error", message: lostMessage(error) }
             : { kind: "result", result, error: failureMessage(error) },
         ),
       )

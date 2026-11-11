@@ -135,6 +135,16 @@ describe("live mode", () => {
     expect(proxy).toMatchObject({ status: 502, detail: null });
   });
 
+  test("an overlong detail is dropped, so it can't fill the error panel", async () => {
+    answer({ detail: "x".repeat(300) }, 503);
+    const short = await client.postIntake("a vs b").catch((e: unknown) => e);
+    expect((short as client.ApiError).detail).toHaveLength(300);
+
+    answer({ detail: "x".repeat(301) }, 503);
+    const long = await client.postIntake("a vs b").catch((e: unknown) => e);
+    expect(long).toMatchObject({ status: 503, detail: null });
+  });
+
   test("ids and search text are URL-encoded", async () => {
     const fetchMock = answer([]);
     await client.searchFighters("a b/c");
