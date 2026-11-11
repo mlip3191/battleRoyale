@@ -21,7 +21,9 @@ PANTHERIA_LICENSE = "No copyright restrictions; cite Jones et al. 2009, Ecology 
 PANTHERIA_FIELDS = {"5-1_AdultBodyMass_g": "g", "13-1_AdultHeadBodyLen_mm": "mm"}
 PANTHERIA_MISSING = -999.0
 ANIMALTRAITS_URL = "https://zenodo.org/records/6468938/files/observations.csv"
-ANIMALTRAITS_LICENSE = "CC0 1.0; cite Herberstein et al. 2022, Scientific Data 9:265"
+ANIMALTRAITS_LICENSE = (
+    "CC0 1.0 (database), CC BY 4.0 (paper); cite Herberstein et al. 2022, Scientific Data 9:265"
+)
 TAXON_NAME = "P225"
 
 
@@ -33,9 +35,16 @@ class TraitTables:
     licenses: dict[str, str] = field(default_factory=dict)
 
 
-# The fighter's scientific name from its Wikidata entity, if it has one.
+# The fighter's scientific name from its Wikidata entity: a preferred claim first, never a
+# deprecated one, so a name Wikidata marks as wrong can't become an exact dataset match.
 def taxon_name(entity: dict[str, Any]) -> str | None:
-    for claim in entity.get("claims", {}).get(TAXON_NAME, []):
+    claims = [
+        claim
+        for claim in entity.get("claims", {}).get(TAXON_NAME, [])
+        if claim.get("rank") != "deprecated"
+    ]
+    claims.sort(key=lambda claim: claim.get("rank") != "preferred")  # stable: keeps order
+    for claim in claims:
         value = claim.get("mainsnak", {}).get("datavalue", {}).get("value")
         if isinstance(value, str) and value.strip():
             return value.strip()
@@ -122,8 +131,15 @@ async def load_trait_tables(
             failures.append(f"{source}: {error}")
             continue
         table = read(text)
-        if not table:  # a changed file format would otherwise look like "no matches"
-            logger.warning("%s had no usable rows; its file may have changed format.", source)
+        # A changed format or a saved error page would otherwise look like "no matches". Delete
+        # the saved copy so the next run downloads it again instead of reusing it.
+        if not table:
+            (kb_dir / "traits" / filename).unlink(missing_ok=True)
+            logger.warning(
+                "%s had no usable rows, so its saved file was deleted; the next run downloads "
+                "it again. If this repeats, the file format may have changed.",
+                source,
+            )
             failures.append(f"{source}: no usable rows in {filename}")
             continue
         tables.by_source[source] = table

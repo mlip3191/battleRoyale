@@ -250,6 +250,24 @@ def test_taxon_name_comes_from_wikidata() -> None:
     assert taxon_name(ENTITY) is None
 
 
+def test_taxon_name_skips_deprecated_and_prefers_preferred() -> None:
+    def claim(name: str, rank: str) -> dict[str, object]:
+        return {"rank": rank, "mainsnak": {"datavalue": {"value": name}}}
+
+    wrong_first = {"claims": {"P225": [claim("Equus wrongus", "deprecated")]}}
+    assert taxon_name(wrong_first) is None
+    ranked = {
+        "claims": {
+            "P225": [
+                claim("Equus wrongus", "deprecated"),
+                claim("Equus ferus caballus", "normal"),
+                claim("Equus caballus", "preferred"),
+            ]
+        }
+    }
+    assert taxon_name(ranked) == "Equus caballus"
+
+
 async def test_trait_facts_are_stored_by_scientific_name(
     database: sqlite3.Connection, tmp_path: Path
 ) -> None:
@@ -300,6 +318,8 @@ async def test_a_dataset_with_no_usable_rows_is_flagged(
     assert sorted(f.split(":")[0] for f in summary.failures) == ["animaltraits", "pantheria"]
     assert summary.facts == 2  # only Wikidata, and no saved file is left half-written
     assert not list((tmp_path / "traits").glob("*.part"))
+    # The unusable copies are deleted, so the next run downloads them again.
+    assert not list((tmp_path / "traits").glob("*"))
 
 
 async def test_a_dataset_that_fails_to_download_is_not_fatal(
