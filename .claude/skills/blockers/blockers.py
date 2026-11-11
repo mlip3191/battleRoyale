@@ -87,7 +87,14 @@ def main() -> None:
     as_json = "--json" in sys.argv
     today = dt.date.today()
     names, pm = load_team()
-    who_runs = sys.argv[sys.argv.index("--as") + 1] if "--as" in sys.argv[:-1] else None
+    who_runs = None
+    if "--as" in sys.argv:
+        idx = sys.argv.index("--as") + 1
+        if idx >= len(sys.argv) or sys.argv[idx].startswith("--"):
+            sys.exit("--as needs a GitHub login, e.g. --as dilloncsmart")
+        who_runs = sys.argv[idx]
+        if who_runs not in names:
+            print(f"Note: {who_runs} isn't in the Team table; no '(you)' group.", file=sys.stderr)
     me = who_runs or gh("api", "user")["login"]
     pm = pm or me
     pm_name = names.get(pm, pm)

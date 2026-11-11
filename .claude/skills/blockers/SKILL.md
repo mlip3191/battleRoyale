@@ -15,7 +15,7 @@ From the repo root:
 python3 -I .claude/skills/blockers/blockers.py
 ```
 
-If you're not inside the repo, or `gh` isn't logged in, say so in plain English and stop. Add `--json` to get raw data if you need to reason about it. Add `--as <github-login>` to preview what a teammate sees (the PM uses this to check someone's list).
+If you're not inside the repo, or `gh` isn't logged in, say so in plain English and stop. Add `--json` to get raw data if you need to reason about it. Add `--as <github-login>` to preview what a teammate sees (the PM uses this to check someone's list). It's a preview only: it doesn't change who `gh` is logged in as, and it still only reads.
 
 The script sorts items like this:
 - **🔴 P0, blocking other people's work:** something is waiting on the item. Either open PRs are stacked on it (another PR targets its branch), or issues have "Blocked by #n" pointing at it or at the issue its PR closes. It also catches stacked PRs merged into a branch other than `main` without an approval.
