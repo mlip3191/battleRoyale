@@ -101,6 +101,38 @@ describe("live mode", () => {
     expect(error).toBeInstanceOf(client.ApiError);
     expect((error as client.ApiError).status).toBe(404);
     expect((error as Error).message).toBe("HTTP 404");
+    expect((error as client.ApiError).detail).toBe("missing");
+  });
+
+  test("intake errors carry the server's detail message (404 and 503)", async () => {
+    answer({ detail: "That question has expired." }, 404);
+    const lost = await client.answerIntake("p1", "x").catch((e: unknown) => e);
+    expect(lost).toMatchObject({
+      status: 404,
+      detail: "That question has expired.",
+    });
+
+    answer({ detail: "Please try again in a moment." }, 503);
+    const busy = await client.postIntake("a vs b").catch((e: unknown) => e);
+    expect(busy).toMatchObject({
+      status: 503,
+      detail: "Please try again in a moment.",
+    });
+  });
+
+  test("an error reply without a text detail leaves detail empty", async () => {
+    answer({ detail: [{ msg: "field required" }] }, 422);
+    const invalid = await client.postIntake("").catch((e: unknown) => e);
+    expect((invalid as client.ApiError).detail).toBeNull();
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(new Response("<h1>Bad gateway</h1>", { status: 502 })),
+      ),
+    );
+    const proxy = await client.postIntake("a vs b").catch((e: unknown) => e);
+    expect(proxy).toMatchObject({ status: 502, detail: null });
   });
 
   test("ids and search text are URL-encoded", async () => {

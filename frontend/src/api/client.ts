@@ -24,12 +24,27 @@ export type Script = components["schemas"]["Script"];
 export type ScriptLine = components["schemas"]["ScriptLine"];
 export type FighterRequest = components["schemas"]["FighterRequest"];
 
-// An HTTP error from our backend; `status` lets callers tell "not found" from a passing hiccup.
+// An HTTP error from our backend; `status` lets callers tell "not found" from a passing hiccup,
+// and `detail` carries the server's own plain-language message when it sent one.
 export class ApiError extends Error {
   status: number;
-  constructor(status: number) {
+  detail: string | null;
+  constructor(status: number, detail: string | null = null) {
     super(`HTTP ${status}`);
     this.status = status;
+    this.detail = detail;
+  }
+}
+
+// The text `detail` of an error reply (FastAPI's {"detail": "..."}), or null if it has none.
+async function errorDetail(response: Response): Promise<string | null> {
+  try {
+    const body: unknown = await response.json();
+    const detail =
+      body && typeof body === "object" && "detail" in body ? body.detail : null;
+    return typeof detail === "string" && detail.trim() ? detail : null;
+  } catch {
+    return null; // not JSON (a proxy page, an empty body): no message to show
   }
 }
 
@@ -51,7 +66,8 @@ async function call<T>(
       body: JSON.stringify(init.body),
     },
   );
-  if (!response.ok) throw new ApiError(response.status);
+  if (!response.ok)
+    throw new ApiError(response.status, await errorDetail(response));
   return (await response.json()) as T;
 }
 
