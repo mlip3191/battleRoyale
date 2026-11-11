@@ -46,13 +46,16 @@ def test_matched_groups_last_as_long_and_leave_as_many_alive(monkeypatch):
     assert sum(swarm.mean_survivors) == pytest.approx(sum(one.mean_survivors), rel=0.1)
 
 
-def test_a_crowd_of_weak_fighters_is_not_overrated(monkeypatch):
+@pytest.mark.parametrize(("cats", "wolves"), [(50, 10), (100, 20)])
+def test_a_crowd_of_weak_fighters_is_not_overrated(monkeypatch, cats, wolves):
+    """Swarm mode used to overrate the crowd by +0.06 to +0.22. It now underrates it a little
+    (about -0.04 to -0.06, see docs/swarm-validation.md), so this pins both sides of that."""
     cat = make_sheet(
         "cat", mass_kg=4.5, size_m=0.46, top_speed_mps=13, attack_force_n=200,
         attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=1.0,
     )  # fmt: skip
-    one, swarm = both(monkeypatch, [cat, wolf()], 50, 10)
-    assert abs(swarm.win_prob[0] - one.win_prob[0]) <= 0.08  # was +0.06 to +0.22 too high
+    one, swarm = both(monkeypatch, [cat, wolf()], cats, wolves)
+    assert abs(swarm.win_prob[0] - one.win_prob[0]) <= 0.08
 
 
 def test_a_pack_around_one_big_target_gives_the_same_win_share(monkeypatch):
