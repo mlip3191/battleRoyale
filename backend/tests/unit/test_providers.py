@@ -5,6 +5,7 @@ import logging
 import wave
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -252,11 +253,11 @@ async def test_intake_chat_sets_its_timeout_on_the_http_client(
     timeouts: list[object] = []
     real_client = httpx.AsyncClient
 
-    def client_spy(*, timeout: object) -> httpx.AsyncClient:
-        timeouts.append(timeout)
+    def client_spy(**options: Any) -> httpx.AsyncClient:
+        timeouts.append(options["timeout"])
         reply = {"choices": [{"message": {"content": "ok"}}]}
         transport = httpx.MockTransport(lambda request: httpx.Response(200, json=reply))
-        return real_client(transport=transport, timeout=timeout)  # type: ignore[arg-type]
+        return real_client(**options, transport=transport)
 
     monkeypatch.setattr("app.providers.live.http.httpx.AsyncClient", client_spy)
     messages: list[base.ChatMessage] = [{"role": "user", "content": "hi"}]

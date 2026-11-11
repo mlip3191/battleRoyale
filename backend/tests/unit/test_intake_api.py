@@ -335,7 +335,7 @@ def test_the_routes_use_the_short_timeout_chat(monkeypatch: pytest.MonkeyPatch) 
     assert (chat.timeout_s, chat.retries) == (15.0, 1)
 
 
-# #169: the safety check inside intake uses the same short-timeout chat, not the shared 30 s one.
+# #169: the safety check (and the parse call, when no chat is given) use the intake chat.
 async def test_the_safety_check_in_intake_uses_the_intake_chat(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -349,3 +349,6 @@ async def test_the_safety_check_in_intake_uses_the_intake_chat(
     text = "a grizzly bear vs 6 gray wolves in a forest"
     result = await parse_matchup(text, chat=MockChatLLM())
     assert result.status == "ok" and asked == [1]
+    asked.clear()
+    result = await parse_matchup(text)  # no chat passed: the parse call uses it too
+    assert result.status == "ok" and asked == [1, 1]

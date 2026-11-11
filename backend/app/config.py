@@ -28,8 +28,10 @@ class Settings(BaseSettings):
     # Providers
     provider_mode: Literal["mock", "live"] = "mock"
     provider_timeout_s: float = 30.0
-    # Intake's chat calls (parse and safety check) wait less and retry less, under the 25 s route
-    # deadline (#169; Adam's live timings: median 6.9 s, max 19.4 s).
+    # Intake's chat calls (parse and safety check) wait less and retry less (#169; Adam's live
+    # timings: median 6.9 s, max 19.4 s). The timeout applies to each step of a call (connect,
+    # send, wait for the reply), not the whole call; the 25 s intake route deadline caps the total,
+    # so after one full timeout the retry has about 9.5 s left.
     intake_timeout_s: float = 15.0
     intake_retries: int = 1
 
