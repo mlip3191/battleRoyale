@@ -50,7 +50,8 @@ def _fact_from_claim(entity_id: str, prop: str, claim: dict[str, Any]) -> Fact |
     return Fact(source="wikidata", field=prop, value=value, unit=unit, reference=reference)
 
 
-# Every mass, length, height, and speed statement on a Wikidata entity.
+# Every mass, length, height, and speed statement on a Wikidata entity. Qualifiers such as sex,
+# date, or method are not kept, so a fact may be one sex's or a record value, not a typical adult.
 def wikidata_facts(entity: dict[str, Any]) -> list[Fact]:
     entity_id = str(entity.get("id", ""))
     claims = entity.get("claims", {})

@@ -98,9 +98,11 @@ async def ingest_fighter(
         save_raw(kb_dir, fighter.id, "wikipedia", article)
         await _ingest_article(connection, parser, embedder, fighter, article)
         entity = await fetch_wikidata(client, fighter.article)
-        if entity is not None:
-            save_raw(kb_dir, fighter.id, "wikidata", entity)
-            _ingest_wikidata(connection, fighter, entity)
+        if entity is None:
+            logger.info("No Wikidata item for %s; any facts from earlier runs stay.", fighter.id)
+            return
+        save_raw(kb_dir, fighter.id, "wikidata", entity)
+        _ingest_wikidata(connection, fighter, entity)
     except (SourceError, ProviderError, httpx.HTTPError, ValueError, sqlite3.Error) as error:
         logger.warning("Could not ingest %s: %s", fighter.id, error)
         summary.failures.append(f"{fighter.id}: {error}")

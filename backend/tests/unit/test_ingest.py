@@ -1,6 +1,7 @@
 """The ingest pipeline and Wikidata facts, with no network or live services."""
 
 import json
+import logging
 import sqlite3
 from collections.abc import Iterator
 from pathlib import Path
@@ -52,7 +53,7 @@ def fighter(fighter_id: str, article: str) -> SeedFighter:
     return SeedFighter(fighter_id, article, "Adult", "mammal", "living", "land", article)
 
 
-def make_handler(calls: list[str], missing: tuple[str, ...] = ()):
+def make_handler(calls: list[str], missing: tuple[str, ...] = (), wikidata: str = "found"):
     def handler(request: httpx.Request) -> httpx.Response:
         calls.append(request.url.path)
         if "page/html" in request.url.path:
@@ -60,6 +61,10 @@ def make_handler(calls: list[str], missing: tuple[str, ...] = ()):
                 return httpx.Response(404)
             html = "<p>" + "A horse weighs 500 kg. " * 80 + "</p>"
             return httpx.Response(200, headers={"ETag": '"77/abc"'}, content=html.encode())
+        if wikidata == "no item":
+            return httpx.Response(200, json={"entities": {"-1": {"missing": ""}}})
+        if wikidata == "refused":
+            return httpx.Response(403)  # not retried, so the test needs no waiting
         return httpx.Response(200, json={"entities": {"Q726": ENTITY}})
 
     return handler
@@ -157,3 +162,34 @@ async def test_a_missing_article_is_logged_and_not_fatal(
         )
     assert summary.parsed == 1 and len(summary.failures) == 1
     assert "ghost" in summary.failures[0]
+
+
+async def test_no_wikidata_item_keeps_the_article_and_is_logged(
+    database: sqlite3.Connection, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    handler = make_handler([], wikidata="no item")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        with caplog.at_level(logging.INFO, logger="app.research.ingest"):
+            summary = await ingest_all(
+                database,
+                client,
+                CountingParser(),
+                MockEmbedder(),
+                [fighter("horse", "Horse")],
+                tmp_path,
+            )
+    assert (summary.parsed, summary.facts, summary.failures) == (1, 0, [])
+    assert "No Wikidata item for horse" in caplog.text
+
+
+async def test_a_wikidata_error_is_recorded_and_not_fatal(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    fighters = [fighter("horse", "Horse"), fighter("duck", "Mallard")]
+    handler = make_handler([], wikidata="refused")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        summary = await ingest_all(
+            database, client, CountingParser(), MockEmbedder(), fighters, tmp_path
+        )
+    assert summary.parsed == 2 and summary.facts == 0  # both articles still stored
+    assert sorted(failure.split(":")[0] for failure in summary.failures) == ["duck", "horse"]

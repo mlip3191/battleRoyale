@@ -37,6 +37,7 @@ def print_summary(summary: IngestSummary, seconds: float) -> None:
         f"| {summary.fighters} | {summary.documents} | {summary.parsed} | {summary.chunks} "
         f"| {summary.facts} | {len(summary.failures)} |"
     )
+    print("fighters and documents are this run; parsed, chunks, and facts are all stored rows.")
     print(f"Finished in {seconds:.0f} s.")
     for failure in summary.failures:
         print(f"Failed: {failure}")
