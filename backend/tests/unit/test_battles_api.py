@@ -22,6 +22,7 @@ from app.pipeline import orchestrator, stages
 from app.pipeline.orchestrator import STUB, run_battle
 from app.pipeline.store import STAGES, BattleStore
 from app.research.seed_fighters import find_seed_sheet
+from tests.conftest import mock_settings
 
 SIM_RUNS = 20  # enough to get a verdict; keeps the tests fast
 WAIT_SECONDS = 30.0
@@ -42,7 +43,7 @@ def matchup(first: str, second: str, **extra: Any) -> Matchup:
 # Few simulation runs, so each battle finishes in well under a second.
 @pytest.fixture(autouse=True)
 def _quick_simulation() -> None:
-    use_settings(Settings(_env_file=None, provider_mode="mock", sim_runs=SIM_RUNS))
+    use_settings(mock_settings(sim_runs=SIM_RUNS))
 
 
 @pytest.fixture
