@@ -97,17 +97,15 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 ### MS-1 walking skeleton (due Sat Nov 14), started Nov 10, final on Nov 14
 
 - **What works (Nov 10):**
-  - **Engine:** F02–F06 and F08 plus the tournament bracket (F07, the benchmark runner, is still a draft). That's the seeded 1 v 1 and group engine, swarm mode, terrain, machines, objects and mythical abilities, the deciding-factor explainer and the fair-fight search.
-  - **Intake parser (A02):** live-tested.
-  - **Knowledge base:** storage, downloaders and retrieval with the reranker (G02, G03), plus 7 hand-verified seed sheets (G05).
-  - **Front end:** app shell, intake page and results page, on fixtures.
-  - **Still to land for MS-1:** the A05 stub path from matchup to verdict, the D05 battle stage and the A04 safety gate.
-  - **Totals:** 62 PRs merged and 58 issues closed.
+  - **Built:** the engine (F02–F06, F08 and the tournament bracket; F07, the benchmark runner, is still a draft, and swarm mode above 200 per side is known to be off until #106), the live-tested intake parser (A02), the knowledge base with retrieval and reranking (G02, G03), 7 hand-verified seed sheets (G05), and the app shell, intake page and results page on fixtures (D02–D04).
+  - **Still to land for MS-1:** the A05 stub path (#36, no PR yet) and the intake API that connects the UI to it (D08, draft #158). Both are planned for wave 3, so MS-1 on Nov 14 is at risk.
+  - **In review, not needed for MS-1:** the D05 battle stage (#121, #123) and the A04 safety gate (#152).
 - **What changed from the plan:**
-  - **D-48:** the repo is public, after GitHub Actions stopped on the private repo for billing.
-  - **D-44:** venom is resolved after the fight.
-  - **D-45:** swarm mode was fixed to match the one-by-one engine.
-  - **D-46:** plain-slug fighter IDs.
+  - **D-41:** the chat model extracts stats; port 9010 only answers decisions.
+  - **D-42/D-44:** venom is modeled and resolved after the fight (build in draft #107).
+  - **D-45:** swarm mode is to be fixed to match the one-by-one engine (fix in draft #106).
+  - **D-46:** plain-slug fighter IDs, two dataset licenses, derived machine values.
   - **D-47:** seed-sheet labeling rules.
+  - **D-48:** the repo is public, after GitHub Actions stopped on the private repo for billing.
   - **The board:** the "PR linked → In review" automation was turned on (#172).
-- **Screenshot:** _(add on Nov 14: the matchup → verdict flow on mocks)_
+- **Screenshot:** _(add on Nov 14: the matchup → verdict flow on mocks, saved in `docs/media/`)_
