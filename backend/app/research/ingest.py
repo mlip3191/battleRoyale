@@ -107,6 +107,7 @@ async def ingest_fighter(
 
 
 # Count what is stored, so the summary describes the knowledge base and not just this run.
+# The table name goes into the SQL text, so callers pass only this module's fixed names.
 def _count(connection: sqlite3.Connection, table: str) -> int:
     return connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
 
