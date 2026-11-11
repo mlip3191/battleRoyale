@@ -5,7 +5,9 @@ import json
 import logging
 import sqlite3
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import httpx
 
@@ -21,6 +23,7 @@ from app.research.sources import (
     fetch_wikidata,
     save_raw,
 )
+from app.research.traits import TraitTables, load_trait_tables, taxon_name
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +41,8 @@ class IngestSummary:
     chunks: int = 0
     facts: int = 0
     failures: list[str] = field(default_factory=list)
+    unmatched: list[str] = field(default_factory=list)
+    """Fighters with no PanTHERIA or AnimalTraits row for their scientific name."""
 
 
 # True when this exact revision is already stored, so it needn't be parsed again.
@@ -80,6 +85,25 @@ def _ingest_wikidata(
     store_facts(connection, fighter.id, "wikidata", facts, document.license, retrieved_at)
 
 
+# Store each trait dataset's rows for the fighter's scientific name, and note a fighter with none.
+def _ingest_traits(
+    connection: sqlite3.Connection,
+    fighter: SeedFighter,
+    entity: dict[str, Any],
+    traits: TraitTables,
+    summary: IngestSummary,
+) -> None:
+    name = taxon_name(entity)
+    retrieved_at = datetime.now(UTC).isoformat()
+    matched = False
+    for source, table in traits.by_source.items():
+        facts = table.get(name, []) if name else []
+        matched = matched or bool(facts)
+        store_facts(connection, fighter.id, source, facts, traits.licenses[source], retrieved_at)
+    if traits.by_source and not matched:
+        summary.unmatched.append(f"{fighter.id} ({name or 'no scientific name'})")
+
+
 # Ingest one fighter; a failure is logged and recorded, and never stops the run.
 async def ingest_fighter(
     connection: sqlite3.Connection,
@@ -89,6 +113,7 @@ async def ingest_fighter(
     fighter: SeedFighter,
     kb_dir: Path,
     summary: IngestSummary,
+    traits: TraitTables | None = None,
 ) -> None:
     try:
         article = await fetch_article(client, fighter.article)
@@ -103,6 +128,8 @@ async def ingest_fighter(
             return
         save_raw(kb_dir, fighter.id, "wikidata", entity)
         _ingest_wikidata(connection, fighter, entity)
+        if traits is not None:
+            _ingest_traits(connection, fighter, json.loads(entity.body), traits, summary)
     except (SourceError, ProviderError, httpx.HTTPError, ValueError, sqlite3.Error) as error:
         logger.warning("Could not ingest %s: %s", fighter.id, error)
         summary.failures.append(f"{fighter.id}: {error}")
@@ -125,11 +152,15 @@ async def ingest_all(
 ) -> IngestSummary:
     await ensure_vector_table(connection, embedder)
     summary = IngestSummary(fighters=len(fighters))
+    traits, trait_failures = await load_trait_tables(client, kb_dir)
+    summary.failures.extend(trait_failures)
     limit = asyncio.Semaphore(CONCURRENT_FIGHTERS)
 
     async def one(fighter: SeedFighter) -> None:
         async with limit:
-            await ingest_fighter(connection, client, parser, embedder, fighter, kb_dir, summary)
+            await ingest_fighter(
+                connection, client, parser, embedder, fighter, kb_dir, summary, traits
+            )
 
     await asyncio.gather(*(one(fighter) for fighter in fighters))
     summary.parsed = _count(connection, "documents")

@@ -15,6 +15,7 @@ from app.providers.mock.text import MockDocParser, MockEmbedder
 from app.research.facts import Fact, store_facts, wikidata_facts
 from app.research.ingest import ingest_all
 from app.research.seed_fighters import SeedFighter
+from app.research.traits import animaltraits_facts, pantheria_facts, taxon_name
 
 UNIT = "http://www.wikidata.org/entity/"
 ENTITY = {
@@ -53,9 +54,40 @@ def fighter(fighter_id: str, article: str) -> SeedFighter:
     return SeedFighter(fighter_id, article, "Adult", "mammal", "living", "land", article)
 
 
-def make_handler(calls: list[str], missing: tuple[str, ...] = (), wikidata: str = "found"):
+PANTHERIA_TEXT = (
+    "MSW05_Binomial\t5-1_AdultBodyMass_g\t13-1_AdultHeadBodyLen_mm\n"
+    "Equus caballus\t403598.53\t-999.00\n"
+    "Mus musculus\t19.30\t\n"
+)
+TRAITS_TEXT = (
+    '"species","sex","inTextReference","body mass","body mass - units"\n'
+    '"Equus caballus","female","Smith, 1990",450,"kg"\n'
+    '"Equus caballus","","Jones, 2001",480,"kg"\n'
+    '"Equus caballus","","Brown, 2005",,"kg"\n'
+)
+HORSE = {
+    **ENTITY,
+    "claims": {
+        **ENTITY["claims"],
+        "P225": [{"mainsnak": {"datavalue": {"value": "Equus caballus"}}}],
+    },
+}
+
+
+def make_handler(
+    calls: list[str],
+    missing: tuple[str, ...] = (),
+    wikidata: str = "found",
+    entity: dict = ENTITY,
+    datasets: str = "ok",
+):
     def handler(request: httpx.Request) -> httpx.Response:
         calls.append(request.url.path)
+        if request.url.host in ("esapubs.org", "zenodo.org"):
+            if datasets == "refused":
+                return httpx.Response(403)
+            text = PANTHERIA_TEXT if request.url.host == "esapubs.org" else TRAITS_TEXT
+            return httpx.Response(200, content=text.encode())
         if "page/html" in request.url.path:
             if any(name in request.url.path for name in missing):
                 return httpx.Response(404)
@@ -65,7 +97,7 @@ def make_handler(calls: list[str], missing: tuple[str, ...] = (), wikidata: str 
             return httpx.Response(200, json={"entities": {"-1": {"missing": ""}}})
         if wikidata == "refused":
             return httpx.Response(403)  # not retried, so the test needs no waiting
-        return httpx.Response(200, json={"entities": {"Q726": ENTITY}})
+        return httpx.Response(200, json={"entities": {"Q726": entity}})
 
     return handler
 
@@ -193,3 +225,89 @@ async def test_a_wikidata_error_is_recorded_and_not_fatal(
         )
     assert summary.parsed == 2 and summary.facts == 0  # both articles still stored
     assert sorted(failure.split(":")[0] for failure in summary.failures) == ["duck", "horse"]
+
+
+def test_pantheria_skips_missing_values() -> None:
+    table = pantheria_facts(PANTHERIA_TEXT)
+    assert [(f.field, f.value, f.unit) for f in table["Equus caballus"]] == [
+        ("5-1_AdultBodyMass_g", 403598.53, "g")
+    ]
+    assert table["Equus caballus"][0].reference.endswith("#Equus_caballus")
+    assert "Mus musculus" in table and len(table["Mus musculus"]) == 1
+
+
+def test_animaltraits_facts_point_at_their_row_and_study() -> None:
+    facts = animaltraits_facts(TRAITS_TEXT)["Equus caballus"]
+    assert [(f.value, f.unit) for f in facts] == [(450.0, "kg"), (480.0, "kg")]
+    assert facts[0].reference.endswith("#row-2 (Smith, 1990; female)")
+    assert facts[1].reference.endswith("#row-3 (Jones, 2001)")
+
+
+def test_taxon_name_comes_from_wikidata() -> None:
+    assert taxon_name(HORSE) == "Equus caballus"
+    assert taxon_name(ENTITY) is None
+
+
+async def test_trait_facts_are_stored_by_scientific_name(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    handler = make_handler([], entity=HORSE)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        summary = await ingest_all(
+            database,
+            client,
+            CountingParser(),
+            MockEmbedder(),
+            [fighter("horse", "Horse")],
+            tmp_path,
+        )
+    sources = database.execute("SELECT source, COUNT(*) FROM facts GROUP BY source").fetchall()
+    assert dict(sources) == {"animaltraits": 2, "pantheria": 1, "wikidata": 2}
+    assert summary.unmatched == [] and summary.failures == []
+    assert (tmp_path / "traits" / "pantheria.txt").exists()
+
+
+async def test_a_fighter_with_no_trait_row_is_reported(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    async with httpx.AsyncClient(transport=httpx.MockTransport(make_handler([]))) as client:
+        summary = await ingest_all(
+            database,
+            client,
+            CountingParser(),
+            MockEmbedder(),
+            [fighter("horse", "Horse")],
+            tmp_path,
+        )
+    assert summary.unmatched == ["horse (no scientific name)"]
+
+
+async def test_a_dataset_that_fails_to_download_is_not_fatal(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    handler = make_handler([], entity=HORSE, datasets="refused")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        summary = await ingest_all(
+            database,
+            client,
+            CountingParser(),
+            MockEmbedder(),
+            [fighter("horse", "Horse")],
+            tmp_path,
+        )
+    assert summary.parsed == 1 and summary.facts == 2  # the article and Wikidata still load
+    assert sorted(f.split(":")[0] for f in summary.failures) == ["animaltraits", "pantheria"]
+
+
+async def test_datasets_download_once_and_a_rerun_changes_nothing(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    calls: list[str] = []
+    fighters = [fighter("horse", "Horse")]
+    handler = make_handler(calls, entity=HORSE)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await ingest_all(database, client, CountingParser(), MockEmbedder(), fighters, tmp_path)
+        before = rows(database)
+        await ingest_all(database, client, CountingParser(), MockEmbedder(), fighters, tmp_path)
+    assert rows(database) == before
+    assert sum("PanTHERIA" in path for path in calls) == 1
