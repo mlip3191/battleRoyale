@@ -139,17 +139,34 @@ describe("timing", () => {
 });
 
 describe("reduced-motion key frames", () => {
-  test("fixture: the start, each KO, and the end", () => {
+  test("fixture: the start, each side closing in, each KO, and the end", () => {
     const { beats } = buildTimeline(result, WOLF_COUNTS);
-    const kos = beats
-      .filter((b) => b.kind === "ko" || b.kind === "crowd-ko")
-      .map((b) => b.index);
+    const kinds = (...k: string[]) =>
+      beats.filter((b) => k.includes(b.kind)).map((b) => b.index);
+    const approaches = kinds("approach");
+    const kos = kinds("ko", "crowd-ko");
+    expect(approaches).toEqual([0, 1]);
     expect(kos.length).toBeGreaterThan(0);
     expect(keyFrames(beats).map((b) => b.index)).toEqual([
-      0,
+      ...approaches,
       ...kos,
       beats.length - 1,
     ]);
+  });
+
+  test("the walk-in is a key frame for each side, even after other events", () => {
+    const log = [
+      ev({ type: "approach", side: 0 }),
+      ev({ type: "miss", side: 0, actor: 0, target: 0 }),
+      ev({ type: "approach", side: 1 }),
+      ev({ type: "hit", side: 1, actor: 0, target: 0, damage: 3 }),
+      ev({ type: "end", side: 1 }),
+    ];
+    const { beats } = buildTimeline(
+      { representative_log: log, outcome: "win_1" },
+      [1, 1],
+    );
+    expect(keyFrames(beats).map((b) => b.index)).toEqual([0, 2, 4]);
   });
 
   test('a summary KO ("more go down") is a key frame', () => {
@@ -165,7 +182,7 @@ describe("reduced-motion key frames", () => {
       { representative_log: log, outcome: "win_0" },
       [1, 60],
     );
-    expect(keyFrames(beats).map((b) => b.index)).toEqual([0, 3, 4, 5]);
+    expect(keyFrames(beats).map((b) => b.index)).toEqual([0, 1, 3, 4, 5]);
   });
 
   test("a log cut off before END still ends on its last event", () => {

@@ -89,12 +89,12 @@ export function createBattleScene(P: typeof Phaser) {
       if (battlefieldUrl) this.load.image(BATTLEFIELD_KEY, battlefieldUrl);
     }
 
-    // Draw the backdrop and both squads at their starting spots.
+    // Draw the backdrop and both squads at their starting spots. (The reduced-motion note is HTML
+    // under the stage, in PhaserStage, so screen readers can read it.)
     create() {
       this.drawBackdrop();
       this.makeCrowdIcon();
       this.squads = [this.buildSquad(0), this.buildSquad(1)];
-      if (this.opts.reducedMotion) this.showKeyFrameNote();
       if (this.skipQueued) this.skipToEnd();
     }
 
@@ -447,21 +447,6 @@ export function createBattleScene(P: typeof Phaser) {
           onComplete: () => this.dispose(box, label),
         });
       }
-    }
-
-    private showKeyFrameNote() {
-      this.add
-        .text(
-          STAGE.width / 2,
-          STAGE.height - 24,
-          "Reduced motion: key moments only",
-          {
-            fontFamily: TEXT_FONT,
-            fontSize: "16px",
-            color: "#b8c1e8",
-          },
-        )
-        .setOrigin(0.5);
     }
 
     // Up to `n` standing sprites of a side: the named fighter if it has its own sprite, else the front ones.

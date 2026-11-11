@@ -210,7 +210,77 @@ test("the controls are labeled buttons in a named group", async () => {
   await sceneOf();
   const group = screen.getByRole("group", { name: "Replay controls" });
   expect(group.querySelectorAll("button")).toHaveLength(4);
-  expect(screen.getByRole("img").getAttribute("aria-label")).toContain(
-    "grizzly bear versus gray wolf",
+  expect(screen.getByRole("img").getAttribute("aria-label")).toBe(
+    "Animated fight replay: 1 grizzly bear versus 6 gray wolves. The captions describe each moment.",
   );
+});
+
+test("autoPlay starts the replay as soon as it is ready", async () => {
+  render(<PhaserStage result={result} matchup={battle.matchup} autoPlay />);
+  const pause = await screen.findByRole("button", { name: "Pause" });
+  expect(pause).toHaveProperty("disabled", false);
+  expect((games[0].config.scene[0] as BattleStage).clock.playing).toBe(true);
+});
+
+test("onFinish fires once when the replay ends, by playing or by skipping", async () => {
+  const onFinish = vi.fn();
+  const view = render(
+    <PhaserStage
+      result={result}
+      matchup={battle.matchup}
+      onFinish={onFinish}
+    />,
+  );
+  const scene = await sceneOf();
+  fireEvent.click(screen.getByRole("button", { name: "Play" }));
+  runFrames(scene);
+  expect(onFinish).toHaveBeenCalledTimes(1);
+  view.unmount();
+  const skipped = vi.fn();
+  render(
+    <PhaserStage result={result} matchup={battle.matchup} onFinish={skipped} />,
+  );
+  await sceneOf(1);
+  fireEvent.click(screen.getByRole("button", { name: "Skip to end" }));
+  expect(skipped).toHaveBeenCalledTimes(1);
+});
+
+test("Replay appears after the fight ends and plays a fresh game from event 0", async () => {
+  const onEvent = vi.fn();
+  const onReplay = vi.fn();
+  render(
+    <PhaserStage
+      result={result}
+      matchup={battle.matchup}
+      onEvent={onEvent}
+      onReplay={onReplay}
+    />,
+  );
+  await sceneOf();
+  expect(screen.queryByRole("button", { name: "Replay" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Skip to end" }));
+  fireEvent.click(screen.getByRole("button", { name: "Replay" }));
+  expect(onReplay).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(games).toHaveLength(2));
+  expect(games[0].destroy).toHaveBeenCalledTimes(1);
+  const again = games[1].config.scene[0] as BattleStage;
+  await waitFor(() => expect(again.clock.playing).toBe(true));
+  onEvent.mockClear();
+  runFrames(again);
+  expect(onEvent.mock.calls.map(([i]) => i)).toEqual(allIndexes);
+});
+
+test("reduced motion: the key-moments note is real text under the stage", async () => {
+  render(stageEl(vi.fn(), true));
+  await sceneOf();
+  const note = screen.getByText(/key moments only/);
+  expect(note.closest('[role="img"]')).toBeNull();
+  expect(screen.queryByText(/relative hit points/)).toBeNull();
+});
+
+test("normal motion: a note explains the damage numbers' unit", async () => {
+  render(stageEl(vi.fn(), false));
+  await sceneOf();
+  expect(screen.getByText(/relative hit points/)).toBeTruthy();
+  expect(screen.queryByText(/key moments only/)).toBeNull();
 });
