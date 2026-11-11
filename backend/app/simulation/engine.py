@@ -492,43 +492,6 @@ def _apply_hits(
     return kills, left, full_hp - rest * dmg
 
 
-def _spread_hits(
-    hits: int,
-    dmg: float,
-    n: int,
-    front_hp: float,
-    full_hp: float,
-    g: int,
-    rng: random.Random,
-) -> tuple[int, int, float]:
-    """Spread `hits` at random over `g` parallel fronts of a bin of `n` fighters.
-
-    As in the one-by-one engine each hit picks its own defender, so some fronts take more hits
-    than others and die earlier. `front_hp` is the typical remaining hit points of a front.
-    Returns (kills, n_left, front_hp).
-    """
-    g = max(1, min(g, n))
-    if g == 1:
-        return _apply_hits(hits, dmg, n, front_hp, full_hp)
-    kills = 0
-    left_hits = hits
-    survivors_hp: list[float] = []  # fronts that took no kill
-    killers_hp: list[float] = []  # fronts that killed and started on a new fighter
-    for i in range(g):
-        mine = rng.binomialvariate(left_hits, 1.0 / (g - i)) if g - i > 1 else left_hits
-        left_hits -= mine
-        k, _, f = _apply_hits(mine, dmg, n, front_hp, full_hp)
-        kills += k
-        (killers_hp if k else survivors_hp).append(f)
-    kills = min(n, kills)
-    # A front that killed continues on a fresh fighter only if one is waiting; otherwise the
-    # front is gone and must not count towards the average.
-    alive_fronts = min(g, n - kills)
-    replaced = max(0, alive_fronts - len(survivors_hp))
-    hp_values = survivors_hp + killers_hp[:replaced]
-    return kills, n - kills, (sum(hp_values) / len(hp_values)) if hp_values else full_hp
-
-
 def _spread_tracked(
     hits: int,
     dmg: float,
@@ -538,7 +501,7 @@ def _spread_tracked(
     g: int,
     rng: random.Random,
 ) -> tuple[int, int, tuple[list[float], list[float]]]:
-    """Like `_spread_hits`, but remembers each wounded defender's hit points between steps.
+    """Spread `hits` over `g` fronts of a bin of `n` fighters, remembering each wounded one.
 
     `hurt` is (fronts, reserve): the defenders being fought right now, and wounded defenders
     nobody is fighting at the moment; everyone else is at full health. As in the one-by-one
