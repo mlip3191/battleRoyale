@@ -123,7 +123,7 @@ Stages run in the orchestrator (`pipeline/`). Each stage records `pending | runn
 
 | Stage | Cached fighter | New fighter | On failure |
 |---|---|---|---|
-| 1 Intake | ≤ 3 s | ≤ 3 s | retry once, then ask the user to rephrase |
+| 1 Intake | about 7 s typical, 25 s limit (D-52) | same | the parser asks the model at most twice (each call waits up to 15 s per step, with one network retry); an outage or the 25 s limit shows "try again in a moment"; unusable replies ask the user to rephrase |
 | 2 Research | ≤ 0.5 s | ≤ 45 s | fall back to seed sheet or all-estimate sheet with a banner; size-reference entities are researched too |
 | 3 Simulate (1,000 runs) | ≤ 3 s | — | must not fail; it is pure code |
 | 4–5 Scripts | ≤ 10 s | — | template-based fallback script |
@@ -340,7 +340,7 @@ One adapter per course endpoint, each behind an interface:
 
 Rules:
 - `config.py` reads `PROVIDER_MODE` (`mock` | `live`) and one base URL per service (see `.env.example`). Nothing else reads environment variables.
-- Every live call has a timeout, 2 retries with backoff, and logs latency but never logs payloads that could contain keys.
+- Every live call has a timeout and retries with backoff (by default `PROVIDER_TIMEOUT_S`=30 and 2 retries; intake's chat calls use `INTAKE_TIMEOUT_S`=15 and `INTAKE_RETRIES`=1, D-52), and logs latency but never logs payloads that could contain keys.
 - `backend/scripts/smoke_providers.py` (task M06) calls each live endpoint once and writes what it learned (URL shape, auth, request/response format, latency) to `docs/providers.md`. Run it before building any live adapter beyond the chat LLM.
 - CI and all automated tests run with `PROVIDER_MODE=mock` (`backend/tests/conftest.py` forces it and ignores `.env`). The endpoints are public URLs, but their keys never go to GitHub, and tests must not depend on them.
 - Course endpoint URLs go in `.env`, never in code: they are public URLs, so anyone holding them could spend the course's quota.
