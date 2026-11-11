@@ -191,13 +191,13 @@ export const beatTimes = (beat: Beat, speed: Speed) => ({
   duration: beat.duration / speed,
 });
 
-// Reduced motion shows key frames only: the start, every knock-out (summary KOs too), and the end.
+// Reduced motion shows key frames only: the start, each side closing in (a jump, no walking),
+// every knock-out (summary KOs too), and the end.
 export function keyFrames(beats: readonly Beat[]): Beat[] {
   if (beats.length === 0) return [];
   const last = beats.length - 1;
-  return beats.filter(
-    (b, i) => i === 0 || i === last || b.kind === "ko" || b.kind === "crowd-ko",
-  );
+  const key = new Set<BeatKind>(["approach", "ko", "crowd-ko"]);
+  return beats.filter((b, i) => i === 0 || i === last || key.has(b.kind));
 }
 
 // Plays a timeline: advance(ms) moves time forward and reports each event index exactly once, in order.
