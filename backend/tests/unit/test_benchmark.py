@@ -236,7 +236,7 @@ def test_a_matchup_with_a_missing_sheet_is_skipped_and_the_rest_are_scored():
     ].reason
     text = bm.render_run(report)
     assert "Skipped (1)" in text and "ghost" in text
-    assert "| Tuning | 2/2 (100%) |" in text  # pass rate over the scored matchups only
+    assert "| Tuning | 2/2 (100%), 1 skipped |" in text  # scored matchups only, skips counted
 
 
 # --- Count cases: the right favorite, and the right side varied --------------------------------
@@ -286,3 +286,17 @@ def test_tuning_only_neither_runs_nor_shows_the_held_out_set():
         j.entry.id not in text
         for j in bm.run_benchmark(bm.mock_sheets(), "mock", [], held, runs=60).judged
     )
+
+
+def test_a_misspelled_confidence_is_an_error_not_silently_medium():
+    import pytest
+
+    raw = {
+        "id": "x-01",
+        "fighters": [{"entity": "gray-wolf", "count": 1}, {"entity": "grizzly-bear", "count": 1}],
+        "terrain": "forest",
+        "expected_winner": "1",
+        "confidence": "hgih",
+    }
+    with pytest.raises(bm.BenchmarkError, match="confidence"):
+        bm.parse_entry(raw, held_out=False)

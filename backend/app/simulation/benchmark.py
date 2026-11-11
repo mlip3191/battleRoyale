@@ -111,9 +111,7 @@ def parse_entry(raw: dict[str, Any], held_out: bool) -> Entry:
             group=_infer_group(raw, fair_range),
             matchup=Matchup(fighters=fighters, terrain=terrain, raw_text=names),
             expected_winner=winner,  # type: ignore[arg-type]
-            confidence="high"
-            if str(raw.get("confidence", "medium")).lower() == "high"
-            else "medium",
+            confidence=_parse_confidence(raw.get("confidence", "medium")),
             fair_range=fair_range,
             source=str(raw.get("source", "")),
             held_out=held_out,
@@ -321,13 +319,22 @@ class RunReport:
         ]
 
 
+def _parse_confidence(value: object) -> str:
+    text = str(value).strip().lower()
+    if text not in ("high", "medium"):
+        raise ValueError(f"confidence must be high or medium, not {value!r}")
+    return text
+
+
 def rate(items: Sequence[Judged]) -> str:
-    """Pass rate over the matchups that were scored (skipped ones are listed separately)."""
+    """Pass rate over the matchups that were scored; says how many were skipped (no sheet)."""
     scored = [j for j in items if not j.skipped]
+    skipped = len(items) - len(scored)
     if not scored:
-        return "n/a"
+        return "n/a" if not skipped else f"n/a ({skipped} skipped, no sheet)"
     passed = sum(j.passed for j in scored)
-    return f"{passed}/{len(scored)} ({round(100 * passed / len(scored))}%)"
+    text = f"{passed}/{len(scored)} ({round(100 * passed / len(scored))}%)"
+    return f"{text}, {skipped} skipped" if skipped else text
 
 
 def current_commit() -> str:
