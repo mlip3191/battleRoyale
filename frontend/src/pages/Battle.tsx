@@ -1,7 +1,7 @@
 // The broadcast page (D07): the ticker while research and the simulation run, then the intro card
 // with captions, the fight replay with play-by-play captions, and the verdict reveal.
 // The show's logic lives in broadcast-flow.ts; this file only lays it out.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { NOT_FOUND, useBattle } from "../api/useBattle.ts";
 import AudioBar from "../components/AudioBar.tsx";
@@ -11,6 +11,7 @@ import {
   LowerThird,
   srOnly,
 } from "../components/Broadcast.tsx";
+import { useFocusRescue } from "../components/focus-rescue.ts";
 import PhaserStage from "../game/PhaserStage.tsx";
 import {
   SPEAKERS,
@@ -25,6 +26,7 @@ import {
   sideNames,
   unavailableNote,
   verdictReveal,
+  type Show,
   type ShowAction,
 } from "./broadcast-flow.ts";
 import type { ScriptLine } from "../api/client.ts";
@@ -67,14 +69,29 @@ function Broadcast({ id }: { id: string }) {
   const [stored, setShow] = useState(START);
   const [eventIndex, setEventIndex] = useState(-1); // last replay event reached
   const [line, setLine] = useState({ phase: START.phase, index: 0 }); // intro/outro line on screen
-  const [captionsPaused, setCaptionsPaused] = useState(false);
+  // The part of the show whose captions the viewer paused. Every step of the show is a new object,
+  // so a pause belongs to one part only: the outro never starts out paused from the intro.
+  const [pausedIn, setPausedIn] = useState<Show | null>(null);
+  const controls = useFocusRescue();
+  const startButton = useRef<HTMLButtonElement>(null);
+  const verdictTitle = useRef<HTMLHeadingElement>(null);
 
   // A newer battle record can start the show; adjust during render, not in an effect.
   const show = nextShow(stored, { type: "update", battle });
   if (show !== stored) setShow(show);
   const act = (action: ShowAction) => setShow((s) => nextShow(s, action));
+  const captionsPaused = pausedIn === show;
+
+  // The show's buttons go away as it moves on. If the viewer was on one, focus goes to the new part
+  // of the show: the verdict's heading, or Start the fight. In the fight the stage takes it, on its
+  // Play/Pause button once ready (claimFocus below). Focus elsewhere on the page is left alone.
+  useEffect(() => {
+    if (show.phase === "verdict") controls.rescue(verdictTitle.current);
+    else if (show.phase === "intro") controls.rescue(startButton.current);
+  });
 
   // Intro and outro lines step along on a timer; the line count restarts with each phase.
+  // The last intro line hands over to the fight; the last outro line simply stays up.
   const timed =
     show.phase === "intro"
       ? linesOf(battle?.scripts ?? [], "intro")
@@ -160,6 +177,7 @@ function Broadcast({ id }: { id: string }) {
           matchup={battle!.matchup}
           assets={battle!.assets}
           autoPlay={show.phase === "fight"}
+          claimFocus={controls.claim}
           onEvent={setEventIndex}
           onFinish={() => act({ type: "fight-done" })}
           onReplay={() => {
@@ -171,18 +189,23 @@ function Broadcast({ id }: { id: string }) {
 
       <Captions lines={captions} />
 
-      <div className={styles.controls}>
+      <div
+        className={styles.controls}
+        onFocus={controls.onFocus}
+        onBlur={controls.onBlur}
+      >
         {current && (show.phase === "intro" || !isLast) && (
           <button
             type="button"
             className={styles.button}
-            onClick={() => setCaptionsPaused(!captionsPaused)}
+            onClick={() => setPausedIn(captionsPaused ? null : show)}
           >
             {captionsPaused ? "Resume captions" : "Pause captions"}
           </button>
         )}
         {show.phase === "intro" && (
           <button
+            ref={startButton}
             type="button"
             className={styles.button}
             onClick={() => act({ type: "intro-done" })}
@@ -206,7 +229,9 @@ function Broadcast({ id }: { id: string }) {
 
       {reveal && (
         <section className={styles.verdict} aria-labelledby="reveal-title">
-          <h2 id="reveal-title">{reveal.headline}</h2>
+          <h2 id="reveal-title" ref={verdictTitle} tabIndex={-1}>
+            {reveal.headline}
+          </h2>
           {reveal.odds && <p>{reveal.odds}</p>}
           {reveal.why && <p>{reveal.why}</p>}
           <Link className={styles.results} to={`/battle/${id}/results`}>

@@ -3,9 +3,10 @@
 import type Phaser from "phaser";
 import { useEffect, useRef, useState } from "react";
 import type { Asset, Matchup, SimulationResult } from "../api/client.ts";
+import { useFocusRescue } from "../components/focus-rescue.ts";
 import { howMany } from "../components/Verdict.tsx";
 import type { BattleStage } from "./BattleScene.ts";
-import { STAGE, battlefieldUrl, layoutStage } from "./layout.ts";
+import { STAGE, battlefieldUrl, layoutStage, spriteUrls } from "./layout.ts";
 import { buildTimeline, type Speed } from "./timeline.ts";
 import styles from "./stage.module.css";
 
@@ -18,6 +19,7 @@ export interface PhaserStageProps {
   onFinish?: () => void; // the replay reached its last event (D07 verdict)
   onReplay?: () => void; // the viewer pressed Replay; events start again from 0
   autoPlay?: boolean; // start playing as soon as the stage is ready
+  claimFocus?: () => boolean; // asked once ready: true moves keyboard focus to Play/Pause
   reducedMotion?: boolean; // defaults to the browser's prefers-reduced-motion setting
 }
 
@@ -32,11 +34,14 @@ const NO_ASSETS: Asset[] = []; // one shared empty list, so a missing prop never
 
 // What makes one replay different from another. A refreshed battle record (a late server update,
 // the polling fallback) brings new objects with the same values, and must not restart the game.
+// The pictures count too: the scene reads them only when it starts, so a viewer who skipped to the
+// verdict before the images were made gets a fresh stage with them as soon as they arrive.
 export const replayKey = (
   battleId: string | undefined,
   result: SimulationResult,
   fighters: Pick<Matchup, "fighters">["fighters"],
   motionless: boolean,
+  assets: readonly Asset[] = NO_ASSETS,
 ) =>
   JSON.stringify([
     battleId ?? null,
@@ -46,6 +51,8 @@ export const replayKey = (
     result.representative_log.length,
     fighters.map((f) => [f.entity, f.count ?? 1]),
     motionless,
+    spriteUrls(assets, fighters),
+    battlefieldUrl(assets),
   ]);
 
 export default function PhaserStage({
@@ -58,11 +65,16 @@ export default function PhaserStage({
   onReplay,
   autoPlay = false,
   reducedMotion,
+  claimFocus,
 }: PhaserStageProps) {
   const host = useRef<HTMLDivElement>(null);
   const stage = useRef<BattleStage | null>(null);
   const onEventRef = useRef(onEvent);
   const onFinishRef = useRef(onFinish);
+  const claimFocusRef = useRef(claimFocus);
+  const playButton = useRef<HTMLButtonElement>(null);
+  const replayButton = useRef<HTMLButtonElement>(null);
+  const controls = useFocusRescue();
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -72,7 +84,7 @@ export default function PhaserStage({
   const motionless = reducedMotion ?? prefersReducedMotion();
 
   const { fighters } = matchup;
-  const key = replayKey(battleId, result, fighters, motionless);
+  const key = replayKey(battleId, result, fighters, motionless, assets);
   // The latest props, read when a game starts; changing them alone never restarts the game.
   const latest = useRef({ result, fighters, assets, motionless, autoPlay });
 
@@ -80,6 +92,7 @@ export default function PhaserStage({
   useEffect(() => {
     onEventRef.current = onEvent;
     onFinishRef.current = onFinish;
+    claimFocusRef.current = claimFocus;
     latest.current = { result, fighters, assets, motionless, autoPlay };
   });
 
@@ -144,6 +157,16 @@ export default function PhaserStage({
     };
   }, [key, round]);
 
+  // Skip to end and the fight's end disable the button in use, and Replay removes itself. When the
+  // viewer was on one of them, focus goes to Replay at the end, or to Play/Pause once a game is
+  // ready. The page can hand focus over too (claimFocus), when its own button started the fight.
+  useEffect(() => {
+    if (!ready) return;
+    if (done) controls.rescue(replayButton.current);
+    else if (!controls.rescue(playButton.current) && claimFocusRef.current?.())
+      playButton.current?.focus();
+  }, [ready, done, controls]);
+
   const togglePlay = () => {
     if (!stage.current) return;
     if (playing) stage.current.pause();
@@ -195,8 +218,11 @@ export default function PhaserStage({
         className={styles.controls}
         role="group"
         aria-label="Replay controls"
+        onFocus={controls.onFocus}
+        onBlur={controls.onBlur}
       >
         <button
+          ref={playButton}
           type="button"
           className={styles.button}
           onClick={togglePlay}
@@ -226,7 +252,12 @@ export default function PhaserStage({
           Skip to end
         </button>
         {done && ready && (
-          <button type="button" className={styles.button} onClick={replay}>
+          <button
+            ref={replayButton}
+            type="button"
+            className={styles.button}
+            onClick={replay}
+          >
             Replay
           </button>
         )}

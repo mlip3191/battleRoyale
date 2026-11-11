@@ -30,28 +30,47 @@ export default function AudioBar({ narration, music }: AudioBarProps) {
     }
   }, [muted, volume, narration]);
 
-  // Stop the sound when the bar goes away (leaving the page).
+  // Stop the sound when the bar goes away (leaving the page). The tracks are picked up again
+  // whenever they change, so ones that arrive after the bar appears are stopped too. (React has
+  // already let go of the elements when this cleanup runs, so it can't read the refs then.)
   useEffect(() => {
     const tracks = [voice.current, song.current];
     return () => tracks.forEach((t) => t && !t.paused && t.pause());
-  }, []);
+  }, [narration, music]);
 
   if (!narration && !music) return null;
 
-  // Start or stop every track together; a track the browser refuses to play just stays quiet.
-  const toggle = () => {
-    const tracks = [voice.current, song.current].filter(
+  // The tracks on the page right now.
+  const tracks = () =>
+    [voice.current, song.current].filter(
       (t): t is HTMLAudioElement => t !== null,
     );
-    if (playing) tracks.forEach((t) => t.pause());
-    else tracks.forEach((t) => void t.play()?.catch(() => undefined));
-    setPlaying(!playing);
+
+  // Start or stop every track together. The button says "Pause sound" only once the browser
+  // really plays something; a track it refuses to play just stays quiet.
+  const toggle = () => {
+    if (playing) {
+      tracks().forEach((t) => t.pause());
+      setPlaying(false);
+      return;
+    }
+    const starts = tracks().map((t) => Promise.resolve().then(() => t.play()));
+    void Promise.allSettled(starts).then((results) => {
+      if (results.some((r) => r.status === "fulfilled")) setPlaying(true);
+    });
   };
+
+  // A track that ends (the announcer is done) leaves the button on Play once nothing is left playing.
+  const onEnded = () => setPlaying(tracks().some((t) => !t.paused && !t.ended));
 
   return (
     <div className={styles.bar} role="group" aria-label="Sound controls">
-      {narration && <audio ref={voice} src={narration} preload="none" />}
-      {music && <audio ref={song} src={music} preload="none" loop />}
+      {narration && (
+        <audio ref={voice} src={narration} preload="none" onEnded={onEnded} />
+      )}
+      {music && (
+        <audio ref={song} src={music} preload="none" loop onEnded={onEnded} />
+      )}
       <button type="button" className={styles.button} onClick={toggle}>
         {playing ? "Pause sound" : "Play sound"}
       </button>

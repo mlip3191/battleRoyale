@@ -263,6 +263,74 @@ test("Skip to verdict: hidden before the result, shown as soon as it exists, jum
   expect(screen.getByRole("status").textContent).toBe("");
 });
 
+// Press a show button the way a keyboard viewer does: focus it, then activate it.
+const press = (name: string) => {
+  const b = button(name);
+  b.focus();
+  fireEvent.click(b);
+};
+const verdictHeading = () => screen.getByRole("heading", { level: 2 });
+
+test("keyboard: Skip to verdict moves focus to the verdict's heading", () => {
+  show(done);
+  press("Skip to verdict");
+  expect(document.activeElement).toBe(verdictHeading());
+  expect(verdictHeading().getAttribute("tabindex")).toBe("-1");
+});
+
+test("keyboard: Skip to verdict during the fight moves focus to the verdict's heading", () => {
+  show(done);
+  startFight();
+  press("Skip to verdict");
+  expect(document.activeElement).toBe(verdictHeading());
+});
+
+test("keyboard: Start the fight hands focus to the stage's Play/Pause, once", () => {
+  show(done);
+  press("Start the fight");
+  expect(stageProps().claimFocus!()).toBe(true);
+  expect(stageProps().claimFocus!()).toBe(false);
+});
+
+test("keyboard: the intro running out under Pause captions hands focus to the stage", () => {
+  vi.useFakeTimers();
+  show(done);
+  button("Pause captions").focus();
+  act(() => vi.advanceTimersByTime(lineMs(intro[0].text)));
+  act(() => vi.advanceTimersByTime(lineMs(intro[1].text)));
+  expect(stageProps().claimFocus!()).toBe(true);
+});
+
+test("keyboard: the outro's last line moves focus from Pause captions to the verdict", () => {
+  vi.useFakeTimers();
+  show(done);
+  fireEvent.click(button("Skip to verdict"));
+  button("Pause captions").focus();
+  act(() => vi.advanceTimersByTime(lineMs(outro[0].text)));
+  expect(screen.queryByRole("button", { name: "Pause captions" })).toBeNull();
+  expect(document.activeElement).toBe(verdictHeading());
+});
+
+test("keyboard: focus is never moved when the viewer wasn't on a show button", () => {
+  vi.useFakeTimers();
+  show(done);
+  act(() => vi.advanceTimersByTime(lineMs(intro[0].text)));
+  act(() => vi.advanceTimersByTime(lineMs(intro[1].text)));
+  expect(stageProps().claimFocus!()).toBe(false);
+  act(() => stageProps().onFinish!());
+  expect(document.activeElement).toBe(document.body);
+});
+
+test("a caption pause belongs to its part of the show: the outro starts unpaused", () => {
+  vi.useFakeTimers();
+  show(done);
+  fireEvent.click(button("Pause captions"));
+  fireEvent.click(button("Skip to verdict"));
+  expect(button("Pause captions")).toBeTruthy();
+  act(() => vi.advanceTimersByTime(lineMs(outro[0].text)));
+  expect(captions().textContent).toContain(outro[1].text);
+});
+
 // The done battle with some assets removed.
 const without = (...kinds: Asset["kind"][]) => ({
   ...doneRecord,
