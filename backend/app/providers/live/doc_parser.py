@@ -21,9 +21,17 @@ PIECE_CHARS = 9_000
 MAX_TOKENS = 4_000
 MIN_PIECE_CHARS = 1_500
 PLAIN_TYPES = {"text/plain", "application/json", "application/xml"}
-DROPPED_BLOCKS = re.compile(r"<(script|style|sup)\b.*?</\1>|<!--.*?-->", re.DOTALL | re.IGNORECASE)
+DROPPED_BLOCKS = re.compile(r"<(script|style)\b.*?</\1>|<!--.*?-->", re.DOTALL | re.IGNORECASE)
+# Only footnote marks go: a superscript can be a real exponent, and dropping one changes a number.
+FOOTNOTES = re.compile(
+    r'<sup\b[^>]*\bclass="[^"]*\b(?:reference|noprint)\b[^"]*"[^>]*>.*?</sup>'
+    r"|<sup\b[^>]*>\s*\[[^\]<]*\]\s*</sup>",
+    re.DOTALL | re.IGNORECASE,
+)
+SUPERSCRIPT = re.compile(r"<sup\b[^>]*>(.*?)</sup>", re.DOTALL | re.IGNORECASE)
 TAG_ATTRIBUTES = re.compile(r"<(/?[a-zA-Z][a-zA-Z0-9]*)\b[^>]*>")
 INLINE_TAGS = re.compile(r"</?(a|span|abbr)>", re.IGNORECASE)
+INLINE_REPLY_TAGS = re.compile(r"</?(a|span|abbr|b|i|em|strong|u|small|sub)\s*>", re.IGNORECASE)
 ANY_TAG = re.compile(r"</?[a-zA-Z][a-zA-Z0-9]*\s*/?>")
 CLOSING_TAG = re.compile(r"</\s*document\s*>", re.IGNORECASE)
 
@@ -32,14 +40,16 @@ class CutOffReply(ProviderError):
     """The parser ran out of room before finishing, so its reply is incomplete."""
 
 
-# Remove what holds no article text: scripts, styles, footnote marks, comments, attributes, links.
+# Remove what holds no article text, and write exponents as ^ so 10<sup>6</sup> can't become 106.
 def strip_markup(html: str) -> str:
-    return INLINE_TAGS.sub("", TAG_ATTRIBUTES.sub(r"<\1>", DROPPED_BLOCKS.sub("", html)))
+    text = FOOTNOTES.sub("", DROPPED_BLOCKS.sub("", html))
+    return INLINE_TAGS.sub("", TAG_ATTRIBUTES.sub(r"<\1>", SUPERSCRIPT.sub(r"^\1", text)))
 
 
-# The model often echoes some HTML, so remove any tags and entities left in its reply.
+# The model often echoes some HTML: inline tags vanish so numbers stay whole, others become spaces.
 def clean_reply(text: str) -> str:
-    return html_text.unescape(ANY_TAG.sub(" ", text)).replace("\xa0", " ").strip()
+    joined = INLINE_REPLY_TAGS.sub("", SUPERSCRIPT.sub(r"^\1", text))
+    return html_text.unescape(ANY_TAG.sub(" ", joined)).replace("\xa0", " ").strip()
 
 
 # Split text into pieces of at most limit characters, ending on a tag where possible.

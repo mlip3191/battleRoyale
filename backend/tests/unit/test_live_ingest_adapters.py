@@ -202,6 +202,25 @@ def test_strip_markup_drops_footnote_marks_and_link_tags() -> None:
     assert strip_markup(html) == "<p>Weighs 500 kg total</p>"
 
 
+def test_strip_markup_keeps_real_exponents_readable() -> None:
+    assert strip_markup("<p>About 10<sup>6</sup> m<sup>3</sup></p>") == "<p>About 10^6 m^3</p>"
+    assert strip_markup("1.2 × 10<sup>-3</sup>") == "1.2 × 10^-3"
+
+
+def test_strip_markup_drops_wikipedia_style_footnotes() -> None:
+    footnote = (
+        '<sup class="mw-ref reference" id="cite_ref-1"><a href="#n"><span>'
+        '<span class="cite-bracket">[</span>1<span class="cite-bracket">]</span>'
+        "</span></a></sup>"
+    )
+    assert strip_markup(f"<p>500 kg{footnote}</p>") == "<p>500 kg</p>"
+
+
+def test_clean_reply_never_splits_a_number_at_an_inline_tag() -> None:
+    assert clean_reply("5<b>0</b>0 kg") == "500 kg"
+    assert clean_reply("10<sup>6</sup> kg") == "10^6 kg"
+
+
 def test_clean_reply_removes_leftover_tags_and_entities() -> None:
     assert clean_reply("<p>173&#160;cm &amp; 500 kg</p>") == "173 cm & 500 kg"
 
