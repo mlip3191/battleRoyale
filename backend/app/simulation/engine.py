@@ -214,11 +214,16 @@ def run_once(
 
     for s in (0, 1):
         hint = "closes in" + (f", {notes[s]}" if notes[s] else "")
-        log(
-            FightEvent(
-                t=0.0, type=EventType.APPROACH, side=s, group_size=sides[s].count, text_hint=hint
+        if record_events:
+            log(
+                FightEvent(
+                    t=0.0,
+                    type=EventType.APPROACH,
+                    side=s,
+                    group_size=sides[s].count,
+                    text_hint=hint,
+                )
             )
-        )
 
     if max(sides[0].count, sides[1].count) > c.SWARM_THRESHOLD:
         outcome = _run_swarm(sides, rng, starts, log, events, record_events)
@@ -309,7 +314,8 @@ def _run_individuals(
         """Take a fighter out of the fight. True if that empties its side."""
         alive_list[side].remove(idx)
         alive_set[side].discard(idx)
-        log(FightEvent(t=t, type=EventType.KO, side=side, actor=idx, text_hint=hint))
+        if record_events:
+            log(FightEvent(t=t, type=EventType.KO, side=side, actor=idx, text_hint=hint))
         if not alive_list[side]:
             return True
         attackers = pools[1 - side]
@@ -361,42 +367,45 @@ def _run_individuals(
             heal(foe_side, target, t)
             total_hp[foe_side] -= min(dmg[s], max(hp[foe_side][target], 0.0))
             hp[foe_side][target] -= dmg[s]
-            log(
-                FightEvent(
-                    t=t,
-                    type=EventType.HIT,
-                    side=s,
-                    actor=i,
-                    target=target,
-                    damage=round(dmg[s], 1),
-                    text_hint=f"{me.weapon_word} lands",
+            if record_events:
+                log(
+                    FightEvent(
+                        t=t,
+                        type=EventType.HIT,
+                        side=s,
+                        actor=i,
+                        target=target,
+                        damage=round(dmg[s], 1),
+                        text_hint=f"{me.weapon_word} lands",
+                    )
                 )
-            )
             if hp[foe_side][target] <= 0 and remove(foe_side, target, t, "goes down"):
                 return finish(t)
             if retreating is None and 1 - total_hp[foe_side] / start_hp[foe_side] >= (
                 sides[foe_side].morale
             ):
                 retreating = foe_side
-                log(
-                    FightEvent(
-                        t=t,
-                        type=EventType.RETREAT,
-                        side=foe_side,
-                        group_size=len(alive_list[foe_side]),
-                        text_hint="breaks and runs",
-                    )
-                )
-                if sides[foe_side].speed_mps > sides[s].speed_mps:
+                if record_events:
                     log(
                         FightEvent(
                             t=t,
-                            type=EventType.FLEE,
+                            type=EventType.RETREAT,
                             side=foe_side,
                             group_size=len(alive_list[foe_side]),
-                            text_hint="escapes",
+                            text_hint="breaks and runs",
                         )
                     )
+                if sides[foe_side].speed_mps > sides[s].speed_mps:
+                    if record_events:
+                        log(
+                            FightEvent(
+                                t=t,
+                                type=EventType.FLEE,
+                                side=foe_side,
+                                group_size=len(alive_list[foe_side]),
+                                text_hint="escapes",
+                            )
+                        )
                     alive = [len(alive_list[0]), len(alive_list[1])]
                     return _outcome(alive, t, events, record_events, winner=s)
             if spike[foe_side] > 0 and target in alive_set[foe_side]:
@@ -405,32 +414,34 @@ def _run_individuals(
                 taken = spike[foe_side]
                 total_hp[s] -= min(taken, max(hp[s][i], 0.0))
                 hp[s][i] -= taken
-                log(
-                    FightEvent(
-                        t=t,
-                        type=EventType.HIT,
-                        side=foe_side,
-                        actor=target,
-                        target=i,
-                        damage=round(taken, 1),
-                        text_hint="spines jab back",
+                if record_events:
+                    log(
+                        FightEvent(
+                            t=t,
+                            type=EventType.HIT,
+                            side=foe_side,
+                            actor=target,
+                            target=i,
+                            damage=round(taken, 1),
+                            text_hint="spines jab back",
+                        )
                     )
-                )
                 if hp[s][i] <= 0:
                     if remove(s, i, t, "goes down"):
                         return finish(t)
                     continue  # the attacker is dead: no next attack
         else:
-            log(
-                FightEvent(
-                    t=t,
-                    type=EventType.MISS,
-                    side=s,
-                    actor=i,
-                    target=target,
-                    text_hint=f"{me.weapon_word} misses",
+            if record_events:
+                log(
+                    FightEvent(
+                        t=t,
+                        type=EventType.MISS,
+                        side=s,
+                        actor=i,
+                        target=target,
+                        text_hint=f"{me.weapon_word} misses",
+                    )
                 )
-            )
         counter[0] += 1
         due[(s, i)] += 1.0 / me.attacks_per_s
         heapq.heappush(queue, (_tick_up(due[(s, i)]), rng.random(), s, i))
@@ -492,15 +503,16 @@ def _run_swarm(
             if sides[s].body == Body.MACHINE and n[s] > 0 and t >= sides[s].endurance_s:
                 # It stopped at its exact operating time, which falls after the previous step.
                 stopped_at = sides[s].endurance_s
-                log(
-                    FightEvent(
-                        t=stopped_at,
-                        type=EventType.KO,
-                        side=s,
-                        group_size=n[s],
-                        text_hint=OUT_OF_ACTION,
+                if record_events:
+                    log(
+                        FightEvent(
+                            t=stopped_at,
+                            type=EventType.KO,
+                            side=s,
+                            group_size=n[s],
+                            text_hint=OUT_OF_ACTION,
+                        )
                     )
-                )
                 n[s] = 0
                 return _outcome(n, stopped_at, events, record_events)
         if n[0] == 0 or n[1] == 0:
@@ -523,29 +535,31 @@ def _run_swarm(
             hits = rng.binomialvariate(attempts, chance) if attempts else 0
             if not hits or dmg[s] <= 0:
                 continue
-            log(
-                FightEvent(
-                    t=t,
-                    type=EventType.HIT,
-                    side=s,
-                    group_size=hits,
-                    damage=round(hits * dmg[s], 1),
-                    text_hint=f"{plural_word(me.weapon_word)} land",
+            if record_events:
+                log(
+                    FightEvent(
+                        t=t,
+                        type=EventType.HIT,
+                        side=s,
+                        group_size=hits,
+                        damage=round(hits * dmg[s], 1),
+                        text_hint=f"{plural_word(me.weapon_word)} land",
+                    )
                 )
-            )
             kills, n[foe], front[foe] = _apply_hits(
                 hits, dmg[s], n[foe], front[foe], sides[foe].max_hp
             )
             if kills:
-                log(
-                    FightEvent(
-                        t=t,
-                        type=EventType.KO,
-                        side=foe,
-                        group_size=kills,
-                        text_hint="go down" if kills > 1 else "goes down",
+                if record_events:
+                    log(
+                        FightEvent(
+                            t=t,
+                            type=EventType.KO,
+                            side=foe,
+                            group_size=kills,
+                            text_hint="go down" if kills > 1 else "goes down",
+                        )
                     )
-                )
             remaining = (n[foe] - 1) * sides[foe].max_hp + front[foe] if n[foe] else 0.0
             if (
                 retreating is None
@@ -553,51 +567,55 @@ def _run_swarm(
                 and 1 - remaining / start_hp[foe] >= sides[foe].morale
             ):
                 retreating = foe
-                log(
-                    FightEvent(
-                        t=t,
-                        type=EventType.RETREAT,
-                        side=foe,
-                        group_size=n[foe],
-                        text_hint="break and run",
-                    )
-                )
-                if sides[foe].speed_mps > me.speed_mps:
+                if record_events:
                     log(
                         FightEvent(
                             t=t,
-                            type=EventType.FLEE,
+                            type=EventType.RETREAT,
                             side=foe,
                             group_size=n[foe],
-                            text_hint="escape",
+                            text_hint="break and run",
                         )
                     )
+                if sides[foe].speed_mps > me.speed_mps:
+                    if record_events:
+                        log(
+                            FightEvent(
+                                t=t,
+                                type=EventType.FLEE,
+                                side=foe,
+                                group_size=n[foe],
+                                text_hint="escape",
+                            )
+                        )
                     return _outcome(n, t, events, record_events, winner=s)
             if spike[foe] > 0 and n[foe] > 0:
                 # Spines: the targets hurt whoever hit them.
-                log(
-                    FightEvent(
-                        t=t,
-                        type=EventType.HIT,
-                        side=foe,
-                        group_size=hits,
-                        damage=round(hits * spike[foe], 1),
-                        text_hint="spines jab back",
+                if record_events:
+                    log(
+                        FightEvent(
+                            t=t,
+                            type=EventType.HIT,
+                            side=foe,
+                            group_size=hits,
+                            damage=round(hits * spike[foe], 1),
+                            text_hint="spines jab back",
+                        )
                     )
-                )
                 back, n[s], front[s] = _apply_hits(
                     hits, spike[foe], n[s], front[s], sides[s].max_hp
                 )
                 if back:
-                    log(
-                        FightEvent(
-                            t=t,
-                            type=EventType.KO,
-                            side=s,
-                            group_size=back,
-                            text_hint="go down" if back > 1 else "goes down",
+                    if record_events:
+                        log(
+                            FightEvent(
+                                t=t,
+                                type=EventType.KO,
+                                side=s,
+                                group_size=back,
+                                text_hint="go down" if back > 1 else "goes down",
+                            )
                         )
-                    )
         if n[0] == 0 or n[1] == 0:
             return _outcome(n, t, events, record_events)
         t = _tick_up(t + dt)
