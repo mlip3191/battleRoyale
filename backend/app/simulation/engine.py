@@ -722,7 +722,13 @@ def _run_swarm(
                         )
         if n[0] == 0 or n[1] == 0:
             return _outcome(n, t, events, record_events)
-        t = _tick_up(t + dt)
+        t_next = _tick_up(t + dt)
+        if t_next > c.MAX_FIGHT_S > t:
+            # Steps grow late in the fight and can jump past the limit. Take one last step exactly
+            # at the limit so a machine whose operating time ends in between (say at 590 s) is
+            # still stopped, as it is with fewer than 200 on a side.
+            t_next = c.MAX_FIGHT_S
+        t = t_next
     return _outcome(n, c.MAX_FIGHT_S, events, record_events)
 
 
