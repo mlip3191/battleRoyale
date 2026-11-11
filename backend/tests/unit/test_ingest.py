@@ -86,6 +86,8 @@ def make_handler(
         if request.url.host in ("esapubs.org", "zenodo.org"):
             if datasets == "refused":
                 return httpx.Response(403)
+            if datasets == "new format":
+                return httpx.Response(200, content=b"name,weight\nEquus caballus,400\n")
             text = PANTHERIA_TEXT if request.url.host == "esapubs.org" else TRAITS_TEXT
             return httpx.Response(200, content=text.encode())
         if "page/html" in request.url.path:
@@ -280,6 +282,24 @@ async def test_a_fighter_with_no_trait_row_is_reported(
             tmp_path,
         )
     assert summary.unmatched == ["horse (no scientific name)"]
+
+
+async def test_a_dataset_with_no_usable_rows_is_flagged(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    handler = make_handler([], entity=HORSE, datasets="new format")
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        summary = await ingest_all(
+            database,
+            client,
+            CountingParser(),
+            MockEmbedder(),
+            [fighter("horse", "Horse")],
+            tmp_path,
+        )
+    assert sorted(f.split(":")[0] for f in summary.failures) == ["animaltraits", "pantheria"]
+    assert summary.facts == 2  # only Wikidata, and no saved file is left half-written
+    assert not list((tmp_path / "traits").glob("*.part"))
 
 
 async def test_a_dataset_that_fails_to_download_is_not_fatal(

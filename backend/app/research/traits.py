@@ -93,7 +93,9 @@ def _number(raw: str | None) -> float | None:
 async def _dataset_text(client: httpx.AsyncClient, url: str, path: Path, sleep: Sleep) -> str:
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(await fetch_file(client, url, sleep=sleep))
+        partial = path.with_suffix(path.suffix + ".part")  # a cut-off download never looks done
+        partial.write_bytes(await fetch_file(client, url, sleep=sleep))
+        partial.replace(path)
     return path.read_bytes().decode("utf-8", errors="replace")
 
 
@@ -119,6 +121,11 @@ async def load_trait_tables(
             logger.warning("Could not load %s: %s", source, error)
             failures.append(f"{source}: {error}")
             continue
-        tables.by_source[source] = read(text)
+        table = read(text)
+        if not table:  # a changed file format would otherwise look like "no matches"
+            logger.warning("%s had no usable rows; its file may have changed format.", source)
+            failures.append(f"{source}: no usable rows in {filename}")
+            continue
+        tables.by_source[source] = table
         tables.licenses[source] = license_name
     return tables, failures
