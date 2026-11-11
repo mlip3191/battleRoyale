@@ -96,10 +96,10 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 
 ### MS-1 walking skeleton (due Sat Nov 14), started Nov 10, final on Nov 14
 
-- **What works (Nov 10):**
-  - **Built:** the engine (F02–F06, F08 and the tournament bracket; F07, the benchmark runner, is still a draft, and swarm mode above 200 per side is known to be off until #106), the live-tested intake parser (A02), the knowledge base with retrieval and reranking (G02, G03), 7 hand-verified seed sheets (G05), and the app shell, intake page and results page on fixtures (D02–D04).
-  - **Still to land for MS-1:** the A05 stub path (#36, no PR yet) and the intake API that connects the UI to it (D08, draft #158). Both are planned for wave 3, so MS-1 on Nov 14 is at risk.
-  - **In review, not needed for MS-1:** the D05 battle stage (#121, #123) and the A04 safety gate (#152).
+- **What works (Nov 10, evening):**
+  - **Built:** the engine (F02–F06, F08 and the tournament bracket; F07, the benchmark runner, is still a draft, and swarm mode above 200 per side is known to be off until #106), the live-tested intake parser with its follow-up fixes (A02, #147), the first part of the A04 safety gate (#152), the knowledge base with retrieval and reranking (G02, G03), 7 hand-verified seed sheets (G05), the app shell, intake page and results page on fixtures (D02–D04), and the Phaser battle stage with replay controls (D05, #121, #123).
+  - **Still to land for MS-1:** the A05 stub path (#36, no PR yet) and the intake API that connects the UI to it (D08, draft #158; the safety gate it was waiting on is now merged). Both are planned for wave 3, so MS-1 on Nov 14 is at risk.
+  - **In review, not needed for MS-1:** the rest of A04, the Wikidata name check (drafts #156, #161, #164, #165).
 - **What changed from the plan:**
   - **D-41:** the chat model extracts stats; port 9010 only answers decisions.
   - **D-42/D-44:** venom is modeled and resolved after the fight (build in draft #107).
@@ -107,5 +107,7 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
   - **D-46:** plain-slug fighter IDs, two dataset licenses, derived machine values.
   - **D-47:** seed-sheet labeling rules.
   - **D-48:** the repo is public, after GitHub Actions stopped on the private repo for billing.
+  - **D-49:** the PM or the backup may merge a teammate's approved PR after an @mention.
+  - **D-50:** swarm mode is to be chosen by how much work a fight is, not by head count (decision in review in #184; build in #183, after #106).
   - **The board:** the "PR linked → In review" automation was turned on (#172).
 - **Screenshot:** _(add on Nov 14: the matchup → verdict flow on mocks, saved in `docs/media/`)_
