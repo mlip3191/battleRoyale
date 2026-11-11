@@ -8,6 +8,7 @@ from app.models.matchup import IntakeResult
 from app.providers.base import ChatLLM
 
 ARTICLES = {"a", "an", "the"}
+AND_WORD = re.compile(r"\band\b", re.I)
 START_OVER = (
     "Sorry, we still couldn't set up that matchup. Please start again and name two fighters, "
     'like "a grizzly bear vs a gray wolf".'
@@ -23,6 +24,8 @@ def merge_answer(original: str, answer: str) -> str:
         return answer  # the answer is a whole matchup, e.g. a suggested "a vs b" option
     if len(typed_sides(original)) < 2:
         return f"{original} vs {answer}"  # the opponent was missing
+    if AND_WORD.search(answer):
+        return f"{original} ({answer})"  # "grizzly bear and wolf" names both sides; don't splice
     *lead, last = answer.split(" ")
     lead = lead[1:] if lead and lead[0].lower() in ARTICLES else lead
     # "bear vs wolf" + "grizzly bear" -> "grizzly bear vs wolf" (also matches "bears").

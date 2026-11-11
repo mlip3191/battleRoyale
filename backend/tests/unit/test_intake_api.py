@@ -14,6 +14,7 @@ from app.api.intake import EXPIRED_MESSAGE, get_chat, get_db
 from app.config import Settings
 from app.db.connection import connect
 from app.db.intake_pending import (
+    MAX_ORIGINAL_CHARS,
     MAX_QUESTION_CHARS,
     PENDING_TTL_SECONDS,
     PendingQuestion,
@@ -188,14 +189,14 @@ def test_text_over_2000_characters_gets_422(client: TestClient, chat: ScriptedCh
     assert response.status_code == 422 and chat.texts == []
 
 
-def test_saving_purges_expired_questions_and_caps_the_question(db_path: Path) -> None:
+def test_saving_purges_expired_questions_and_caps_the_question_and_text(db_path: Path) -> None:
     connection = connect(db_path)
     apply_migrations(connection)
     now = time.time()
     old = save_pending(
         connection, PendingQuestion("a", "Q?", []), now=now - PENDING_TTL_SECONDS - 1
     )
-    long_question = PendingQuestion("bear vs wolf", "Which? " * 200, ["grizzly bear"])
+    long_question = PendingQuestion("bear vs wolf " * 200, "Which? " * 200, ["grizzly bear"])
     fresh = save_pending(connection, long_question, now=now)
     count = connection.execute("SELECT COUNT(*) FROM intake_pending").fetchone()[0]
     taken = take_pending(connection, fresh, now=now)
@@ -203,6 +204,7 @@ def test_saving_purges_expired_questions_and_caps_the_question(db_path: Path) ->
     assert count == 1 and old != fresh  # the expired row went when the new one was saved
     assert len(fresh) == len("p-") + 32  # a full uuid, not a shortened one
     assert taken is not None and len(taken.question) == MAX_QUESTION_CHARS
+    assert len(taken.original_text) == MAX_ORIGINAL_CHARS  # the parser reads 500 at most
 
 
 def test_both_routes_are_in_openapi(client: TestClient) -> None:
@@ -224,6 +226,9 @@ def test_both_routes_are_in_openapi(client: TestClient) -> None:
         ("bear vs wolf", "the big one", "bear vs wolf (the big one)"),
         ("bear vs bear", "grizzly bear", "bear vs bear (grizzly bear)"),
         ("bear vs wolf", "  ", "bear vs wolf"),
+        ("a bear vs a wolf", "grizzly bear and wolf", "a bear vs a wolf (grizzly bear and wolf)"),
+        ("a bear vs a wolf", "Grizzly AND gray wolf", "a bear vs a wolf (Grizzly AND gray wolf)"),
+        ("a bear vs a wolf", "a sandy bear", "a sandy bear vs a wolf"),
     ],
 )
 def test_merge_answer(original: str, answer: str, merged: str) -> None:

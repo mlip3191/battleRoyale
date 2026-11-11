@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 PENDING_TTL_SECONDS = 30 * 60
 MAX_QUESTION_CHARS = 500
+MAX_ORIGINAL_CHARS = 500  # the parser refuses longer text, so nothing past this is ever read
 
 
 @dataclass(frozen=True)
@@ -38,7 +39,7 @@ def save_pending(
         "VALUES (?, ?, ?, ?, ?)",
         (
             pending_id,
-            pending.original_text,
+            pending.original_text[:MAX_ORIGINAL_CHARS],
             pending.question[:MAX_QUESTION_CHARS],
             json.dumps(pending.options),
             now,
