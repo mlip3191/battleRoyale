@@ -62,6 +62,28 @@ describe("sprite cap and badges", () => {
     }
   });
 
+  test("a sprite is never taller than its row, so fighters in a column don't overlap", () => {
+    for (let count = 1; count <= MAX_SPRITES_PER_SIDE; count++) {
+      const { slots, size } = layoutSide(0, "a", count, null);
+      expect(size).toBeGreaterThan(0);
+      // The first column holds up to 10 fighters, top to bottom.
+      const column = slots.slice(0, 10);
+      for (let row = 1; row < column.length; row++) {
+        expect(column[row].y - column[row - 1].y).toBeGreaterThanOrEqual(size);
+      }
+    }
+  });
+
+  test("sprite sizes: big for a lone fighter, capped by row height for a column", () => {
+    const sizeFor = (count: number) => layoutSide(1, "b", count, null).size;
+    expect(sizeFor(1)).toBe(140);
+    expect(sizeFor(3)).toBe(100);
+    expect(sizeFor(6)).toBe(49); // 64 would overlap: six rows are 53 px apart
+    expect(sizeFor(10)).toBe(28);
+    expect(sizeFor(50)).toBe(28);
+    expect(sizeFor(1000)).toBe(28);
+  });
+
   test("visible sprites shrink with the crowd but never vanish while someone stands", () => {
     expect(visibleSlots(1000, 1000, 50)).toBe(50);
     expect(visibleSlots(500, 1000, 50)).toBe(25);

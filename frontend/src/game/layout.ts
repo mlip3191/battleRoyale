@@ -145,7 +145,9 @@ export function layoutSide(
   spriteUrl: string | null,
 ): SideLayout {
   const slots = Math.max(1, Math.min(count, MAX_SPRITES_PER_SIDE));
-  const size = spriteSize(slots);
+  // Never taller than a row, so a column of fighters doesn't overlap.
+  const rowGap = Math.floor((FLOOR_BOTTOM - FLOOR_TOP) / Math.min(slots, ROWS));
+  const size = Math.min(spriteSize(slots), rowGap - 4);
   return {
     side,
     name,
