@@ -504,6 +504,56 @@ def _spread_hits(
     return kills, n - kills, (sum(hp_values) / len(hp_values)) if hp_values else full_hp
 
 
+def _spread_tracked(
+    hits: int,
+    dmg: float,
+    n: int,
+    hurt: tuple[list[float], list[float]],
+    full_hp: float,
+    g: int,
+    rng: random.Random,
+) -> tuple[int, int, tuple[list[float], list[float]]]:
+    """Like `_spread_hits`, but remembers each wounded defender's hit points between steps.
+
+    `hurt` is (fronts, reserve): the defenders being fought right now, and wounded defenders
+    nobody is fighting at the moment; everyone else is at full health. As in the one-by-one
+    engine, attackers stay on their target until it falls, so the fronts persist from step to
+    step: a front that has taken damage keeps taking it. Only when the number of fronts changes
+    do defenders move between the fronts and the reserve (never healing on the way). Each hit
+    picks one of the `g` fronts at random. Returns (kills, n_left, (fronts, reserve)).
+    """
+    g = max(1, min(g, n))
+    fronts, reserve = list(hurt[0]), list(hurt[1])
+    if len(fronts) > g:  # fewer attackers: a random subset keeps its targets
+        rng.shuffle(fronts)
+        reserve += fronts[g:]
+        fronts = fronts[:g]
+    fresh = n - len(fronts) - len(reserve)  # defenders still at full health
+    while len(fronts) < g:
+        if reserve and (fresh <= 0 or rng.random() < len(reserve) / (len(reserve) + fresh)):
+            fronts.append(reserve.pop(rng.randrange(len(reserve))))
+        else:
+            fronts.append(full_hp)
+            fresh -= 1
+    kills = 0
+    # Attackers stay on their targets, so each front gets a steady share of the hits: an equal
+    # split, with the remainder going to random fronts (no fresh random draw per front per step).
+    share, extra = divmod(hits, g)
+    lucky = set(rng.sample(range(g), extra)) if extra else set()
+    survivors: list[float] = []  # fronts that took no kill
+    killers: list[float] = []  # fronts that killed and started on a new fighter
+    for i in range(g):
+        mine = share + (1 if i in lucky else 0)
+        k, _, f = _apply_hits(mine, dmg, n, fronts[i], full_hp)
+        kills += k
+        (killers if k else survivors).append(f)
+    kills = min(n, kills)
+    n_left = n - kills
+    # A front that killed continues on a fresh fighter only if one is still waiting.
+    waiting = n_left - len(reserve) - len(survivors)
+    return kills, n_left, (survivors + killers[: max(0, waiting)], reserve)
+
+
 def _run_swarm(
     sides: list[Template],
     rng: random.Random,
@@ -514,7 +564,7 @@ def _run_swarm(
 ) -> RunOutcome:
     """Aggregated fight for big groups: each side is one bin of identical fighters."""
     n = [sides[0].count, sides[1].count]
-    front = [sides[0].max_hp, sides[1].max_hp]
+    hurt: list[tuple[list[float], list[float]]] = [([], []), ([], [])]  # (fronts, reserve)
     hit_p = [hit_chance(sides[0], sides[1]), hit_chance(sides[1], sides[0])]
     dmg = [damage_per_hit(sides[0], sides[1]), damage_per_hit(sides[1], sides[0])]
     spike = [damage_per_hit(sides[s], sides[1 - s]) if sides[s].spiky else 0.0 for s in (0, 1)]
@@ -522,7 +572,6 @@ def _run_swarm(
     bonus = [group_bonus(sides[0]), group_bonus(sides[1])]
     start_hp = [sides[s].max_hp * sides[s].count for s in (0, 1)]
     retreating: int | None = None
-    fronts = [1, 1]
     t = _tick_up(min(starts))
 
     while t <= c.MAX_FIGHT_S:
@@ -530,7 +579,10 @@ def _run_swarm(
         for s in (0, 1):
             if sides[s].regen_per_s > 0 and n[s] > 0:
                 heal_hp = sides[s].regen_per_s * sides[s].max_hp * dt
-                front[s] = min(sides[s].max_hp, front[s] + heal_hp)
+                hurt[s] = (
+                    [min(sides[s].max_hp, h + heal_hp) for h in hurt[s][0]],
+                    [min(sides[s].max_hp, h + heal_hp) for h in hurt[s][1]],
+                )
         # Machines stop in order of their operating time, and the first to stop loses, as in the
         # one-by-one engine (both stopping in the same step is not a mutual wipe-out).
         stop_order = sorted((0, 1), key=lambda x: sides[x].endurance_s)
@@ -585,9 +637,8 @@ def _run_swarm(
                     )
                 )
             g = n[foe] if me.ranged else min(n[foe], engaged)
-            fronts[foe] = max(1, min(g, n[foe]))
-            kills, n[foe], front[foe] = _spread_hits(
-                hits, dmg[s], n[foe], front[foe], sides[foe].max_hp, g, rng
+            kills, n[foe], hurt[foe] = _spread_tracked(
+                hits, dmg[s], n[foe], hurt[foe], sides[foe].max_hp, g, rng
             )
             if kills:
                 if record_events:
@@ -600,8 +651,10 @@ def _run_swarm(
                             text_hint="go down" if kills > 1 else "goes down",
                         )
                     )
-            g_eff = min(fronts[foe], n[foe])
-            remaining = (n[foe] - g_eff) * sides[foe].max_hp + g_eff * front[foe] if n[foe] else 0.0
+            wounded = hurt[foe][0] + hurt[foe][1]
+            remaining = (
+                (n[foe] - len(wounded)) * sides[foe].max_hp + sum(wounded) if n[foe] else 0.0
+            )
             if (
                 retreating is None
                 and n[foe] > 0
@@ -643,8 +696,8 @@ def _run_swarm(
                             text_hint="spines jab back",
                         )
                     )
-                back, n[s], front[s] = _spread_hits(
-                    hits, spike[foe], n[s], front[s], sides[s].max_hp, engaged, rng
+                back, n[s], hurt[s] = _spread_tracked(
+                    hits, spike[foe], n[s], hurt[s], sides[s].max_hp, engaged, rng
                 )
                 if back:
                     if record_events:
