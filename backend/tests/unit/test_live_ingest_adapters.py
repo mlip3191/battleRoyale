@@ -11,6 +11,7 @@ from app.providers import base
 from app.providers.live.doc_parser import (
     MAX_TOKENS,
     PIECE_CHARS,
+    PROMPT_PATH,
     LiveDocParser,
     clean_reply,
     split_pieces,
@@ -194,7 +195,29 @@ async def test_parser_skips_the_endpoint_for_plain_text() -> None:
 
 def test_a_full_piece_and_its_reply_fit_the_models_context() -> None:
     # Measured live on Wikipedia HTML: about 2.8 characters per token, so 2.5 is a safe bound.
-    assert PIECE_CHARS / 2.5 + MAX_TOKENS <= MODEL_CONTEXT_TOKENS
+    prompt_chars = len(PROMPT_PATH.read_text(encoding="utf-8"))
+    template_tokens = 50  # chat-template overhead around the message
+    needed = (PIECE_CHARS + prompt_chars) / 2.5 + template_tokens + MAX_TOKENS
+    assert needed <= MODEL_CONTEXT_TOKENS
+
+
+def test_a_fraction_is_not_turned_into_an_exponent() -> None:
+    text = strip_markup("<p>21.2<sup>1</sup>⁄<sub>4</sub> hands, 10<sup>6</sup> kg</p>")
+    assert "21.2 1⁄" in text and "^1" not in text and "10^6" in text
+    assert "^" not in clean_reply("21.2<sup>1</sup>⁄<sub>4</sub> hands")
+
+
+def test_attributes_holding_a_closing_bracket_do_not_leak_into_the_text() -> None:
+    html = """<p><span data-mw='{"wt":"[[Page|1758]] > x"}'>Linnaeus</span></p>"""
+    assert strip_markup(html) == "<p>Linnaeus</p>"
+
+
+def test_an_echoed_footnote_is_dropped_from_a_reply() -> None:
+    assert clean_reply("500 kg<sup>[1]</sup>") == "500 kg"
+
+
+def test_split_pieces_prefers_a_space_when_there_are_no_tags() -> None:
+    assert split_pieces("alpha 12345 beta", limit=9) == ["alpha ", "12345 ", "beta"]
 
 
 def test_strip_markup_drops_footnote_marks_and_link_tags() -> None:

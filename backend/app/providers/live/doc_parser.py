@@ -29,7 +29,12 @@ FOOTNOTES = re.compile(
     re.DOTALL | re.IGNORECASE,
 )
 SUPERSCRIPT = re.compile(r"<sup\b[^>]*>(.*?)</sup>", re.DOTALL | re.IGNORECASE)
-TAG_ATTRIBUTES = re.compile(r"<(/?[a-zA-Z][a-zA-Z0-9]*)\b[^>]*>")
+# The top of a fraction (21.2<sup>1</sup>⁄<sub>4</sub>) stays plain text, not an exponent.
+FRACTION_TOP = re.compile(
+    r"<sup\b[^>]*>((?:(?!</sup>).)*)</sup>(?=\s*⁄)", re.DOTALL | re.IGNORECASE
+)
+# Quote-aware, because Wikipedia's data-mw attributes hold JSON with > inside the quotes.
+TAG_ATTRIBUTES = re.compile(r"""<(/?[a-zA-Z][a-zA-Z0-9]*)\b(?:[^>"']|"[^"]*"|'[^']*')*>""")
 INLINE_TAGS = re.compile(r"</?(a|span|abbr)>", re.IGNORECASE)
 INLINE_REPLY_TAGS = re.compile(r"</?(a|span|abbr|b|i|em|strong|u|small|sub)\s*>", re.IGNORECASE)
 ANY_TAG = re.compile(r"</?[a-zA-Z][a-zA-Z0-9]*\s*/?>")
@@ -43,20 +48,22 @@ class CutOffReply(ProviderError):
 # Remove what holds no article text, and write exponents as ^ so 10<sup>6</sup> can't become 106.
 def strip_markup(html: str) -> str:
     text = FOOTNOTES.sub("", DROPPED_BLOCKS.sub("", html))
-    return INLINE_TAGS.sub("", TAG_ATTRIBUTES.sub(r"<\1>", SUPERSCRIPT.sub(r"^\1", text)))
+    marked = SUPERSCRIPT.sub(r"^\1", FRACTION_TOP.sub(r" \1", text))
+    return INLINE_TAGS.sub("", TAG_ATTRIBUTES.sub(r"<\1>", marked))
 
 
 # The model often echoes some HTML: inline tags vanish so numbers stay whole, others become spaces.
 def clean_reply(text: str) -> str:
-    joined = INLINE_REPLY_TAGS.sub("", SUPERSCRIPT.sub(r"^\1", text))
+    marked = SUPERSCRIPT.sub(r"^\1", FRACTION_TOP.sub(r" \1", FOOTNOTES.sub("", text)))
+    joined = INLINE_REPLY_TAGS.sub("", marked)
     return html_text.unescape(ANY_TAG.sub(" ", joined)).replace("\xa0", " ").strip()
 
 
-# Split text into pieces of at most limit characters, ending on a tag where possible.
+# Split text into pieces of at most limit characters, ending on a tag or space where possible.
 def split_pieces(text: str, limit: int = PIECE_CHARS) -> list[str]:
     pieces: list[str] = []
     while len(text) > limit:
-        cut = text.rfind(">", 0, limit) + 1 or limit
+        cut = text.rfind(">", 0, limit) + 1 or text.rfind(" ", 0, limit) + 1 or limit
         pieces.append(text[:cut])
         text = text[cut:]
     return [*pieces, text] if text else pieces
