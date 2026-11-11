@@ -11,6 +11,7 @@ import random
 import pytest
 
 from app.simulation import constants as c
+from app.simulation import engine
 from app.simulation.engine import _spread_tracked, run
 from tests.property.sim_helpers import load_sheet, make_sheet, matchup_of
 
@@ -125,3 +126,32 @@ def test_the_bookkeeping_always_adds_up(seed):
         n = n_left
         if n == 0:
             break
+
+
+def test_the_hits_are_all_applied_however_the_fronts_are_grouped():
+    """Fronts with the same hit points are handled together; no hit may be lost or doubled."""
+    for seed in range(30):
+        rng = random.Random(seed)
+        g, hits = rng.randint(2, 40), rng.randint(0, 300)
+        full, dmg = 1000.0, 1.0  # nobody can die, so every hit is a point of damage on a front
+        state = ([], [])
+        _, _, (fronts, reserve) = _spread_tracked(hits, dmg, 500, state, full, g, rng)
+        assert len(fronts) == g and reserve == []
+        assert round(sum(full - hp for hp in fronts)) == hits  # exactly the hits that were dealt
+        share, extra = divmod(hits, g)
+        assert sorted(full - hp for hp in fronts) == [share] * (g - extra) + [share + 1] * extra
+
+
+def test_identical_fronts_are_processed_as_one_group(monkeypatch):
+    """The speedup: 400 fronts at the same hit points cost two hit calculations, not 400."""
+    calls = []
+    real = engine._apply_hits
+
+    def counting(*args):
+        calls.append(args)
+        return real(*args)
+
+    monkeypatch.setattr(engine, "_apply_hits", counting)
+    rng = random.Random(0)
+    _spread_tracked(1000, 1.0, 5000, ([], []), 100.0, 400, rng)  # 2.5 hits each: 400 fronts
+    assert len(calls) <= 2
