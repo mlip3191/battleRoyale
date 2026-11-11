@@ -15,7 +15,8 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-USER_AGENT = "battle-royale-course-project/0.1"
+# Wikimedia refuses clients that don't say who they are, so this names the project and its repo.
+USER_AGENT = "BattleRoyaleCourseProject/0.1 (https://github.com/mlip3191/battleRoyale)"
 WIKIPEDIA_HTML = "https://en.wikipedia.org/api/rest_v1/page/html/{title}"
 WIKIPEDIA_PAGE = "https://en.wikipedia.org/wiki/{title}"
 WIKIPEDIA_REVISION = "https://en.wikipedia.org/w/index.php?title={title}&oldid={revision}"
