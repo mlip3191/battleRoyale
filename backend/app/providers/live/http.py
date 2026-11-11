@@ -1,4 +1,4 @@
-"""Shared HTTP helper for live adapters: timeout, 2 retries with backoff, latency-only logging."""
+"""Shared HTTP helper for live adapters: timeout, retries with backoff, latency-only logging."""
 
 import asyncio
 import logging
@@ -9,7 +9,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-RETRIES = 2
+RETRIES = 2  # default; a caller can pass fewer (intake uses Settings.intake_retries)
 BACKOFF_S = 0.5
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 
@@ -28,9 +28,10 @@ async def post_json(
     payload: dict[str, Any],
     timeout_s: float,
     client: httpx.AsyncClient | None = None,
+    retries: int = RETRIES,
 ) -> Any:
     return await _request_json(
-        "POST", provider, base_url, path, api_key, payload, timeout_s, client
+        "POST", provider, base_url, path, api_key, payload, timeout_s, client, retries
     )
 
 
@@ -43,8 +44,11 @@ async def get_json(
     api_key: str,
     timeout_s: float,
     client: httpx.AsyncClient | None = None,
+    retries: int = RETRIES,
 ) -> Any:
-    return await _request_json("GET", provider, base_url, path, api_key, None, timeout_s, client)
+    return await _request_json(
+        "GET", provider, base_url, path, api_key, None, timeout_s, client, retries
+    )
 
 
 # Send one request and return the parsed reply, retrying transient failures.
@@ -57,12 +61,13 @@ async def _request_json(
     payload: dict[str, Any] | None,
     timeout_s: float,
     client: httpx.AsyncClient | None,
+    retries: int = RETRIES,
 ) -> Any:
     headers = {"Authorization": f"Bearer {api_key}"}
     owned = client is None
     client = client or httpx.AsyncClient(timeout=timeout_s)
     try:
-        for attempt in range(RETRIES + 1):
+        for attempt in range(retries + 1):
             started = time.perf_counter()
             try:
                 response = await client.request(
@@ -80,7 +85,7 @@ async def _request_json(
                 problem = f"HTTP {response.status_code}"
                 if response.status_code not in RETRY_STATUSES:
                     break
-            if attempt < RETRIES:
+            if attempt < retries:
                 await asyncio.sleep(BACKOFF_S * 2**attempt)
         raise ProviderError(f"Live '{provider}' call to {path} failed: {problem}.")
     finally:

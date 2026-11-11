@@ -31,7 +31,7 @@ from app.intake.schema import Clarification, ParsedFighter, ParsedMatchup
 from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.models.terrain import Terrain
 from app.providers.base import ChatLLM, ChatMessage
-from app.providers.registry import get_provider
+from app.providers.registry import get_intake_chat
 from app.safety import (
     SafetyUnavailable,
     SafetyVerdict,
@@ -330,7 +330,7 @@ async def parse_and_classify(
 # input; raises IntakeUnavailable when the chat provider or the safety classifier is down (an
 # outage, not the user's wording; safety fails closed). Safety (A04): code rules run on the text
 # before any model call, the classifier runs alongside the parse call, and an ok reading is
-# checked again side by side. safety_chat defaults to the chat provider.
+# checked again side by side. safety_chat defaults to the intake chat (short timeout, #169).
 # ask=False is for the answer to a question (D08): a still-vague fighter is accepted with a note.
 async def parse_matchup(
     text: str,
@@ -347,9 +347,9 @@ async def parse_matchup(
     rules = check_text_rules(text)
     if not rules.allowed:
         return blocked_result(rules)
-    safety_chat = safety_chat or get_provider("chat")
+    safety_chat = safety_chat or get_intake_chat()
     try:
-        parsed, verdict = await parse_and_classify(text, chat or get_provider("chat"), safety_chat)
+        parsed, verdict = await parse_and_classify(text, chat or get_intake_chat(), safety_chat)
         if not verdict.allowed:
             return blocked_result(verdict)
         result = read_matchup(text, parsed, ask=ask)

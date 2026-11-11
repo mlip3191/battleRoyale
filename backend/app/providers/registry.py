@@ -129,3 +129,18 @@ def get_provider(name: ProviderName, settings: Settings | None = None) -> object
             f"No live '{name}' adapter yet; use PROVIDER_MODE=mock until its task builds one."
         )
     return factory(service_config(name, settings), settings)
+
+
+# The chat model for intake: the same provider, with intake's shorter timeout and fewer retries.
+def get_intake_chat(settings: Settings | None = None) -> ChatLLM:
+    settings = settings or get_settings()
+    if settings.provider_mode == "mock":
+        return mock.MockChatLLM()
+    from app.providers.live.chat import LiveChatLLM
+
+    return LiveChatLLM(
+        service_config("chat", settings),
+        settings,
+        timeout_s=settings.intake_timeout_s,
+        retries=settings.intake_retries,
+    )
