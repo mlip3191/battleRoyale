@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Providers
     provider_mode: Literal["mock", "live"] = "mock"
     provider_timeout_s: float = 30.0
+    # Intake's chat calls (parse and safety check) wait less and retry less, under the 25 s route
+    # deadline (#169; Adam's live timings: median 6.9 s, max 19.4 s).
+    intake_timeout_s: float = 15.0
+    intake_retries: int = 1
 
     # Course endpoints (URLs hold hosts, so they never appear in repr or logs)
     course_api_key: SecretStr = SecretStr("")

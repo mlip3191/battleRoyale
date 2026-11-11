@@ -26,10 +26,12 @@ from app.db.intake_pending import (
 )
 from app.db.migrate import apply_migrations
 from app.intake.answer import START_OVER, merge_answer
-from app.intake.parser import COMMON_KIND_NOTE, INPUT_END, INPUT_START
+from app.intake.parser import COMMON_KIND_NOTE, INPUT_END, INPUT_START, parse_matchup
 from app.main import create_app
 from app.providers.base import ChatMessage
+from app.providers.live.chat import LiveChatLLM
 from app.providers.live.http import ProviderError
+from app.providers.mock.text import MockChatLLM
 
 
 def side(raw: str, entity: str) -> dict[str, Any]:
@@ -316,3 +318,34 @@ def test_a_restored_question_keeps_its_id_and_age(db_path: Path) -> None:
     later = take_pending(connection, pending_id, now=now + 10)  # past the original 30 minutes
     connection.close()
     assert later is None
+
+
+# #169: in live mode both routes read matchups with intake's chat (15 s per call, one retry).
+def test_the_routes_use_the_short_timeout_chat(monkeypatch: pytest.MonkeyPatch) -> None:
+    live = Settings(
+        _env_file=None,
+        provider_mode="live",
+        course_api_key="decoy-key-0000",
+        chat_llm_url="http://decoy-host.invalid:9001",
+        chat_llm_model="decoy/chat-model",
+    )
+    monkeypatch.setattr("app.providers.registry.get_settings", lambda: live)
+    chat = get_chat()
+    assert isinstance(chat, LiveChatLLM)
+    assert (chat.timeout_s, chat.retries) == (15.0, 1)
+
+
+# #169: the safety check inside intake uses the same short-timeout chat, not the shared 30 s one.
+async def test_the_safety_check_in_intake_uses_the_intake_chat(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    asked: list[int] = []
+
+    def intake_chat() -> MockChatLLM:
+        asked.append(1)
+        return MockChatLLM()
+
+    monkeypatch.setattr("app.intake.parser.get_intake_chat", intake_chat)
+    text = "a grizzly bear vs 6 gray wolves in a forest"
+    result = await parse_matchup(text, chat=MockChatLLM())
+    assert result.status == "ok" and asked == [1]
