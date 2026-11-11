@@ -101,7 +101,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 ```
 Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → build + tests
 → PR (template, "Closes #n") → required: CI ×4 + Secret scan + Critical files · advisory: QA bot
-→ teammate review (review-prs skill: draft → send → separate approve) → author merges → Done
+→ teammate review (review-prs skill: draft → send → separate approve) → author merges (or PM/backup, D-49) → Done
 ```
 
 ## 7. Review of the proposal and setup guide: gaps filled

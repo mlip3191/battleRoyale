@@ -54,7 +54,7 @@ Personal-account repos give every collaborator the same Write role, which matche
 
 ## Step 2: Branch Protection and Pull Request Workflow
 
-No one pushes directly to main. Every change goes through a feature branch and a pull request. Any teammate can review and approve; once approved, the author merges it into main.
+No one pushes directly to main. Every change goes through a feature branch and a pull request. Any teammate can review and approve; once approved, the author merges it into main (or the PM, or Gunnar as backup, after @mentioning you: D-49).
 
 ### GitHub settings (PM does this once)
 
@@ -96,7 +96,9 @@ Also set up:
 
 6.  Claude pushes the branch and opens a pull request linked to the issue ("Closes \#\<number\>").
 
-7.  Any teammate reviews and either requests changes or approves. Once approved, the author merges the pull request into main.
+7.  Any teammate reviews and either requests changes or approves. Once approved, the author merges the pull request into main (or the PM, or Gunnar as backup, after @mentioning you: D-49).
+
+    **When someone else merges your PR:** you'll get an @mention on the PR saying why (usually to unblock other work). Run `git switch main && git pull`, and start your next branch from the updated `main`. If you still had changes for that PR, put them in a new PR.
 
 ### Review and merge rules
 
@@ -332,7 +334,7 @@ People on two computers repeat the installs on both, log in to GitHub and Claude
 
 4.  Run /review on a teammate's PR to practice reviewing (the guide: [reviewing.md](reviewing.md)).
 
-5.  Once your PR is approved, merge it.
+5.  Once your PR is approved, merge it. (The PM, or Gunnar as backup, may merge it for you after an @mention, to unblock others: D-49.)
 
 ### 5. Cheat sheet
 

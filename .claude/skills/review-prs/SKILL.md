@@ -43,7 +43,7 @@ Then show **one table per group**, in this order, skipping empty groups:
 1. **Needs your review** — not authored by `ME`, not draft, and either review requested from `ME` or fewer than 1 approval.
 2. **Needs the PM** — touches critical files and the author isn't the PM; only the PM's approval (or the backup approver Gunnar's, when Mike is unavailable) satisfies the critical-files check (anyone can still review and comment).
 3. **Blocked** — a failing required check or merge conflicts (`mergeable` = CONFLICTING). Reviewing is still useful; approving isn't yet. (A QA bot verdict alone never makes a PR blocked.)
-4. **Approved, ready to merge** — the author should merge it.
+4. **Approved, ready to merge** — the author should merge it; the PM or the backup approver may merge it after @mentioning the author (D-49).
 5. **Your PRs** — authored by `ME`. You can't review these; show their status so you know what to fix.
 6. **Drafts** — not ready; review only if the author asked.
 
