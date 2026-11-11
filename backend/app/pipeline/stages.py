@@ -2,9 +2,8 @@
 
 Each function calls the owning module's public function where it exists. Where the module is
 not built yet, a stub returns the matching contract fixture and the result says `stub=True`, so
-the orchestrator marks the stage detail "stub". Stubs remaining: challenger (A05 part 3),
-scripts (A06), audio and music (A07), images (A08). Research reads the seed sheets until G04's
-get_stat_sheet lands.
+the orchestrator marks the stage detail "stub". Stubs remaining: scripts (A06), audio and music
+(A07), images (A08). Research reads the seed sheets until G04's get_stat_sheet lands.
 """
 
 import asyncio
@@ -17,6 +16,7 @@ from app.models.media import Asset
 from app.models.narration import Script
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
 from app.models.stats import StatSheet
+from app.pipeline import challenger as next_challenger
 from app.research.seed_fighters import find_seed_sheet
 from app.simulation import engine, fair
 
@@ -49,6 +49,8 @@ class Stubbed[T]:
 
     value: T
     stub: bool = False
+    fallback: bool = False
+    """The stage used its fallback path: it ends "fallback"; a value that isn't None is saved."""
 
 
 @dataclass(frozen=True)
@@ -126,10 +128,12 @@ async def summary(matchup: Matchup, found: Research, result: SimulationResult) -
     )
 
 
-# Step 8 (stub until A05 part 3): the next challenger.
-async def challenger(found: Research, result: SimulationResult) -> Stubbed[ChallengerSuggestion]:
-    fixture = _fixture("challenger-suggestion.json")
-    return Stubbed(ChallengerSuggestion.model_validate(fixture), stub=True)
+# Step 8: the next challenger from seed and cached fighters only (pipeline/challenger.py).
+async def challenger(
+    matchup: Matchup, found: Research, result: SimulationResult
+) -> Stubbed[ChallengerSuggestion | None]:
+    pick, fallback = await next_challenger.suggest(found.sheets, result, matchup.terrain)
+    return Stubbed(pick, fallback=fallback)
 
 
 # Steps 4–5 (stub until A06): intro, play-by-play, and outro scripts.

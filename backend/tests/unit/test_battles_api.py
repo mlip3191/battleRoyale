@@ -96,13 +96,17 @@ def test_battle_reaches_done_with_a_verdict(client: TestClient) -> None:
     assert record.result.runs == SIM_RUNS
     assert record.result.outcome in {"win_0", "win_1", "draw", "no_contest"}
     assert all(stage.status == "done" for stage in record.stages)
+    # The real challenger stage ran on the mock decision model and saved its pick.
+    assert record.challenger is not None
+    assert record.challenger.entity not in {s.display_name for s in record.stat_sheets}
+    assert 0.0 <= record.challenger.tested_win_prob <= 1.0
 
 
 def test_every_stub_stage_says_stub(client: TestClient) -> None:
     record = wait_until_finished(client, start(client, matchup_body("horse", "duck")))
     for name in STAGES:
         detail = final_stage(record, name).detail
-        if name in ("research", "simulate", "summary"):
+        if name in ("research", "simulate", "summary", "challenger"):
             assert detail != STUB, name
         else:
             assert detail == STUB, name
