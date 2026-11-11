@@ -3,10 +3,11 @@
 From the repo root:
   uv run --directory backend python scripts/showcase_dry_run.py
 
-The real sheets come from tasks G05 and G09. Until then, every fighter except the grizzly and the
-gray wolf (contract fixtures with real citations) is a stand-in with round numbers from common
-reference values. They are NOT sourced and must never reach the UI: this script only checks that
-the engine gives sensible, explainable results for the demo, and shows what to tune if not.
+The real sheets come from tasks G05 and G09. So far only the grizzly and the gray wolf are real
+(the hand-verified seed sheets in data/seed/fighters/); every other fighter is a stand-in with
+round numbers from common reference values. They are NOT sourced and must never reach the UI:
+this script only checks that the engine gives sensible, explainable results for the demo, and
+shows what to tune if not.
 """
 
 import argparse
@@ -27,19 +28,23 @@ from app.simulation.fair import fair_fight  # noqa: E402
 from app.simulation.summary import Summary, summary  # noqa: E402
 
 # Deliberately borrowed from the test helpers (this works because the backend folder is on the
-# path); moving `sim_helpers` breaks it. Note that `make_sheet` copies the gray wolf's citations
-# onto invented numbers, so the stand-in sheets built here must never be shown, saved, or used as
-# fixtures.
-from tests.property.sim_helpers import FIXTURES, make_dragon, make_sheet, matchup_of  # noqa: E402
+# path); moving `sim_helpers` breaks it. `make_sheet` labels every overridden stat as an unsourced
+# stand-in (#86), but the numbers are still invented, so the stand-in sheets built here must never
+# be shown, saved, or used as fixtures.
+from tests.property.sim_helpers import make_dragon, make_sheet, matchup_of  # noqa: E402
+
+SEED_FIGHTERS = Path(__file__).resolve().parents[2] / "data" / "seed" / "fighters"
 
 BANNER = (
-    "STAND-IN SHEETS: only the grizzly and the gray wolf are real; every other fighter is an "
-    "unsourced stand-in.\nEngine check only, not demo results."
+    "STAND-IN SHEETS: only the grizzly and the gray wolf are real (G05 seed sheets); every other "
+    "fighter is an unsourced stand-in.\nEngine check only, not demo results."
 )
 
 
-def fixture(name: str) -> StatSheet:
-    return StatSheet.model_validate(json.loads((FIXTURES / name).read_text("utf-8")))
+def seed_sheet(name: str) -> StatSheet:
+    """A real, hand-verified seed sheet (G05) by file name, e.g. "gray-wolf"."""
+    path = SEED_FIGHTERS / f"{name}.json"
+    return StatSheet.model_validate(json.loads(path.read_text("utf-8")))
 
 
 def stand_ins() -> dict[str, StatSheet]:
@@ -51,33 +56,39 @@ def stand_ins() -> dict[str, StatSheet]:
             group_tactics_0_1=0.4,
         ),
         "duck": make_sheet(
-            "duck", mass_kg=1.2, size_m=0.55, top_speed_mps=5, attack_force_n=20,
+            "duck",
+            category="bird", mass_kg=1.2, size_m=0.55, top_speed_mps=5, attack_force_n=20,
             attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=0.3,
             group_tactics_0_1=0.3,
         ),
         "honey badger": make_sheet(
-            "honey badger", mass_kg=10, size_m=0.75, top_speed_mps=8, attack_force_n=300,
+            "honey badger",
+            category="mammal", mass_kg=10, size_m=0.75, top_speed_mps=8, attack_force_n=300,
             attacks_per_s=2.0, reach_m=0.3, armor_0_1=0.5, aggression_0_1=1.0,
             group_tactics_0_1=0.0,
         ),
         "king cobra": make_sheet(
-            "king cobra", mass_kg=6, size_m=3.5, top_speed_mps=5, attack_force_n=100,
+            "king cobra",
+            category="reptile", mass_kg=6, size_m=3.5, top_speed_mps=5, attack_force_n=100,
             attacks_per_s=1.5, reach_m=1.2, armor_0_1=0.1, aggression_0_1=0.5,
             group_tactics_0_1=0.0,
         ),
         "legionary": make_sheet(
-            "legionary", mass_kg=75, size_m=1.75, top_speed_mps=6, attack_force_n=1500,
-            attacks_per_s=1.0, reach_m=0.9, armor_0_1=0.5, aggression_0_1=0.7,
+            "legionary",
+            category="human_archetype", mass_kg=75, size_m=1.75, top_speed_mps=6,
+            attack_force_n=1500, attacks_per_s=1.0, reach_m=0.9, armor_0_1=0.5, aggression_0_1=0.7,
             group_tactics_0_1=0.9, weapons=["weapon_melee"],
         ),
         "gorilla": make_sheet(
-            "gorilla", mass_kg=160, size_m=1.7, top_speed_mps=7, attack_force_n=6000,
+            "gorilla",
+            category="mammal", mass_kg=160, size_m=1.7, top_speed_mps=7, attack_force_n=6000,
             attacks_per_s=1.0, reach_m=1.0, armor_0_1=0.15, aggression_0_1=0.5,
             group_tactics_0_1=0.2,
         ),
         "dragon": make_dragon(["flight", "breath_weapon"], name="dragon"),
         "tank": make_sheet(
-            "tank", body="machine", weapons=["ramming"], mass_kg=60000, size_m=10.0,
+            "tank",
+            category="vehicle", body="machine", weapons=["ramming"], mass_kg=60000, size_m=10.0,
             top_speed_mps=18, attack_force_n=0, attacks_per_s=0.1, reach_m=1.0,
             armor_0_1=0.9, endurance_s=7200, aggression_0_1=0.0, group_tactics_0_1=0.0,
         ),
@@ -94,7 +105,7 @@ class Battle:
 
 def battles() -> list[Battle]:
     s = stand_ins()
-    bear, wolf = fixture("stat-sheet.json"), fixture("stat-sheet-gray-wolf.json")
+    bear, wolf = seed_sheet("grizzly-bear"), seed_sheet("gray-wolf")
     return [
         Battle(
             "100 duck-sized horses vs 1 horse-sized duck",

@@ -18,6 +18,9 @@ export type SimulationResult = components["schemas"]["SimulationResult"];
 export type FairFight = components["schemas"]["FairFight"];
 export type ChallengerSuggestion =
   components["schemas"]["ChallengerSuggestion"];
+export type FightEvent = components["schemas"]["FightEvent"];
+export type Asset = components["schemas"]["Asset"];
+export type FighterRequest = components["schemas"]["FighterRequest"];
 
 // An HTTP error from our backend; `status` lets callers tell "not found" from a passing hiccup.
 export class ApiError extends Error {
