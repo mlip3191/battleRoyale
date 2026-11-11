@@ -58,6 +58,7 @@ NUMBER_WORDS = (
 )  # "hundreds", "thousands" count too
 
 REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it another way?"
+COMMON_KIND_NOTE = "Still not sure which kind you meant, so we'll use the most common one."
 EXAMPLE_OPTIONS = [
     "a grizzly bear vs 6 gray wolves",
     "a dozen house cats vs a golden retriever",
@@ -330,8 +331,13 @@ async def parse_and_classify(
 # outage, not the user's wording; safety fails closed). Safety (A04): code rules run on the text
 # before any model call, the classifier runs alongside the parse call, and an ok reading is
 # checked again side by side. safety_chat defaults to the chat provider.
+# ask=False is for the answer to a question (D08): a still-vague fighter is accepted with a note.
 async def parse_matchup(
-    text: str, *, chat: ChatLLM | None = None, safety_chat: ChatLLM | None = None
+    text: str,
+    *,
+    chat: ChatLLM | None = None,
+    safety_chat: ChatLLM | None = None,
+    ask: bool = True,
 ) -> IntakeResult:
     text = text.strip()
     if not text:
@@ -346,7 +352,7 @@ async def parse_matchup(
         parsed, verdict = await parse_and_classify(text, chat or get_provider("chat"), safety_chat)
         if not verdict.allowed:
             return blocked_result(verdict)
-        result = read_matchup(text, parsed)
+        result = read_matchup(text, parsed, ask=ask)
         if result.matchup is not None:
             sides = await check_parsed_sides(result.matchup.fighters, text, chat=safety_chat)
             if not sides.allowed:
@@ -357,7 +363,8 @@ async def parse_matchup(
 
 
 # The model's reading -> IntakeResult (ok or clarify), with every number decided by code.
-def read_matchup(text: str, parsed: ParsedMatchup | None) -> IntakeResult:
+# ask=False accepts a still-vague fighter with a note instead of asking again.
+def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -> IntakeResult:
     if parsed is None:
         return clarify(REPHRASE_QUESTION, EXAMPLE_OPTIONS)
     if len(parsed.fighters) > 2:
@@ -366,7 +373,7 @@ def read_matchup(text: str, parsed: ParsedMatchup | None) -> IntakeResult:
         problem = read_count(fighter.raw).problem
         if problem:
             return not_whole(text, fighter, problem)
-    if parsed.needs_clarification or len(parsed.fighters) < 2:
+    if len(parsed.fighters) < 2 or (ask and parsed.needs_clarification):
         return vague(parsed)
     max_count = get_settings().sim_max_count
     built = [build_fighter(f, max_count) for f in parsed.fighters]
@@ -374,6 +381,8 @@ def read_matchup(text: str, parsed: ParsedMatchup | None) -> IntakeResult:
     notes = _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
     if terrain_note:
         notes.append(terrain_note)
+    if parsed.needs_clarification:
+        notes.append(COMMON_KIND_NOTE)
     fighters = [request for request, _ in built]
     matchup = Matchup(
         fighters=fighters, terrain=terrain, raw_text=text, assumptions=list(dict.fromkeys(notes))
