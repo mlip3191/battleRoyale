@@ -41,6 +41,8 @@ def print_summary(summary: IngestSummary, seconds: float) -> None:
     print(f"Finished in {seconds:.0f} s.")
     for failure in summary.failures:
         print(f"Failed: {failure}")
+    for fighter in summary.unmatched:
+        print(f"No trait match: {fighter}")
 
 
 # Run the ingest with the configured providers.
