@@ -57,6 +57,9 @@ def test_a_crowd_of_weak_fighters_is_not_overrated(monkeypatch, cats, wolves):
         "cat", mass_kg=4.5, size_m=0.46, top_speed_mps=13, attack_force_n=200,
         attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=1.0,
     )  # fmt: skip
+    # 300 runs per engine have noise of about 0.08, so this passes thanks to the fixed seeds, not
+    # statistical power: it catches the old +0.06 to +0.22 error, but a version bump (which
+    # reshuffles every seed) may need the run count raised.
     one, swarm = both(monkeypatch, [cat, wolf()], cats, wolves)
     assert abs(swarm.win_prob[0] - one.win_prob[0]) <= 0.05
 
