@@ -547,11 +547,15 @@ def _spread_tracked(
         k, _, f = _apply_hits(mine, dmg, n, fronts[i], full_hp)
         kills += k
         (killers if k else survivors).append(f)
-    kills = min(n, kills)
+    kills = min(kills, n - len(survivors))  # fronts that took no kill are still alive
     n_left = n - kills
     # A front that killed continues on a fresh fighter only if one is still waiting.
     waiting = n_left - len(reserve) - len(survivors)
-    return kills, n_left, (survivors + killers[: max(0, waiting)], reserve)
+    kept = survivors + killers[: max(0, waiting)]
+    # Fighters killed beyond the fresh ones came out of the wounded waiting in the reserve.
+    for _ in range(max(0, len(kept) + len(reserve) - n_left)):
+        reserve.pop(rng.randrange(len(reserve)))
+    return kills, n_left, (kept, reserve)
 
 
 def _run_swarm(

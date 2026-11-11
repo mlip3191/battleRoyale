@@ -6,10 +6,12 @@ catch the old problems: crowds overrated by 0.06-0.22, fights twice as long, a t
 survivors. The full table is `scripts/validate_swarm.py`.
 """
 
+import random
+
 import pytest
 
 from app.simulation import constants as c
-from app.simulation.engine import run
+from app.simulation.engine import _spread_tracked, run
 from tests.property.sim_helpers import load_sheet, make_sheet, matchup_of
 
 ALWAYS_INDIVIDUAL = 10**9
@@ -48,17 +50,75 @@ def test_matched_groups_last_as_long_and_leave_as_many_alive(monkeypatch):
 
 @pytest.mark.parametrize(("cats", "wolves"), [(50, 10), (100, 20)])
 def test_a_crowd_of_weak_fighters_is_not_overrated(monkeypatch, cats, wolves):
-    """Swarm mode used to overrate the crowd by +0.06 to +0.22. It now underrates it a little
-    (about -0.04 to -0.06, see docs/swarm-validation.md), so this pins both sides of that."""
+    """Swarm mode used to overrate the crowd by +0.06 to +0.22, then underrated it by 0.04 to 0.06
+    (it forgot which defenders were already wounded). It now agrees within noise (see
+    docs/swarm-validation.md), so this pins both directions."""
     cat = make_sheet(
         "cat", mass_kg=4.5, size_m=0.46, top_speed_mps=13, attack_force_n=200,
         attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=1.0,
     )  # fmt: skip
     one, swarm = both(monkeypatch, [cat, wolf()], cats, wolves)
-    assert abs(swarm.win_prob[0] - one.win_prob[0]) <= 0.08
+    assert abs(swarm.win_prob[0] - one.win_prob[0]) <= 0.05
 
 
 def test_a_pack_around_one_big_target_gives_the_same_win_share(monkeypatch):
     bear = load_sheet("stat-sheet.json")
     one, swarm = both(monkeypatch, [wolf(), bear], 12, 1)
     assert abs(swarm.win_prob[0] - one.win_prob[0]) <= 0.08  # was -0.09 (damage carried over)
+
+
+# --- _spread_tracked: wounded defenders are remembered between steps (#76) ------------------------
+
+
+def test_a_wounded_front_keeps_taking_damage_step_after_step():
+    rng = random.Random(1)
+    state = ([], [])
+    for _ in range(3):  # one front, one hit of 10 per step on a 100-hit-point fighter
+        kills, n_left, state = _spread_tracked(1, 10.0, 5, state, 100.0, 1, rng)
+        assert kills == 0 and n_left == 5
+    assert state == ([70.0], [])
+
+
+def test_attackers_share_the_hits_evenly_across_the_fronts():
+    rng = random.Random(2)
+    kills, _, (fronts, reserve) = _spread_tracked(12, 10.0, 20, ([], []), 100.0, 4, rng)
+    assert kills == 0 and reserve == [] and fronts == [70.0] * 4  # 3 hits each, no luck involved
+
+
+def test_the_leftover_hits_go_to_random_fronts():
+    rng = random.Random(3)
+    _, _, (fronts, _) = _spread_tracked(6, 10.0, 20, ([], []), 100.0, 4, rng)
+    assert sorted(fronts) == [80.0, 80.0, 90.0, 90.0]  # 1 hit each, plus 2 extra on two fronts
+
+
+def test_wounds_never_heal_when_fewer_fronts_are_fought():
+    rng = random.Random(4)
+    _, _, state = _spread_tracked(4, 10.0, 20, ([], []), 100.0, 4, rng)  # 4 fronts, 90 hp each
+    _, _, (fronts, reserve) = _spread_tracked(0, 10.0, 20, state, 100.0, 2, rng)
+    assert len(fronts) + len(reserve) == 4 and sorted(fronts + reserve) == [90.0] * 4
+    assert len(fronts) == 2  # only two are being fought now; the other two wait, still wounded
+
+
+def test_a_front_that_kills_moves_on_to_a_fresh_fighter_only_if_one_is_waiting():
+    rng = random.Random(5)
+    kills, n_left, (fronts, _) = _spread_tracked(10, 10.0, 2, ([], []), 10.0, 2, rng)
+    assert kills == 2 and n_left == 0 and fronts == []  # nobody left to move on to
+    kills, n_left, (fronts, _) = _spread_tracked(2, 10.0, 3, ([], []), 10.0, 2, rng)
+    assert kills == 2 and n_left == 1 and len(fronts) == 1  # one waiting fighter, one front left
+
+
+@pytest.mark.parametrize("seed", range(20))
+def test_the_bookkeeping_always_adds_up(seed):
+    rng = random.Random(seed)
+    n, full = rng.randint(2, 60), 100.0
+    state = ([], [])
+    for _ in range(25):
+        hits, g = rng.randint(0, 80), rng.randint(1, 30)
+        kills, n_left, state = _spread_tracked(hits, rng.uniform(5, 60), n, state, full, g, rng)
+        fronts, reserve = state
+        assert 0 <= kills <= n and n_left == n - kills
+        assert len(fronts) + len(reserve) <= n_left
+        assert all(0 < hp <= full for hp in fronts + reserve)
+        n = n_left
+        if n == 0:
+            break
