@@ -21,10 +21,195 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/intake": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Intake */
+        post: operations["start_intake_api_intake_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/intake/{pending_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer Intake */
+        post: operations["answer_intake_api_intake__pending_id__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * FighterRequest
+         * @description One side of the matchup, as understood from the user's words.
+         */
+        FighterRequest: {
+            /**
+             * Entity
+             * @description Normalized name of the fighter, e.g. "grizzly bear".
+             */
+            entity: string;
+            /**
+             * Count
+             * @description How many of them fight on this side (1 to 10,000).
+             * @default 1
+             */
+            count: number;
+            /**
+             * Variant
+             * @description Which kind, e.g. "adult male" or "polar"; empty when not specified.
+             * @default null
+             */
+            variant: string | null;
+            /**
+             * Size Reference
+             * @description Another entity this fighter is sized like ("horse-sized duck" -> "horse"). Only a name,
+             *     never a number: code computes the scale factor from both stat sheets' mass_kg.
+             * @default null
+             */
+            size_reference: string | null;
+            /**
+             * Raw
+             * @description The user's own words for this fighter.
+             */
+            raw: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * IntakeAnswer
+         * @description Body of POST /api/intake/{pending_id}/answer.
+         */
+        IntakeAnswer: {
+            /** Answer */
+            answer: string;
+        };
+        /**
+         * IntakeRequest
+         * @description Body of POST /api/intake.
+         */
+        IntakeRequest: {
+            /** Text */
+            text: string;
+        };
+        /**
+         * IntakeResult
+         * @description Intake's answer: a matchup, a clarifying question, or a block.
+         */
+        IntakeResult: {
+            /**
+             * Status
+             * @description ok = ready to research; clarify = ask the user first; blocked = refused.
+             * @enum {string}
+             */
+            status: "ok" | "clarify" | "blocked";
+            /**
+             * @description The parsed matchup when status is ok.
+             * @default null
+             */
+            matchup: components["schemas"]["Matchup"] | null;
+            /**
+             * Question
+             * @description The clarifying question when status is clarify.
+             * @default null
+             */
+            question: string | null;
+            /**
+             * Options
+             * @description Two to four suggested answers to the question.
+             * @default []
+             */
+            options: string[];
+            /**
+             * Pending Id
+             * @description Id to send back with the user's answer to a clarifying question.
+             * @default null
+             */
+            pending_id: string | null;
+            /**
+             * Blocked Reason
+             * @description Why the request was refused. deity = named gods or religious figures; weapon = modern
+             *     firearms, explosives, WMD; out_of_scope = abstract ideas, places, landforms,
+             *     celestial bodies.
+             * @default null
+             */
+            blocked_reason: ("real_person" | "minor" | "sexual" | "hate" | "self_harm" | "copyrighted_character" | "deity" | "weapon" | "out_of_scope" | "nonsense" | "other") | null;
+            /**
+             * Message
+             * @description Friendly text shown to the user.
+             * @default null
+             */
+            message: string | null;
+        };
+        /**
+         * Matchup
+         * @description A parsed battle request: exactly two sides on one terrain.
+         */
+        Matchup: {
+            /**
+             * Fighters
+             * @description The two sides (the MVP supports exactly two).
+             */
+            fighters: components["schemas"]["FighterRequest"][];
+            /**
+             * @description Where they fight; the arena when the user didn't say.
+             * @default arena
+             */
+            terrain: components["schemas"]["Terrain"];
+            /**
+             * Raw Text
+             * @description The user's full request, word for word.
+             */
+            raw_text: string;
+            /**
+             * Assumptions
+             * @description Choices intake made for the user, e.g. "Assumed adult male grizzly".
+             * @default []
+             */
+            assumptions: string[];
+        };
+        /**
+         * Terrain
+         * @description The battlefield; it changes who can reach whom and how fast they move.
+         * @enum {string}
+         */
+        Terrain: "arena" | "open_field" | "forest" | "water" | "shoreline" | "urban" | "mountain";
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
         /**
          * Ability
          * @description Special powers of mythical creatures; each has one documented engine effect.
@@ -274,95 +459,11 @@ export interface components {
             cached: boolean;
         };
         /**
-         * FighterRequest
-         * @description One side of the matchup, as understood from the user's words.
-         */
-        FighterRequest: {
-            /**
-             * Entity
-             * @description Normalized name of the fighter, e.g. "grizzly bear".
-             */
-            entity: string;
-            /**
-             * Count
-             * @description How many of them fight on this side (1 to 10,000).
-             * @default 1
-             */
-            count: number;
-            /**
-             * Variant
-             * @description Which kind, e.g. "adult male" or "polar"; empty when not specified.
-             * @default null
-             */
-            variant: string | null;
-            /**
-             * Size Reference
-             * @description Another entity this fighter is sized like ("horse-sized duck" -> "horse"). Only a name,
-             *     never a number: code computes the scale factor from both stat sheets' mass_kg.
-             * @default null
-             */
-            size_reference: string | null;
-            /**
-             * Raw
-             * @description The user's own words for this fighter.
-             */
-            raw: string;
-        };
-        /**
          * Habitat
          * @description Where the fighter can move.
          * @enum {string}
          */
         Habitat: "land" | "water" | "air" | "amphibious";
-        /**
-         * IntakeResult
-         * @description Intake's answer: a matchup, a clarifying question, or a block.
-         */
-        IntakeResult: {
-            /**
-             * Status
-             * @description ok = ready to research; clarify = ask the user first; blocked = refused.
-             * @enum {string}
-             */
-            status: "ok" | "clarify" | "blocked";
-            /**
-             * @description The parsed matchup when status is ok.
-             * @default null
-             */
-            matchup: components["schemas"]["Matchup"] | null;
-            /**
-             * Question
-             * @description The clarifying question when status is clarify.
-             * @default null
-             */
-            question: string | null;
-            /**
-             * Options
-             * @description Two to four suggested answers to the question.
-             * @default []
-             */
-            options: string[];
-            /**
-             * Pending Id
-             * @description Id to send back with the user's answer to a clarifying question.
-             * @default null
-             */
-            pending_id: string | null;
-            /**
-             * Blocked Reason
-             * @description Why the request was refused. deity = named gods or religious figures; weapon = modern
-             *     firearms, explosives, WMD; out_of_scope = abstract ideas, places, landforms,
-             *     celestial bodies.
-             * @default null
-             */
-            blocked_reason: ("real_person" | "minor" | "sexual" | "hate" | "self_harm" | "copyrighted_character" | "deity" | "weapon" | "out_of_scope" | "nonsense" | "other") | null;
-            /**
-             * Message
-             * @description Friendly text shown to the user.
-             * @default null
-             */
-            message: string | null;
-        };
         /**
          * LoreProfile
          * @description How a mythical creature is modeled on real animals, according to legend.
@@ -393,33 +494,6 @@ export interface components {
             heads: number | null;
             /** @description The sentence in the myth's article that justifies the analogs and abilities. */
             source: components["schemas"]["Source"];
-        };
-        /**
-         * Matchup
-         * @description A parsed battle request: exactly two sides on one terrain.
-         */
-        Matchup: {
-            /**
-             * Fighters
-             * @description The two sides (the MVP supports exactly two).
-             */
-            fighters: components["schemas"]["FighterRequest"][];
-            /**
-             * @description Where they fight; the arena when the user didn't say.
-             * @default arena
-             */
-            terrain: components["schemas"]["Terrain"];
-            /**
-             * Raw Text
-             * @description The user's full request, word for word.
-             */
-            raw_text: string;
-            /**
-             * Assumptions
-             * @description Choices intake made for the user, e.g. "Assumed adult male grizzly".
-             * @default []
-             */
-            assumptions: string[];
         };
         /**
          * Script
@@ -738,12 +812,6 @@ export interface components {
              */
             note: string | null;
         };
-        /**
-         * Terrain
-         * @description The battlefield; it changes who can reach whom and how fast they move.
-         * @enum {string}
-         */
-        Terrain: "arena" | "open_field" | "forest" | "water" | "shoreline" | "urban" | "mountain";
     };
     responses: never;
     parameters: never;
@@ -771,6 +839,74 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    start_intake_api_intake_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntakeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntakeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_intake_api_intake__pending_id__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pending_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntakeAnswer"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntakeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

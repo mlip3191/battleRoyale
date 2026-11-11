@@ -20,6 +20,8 @@ export type ChallengerSuggestion =
   components["schemas"]["ChallengerSuggestion"];
 export type FightEvent = components["schemas"]["FightEvent"];
 export type Asset = components["schemas"]["Asset"];
+export type Script = components["schemas"]["Script"];
+export type ScriptLine = components["schemas"]["ScriptLine"];
 export type FighterRequest = components["schemas"]["FighterRequest"];
 
 // An HTTP error from our backend; `status` lets callers tell "not found" from a passing hiccup.

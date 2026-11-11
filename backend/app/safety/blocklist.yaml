@@ -1,0 +1,299 @@
+# Safety code rules (A04): words and phrases that clearly name people the app never puts in the
+# ring. Read by backend/app/safety/rules.py. Only clear human cases live here; anything
+# ambiguous ("kid" is also a young goat, "a Persian" is also a cat) is left to the classifier.
+# Categories and patterns only: no slurs are spelled out, and none are needed.
+#
+# How a side is read: lowercase, hyphens become spaces, anything after "in", "on", "at", "with"
+# (and similar) is dropped, and the last word left is the side's head noun ("a baby elephant in
+# the snow" -> head "elephant").
+#
+#   anywhere:   a word or phrase that blocks wherever it appears ("toddler").
+#   head:       blocks only as the head noun, so "a baby" is blocked but "a baby elephant",
+#               "a German shepherd" and "a Bengal tiger" are not.
+#   with_people: blocks when the head noun is one of people_words and a word from head comes
+#               earlier in the side ("French people", "Japanese women").
+
+minor:
+  reason: minor
+  anywhere:
+    - toddler
+    - toddlers
+    - preschooler
+    - preschoolers
+    - kindergartner
+    - kindergartners
+    - kindergartener
+    - kindergarteners
+    - schoolchild
+    - schoolchildren
+    - schoolkid
+    - schoolkids
+    - schoolboy
+    - schoolboys
+    - schoolgirl
+    - schoolgirls
+    - grade schooler
+    - grade schoolers
+    - middle schooler
+    - middle schoolers
+    - high schooler
+    - high schoolers
+    - boy scout
+    - boy scouts
+    - girl scout
+    - girl scouts
+    - cub scout
+    - cub scouts
+  head:
+    - baby
+    - babies
+    - infant
+    - infants
+    - newborn
+    - newborns
+    - child
+    - children
+    - boy
+    - boys
+    - girl
+    - girls
+    - teen
+    - teens
+    - teenager
+    - teenagers
+    - tween
+    - tweens
+    - youngster
+    - youngsters
+    - minor
+    - minors
+    - kiddo
+    - kiddos
+  # "a 6-year-old" (head) is blocked; "a 6-year-old horse" is not. Ages from 18 up are fine.
+  max_age: 17
+
+group_of_people:
+  # The contract has no separate "group" reason; groups of people map to hate (ARCHITECTURE §11).
+  reason: hate
+  # Present-day nationalities, ethnic groups, and religions as nouns for people. Left out on
+  # purpose because they also name animals, things, or allowed archetypes: Persian, Siamese,
+  # Burmese, Himalayan, Maltese, Bengal, Afghan, Arabian, Arab, Dalmatian, Swede, Pole, Dane,
+  # Roman, Spartan, Viking, Mongol, Aztec, Trojan.
+  head:
+    - american
+    - americans
+    - canadian
+    - canadians
+    - mexican
+    - mexicans
+    - brazilian
+    - brazilians
+    - argentine
+    - argentines
+    - argentinian
+    - argentinians
+    - cuban
+    - cubans
+    - british
+    - brit
+    - brits
+    - english
+    - englishman
+    - englishmen
+    - scot
+    - scots
+    - scottish
+    - scotsman
+    - scotsmen
+    - welsh
+    - welshman
+    - irish
+    - irishman
+    - irishmen
+    - french
+    - frenchman
+    - frenchmen
+    - german
+    - germans
+    - dutch
+    - dutchman
+    - dutchmen
+    - belgian
+    - belgians
+    - swiss
+    - austrian
+    - austrians
+    - italian
+    - italians
+    - spanish
+    - spaniard
+    - spaniards
+    - portuguese
+    - greek
+    - greeks
+    - swedish
+    - norwegian
+    - norwegians
+    - danish
+    - finnish
+    - finn
+    - finns
+    - polish
+    - russian
+    - russians
+    - ukrainian
+    - ukrainians
+    - turkish
+    - turk
+    - turks
+    - iranian
+    - iranians
+    - iraqi
+    - iraqis
+    - israeli
+    - israelis
+    - palestinian
+    - palestinians
+    - egyptian
+    - egyptians
+    - nigerian
+    - nigerians
+    - kenyan
+    - kenyans
+    - ethiopian
+    - ethiopians
+    - indian
+    - indians
+    - pakistani
+    - pakistanis
+    - chinese
+    - japanese
+    - korean
+    - koreans
+    - vietnamese
+    - thai
+    - filipino
+    - filipinos
+    - indonesian
+    - indonesians
+    - australian
+    - australians
+    - african
+    - africans
+    - european
+    - europeans
+    - asian
+    - asians
+    - hispanic
+    - hispanics
+    - latino
+    - latinos
+    - latina
+    - latinas
+    - christian
+    - christians
+    - catholic
+    - catholics
+    - protestant
+    - protestants
+    - mormon
+    - mormons
+    - muslim
+    - muslims
+    - jew
+    - jews
+    - jewish
+    - hindu
+    - hindus
+    - buddhist
+    - buddhists
+    - sikh
+    - sikhs
+    - atheist
+    - atheists
+    - amish
+  people_words:
+    - people
+    - peoples
+    - person
+    - persons
+    - man
+    - men
+    - woman
+    - women
+    - folk
+    - folks
+    - citizen
+    - citizens
+    - family
+    - families
+    - tribe
+    - tribes
+    - population
+    - immigrant
+    - immigrants
+    - kid
+    - kids
+    - child
+    - children
+
+real_person:
+  reason: real_person
+  # The user or someone they know: "me vs a goose", "my brother vs a goose".
+  self_words:
+    - me
+    - myself
+    - i
+    - us
+    - ourselves
+  owners:
+    - my
+    - our
+    - your
+  relations:
+    - mom
+    - mum
+    - mother
+    - dad
+    - father
+    - parent
+    - brother
+    - sister
+    - sibling
+    - son
+    - daughter
+    - wife
+    - husband
+    - girlfriend
+    - boyfriend
+    - partner
+    - fiance
+    - fiancee
+    - aunt
+    - uncle
+    - cousin
+    - nephew
+    - niece
+    - grandma
+    - grandpa
+    - grandmother
+    - grandfather
+    - granny
+    - grandparent
+    - boss
+    - manager
+    - coworker
+    - colleague
+    - teacher
+    - professor
+    - classmate
+    - roommate
+    - neighbor
+    - neighbour
+    - friend
+    - bestie
+    - ex
+    - landlord
+    - coach
+    - doctor
+    - dentist
