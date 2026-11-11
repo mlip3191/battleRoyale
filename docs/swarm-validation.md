@@ -2,7 +2,7 @@
 
 Fights where either side has more than 200 individuals run in **swarm mode** (each side is one group; see [simulation-model.md](simulation-model.md)). Swarm mode exists for speed, but it is a different model from the one-by-one engine, so this page measures how far apart they are. The one-by-one engine is the reference.
 
-Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (about 10 s; `--scenario cats` for one group, `--runs` to change the 600 runs per engine). Each fight is simulated twice with the same sheets, once forced through each engine. The table has a **Noise (95%)** column (`1.96 x sqrt(2 p (1-p) / runs)`, with p the one-by-one win share) and marks gaps that are within it. The numbers below were re-run on `main` at engine version 7 and reproduce (the script is seeded); if the engine version changes, re-run the script and refresh the tables, since a new version reshuffles every run's random stream.
+Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (about 10 s; `--scenario cats` for one group, `--runs` to change the 600 runs per engine). Each fight is simulated twice with the same sheets, once forced through each engine. The table has a **Noise (95%)** column (`1.96 x sqrt(2 p (1-p) / runs)`, with p the one-by-one win share) and marks gaps that are within it. The numbers below were re-run on this branch (merged with `main`) at engine version 7 and reproduce (the script is seeded); if the engine version changes, re-run the script and refresh the tables, since a new version reshuffles every run's random stream.
 
 ## Results (600 runs each, after the #76 fixes and #84, engine version 7)
 
@@ -46,17 +46,17 @@ The conclusions held at these sizes before the fixes: matched, one-big-target an
 
 | Fight | One-by-one | Swarm | Gap | Noise (95%) |
 |---|---|---|---|---|
-| 250 v 250 wolves | 0.547 | 0.547 | +0.000 | 0.080 (within noise) |
+| 250 v 250 wolves | 0.547 | 0.543 | -0.003 | 0.080 (within noise) |
 | 300 cats v 60 wolves | 0.453 | 0.453 | +0.000 | 0.080 (within noise) |
 | 600 cats v 120 wolves | 0.530 | 0.530 | +0.000 | 0.080 (within noise) |
 | 400 archers v 200 wolves | 0.940 | 0.953 | +0.013 | 0.038 (within noise) |
 
-Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 for the two crowd fights.
+Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 for the two crowd fights. (These larger fights last 0.86 to 0.88x as long in swarm mode.) Timings are machine-dependent: 10,000 ants v 1 lion measured 0.6 s on one run and about 1.0 s on another.
 
 ## What this means for the app
 
 - **Win probabilities from swarm mode are trustworthy** to about ±0.02 for every kind of fight in the validation script, including a crowd of weak fighters against a few strong ones.
-- **Duration and survivor counts from swarm mode are now close** to the one-by-one engine's (durations 0.88 to 1.03x, survivors within a few percent), so a fight at 201 per side reads like the same fight at 199.
+- **Duration and survivor counts from swarm mode are now close** to the one-by-one engine's (durations 0.86 to 1.03x, survivors within a few percent), so a fight at 201 per side reads like the same fight at 199.
 - **Fair-fight search:** probes above 200 per side use swarm mode, and their answers are now as reliable as those below.
 - **F07 benchmark:** "count" cases above 200 per side are fine to include; still flag any swarm-mode matchup in the report.
 - **Lowering the threshold does not save time the way it used to.** Swarm mode is accurate at every size, but it is now much slower than the old smooth model (a 201 v 201 fight takes about 1.8 s per 1,000 runs instead of 0.14 s), so swarm mode costs about as much as a 150 v 150 fight one by one (2.4 s). The cost of a fight depends on how many fronts are fought and how long it lasts, not only on the head count (see the timings above and #91).
