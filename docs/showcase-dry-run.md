@@ -21,7 +21,7 @@ The five showcase battles (PRODUCT_SPEC §9) run through the engine before the r
 |---|---|---|---|
 | 100 duck-sized horses vs 1 horse-sized duck (open field) | Duck wins 100% (about 103 s) | Yes; the explanation now credits the scaling (finding 1, fixed) | 7.4 s |
 | Grizzly vs 6 wolves (forest) | Grizzly 53% / wolves 47%, about 18 s | Yes: a close, believable fight. Fair fight is 6 wolves | 1.4 s |
-| Honey badger vs king cobra | Badger wins 100% in about 3 s | Overconfident: the cobra can't hurt it (finding 2) | 1.1 s |
+| Honey badger vs king cobra | Badger wins 100% in about 3 s; the explainer credits its venom resistance | Yes: the cobra is venomous now, and the badger shrugs it off (finding 2) | 0.9 s |
 | Roman legionary vs gorilla (forest) | Gorilla 99.9% | Yes. A fair fight needs about 5 legionaries, a nice talking point | 0.6 s |
 | A dragon vs a main battle tank (open field) | Tank wins 100% (about 83 s) | Possible, but a foregone conclusion (finding 3) | 4.6 s |
 
@@ -31,9 +31,11 @@ The five showcase battles (PRODUCT_SPEC §9) run through the engine before the r
 The first run of this dry run said "Attack rate decided it: Duck (2 attacks per second) against Horse (0.5 attacks per second)." The real reason is the size scaling (a duck grown to 500 kg against horses shrunk to 1.2 kg). The deciding-factor check equalized the *sheet* stats but left the scaling in place, so size never showed up as a factor.
 - **Fix (merged in #69):** the check now also re-runs the fight without the scale factors. When that moves the result most, it reports size and quotes the sheets and the references. The battle now reads: "Size decided it: after scaling, Duck (1.2 kg normally, scaled to horse size) against 100 Horse (500 kg normally, scaled to duck size)." Every number is still an input.
 
-### 2. Venom is not modeled, so the cobra is toothless
-A sheet can list `venom`, but the engine has no venom mechanic (F08 covers bodies and legendary abilities, not venom). A real king cobra can kill; here a 100 N bite does almost nothing against a 10 kg badger with 0.5 armor, so the badger wins 100% and the log is only 11 events.
-- **Decided (D-42, recorded in PR #83; refined by D-44):** venom will be modeled, tracked in #81. The options considered were (a) a venom effect over time with assumption-labeled constants and a resistance note for the badger, (b) an effective attack force through the number rule's `assumption` path, and (c) a different matchup.
+### 2. Venom (modeled since #81, D-44)
+The first run of this dry run found that a sheet could list `venom` but the engine had no venom mechanic, so a king cobra's 100 N bite did almost nothing to a 10 kg badger and the badger won 100%. **Decided (D-42, refined by D-44):** model venom as a dose that works after the fight, with assumption-labeled constants and a resistance entry for the honey badger. That is now in the engine (#81).
+- With the stand-in cobra carrying `venom` and the badger using the `honey-badger` id, battle 3 is still a **100% badger win in about 3 s**, and the explainer now reads "Honey badger's venom resistance decided it: it shrugs off bites that would kill others."
+- Without the resistance entry (the same badger under another id), the badger wins 83% and the other 17% are draws, because the poisoned badger dies after the fight; the fight lasts about 23 s, and the explainer says "Size decided it", which does not mention venom (the sensitivity check ranks size higher).
+- Venom resolves 120 s after the last blow and only when a side is wiped out. Swarm mode (above 200 per side) ignores it.
 
 ### 3. The dragon can't touch a 60-tonne tank
 Hit points scale with mass (10 hp per kg), so the tank has 600,000. The dragon's breath is about 5,000 damage per hit.

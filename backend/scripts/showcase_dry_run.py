@@ -58,15 +58,15 @@ def stand_ins() -> dict[str, StatSheet]:
         ),
         "honey badger": make_sheet(
             "honey badger",
-            category="mammal", mass_kg=10, size_m=0.75, top_speed_mps=8, attack_force_n=300,
-            attacks_per_s=2.0, reach_m=0.3, armor_0_1=0.5, aggression_0_1=1.0,
-            group_tactics_0_1=0.0,
+            fighter_id="honey-badger", category="mammal", mass_kg=10, size_m=0.75,
+            top_speed_mps=8, attack_force_n=300, attacks_per_s=2.0, reach_m=0.3, armor_0_1=0.5,
+            aggression_0_1=1.0, group_tactics_0_1=0.0,
         ),
         "king cobra": make_sheet(
             "king cobra",
-            category="reptile", mass_kg=6, size_m=3.5, top_speed_mps=5, attack_force_n=100,
-            attacks_per_s=1.5, reach_m=1.2, armor_0_1=0.1, aggression_0_1=0.5,
-            group_tactics_0_1=0.0,
+            weapons=["venom", "teeth"], category="reptile", mass_kg=6, size_m=3.5,
+            top_speed_mps=5, attack_force_n=100, attacks_per_s=1.5, reach_m=1.2, armor_0_1=0.1,
+            aggression_0_1=0.5, group_tactics_0_1=0.0,
         ),
         "legionary": make_sheet(
             "legionary",

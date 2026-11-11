@@ -176,11 +176,11 @@ def venom_dose(attacker: Template, target: Template) -> float:
     """Share of a lethal dose one landed bite delivers (0 for a bite without venom).
 
     The same bite is a bigger dose for a smaller victim: it scales with (attacker mass / target
-    mass) ** 0.5, an assumption, and resistance cuts it.
+    mass) ** VENOM_SIZE_EXP, an assumption, and resistance cuts it.
     """
     if not attacker.venomous:
         return 0.0
-    size = (attacker.mass_kg / max(target.mass_kg, c.MIN_MASS_KG)) ** 0.5
+    size = (attacker.mass_kg / max(target.mass_kg, c.MIN_MASS_KG)) ** c.VENOM_SIZE_EXP
     return c.VENOM_BITE_SHARE * size * (1.0 - target.venom_resist)
 
 

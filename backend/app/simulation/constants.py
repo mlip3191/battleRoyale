@@ -126,6 +126,9 @@ DEFAULT_HEADS = 3
 # target, scaled by relative body size, and a fighter that carries a full dose (1.0) dies after
 # the fight (a side wiped out leaves a poisoned survivor to die, which can make it a draw).
 VENOM_BITE_SHARE = 0.65
+# A bite is a bigger dose for a smaller victim: it scales with (attacker mass / target mass) to
+# this power (an assumption; 0.5 means a bite's effect follows body length more than mass).
+VENOM_SIZE_EXP = 0.5
 # Delay between the last blow and the venom killing a poisoned survivor ("minutes", D-44).
 VENOM_ONSET_S = 120.0
 # Resistance to venom, from 0 (none) to 1 (immune), by base fighter id; anything not listed has
