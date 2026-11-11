@@ -11,6 +11,13 @@ export type StatSheet = components["schemas"]["StatSheet"];
 export type BattleCreated = components["schemas"]["BattleCreated"];
 export type ShowcaseBattle = components["schemas"]["ShowcaseBattle"];
 export type FighterMatch = components["schemas"]["FighterMatch"];
+export type StatValue = components["schemas"]["StatValue"];
+export type Source = components["schemas"]["Source"];
+export type LoreProfile = components["schemas"]["LoreProfile"];
+export type SimulationResult = components["schemas"]["SimulationResult"];
+export type FairFight = components["schemas"]["FairFight"];
+export type ChallengerSuggestion =
+  components["schemas"]["ChallengerSuggestion"];
 
 // An HTTP error from our backend; `status` lets callers tell "not found" from a passing hiccup.
 export class ApiError extends Error {

@@ -113,7 +113,7 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 - **Method (one-at-a-time sensitivity).** For each of the ten stats, plus "numbers" and "terrain", we make that one factor equal for both sides, re-run the first 200 fights with the **same random seed**, and measure how much the favorite's score moves. The score is its win share plus half its average share of fighters left standing (so a fight where the favorite wins 100% either way still shows which factor mattered most). The largest mover is the deciding factor. Using the same seed means a factor that does nothing changes nothing, instead of adding noise.
 - **How a factor is equalized.** A stat becomes the average of the two sides' values and ranges. "Numbers" sets both counts to the smaller one. "Terrain" removes the terrain multipliers for both. Factors that are already equal are skipped. Results are cached within a run.
 - **Explanation.** A code template, never a language model. It quotes values straight from the stat sheets and the matchup counts, rounded to three significant figures; it never computes new numbers (a test checks that every number in an explainer is an input). If the deciding factor is aggression, teamwork, or armor, it adds "This rests on an assumption: behavior and armor are judgments, not measurements." Special cases: a stalemate (most runs drew) and "too close to call" (no factor moved the score by 0.02).
-- **Cost.** About a dozen extra 200-run simulations: 0.3 s for a 1 v 1, about 1 s for a 6 v 1, and about 3 s extra for 10,000 ants v 1 lion. `run(..., explain=False)` skips this analysis; use it for quick probes such as the fair-fight search.
+- **Cost.** About a dozen extra 200-run simulations: 0.3 s for a 1 v 1, about 1 s for a 6 v 1, and about 3 s extra for 10,000 ants v 1 lion. `run(..., explain=False)` skips this analysis; use it for quick probes such as the fair-fight search. Showcase battle 1 (100 horses v 1 duck) takes about 2 s on a laptop with the analysis (about 3.2 s before the engine stopped building replay events nobody records; results are identical), inside the 3 s Simulate stage. CI runners are 2 to 3 times slower, so `test_simulation_explained_timing.py` guards the fix by counting the replay events built (over a million before, under 2,000 now) instead of asserting 3 s of wall-clock time.
 - **`summary()`** (`summary.py`) returns what the results page and the announcer need: win and draw percentages, average survivors, duration in seconds, the favorite (none for a draw, no contest, or an exact tie), and the deciding-factor text.
 
 ## Fair fight and next challenger (F06)
@@ -152,6 +152,17 @@ The 95% interval is a Wilson score interval on the share of runs won. Because ev
 ## Not modeled yet
 
 Fatigue for living fighters (`endurance_s` only stops machines). A `no_contest` reports `habitat` (cannot reach) or `attack_force_n` (cannot hurt) as its deciding factor.
+
+## Tournament bracket (#113)
+
+`run_tournament(stat_sheets, terrain=ARENA, runs=None, explain=True)` in `tournament.py` runs eight fighters through a single-elimination bracket: 4 matches, then 2, then the final.
+
+- **Seeding.** The order of the list is the seeding (first = top seed). Round 1 pairs seeds 1 v 8, 4 v 5, 2 v 7 and 3 v 6, so the top seeds cannot meet before the semifinals. The winners of matches 1 and 2 meet in one semifinal and the winners of 3 and 4 in the other.
+- **No new randomness.** Every match is an ordinary 1 v 1 `run(...)`, seeded from the two fighters, the terrain and `ENGINE_VERSION` as usual. The same eight sheets, terrain and run count always give the same bracket and champion. `Tournament.seed` is a fingerprint of the entrants, terrain and engine version.
+- **Who goes through.** The match verdict's winner. For a draw or a `no_contest`, the fighter with the higher win share goes through (`decided_by = "better_odds"`), and if that is level too, the higher seed (`"seed"`). Each match says which rule decided it.
+- **Errors.** Anything other than exactly eight fighters, or the same fighter twice, raises a `ValueError` with a plain message.
+- **Cost.** Seven 1 v 1 matches: about 1 s in total with the default 1,000 runs and the deciding-factor analysis. `explain=False` is faster, but its deciding factor is a placeholder.
+- **Not changed.** Single-battle results and `ENGINE_VERSION` are untouched. The API, narration and UI come later (#114 to #117).
 
 ## References
 

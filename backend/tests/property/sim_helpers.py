@@ -5,9 +5,10 @@ import json
 from pathlib import Path
 
 from app.models.matchup import FighterRequest, Matchup
-from app.models.stats import StatName, StatSheet
+from app.models.stats import ASSUMABLE_STATS, StatName, StatSheet
 from app.models.terrain import Terrain
 
+STAND_IN_NOTE = "stand-in value for tests (no source)"
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "contracts"
 
 
@@ -50,11 +51,17 @@ def make_sheet(
     body: str | None = None,
     weapons: list[str] | None = None,
     fighter_id: str | None = None,
+    category: str | None = None,
     **stats: float,
 ) -> StatSheet:
     """A stand-in fighter: the gray wolf with some stats replaced (range = value +/- spread).
 
-    Real sheets arrive with G05; these only exercise the engine.
+    Real sheets arrive with G05; these only exercise the engine. Every replaced stat is labeled
+    honestly (#86): no source, an estimate, low confidence, and a note saying it is a stand-in,
+    so a stand-in can never carry the wolf's real citation. A behavioral stat (aggression, group
+    tactics, armor) becomes an `assumption`; any other stat becomes a `category_default`, the
+    only estimate method the sheet rules allow for it. Stats you do not replace keep the wolf's
+    real source. `category` (default "mammal") and `body` say what kind of thing it is.
     """
     data = copy.deepcopy(load_sheet("stat-sheet-gray-wolf.json").model_dump(mode="json"))
     data["sheet_hash"] = name
@@ -65,6 +72,8 @@ def make_sheet(
         data["habitat"] = habitat
     if body:
         data["body"] = body
+    if category:
+        data["category"] = category
     if weapons:
         data["weapons"] = weapons
     for stat, value in stats.items():
@@ -72,6 +81,11 @@ def make_sheet(
         entry["value"] = float(value)
         entry["low"] = value * (1 - spread)
         entry["high"] = value * (1 + spread)
+        entry["source"] = None
+        entry["is_estimate"] = True
+        entry["confidence"] = "low"
+        entry["method"] = "assumption" if StatName(stat) in ASSUMABLE_STATS else "category_default"
+        entry["note"] = STAND_IN_NOTE
     return StatSheet.model_validate(data)
 
 
