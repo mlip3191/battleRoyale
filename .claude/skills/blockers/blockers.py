@@ -41,9 +41,16 @@ TIERS = {
 
 
 def gh(*args: str):
-    """Run a read-only gh command and parse its JSON output."""
-    res = subprocess.run(["gh", *args], capture_output=True, text=True)
+    """Run a read-only gh command and parse its JSON output (UTF-8, so Windows works too)."""
+    try:
+        res = subprocess.run(
+            ["gh", *args], capture_output=True, text=True, encoding="utf-8", errors="replace"
+        )
+    except FileNotFoundError:
+        sys.exit("GitHub CLI (gh) isn't installed. Install it, then run `gh auth login`.")
     if res.returncode != 0:
+        if "auth login" in res.stderr:
+            sys.exit("You're not logged in to GitHub CLI. Run `gh auth login`, then try again.")
         sys.exit(f"gh {' '.join(args[:3])} failed: {res.stderr.strip()}")
     return json.loads(res.stdout) if res.stdout.strip() else None
 
@@ -54,7 +61,7 @@ def load_team() -> tuple[dict[str, str], str | None]:
     path = Path("docs/DECISIONS.md")
     if path.exists():
         for name, login in re.findall(
-            r"^\|\s*([^|`]+?)\s*\|\s*`([\w-]+)`\s*\|", path.read_text(), re.M
+            r"^\|\s*([^|`]+?)\s*\|\s*`([\w-]+)`\s*\|", path.read_text(encoding="utf-8"), re.M
         ):
             names[login] = name.split()[0]
             if "(PM)" in name:
@@ -75,6 +82,11 @@ def closes(body: str) -> set[int]:
     return {int(n) for n in re.findall(r"(?i)(?:closes|fixes|resolves)\s+#(\d+)", body or "")}
 
 
+def tier_for(base: int, downstream: list[int]) -> int:
+    """P0 when someone is waiting on this item, otherwise its base tier."""
+    return 0 if downstream else base
+
+
 def label_value(labels: list[str], prefix: str) -> str | None:
     """Value of a 'prefix: value' label, e.g. wave: 4 -> '4'."""
     for lab in labels:
@@ -84,6 +96,8 @@ def label_value(labels: list[str], prefix: str) -> str | None:
 
 
 def main() -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # emoji headings on a Windows (cp1252) console
     as_json = "--json" in sys.argv
     today = dt.date.today()
     names, pm = load_team()
@@ -187,7 +201,6 @@ def main() -> None:
         downstream = descendants(n) + sorted(
             {w for c in closes(p["body"]) for w in waiting_on.get(c, set())}
         )
-        tier_if = lambda base, blocks=downstream: 0 if blocks else base  # noqa: E731
         checks = p.get("statusCheckRollup") or []
         failing = [
             c["name"]
@@ -200,7 +213,7 @@ def main() -> None:
 
         if real_fail:
             add(
-                tier_if(1),
+                tier_for(1, downstream),
                 author,
                 f"PR #{n}",
                 f"fix failing checks ({', '.join(sorted(set(real_fail)))})",
@@ -208,7 +221,14 @@ def main() -> None:
                 downstream,
             )
         if p.get("mergeable") == "CONFLICTING":
-            add(tier_if(1), author, f"PR #{n}", "resolve merge conflicts", title, downstream)
+            add(
+                tier_for(1, downstream),
+                author,
+                f"PR #{n}",
+                "resolve merge conflicts",
+                title,
+                downstream,
+            )
         if CRITICAL_CHECK in failing and author != pm:
             mine = [
                 r
@@ -220,7 +240,7 @@ def main() -> None:
                 if mine and mine[-1]["state"] == "APPROVED"
                 else "review + approve (touches critical files)"
             )
-            add(tier_if(1), pm, f"PR #{n}", act, title, downstream)
+            add(tier_for(1, downstream), pm, f"PR #{n}", act, title, downstream)
 
         # Changes requested: whoever holds the ball.
         latest = {}
@@ -234,7 +254,7 @@ def main() -> None:
                 continue
             if last_push > r["submittedAt"]:
                 add(
-                    tier_if(1),
+                    tier_for(1, downstream),
                     reviewer,
                     f"PR #{n}",
                     "re-review (fixes pushed after your changes request; "
@@ -244,7 +264,7 @@ def main() -> None:
                 )
             else:
                 add(
-                    tier_if(1),
+                    tier_for(1, downstream),
                     author,
                     f"PR #{n}",
                     f"address {names.get(reviewer, reviewer)}'s changes request",
@@ -265,16 +285,16 @@ def main() -> None:
                 for r in requested:
                     kind = "review again (re-requested)" if r in reviewed else "first review"
                     add(
-                        tier_if(1),
+                        tier_for(1, downstream),
                         r,
                         f"PR #{n}",
                         f"{kind} (by {names.get(author, author)})",
                         title,
                         downstream,
                     )
-            elif not requested:
+            else:
                 add(
-                    tier_if(1),
+                    tier_for(1, downstream),
                     author,
                     f"PR #{n}",
                     "request a reviewer (no review yet)",
@@ -293,7 +313,7 @@ def main() -> None:
                 )
             else:
                 add(
-                    tier_if(2),
+                    tier_for(2, downstream),
                     author,
                     f"PR #{n}",
                     "approved and green: merge it"

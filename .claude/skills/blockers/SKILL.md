@@ -15,6 +15,8 @@ From the repo root:
 python3 -I .claude/skills/blockers/blockers.py
 ```
 
+On Windows, if `python3` opens the Microsoft Store or isn't found, use `py -3 -I .claude/skills/blockers/blockers.py` (or `python -I …`).
+
 If you're not inside the repo, or `gh` isn't logged in, say so in plain English and stop. Add `--json` to get raw data if you need to reason about it. Add `--as <github-login>` to preview what a teammate sees (the PM uses this to check someone's list). It's a preview only: it doesn't change who `gh` is logged in as, and it still only reads.
 
 The script sorts items like this:
