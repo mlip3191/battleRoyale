@@ -191,5 +191,5 @@ def make_dragon(
     for stat, value in stats.items():
         entry = data["stats"][stat]
         entry["value"], entry["low"], entry["high"] = value, value * 0.8, value * 1.2
-        label_as_stand_in(entry, stat, mythical=True)
+        label_as_stand_in(entry, stat, mythical=True)  # the dragon fixture is a mythical sheet
     return StatSheet.model_validate(data)
