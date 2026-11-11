@@ -98,8 +98,8 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 
 - **What works (Nov 10, evening):**
   - **Built:** the engine (F02–F06, F08 and the tournament bracket; F07, the benchmark runner, is still a draft, and swarm mode above 200 per side is known to be off until #106), the live-tested intake parser with its follow-up fixes (A02, #147), the first part of the A04 safety gate (#152), the knowledge base with retrieval and reranking (G02, G03), 7 hand-verified seed sheets (G05), the app shell, intake page and results page on fixtures (D02–D04), and the Phaser battle stage with replay controls (D05, #121, #123).
-  - **Still to land for MS-1:** the A05 stub path (#36, no PR yet) and the intake API that connects the UI to it (D08, draft #158; the safety gate it was waiting on is now merged). Both are planned for wave 3, so MS-1 on Nov 14 is at risk.
-  - **In review, not needed for MS-1:** the rest of A04, the Wikidata name check (drafts #156, #161, #164, #165).
+  - **Still to land for MS-1:** the A05 stub path (#36, no PR yet) and the intake API that connects the UI to it (D08, draft #158; it was waiting on #147 and the first part of the safety gate, #152, and both are now merged). Both are planned for wave 3, so MS-1 on Nov 14 is at risk.
+  - **In review, not needed for MS-1:** the rest of A04, the Wikidata name check and the safety test cases (stacked drafts #156, #161, #164, #165 and #185; #185 closes #27).
 - **What changed from the plan:**
   - **D-41:** the chat model extracts stats; port 9010 only answers decisions.
   - **D-42/D-44:** venom is modeled and resolved after the fight (build in draft #107).
