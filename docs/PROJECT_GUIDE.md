@@ -52,7 +52,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 3. **Fill `.env`:** in your own terminal, run `npm run env:setup`; it asks for the course host and key (hidden) and writes `.env` (D-03). Never paste them anywhere else — they're public URLs, so anyone holding them could use the course's quota.
 4. **GitHub Pro is confirmed** for the team (D-01; M01 re-checks it). D-03, D-05, D-06, and D-08 are decided; remaining open items are in [DECISIONS.md](DECISIONS.md).
 5. **Open Claude Code in the repo and say: "Read INIT.md and follow it."** ([INIT.md](../INIT.md)) It runs M01–M08 one at a time, stops for your confirmation, and tells you when to click something in GitHub. In order:
-   - **M01** GitHub settings: confirm Pro, make the repo private, squash-only merges, Dependabot, read-only Actions token, allowed-actions list.
+   - **M01** GitHub settings: confirm Pro, squash-only merges, Dependabot, read-only Actions token, allowed-actions list. (M01's "make the repo private" step is superseded by D-48; the repo is public.)
    - **M02** Line-ending rules, test the secret-blocking hook with decoys, build log, a light ruleset on `main`, and early invites so teammates can install while you finish.
    - **M03** Claude Code permissions and hooks (`.claude/settings.json`); needs one Claude Code restart.
    - **M04** Backend + front-end skeleton, `npm start`, cross-platform files, CI (Linux + Windows on PRs, Mac on demand).
@@ -88,7 +88,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 10. In Claude Code: *"Start work on issue #<n>. Read the task in docs/plan/<your lane file> under its ID, follow its prompt, and check off its acceptance criteria before opening the PR."*
 11. Claude explains its plan → you say yes → it builds, runs tests, and commits. **Before opening the PR, type `/qa`**: it runs the exact check the QA bot and your reviewer will run, and offers to fix anything must-fix. Then Claude pushes and opens the PR.
 12. Request a reviewer on the PR (GitHub notifies them). The advisory QA bot comments within a few minutes; a teammate's review and approval are what count. Fix anything requested on the same branch, run `/qa` again, then add the `re-review` label if you want the bot to look again.
-13. When it's approved and all checks are green, click **Squash and merge**.
+13. When it's approved and all checks are green, click **Squash and merge**. (The PM, or Gunnar as backup, may merge it for you after an @mention: D-49.)
 
 **Every day after**
 
@@ -101,7 +101,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 ```
 Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → build + tests
 → PR (template, "Closes #n") → required: CI ×4 + Secret scan + Critical files · advisory: QA bot
-→ teammate review (review-prs skill: draft → send → separate approve) → author merges → Done
+→ teammate review (review-prs skill: draft → send → separate approve) → author merges (or PM/backup, D-49) → Done
 ```
 
 ## 7. Review of the proposal and setup guide: gaps filled
@@ -114,7 +114,7 @@ Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → buil
 | 4 | Proposal names Hermes as the coding agent; team uses Claude Code | Claude Code for the build; Hermes Agent builds task G06 for the report | D-02 |
 | 5 | Dillon isn't on the proposal; group letter and last names are blank | Group A, Dillon confirmed, names and handles recorded | D-06, D-08 |
 | 6 | Deliverables weren't mapped to work | Final Project Overview mapped to owners, record-keeping, bug bash, and instructor access | plan/DELIVERABLES.md |
-| 7 | The repo was public; going private on GitHub Free would silently drop branch protection | Private + GitHub Pro (Student Pack); gitleaks Secret scan replaces GitHub's secret scanning, which private personal repos don't get | D-01, Step 8 |
+| 7 | The repo was public; going private on GitHub Free would silently drop branch protection | Was private + GitHub Pro (Student Pack). Public again since D-48, which keeps branch protection and turns on GitHub's secret scanning and push protection; the gitleaks Secret scan still runs | D-01, D-48, Step 8 |
 | 8 | "Expert answers" for the benchmark undefined | Three groups (obvious, documented, count) with pass rules set in advance | G07, D-10 |
 | 9 | Stat schema undefined | Ten fixed stats + habitat + weapons | ARCHITECTURE §5 |
 | 10 | Long media generation would block the verdict | Staged pipeline with progressive reveal and per-stage fallbacks | ARCHITECTURE §4 |
@@ -124,8 +124,8 @@ Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → buil
 | 14 | No demo-day plan | Five cached showcase battles + backup video | PRODUCT_SPEC §9 |
 | 15 | Setup guide said "PM does everything first"; lanes need balance | Each teammate's first task is a setup task; Mike's lane is Phase 0 | LANES.md |
 | 16 | Setup guide's review tool posted and set status automatically | review-prs skill: draft → confirm send → separate confirm approve | Step 3, D-23 |
-| 17 | Fork PRs could run code on a reviewer's machine or slip past the QA bot | Private repo (only collaborators can fork); skill refuses to run fork code; QA bot skips fork PRs and is advisory only | SKILL.md, M01 |
-| 18 | QA bot cost and Actions minutes on a private repo | Bot advisory, runs only when a PR opens or on a `re-review` label; PR CI on Linux + Windows, macOS on demand before milestones; no "up to date" rule | D-01, D-04, D-26 |
+| 17 | Fork PRs could run code on a reviewer's machine or slip past the QA bot | Fork PRs get no secrets and a read-only token (CI, Secret scan and the QA bot use `pull_request`); Critical files approval never runs PR code; skill refuses to run fork code; QA bot skips fork PRs and is advisory only | SKILL.md, M01, D-48 |
+| 18 | QA bot cost and Actions minutes (while the repo was private) | Bot advisory, runs only when a PR opens or on a `re-review` label; PR CI on Linux + Windows, macOS on demand before milestones; no "up to date" rule. Since D-48 the repo is public, so GitHub-hosted Actions minutes are free | D-01, D-04, D-26, D-48 |
 | 19 | The evaluation tested the simulator, not the AI | Live AI evaluation (M09) and a held-out benchmark run with hand-verified and research-only sheets | D-37 |
 | 20 | "Science-backed" claim stretched over unsourced behavioral stats | Behavioral stats labeled assumptions with a rubric; ranges and uncertainty sampling; constants documented | D-32 |
 | 21 | No business case in an AI *Business* Solutions course | Business case added: segments, comparison, unit economics, metrics | PRODUCT_SPEC §2a |
