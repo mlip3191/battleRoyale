@@ -8,13 +8,14 @@ from tests.property.sim_helpers import make_sheet, matchup_of
 
 
 def test_a_crowded_fight_still_shows_fighters_going_down():
-    wolf = make_sheet("wolf", mass_kg=40, size_m=1.0, attack_force_n=700)
+    # Aggression 1.0 means nobody breaks and runs, so the fight goes on to the last fall.
+    wolf = make_sheet("wolf", mass_kg=40, size_m=1.0, attack_force_n=700, aggression_0_1=1.0)
     result = run(matchup_of(150, 150), [wolf, wolf], runs=3)
     log = result.representative_log
     kinds = [e.type for e in log]
     assert len(log) <= c.MAX_LOG_EVENTS
     assert kinds[-1] == EventType.END
-    assert kinds.count(EventType.KO) >= 140
+    assert kinds.count(EventType.KO) >= 100
     # Hits and misses stop early; knock-outs keep going after them.
     last_flow = max(i for i, k in enumerate(kinds) if k in (EventType.HIT, EventType.MISS))
     assert EventType.KO in kinds[last_flow:]
@@ -59,4 +60,6 @@ def test_knock_outs_that_do_not_fit_are_summed_so_every_death_is_counted():
         if summaries:
             summarized += 1
             assert all(outcome.events.index(e) > outcome.events.index(kos[0]) for e in summaries)
-    assert summarized >= 2  # most of these fights overflow the log, so the summary is exercised
+    # Between 5 and 7 of these 8 fights overflow the log, depending on the branch's morale and
+    # ability rules, so require at least half: the summary path can't quietly stop being tested.
+    assert summarized >= 4

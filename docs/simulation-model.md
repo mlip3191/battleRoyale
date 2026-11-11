@@ -4,20 +4,20 @@ This is the answer to "where do your numbers come from?" Every constant lives in
 
 Honesty note: published studies say how strong a bite is or how fast an animal runs (that is what the stat sheets cite), but nothing in the literature gives a conversion from "newtons of bite force" to "hit points in a fight." Where a constant has no published source, it is labeled **assumption** below and was chosen so that results look sensible across the benchmark matchups. The benchmark (F07) is how we check that choice.
 
-## How a fight works (engine version 3)
+## How a fight works (engine version 6)
 
 1. **Sampling.** Each of the (default) 1,000 runs draws every stat uniformly between its `low` and `high` for each side, using a generator seeded from the matchup, both stat-sheet hashes, and `ENGINE_VERSION`. Uncertain inputs therefore spread the results.
-2. **Approach.** The sides start `START_DISTANCE_M` apart and close at the sum of their speeds, minus the longer reach.
-3. **Combat.** Time moves in 0.1 s ticks (the loop jumps straight to the next tick where someone acts). Every fighter attacks at `attacks_per_s`, starting at a random point in its first interval so neither side gets a built-in first strike. Each attack picks a random living enemy, hits with a probability from speed and size, and deals damage reduced by armor.
-4. **End.** A side with no fighters left loses. A fight still going at `MAX_FIGHT_S` (600 s) is a **draw**. If neither side can damage the other, or nobody can close the distance, it is also a draw (the dedicated `no_contest` handling comes with F04/F08).
+2. **Approach.** The sides start `START_DISTANCE_M` apart and close at the sum of their speeds. Each side can attack once the gap is within its own reach, so a long-reach attacker (a breath weapon) opens fire first.
+3. **Combat.** Time moves in 0.1 s ticks (the loop jumps straight to the next tick where someone acts). Every fighter attacks at `attacks_per_s`, starting at a random point in its first interval so neither side gets a built-in first strike. Each fighter's attack schedule is kept exactly (unrounded), and only the moment an event happens is rounded up to the next tick, so rounding never adds up: a fighter that attacks 1.5 times a second really does. An earlier version rounded every interval up to the next tick and compounded the error, so it made 1.43 attacks a second at a sheet rate of 1.5 (-5%), 2.5 at 3 (-17%), 3.3 at 4 (-17%), 5 at 7 (-29%), and never more than 5 at any higher rate (-44% at 9). Only rates that are a whole number of ticks apart (1, 2, 5, 10 a second) were exact. Each attack picks a random living enemy, hits with a probability from speed and size, and deals damage reduced by armor.
+4. **End.** A side with no fighters left loses. A fight still going at `MAX_FIGHT_S` (600 s) is a **draw**. If neither side can damage the other, or nobody can close the distance, it is `no_contest` (see Terrain, habitat, and behavior and Machines, objects, and mythical abilities below).
 5. **Summary.** Win and draw shares, 95% Wilson intervals, mean survivors and duration. The representative fight is re-run with the event log on: the run closest to the median duration among the most common outcome, capped at 300 events. Hits and misses fill only about the first half, so knock-outs have room; knock-outs that still do not fit are summed into one "more go down" event per side (its `group_size`) just before the ending, so the KO sizes add up to the number of fighters who fell.
 
 ## Constants
 
 | Constant | Value | Meaning | Source / status |
 |---|---|---|---|
-| `ENGINE_VERSION` | 3 | Part of the seed; bump whenever results would change. | Bookkeeping |
-| `TICK_S` | 0.1 s | Simulation time step. | Assumption (fine enough for attack rates up to ~10/s) |
+| `ENGINE_VERSION` | 6 | Part of the seed; bump whenever results would change. | Bookkeeping |
+| `TICK_S` | 0.1 s | Simulation time step. | Assumption (fine enough for attack rates up to ~10/s; event times only, the attack rate itself is exact) |
 | `MAX_FIGHT_S` | 600 s | A fight this long is a draw. | Design choice (DECISIONS / ARCHITECTURE §9) |
 | `MAX_LOG_EVENTS` | 300 | Cap on the replay log. | `SimulationResult` contract |
 | `START_DISTANCE_M` | 10 m | Starting gap. | Assumption |
@@ -39,6 +39,19 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `SWARM_STEP_GROWTH` | 0.1 | Swarm steps are at least this share of elapsed time. | **Assumption**: keeps 600 s swarm fights fast; early moments stay fine-grained |
 | `MORALE_FLOOR`, `MORALE_SPAN` | 0.2, 0.8 | A side retreats once it has lost `0.2 + 0.8 x aggression_0_1` of its total hit points (timid 20%, fully aggressive never). | **Assumption**; no source measures this. Aggression is itself an assumable stat on the sheet. |
 | `GROUP_TACTICS_BONUS` | 0.5 | With two or more attackers on one target, hit chance rises by up to this share at `group_tactics_0_1` = 1. | **Assumption** (cooperative hunting raises success in packs, e.g. Packer & Ruttan 1988, but no table gives a number) |
+| `DECIDING_RUNS` | 200 | Runs per one-at-a-time sensitivity check. | Design choice (ARCHITECTURE §9) |
+| `SURVIVOR_WEIGHT` | 0.5 | Weight of the favorite's average survivors next to its win share when ranking factors. | **Assumption**: keeps a lopsided fight (win share stuck at 100%) from hiding which factor matters most |
+| `MIN_EFFECT` | 0.02 | If no factor moves the favorite's score by at least this much, the verdict is "too close to call". | **Assumption** (about the noise of a 200-run check) |
+| `FAIR_RUNS` | 200 | Runs per fair-fight probe and per next-challenger duel. | Design choice (ARCHITECTURE §9) |
+| `FAIR_TOLERANCE` | 0.05 | A fight is fair when the varied side's win share is within this of 50%. | Design choice (ARCHITECTURE §9) |
+| `FAIR_MAX_PROBES`, `FAIR_MAX_COUNT` | 20, 10,000 | Most probes one search may use, and the largest count it tries. | Design choice (ARCHITECTURE §9; 10,000 is the app's count limit) |
+| `RAM_DAMAGE_PER_MOMENTUM` | 0.005 hp per kg x m/s | Ramming and crushing damage = this x mass x speed. | Momentum (mass x speed) is the physical measure of how hard a moving mass hits; the hit-point conversion is an **assumption** (same role as `DAMAGE_PER_NEWTON`) |
+| `RAM_ATTACKS_PER_S` | 0.4 | One ramming or crushing pass every 2.5 s. | **Assumption** |
+| `CRUSH_MIN_SPEED_MPS` | 1.0 m/s | Crushing uses at least this speed in the momentum formula. | **Assumption**: crushing needs weight, not speed |
+| `BREATH_DAMAGE_N` | 100,000 N-equivalent | A breath weapon's damage is at least this x `DAMAGE_PER_NEWTON`. | **Assumption**: legends give no numbers |
+| `BREATH_RANGE_M` | 15 m | How far a breath weapon reaches. | **Assumption** |
+| `REGEN_SHARE_PER_S` | 0.002 | Regeneration heals this share of max hit points per second (full heal in about 8 minutes). | **Assumption**; 1% per second made a regenerator effectively unkillable |
+| `DEFAULT_HEADS` | 3 | Heads for `extra_heads` when the legend names no verified number. | ARCHITECTURE §9 (a design default) |
 | `STRENGTH_SCALE_EXP` | 2/3 | Strength and damage scale as k^(2/3) when resized by k. | Muscle force follows cross-section area, so mass^(2/3): the square-cube law (Galileo 1638; Hill 1950, "The Dimensions of Animals and their Muscular Dynamics") |
 | `LENGTH_SCALE_EXP` | 1/3 | Size and reach scale as k^(1/3). | Geometric similarity: length = mass^(1/3) |
 | `SPEED_SCALE_EXP` | 1/6 | Top speed scales as k^(1/6). | Maximum running speed grows about mass^0.17 across mammals (Garland 1983, *J. Zoology*); simplified to 1/6 and applied to all movement. Garland also finds speed falls for the very largest animals, which this does not model |
@@ -87,9 +100,46 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 | mountain | water | x0.1 | x0.3 | x0.5 | stranded |
 | mountain | air | x0.9 | x1.0 | x0.95 | thin air and updrafts, small cost |
 | mountain | amphibious | x0.7 | x0.9 | x0.85 | rough rock is hard on soft bodies |
+
 - **`no_contest`.** If neither side can reach the other, `run()` returns immediately with outcome `no_contest`, zero probabilities, and an END event "no contest: neither can reach the other". The only unreachable pair is a flier against a strictly water-living fighter in open water (the swimmer is submerged and the flier is out of reach). On dry land a fish is stranded and reachable; in the shallows everyone is reachable.
 - **Morale, retreat, and flee.** When a side's lost share of total hit points passes its morale threshold (see constants), it retreats (RETREAT event) and stops attacking. If it is faster than the other side (after terrain) it escapes (FLEE event): the fight ends, the pursuer wins, and the runner counts as a survivor (a loss for its side, but alive). If it is not faster, it is caught and finishes the fight defenseless. Machines will never retreat (F08).
 - **Group tactics.** Two or more attackers on the same target (or, for ranged sides and swarms, a crowd of attackers) raise hit chance by `group_tactics_0_1 x 0.5`, capped by the normal hit-chance maximum.
+
+## The deciding factor and its explanation (F05)
+
+- **Method (one-at-a-time sensitivity).** For each of the ten stats, plus "numbers" and "terrain", we make that one factor equal for both sides, re-run the first 200 fights with the **same random seed**, and measure how much the favorite's score moves. The score is its win share plus half its average share of fighters left standing (so a fight where the favorite wins 100% either way still shows which factor mattered most). The largest mover is the deciding factor. Using the same seed means a factor that does nothing changes nothing, instead of adding noise.
+- **How a factor is equalized.** A stat becomes the average of the two sides' values and ranges. "Numbers" sets both counts to the smaller one. "Terrain" removes the terrain multipliers for both. Factors that are already equal are skipped. Results are cached within a run.
+- **Explanation.** A code template, never a language model. It quotes values straight from the stat sheets and the matchup counts, rounded to three significant figures; it never computes new numbers (a test checks that every number in an explainer is an input). If the deciding factor is aggression, teamwork, or armor, it adds "This rests on an assumption: behavior and armor are judgments, not measurements." Special cases: a stalemate (most runs drew) and "too close to call" (no factor moved the score by 0.02).
+- **Cost.** About a dozen extra 200-run simulations: 0.3 s for a 1 v 1, about 1 s for a 6 v 1, and about 3 s extra for 10,000 ants v 1 lion. `run(..., explain=False)` skips this analysis; use it for quick probes such as the fair-fight search.
+- **`summary()`** (`summary.py`) returns what the results page and the announcer need: win and draw percentages, average survivors, duration in seconds, the favorite (none for a draw, no contest, or an exact tie), and the deciding-factor text.
+
+## Fair fight and next challenger (F06)
+
+- **Fair-fight search (`fair.py`).** "How many house cats would make this a coin flip?" The search varies the count of the **losing** side (the side with the lower win share in the main result). It starts at the current count, doubles until the varied side's win share passes 55%, then bisects on whole numbers between the last count below 45% and the first above 55%. Each probe is a 200-run simulation (no deciding-factor analysis), at most 20 probes, counts capped at 10,000. It stops as soon as a probe lands within 5 points of 50% ("A fair fight needs 37 house cats against 1 gray wolf.").
+- **When it can't.** If even 10,000 can't reach 45%, the answer is `count = None` with "No fair fight within 10,000 house cats." (a stalemate where neither side can win counts as this too). If the main fight is a draw or a `no_contest`, there is no loser to even up, so `count` is `None` with a plain explanation.
+- **Whole numbers can't always hit 50%.** Near the balance point one extra fighter can move the win share by 10-20 points. When no integer lands within the 5-point band, the closest count found is returned with "about", and `win_prob_at_count` shows the real value.
+- **Draws don't count as half a win.** The target is the varied side's win share alone, so a stalemate (for example ants against an elephant) can't masquerade as a fair fight.
+- **Next challenger (`test_challengers`).** Given the winner's sheet and candidate sheets (the language model proposes the candidates elsewhere), it runs a 200-run 1 v 1 duel of the winner against each candidate and returns suggestions sorted by how close the candidate's win share is to 50%, with ties broken by name so results repeat exactly. A candidate that cannot meet the winner at all (`no_contest`) is left out. The reason text is a code template ("a coin flip", "a slight underdog", and so on) with no invented numbers.
+- **Cost.** About 0.2 s for wolf vs house cats and about 4 s for the no-answer case (15 swarm probes up to 10,000 ants). One-by-one probes with many fighters (just under 200) are slower; see the speed note above.
+
+## Machines, objects, and mythical abilities (F08)
+
+**Bodies**
+- **Machine** (vehicles, robots): never retreats or flees (no morale) and has no fatigue. When its sampled `endurance_s` (operating time) runs out it is **out of action**: a KO event with the hint "out of action: its operating time ran out", counted as a loss for that fighter. A whole swarm of machines stops together.
+- **Inert** (objects, plants): never approaches, never retreats. It attacks only if it has an attack, and only once the other side has closed the distance. An inert fighter with `spines` hurts whoever hits it: each hit costs the attacker the inert fighter's own damage per hit (event hint "spines jab back").
+- **Ramming and crushing:** damage per hit = `RAM_DAMAGE_PER_MOMENTUM x mass x speed` (momentum, the product of mass and velocity). Crushing floors the speed at `CRUSH_MIN_SPEED_MPS`. The attack rate is the constant `RAM_ATTACKS_PER_S`, replacing the sheet's. Mounted guns are not modeled (DECISIONS D-38).
+- **No contest and draws:** if neither side can damage the other (no attack, or no way to close the distance) the result is `no_contest` with the hint "no contest: nobody can hurt anybody" (a rock vs a sword). If one side simply cannot finish the other in 600 s, the fight is a draw.
+
+**Abilities** (from the stat sheet's `lore`)
+- **Flight:** the creature uses air-terrain rules (forests hinder it more, open sky does not) and engages air and land targets. A flier cannot reach a swimmer in open water (`no_contest`), as for birds.
+- **Breath weapon:** a ranged attack (square law: every individual can breathe on the same target, so no engagement cap), damage at least `BREATH_DAMAGE_N x DAMAGE_PER_NEWTON`, reaching `BREATH_RANGE_M`, so it attacks before melee fighters close in.
+- **Regeneration:** heals `REGEN_SHARE_PER_S` of max hit points per second, up to full. Healing is applied lazily, when a fighter is next hit; the retreat (morale) check uses the same up-to-date totals, but a fighter nobody touches does not count unseen healing toward it. Fine for an assumption-level model.
+- **Extra heads:** attack rate times the number of heads (`DEFAULT_HEADS` if the lore gives none).
+- The deciding-factor check also removes all abilities and re-runs; if that moves the result most, the factor is `abilities` and the explainer says "according to legend".
+
+**Certain results are not simulated.** Before running a fight, the engine asks whether the result is certain: if even the most damage possible (every fighter attacking as often as it can, every attack hitting, no healing) cannot kill a single fighter or push the other side past its morale limit before the fight must end, nothing can change. The fight is then a draw at 600 s, or, if a machine runs out of operating time first, a loss for that machine's side at that moment. This is exact, not an estimate: a test compares the shortcut with the full simulation on thousands of random fights with up to 12 fighters a side (0 differences found). Fights with more than 200 on a side are never shortcut, because swarm mode acts in coarse time steps and the bound would not be exact there; they are cheap to simulate anyway. A machine's operating-time stop is applied in order of operating time, and reported at the exact moment, in both modes. It keeps hopeless stalemates cheap (for example 150 feeble attackers against a mountain, or machines that never dent an object, which used to cost tens of seconds). Objects whose spines really hurt attackers are always simulated, and the replay of a representative fight is always simulated in full so the log shows real events.
+
+**Calibration warning.** With these assumed constants a dragon built from the fixture sheet (6 t) cannot dent a 60 t tank with 80% armor in ten minutes. Showcase battle #5 (dragon vs main battle tank) will need its constants revisited once G09's real dragon sheet and the F07 benchmark exist.
 
 ## Why probabilities are shown as "range"
 
@@ -97,7 +147,7 @@ The 95% interval is a Wilson score interval on the share of runs won. Because ev
 
 ## Not modeled yet
 
-Deciding-factor analysis (F05), machines and abilities (F08), and fatigue from `endurance_s`. The placeholder `deciding_factor` is always `mass_kg` (except `habitat` for a `no_contest`).
+Fatigue for living fighters (`endurance_s` only stops machines). A `no_contest` reports `habitat` (cannot reach) or `attack_force_n` (cannot hurt) as its deciding factor.
 
 ## References
 

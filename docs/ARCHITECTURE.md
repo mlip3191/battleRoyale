@@ -207,7 +207,7 @@ class LoreProfile(BaseModel):              # mythical creatures only
     source: Source                         # the sentence in the myth's article that justifies the analogs and abilities
 
 class StatSheet(BaseModel):
-    fighter_id: str                        # slug: "grizzly-bear--adult-male"
+    fighter_id: str                        # slug: "grizzly-bear" (default variant; others add "--variant", e.g. "grizzly-bear--juvenile")
     display_name: str
     media_name: str                        # generic, brand-free name used in image/music prompts ("electric pickup truck")
     category: Literal["mammal","bird","reptile","amphibian","fish","insect","arachnid","mollusk","dinosaur",
@@ -398,7 +398,7 @@ Pure Python, no I/O, no providers. Lane owner: Felipe.
 - **Voice cloning:** only a voice whose owner gave written consent (e.g. a teammate). Never imitate a celebrity or real announcer.
 - **Music and images:** prompts never name real artists, songs, franchises, characters, or brands; they use the stat sheet's `media_name`, checked against the same allowlist and a brand/franchise blocklist.
 - **Attribution:** Wikipedia/Wikidata text is CC BY-SA / CC0; the results page lists sources with links and license.
-- **Repo hygiene:** the repo is private, but no endpoint URLs, keys, or student data in commits — treat every commit as if it were public. See TEAM_PROCESS Step 8.
+- **Repo hygiene:** the repo is public (DECISIONS D-48), so no endpoint URLs, keys, or student data in commits, PRs, issues, or comments. See TEAM_PROCESS Step 8.
 
 ## 12. Testing strategy
 

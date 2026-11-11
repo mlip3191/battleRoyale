@@ -21,7 +21,12 @@ def test_probabilities_sum_to_one_and_mirror_match_is_fair(mass):
     sheet = with_stat(load_sheet("stat-sheet.json"), StatName.MASS, mass)
     shares = []
     for terrain in (Terrain.ARENA, Terrain.OPEN_FIELD):
-        result = run(matchup().model_copy(update={"terrain": terrain}), [sheet, sheet], runs=1000)
+        result = run(
+            matchup().model_copy(update={"terrain": terrain}),
+            [sheet, sheet],
+            runs=1000,
+            explain=False,
+        )
         assert abs(result.win_prob[0] + result.win_prob[1] + result.draw_prob - 1.0) < 1e-9
         shares.append(result.win_prob[0])
     assert 0.45 <= sum(shares) / len(shares) <= 0.55

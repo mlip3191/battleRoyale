@@ -48,7 +48,7 @@ Docs: `INIT.md` (Phase 0) · `docs/PROJECT_GUIDE.md` (start here) · `docs/PRODU
 ## 7. Testing and Definition of Done
 Every feature or fix has at least one test (`backend/tests/{unit,contract,golden,property}`, `frontend/src/**/*.test.tsx`). A bug fix starts with a failing test. **Done** = the issue's acceptance criteria all met, `npm run check` passes, the app still starts, the PR explains the change in plain English, docs updated if behavior changed.
 
-## 8. Secrets and environment (private repo — but treat every commit as if it were public)
+## 8. Secrets and environment (public repo — every commit, PR, issue and comment is visible to anyone)
 - All config comes from `.env` (never committed), documented in `.env.example` with a comment and placeholder per variable. New variable → add it to `.env.example` and tell the user how to get the value.
 - **Course key and endpoints:** use `/setup-env`. The user runs `npm run env:setup` in their own terminal; it asks for the host and key (hidden) and writes `.env`. Never ask for a key or host in the chat; if one is pasted, don't repeat it or save it anywhere, and say why.
 - Never put keys **or course endpoint hosts** in code, tests, fixtures, docs, logs, or `.mcp.json` (use `${VAR}` there).
@@ -60,6 +60,7 @@ Every feature or fix has at least one test (`backend/tests/{unit,contract,golden
 - To check your own work: the user types `/qa [n]` (or asks "check my work before I open a PR") → run the **/qa** self-check. It works on your own branch or PR and posts nothing.
 - The QA bot, /review, and /qa all follow **`.claude/qa/checklist.md`** on the same model, so they agree. Change the checklist, not the individual tools.
 - The QA bot on GitHub is **advisory**. Treat its comments as suggestions; a teammate's approval and the required checks (CI, Secret scan, Critical files approval) are the gate. To have it look again after fixes, add the `re-review` label.
+- To file a new issue, use /new-issue.
 - Work only on an assigned issue; read its acceptance criteria and its task in `docs/plan/` first. If it's bigger than size M or unclear, stop and suggest splitting or clarifying.
 
 ## 10. Permissions and hooks

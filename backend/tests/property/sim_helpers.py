@@ -44,7 +44,12 @@ def with_stat(sheet: StatSheet, name: StatName, value: float) -> StatSheet:
 
 
 def make_sheet(
-    name: str, spread: float = 0.2, habitat: str | None = None, **stats: float
+    name: str,
+    spread: float = 0.2,
+    habitat: str | None = None,
+    body: str | None = None,
+    weapons: list[str] | None = None,
+    **stats: float,
 ) -> StatSheet:
     """A stand-in fighter: the gray wolf with some stats replaced (range = value +/- spread).
 
@@ -55,6 +60,10 @@ def make_sheet(
     data["display_name"] = name.capitalize()
     if habitat:
         data["habitat"] = habitat
+    if body:
+        data["body"] = body
+    if weapons:
+        data["weapons"] = weapons
     for stat, value in stats.items():
         entry = data["stats"][stat]
         entry["value"] = float(value)
@@ -131,3 +140,20 @@ def duck() -> StatSheet:
         reach_m=0.15,
         armor_0_1=0.05,
     )
+
+
+def make_dragon(
+    abilities: list[str], heads: int | None = None, name: str = "dragon", **stats: float
+) -> StatSheet:
+    """The dragon fixture with chosen legendary powers (all its stats are assumptions)."""
+    data = copy.deepcopy(load_sheet("stat-sheet-dragon.json").model_dump(mode="json"))
+    data["sheet_hash"] = name
+    data["lore"]["abilities"] = abilities
+    data["lore"]["heads"] = heads
+    data["weapons"] = [w for w in data["weapons"] if w != "breath_weapon"] + (
+        ["breath_weapon"] if "breath_weapon" in abilities else []
+    )
+    for stat, value in stats.items():
+        entry = data["stats"][stat]
+        entry["value"], entry["low"], entry["high"] = value, value * 0.8, value * 1.2
+    return StatSheet.model_validate(data)
