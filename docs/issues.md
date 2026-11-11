@@ -113,7 +113,9 @@ The GitHub Project board has five columns:
 | **Backlog** | Filed, not checked yet | Every new issue starts here |
 | **Ready** | Scope, criteria, and size checked | The PM, at weekly triage |
 | **In progress** | Someone is working on it | You: assign yourself and move the card when you start |
-| **In review** | A pull request is open for it | Automatic, when a PR says `Closes #<n>` |
+| **In review** | A pull request is open for it | Automatic, when a PR says `Closes #<n>`. For "Part of #n" or stacked PRs, move the card yourself |
 | **Done** | The PR is merged | Automatic, when the PR merges |
+
+A stacked PR (one that targets another PR's branch) and a "Part of #n" PR don't move the issue on the board, because GitHub only links PRs that close an issue on `main`. Move those cards yourself.
 
 To start an issue, pick one from **Ready**, assign yourself, and move it to **In progress**. Then, in Claude Code, say "Start work on issue #<number>".
