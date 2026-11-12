@@ -45,6 +45,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `FAIR_RUNS` | 200 | Runs per fair-fight probe and per next-challenger duel. | Design choice (ARCHITECTURE §9) |
 | `FAIR_TOLERANCE` | 0.05 | A fight is fair when the varied side's win share is within this of 50%. | Design choice (ARCHITECTURE §9) |
 | `FAIR_MAX_PROBES`, `FAIR_MAX_COUNT` | 20, 10,000 | Most probes one search may use, and the largest count it tries. | Design choice (ARCHITECTURE §9; 10,000 is the app's count limit) |
+| `CHALLENGER_SLIGHT_GAP` | 0.15 | The next-challenger reason says "a slight" favorite or underdog within this of 50% and "a clear" one beyond it ("a coin flip" uses `FAIR_TOLERANCE`). | **Assumption**: wording only, never a result |
 | `RAM_DAMAGE_PER_MOMENTUM` | 0.005 hp per kg x m/s | Ramming and crushing damage = this x mass x speed. | Momentum (mass x speed) is the physical measure of how hard a moving mass hits; the hit-point conversion is an **assumption** (same role as `DAMAGE_PER_NEWTON`) |
 | `RAM_ATTACKS_PER_S` | 0.4 | One ramming or crushing pass every 2.5 s. | **Assumption** |
 | `CRUSH_MIN_SPEED_MPS` | 1.0 m/s | Crushing uses at least this speed in the momentum formula. | **Assumption**: crushing needs weight, not speed |

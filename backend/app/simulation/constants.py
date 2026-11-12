@@ -98,6 +98,9 @@ FAIR_TOLERANCE = 0.05
 # Most probes one search may use, and the largest count it will try.
 FAIR_MAX_PROBES = 20
 FAIR_MAX_COUNT = 10_000
+# The next-challenger reason says "a coin flip" within FAIR_TOLERANCE of 50%, "a slight" favorite
+# or underdog within this of 50%, and "a clear" one beyond it (wording only, never a result).
+CHALLENGER_SLIGHT_GAP = 0.15
 
 # --- Machines, objects, and mythical abilities (F08) ---
 

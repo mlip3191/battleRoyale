@@ -88,7 +88,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 10. In Claude Code: *"Start work on issue #<n>. Read the task in docs/plan/<your lane file> under its ID, follow its prompt, and check off its acceptance criteria before opening the PR."*
 11. Claude explains its plan → you say yes → it builds, runs tests, and commits. **Before opening the PR, type `/qa`**: it runs the exact check the QA bot and your reviewer will run, and offers to fix anything must-fix. Then Claude pushes and opens the PR.
 12. Request a reviewer on the PR (GitHub notifies them). The advisory QA bot comments within a few minutes; a teammate's review and approval are what count. Fix anything requested on the same branch, run `/qa` again, then add the `re-review` label if you want the bot to look again.
-13. When it's approved and all checks are green, click **Squash and merge**.
+13. When it's approved and all checks are green, click **Squash and merge**. (The PM, or Gunnar as backup, may merge it for you after an @mention: D-49.)
 
 **Every day after**
 
@@ -101,7 +101,7 @@ Then: bug bash and outside usability sessions Nov 21–22, feature freeze end of
 ```
 Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → build + tests
 → PR (template, "Closes #n") → required: CI ×4 + Secret scan + Critical files · advisory: QA bot
-→ teammate review (review-prs skill: draft → send → separate approve) → author merges → Done
+→ teammate review (review-prs skill: draft → send → separate approve) → author merges (or PM/backup, D-49) → Done
 ```
 
 ## 7. Review of the proposal and setup guide: gaps filled

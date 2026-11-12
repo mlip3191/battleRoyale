@@ -17,6 +17,15 @@ vi.mock("../api/useBattle.ts", async (original) => ({
   useBattle: () => state.value,
 }));
 
+// The real stage loads Phaser (no canvas in jsdom); a stand-in shows what it was given.
+vi.mock("../game/PhaserStage.tsx", () => ({
+  default: (props: { result: { representative_log: unknown[] } }) => (
+    <div data-testid="phaser-stage">
+      {props.result.representative_log.length} events
+    </div>
+  ),
+}));
+
 afterEach(cleanup);
 
 // The app's routes for battle b1, opened at the given address.
@@ -113,6 +122,21 @@ test("done: links to this battle's results", () => {
   show(done);
   const link = screen.getByRole("link", { name: "See the results" });
   expect(link.getAttribute("href")).toBe("/battle/b1/results");
+});
+
+test("done: plays the fight replay from the battle's result", () => {
+  show(done);
+  expect(screen.getByTestId("phaser-stage").textContent).toBe(
+    `${asRecord(done).result!.representative_log.length} events`,
+  );
+});
+
+test("running or done without a result: no replay stage", () => {
+  show(running);
+  expect(screen.queryByTestId("phaser-stage")).toBeNull();
+  cleanup();
+  show({ ...asRecord(done), result: null });
+  expect(screen.queryByTestId("phaser-stage")).toBeNull();
 });
 
 test("the page has a heading for screen readers", () => {

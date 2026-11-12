@@ -5,6 +5,7 @@ import logging
 import wave
 from io import BytesIO
 from pathlib import Path
+from typing import Any
 
 import httpx
 import pytest
@@ -19,6 +20,7 @@ from app.providers.registry import (
     MOCKS,
     ProviderConfigError,
     ServiceConfig,
+    get_intake_chat,
     get_provider,
     service_config,
 )
@@ -209,6 +211,59 @@ async def test_live_chat_retries_twice_then_fails_without_leaking_host_or_key(
         await chat_with(httpx.MockTransport(down)).complete(messages, prompt_name="x")
     assert "HTTP 503" in str(error.value)
     assert DECOY_HOST not in str(error.value) and DECOY_KEY not in str(error.value)
+
+
+# #169: intake's chat waits 15 s and retries once; every other chat call keeps 30 s and 2 retries.
+def test_intake_chat_has_a_shorter_timeout_and_fewer_retries() -> None:
+    settings = live_settings()
+    intake = get_intake_chat(settings)
+    shared = get_provider("chat", settings)
+    assert isinstance(intake, LiveChatLLM) and isinstance(shared, LiveChatLLM)
+    assert (intake.timeout_s, intake.retries) == (15.0, 1)
+    assert (shared.timeout_s, shared.retries) == (30.0, 2)
+    assert isinstance(get_intake_chat(mock_settings()), MockChatLLM)
+
+
+async def test_intake_chat_gives_up_after_one_retry_when_the_model_is_slow(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.providers.live.http.BACKOFF_S", 0)
+    calls: list[int] = []
+
+    def slow(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        raise httpx.ReadTimeout("the model took too long", request=request)
+
+    settings = live_settings()
+    client = httpx.AsyncClient(transport=httpx.MockTransport(slow))
+    messages: list[base.ChatMessage] = [{"role": "user", "content": "hi"}]
+    intake = LiveChatLLM(service_config("chat", settings), settings, client=client, retries=1)
+    with pytest.raises(ProviderError, match="ReadTimeout"):
+        await intake.complete(messages, prompt_name="x")
+    assert len(calls) == 2  # one try and one retry, not three tries
+    calls.clear()
+    with pytest.raises(ProviderError):
+        await chat_with(httpx.MockTransport(slow)).complete(messages, prompt_name="x")
+    assert len(calls) == 3
+
+
+async def test_intake_chat_sets_its_timeout_on_the_http_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    timeouts: list[object] = []
+    real_client = httpx.AsyncClient
+
+    def client_spy(**options: Any) -> httpx.AsyncClient:
+        timeouts.append(options["timeout"])
+        reply = {"choices": [{"message": {"content": "ok"}}]}
+        transport = httpx.MockTransport(lambda request: httpx.Response(200, json=reply))
+        return real_client(**options, transport=transport)
+
+    monkeypatch.setattr("app.providers.live.http.httpx.AsyncClient", client_spy)
+    messages: list[base.ChatMessage] = [{"role": "user", "content": "hi"}]
+    assert await get_intake_chat(live_settings()).complete(messages, prompt_name="x") == "ok"
+    assert await get_provider("chat", live_settings()).complete(messages, prompt_name="x") == "ok"
+    assert timeouts == [15.0, 30.0]
 
 
 def test_live_mode_builds_the_structured_adapter() -> None:
