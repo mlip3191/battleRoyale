@@ -1,0 +1,150 @@
+{
+  "fighter_id": "gorilla",
+  "display_name": "Gorilla",
+  "media_name": "gorilla",
+  "category": "mammal",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "teeth"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 140.0,
+      "unit": "kg",
+      "source": {
+        "title": "Western lowland gorilla",
+        "url": "https://en.wikipedia.org/w/index.php?title=Western_lowland_gorilla&oldid=1382452187",
+        "quote": "Males have an average weight of 140 kg (310 lb), females of 70 kg (150 lb).",
+        "retrieved_at": "2026-11-11T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 126.0,
+      "high": 154.0,
+      "note": "Average adult male, from the lowland article; the Western gorilla article gives 145-191 kg for males, so this is the lower, lowland-specific figure. Range is the standard +/-10%."
+    },
+    "size_m": {
+      "value": 1.67,
+      "unit": "m",
+      "source": {
+        "title": "Western gorilla",
+        "url": "https://en.wikipedia.org/w/index.php?title=Western_gorilla&oldid=1378647418",
+        "quote": "Males average 1.67 m (5.5 ft) although reaching a height up to 1.76 m (5.8 ft)",
+        "retrieved_at": "2026-11-11T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 1.5,
+      "high": 1.76,
+      "note": "Average standing height of adult males. High is the stated maximum in the same sentence; low is the standard -10%."
+    },
+    "top_speed_mps": {
+      "value": 12.0,
+      "unit": "m/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 6.0,
+      "high": 18.0,
+      "note": "No published top speed found for this animal; category default."
+    },
+    "attack_force_n": {
+      "value": 3420.0,
+      "unit": "N",
+      "source": {
+        "title": "9 mammals, sharks, and reptiles with the strongest bite (IFAW)",
+        "url": "https://www.ifaw.org/au/journal/9-jaw-dropping-animals-strongest-bite",
+        "quote": "The bite force of the Western gorilla (Gorilla gorilla) was calculated by one study to be about 3,420 Newtons.",
+        "retrieved_at": "2026-11-11T00:00:00Z",
+        "license": "Publisher copyright, not an open license; one sentence cited"
+      },
+      "confidence": "low",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 1710.0,
+      "high": 5130.0,
+      "note": "Modeled maximum molar bite from Eng, Lieberman, Zink and Peters 2013, Am. J. Phys. Anthropol. 151:544 (doi:10.1002/ajpa.22296), as quoted by IFAW. Second-hand: the paper's PDF could not be opened. A molar, not canine, bite, so it is not directly comparable with the Wroe canine values on the wolf and grizzly sheets (593 N and 751 N); it is about 3 times the code's carnivore fit for 140 kg (1,016 N) and high for a fighting bite. Range is +/-50%, as on the elephant's stand-in."
+    },
+    "attacks_per_s": {
+      "value": 1.5,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.75,
+      "high": 2.25,
+      "note": "No published attack rate found for this animal; category default."
+    },
+    "reach_m": {
+      "value": 0.42,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.31,
+      "high": 0.52,
+      "note": "reach = 0.25 x size_m, from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.15,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.075,
+      "high": 0.225,
+      "note": "armor level 1: fur and bare skin."
+    },
+    "endurance_s": {
+      "value": 240.0,
+      "unit": "s",
+      "source": {
+        "title": "Observations of severe and lethal coalitionary attacks in wild mountain gorillas (Rosenbaum, Vecellio and Stoinski 2016, Scientific Reports 6:37018)",
+        "url": "https://par.nsf.gov/servlets/purl/10426250",
+        "quote": "Approximately 3-4 minutes after the attack began, it abruptly stopped.",
+        "retrieved_at": "2026-11-11T00:00:00Z",
+        "license": "CC BY 4.0"
+      },
+      "confidence": "low",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 180.0,
+      "high": 240.0,
+      "note": "Stand-in, not a measured endurance: one 2004 attack by 26 mountain gorillas on a lone male, which the attackers stopped on their own after 3-4 minutes (the same paper reports another attack of 18 minutes). Used for an adult male western lowland gorilla. Upper end of the stated range; the source gives no mean."
+    },
+    "aggression_0_1": {
+      "value": 0.5,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.25,
+      "high": 0.75,
+      "note": "aggression level 3: defends itself and its troop, avoids risky fights."
+    },
+    "group_tactics_0_1": {
+      "value": 0.5,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.25,
+      "high": 0.75,
+      "note": "group tactics level 3: family troop that defends together."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "0736351d1edf1a27f08552b98336b709a8f851512c1ac80cb6261b713d85cb62"
+}

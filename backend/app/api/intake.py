@@ -15,7 +15,7 @@ from app.intake.answer import resolve_answer
 from app.intake.parser import IntakeUnavailable, parse_matchup
 from app.models.matchup import IntakeResult
 from app.providers.base import ChatLLM
-from app.providers.registry import get_provider
+from app.providers.registry import get_intake_chat
 
 router = APIRouter(prefix="/api/intake", tags=["intake"])
 EXPIRED_MESSAGE = (
@@ -49,9 +49,9 @@ async def get_db() -> AsyncIterator[sqlite3.Connection]:
         connection.close()
 
 
-# The chat model that reads matchups; tests swap in a scripted one.
+# The chat model that reads matchups (intake's short timeout, #169); tests swap in a scripted one.
 def get_chat() -> ChatLLM:
-    return get_provider("chat")
+    return get_intake_chat()
 
 
 Db = Annotated[sqlite3.Connection, Depends(get_db)]

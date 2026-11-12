@@ -236,16 +236,29 @@ async def test_research_raising_fails_the_battle(
     assert (research.status, research.detail) == ("failed", orchestrator.RESEARCH_FAILED)
 
 
-@pytest.mark.parametrize("fake", [boom, sleep_too_long], ids=["raises", "too-slow"])
-async def test_simulate_failing_fails_the_battle(
-    store: BattleStore, monkeypatch: pytest.MonkeyPatch, fake: Callable[..., Awaitable[Any]]
+async def test_simulate_raising_fails_the_battle(
+    store: BattleStore, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "simulate", TINY_BUDGET)
-    replace(monkeypatch, "simulate", fake)
+    replace(monkeypatch, "simulate", boom)
     record = await battle(store)
     assert record.status == "failed"
     simulate = stage_of(record, "simulate")
     assert (simulate.status, simulate.detail) == ("failed", orchestrator.SIMULATE_FAILED)
+    assert record.result is None
+    assert all(stage_of(record, s).status == "pending" for s in OPTIONAL)
+
+
+async def test_simulate_past_its_budget_says_the_fight_is_too_big(
+    store: BattleStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "simulate", TINY_BUDGET)
+    replace(monkeypatch, "simulate", sleep_too_long)
+    record = await battle(store)
+    assert record.status == "failed"
+    simulate = stage_of(record, "simulate")
+    assert (simulate.status, simulate.detail) == ("failed", orchestrator.SIMULATE_TOO_SLOW)
+    # Retrying the same fight can't help, so the message must not suggest it.
+    assert simulate.detail is not None and "Please try again." not in simulate.detail
     assert record.result is None
     assert all(stage_of(record, s).status == "pending" for s in OPTIONAL)
 
