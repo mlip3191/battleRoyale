@@ -15,7 +15,7 @@ from datetime import datetime
 
 from app.models.stats import Confidence, Source, StatName, StatSheet, StatValue
 from app.research.defaults import PHYSICAL_ORDER, behavioral_default, category_default
-from app.research.facts import Fact
+from app.research.facts import PROPERTIES, Fact
 from app.research.ranges import range_for, within_sanity_bounds
 from app.research.seed_fighters import (
     SeedFighter,
@@ -34,19 +34,21 @@ RAM_WEAPONS = frozenset({"ramming", "crushing"})
 
 # Which stored facts can fill each stat, best first. Each group is (source, fields); the first
 # group with a usable fact wins, and within a group the larger field wins (size is the longest
-# dimension, so a height taller than the length is used).
+# dimension, so a height taller than the length is used). Wikidata fields are property IDs, as
+# facts.py stores them: P2067 mass, P2043 length, P2048 height, P2052 speed.
 FACT_GROUPS: dict[StatName, list[tuple[str, tuple[str, ...]]]] = {
     StatName.MASS: [
-        ("wikidata", ("mass",)),
+        ("wikidata", ("P2067",)),
         ("animaltraits", ("body mass",)),
         ("pantheria", ("5-1_AdultBodyMass_g",)),
     ],
     StatName.SIZE: [
-        ("wikidata", ("length", "height")),
+        ("wikidata", ("P2043", "P2048")),
         ("pantheria", ("13-1_AdultHeadBodyLen_mm",)),
     ],
-    StatName.SPEED: [("wikidata", ("speed",))],
+    StatName.SPEED: [("wikidata", ("P2052",))],
 }
+CONFIDENCE_ORDER = (Confidence.LOW, Confidence.MEDIUM, Confidence.HIGH)
 SOURCE_TITLES = {
     "wikidata": "Wikidata",
     "animaltraits": "AnimalTraits (Herberstein et al. 2022)",
@@ -150,39 +152,44 @@ def _pick(stat: StatName, facts: list[StoredFact]) -> StatValue | None:
     fact = chosen.fact
     count = f" Middle of {len(values)} stored figures; low and high are the smallest and largest."
     return StatValue(
-        value=round(value, 6),
+        value=_sig(value),
         unit=STAT_UNITS[stat],
         source=Source(
             title=SOURCE_TITLES.get(fact.source, fact.source),
             url=fact.reference.split(" ")[0],
-            quote=f"{fact.field}: {fact.value:g} {fact.unit}",
+            quote=f"{PROPERTIES.get(fact.field, fact.field)}: {fact.value:.15g} {fact.unit}",
             retrieved_at=chosen.retrieved_at,
             license=chosen.license,
         ),
         confidence=Confidence.MEDIUM,
         is_estimate=False,
         method="extracted",
-        low=round(low, 6),
-        high=round(high, 6),
+        low=_sig(low),
+        high=_sig(high),
         note=f"Stored {fact.source} fact, converted to {STAT_UNITS[stat]}."
         + (count if len(values) > 1 else " One stored figure; range is the standard +/-25%."),
     )
 
 
-# A value code computes from stats already chosen, or None when no formula applies.
+# A value code computes from stats already chosen, or None when no formula applies. Objects and
+# plants don't lunge, so they keep their reach default.
 def derive(
     stat: StatName, profile: FighterProfile, chosen: dict[StatName, StatValue]
 ) -> StatValue | None:
     rams = bool(RAM_WEAPONS & set(profile.weapons))
-    if stat == StatName.REACH and StatName.SIZE in chosen:
-        size = chosen[StatName.SIZE].value
+    if stat == StatName.REACH and StatName.SIZE in chosen and profile.body != "inert":
+        size = chosen[StatName.SIZE]
+
+        def reach(s: float) -> float:
+            return 0.25 * s
+
         return _derived(
-            0.25 * size,
+            reach(size.value),
             stat,
-            0.25 * 0.75 * size,
-            0.25 * 1.25 * size,
-            "reach = 0.25 x size_m, from size_m.",
-            digits=2,
+            reach(_end(size.low, size.value)),
+            reach(_end(size.high, size.value)),
+            "reach = 0.25 x size_m, from size_m; low and high use size's low and high.",
+            _weakest(size),
         )
     if stat == StatName.ATTACK_FORCE and rams:
         return _ram_force(profile, chosen[StatName.MASS], chosen[StatName.SPEED])
@@ -194,6 +201,7 @@ def derive(
             rate,
             rate,
             "Ramming machine: RAM_ATTACKS_PER_S, the engine's fixed ramming rate.",
+            Confidence.MEDIUM,
         )
     return None
 
@@ -213,7 +221,7 @@ def _ram_force(profile: FighterProfile, mass: StatValue, speed: StatValue) -> St
         force(_end(mass.high, mass.value), _end(speed.high, speed.value)),
         "Ramming machine: attack_force_n = RAM_DAMAGE_PER_MOMENTUM x mass_kg x top_speed_mps / "
         "DAMAGE_PER_NEWTON. The engine works out the real hit from mass and speed.",
-        digits=0,
+        _weakest(mass, speed),
     )
 
 
@@ -222,17 +230,27 @@ def _end(bound: float | None, value: float) -> float:
     return value if bound is None else bound
 
 
+# A derived value is only as sure as its least sure input.
+def _weakest(*inputs: StatValue) -> Confidence:
+    return min((i.confidence for i in inputs), key=CONFIDENCE_ORDER.index)
+
+
+# Keep `sig` significant figures, so tiny fighters keep their precision.
+def _sig(x: float, sig: int = 6) -> float:
+    return float(f"{x:.{sig}g}")
+
+
 def _derived(
-    value: float, stat: StatName, low: float, high: float, note: str, digits: int = 6
+    value: float, stat: StatName, low: float, high: float, note: str, confidence: Confidence
 ) -> StatValue:
     return StatValue(
-        value=round(value, digits),
+        value=_sig(value),
         unit=STAT_UNITS[stat],
-        confidence=Confidence.MEDIUM,
+        confidence=confidence,
         is_estimate=False,
         method="derived",
-        low=round(low, digits),
-        high=round(high, digits),
+        low=_sig(low),
+        high=_sig(high),
         note=note,
     )
 

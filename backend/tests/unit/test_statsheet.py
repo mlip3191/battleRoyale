@@ -9,7 +9,7 @@ import pytest
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
 from app.models.stats import ASSUMABLE_STATS, Confidence, Source, StatName, StatValue
-from app.research.facts import Fact, store_facts
+from app.research.facts import Fact, store_facts, wikidata_facts
 from app.research.seed_fighters import find_seed_sheet
 from app.research.sheet_hash import compute_sheet_hash
 from app.research.statsheet import (
@@ -25,10 +25,15 @@ CAT = FighterProfile("house-cat", "House cat", "house cat", "mammal", "living", 
 TRUCK = FighterProfile(
     "pickup-truck", "Pickup truck", "pickup truck", "vehicle", "machine", "land", ("ramming",)
 )
+ANT = FighterProfile("army-ant", "Army ant", "army ant", "insect", "living", "land", ("none",))
+TOASTER = FighterProfile("toaster", "Toaster", "toaster", "object", "inert", "land", ("none",))
+# Wikidata facts are stored under their property IDs, as facts.py does.
+WIKIDATA_IDS = {"mass": "P2067", "length": "P2043", "height": "P2048", "speed": "P2052"}
 
 
 # A stored Wikidata fact for a test.
 def fact(field: str, value: float, unit: str, source: str = "wikidata", n: int = 1) -> StoredFact:
+    field = WIKIDATA_IDS.get(field, field) if source == "wikidata" else field
     reference = f"https://www.wikidata.org/wiki/Q146#Q146-{field}-{n}"
     return StoredFact(Fact(source, field, value, unit, reference), "CC0 1.0", WHEN)
 
@@ -77,7 +82,13 @@ class TestPreferenceOrder:
     def test_derived_wins_over_the_category_default(self) -> None:
         sheet = build_stat_sheet(CAT, [fact("length", 0.46, "m")])
         reach = sheet.stats[StatName.REACH]
-        assert (reach.method, reach.value, reach.low, reach.high) == ("derived", 0.12, 0.09, 0.14)
+        assert (reach.method, reach.value, reach.low, reach.high) == (
+            "derived",
+            0.115,
+            0.08625,
+            0.14375,
+        )
+        assert reach.confidence == "medium"  # as sure as the size fact it came from
 
     def test_the_category_default_is_the_last_resort(self) -> None:
         mass = build_stat_sheet(CAT).stats[StatName.MASS]
@@ -89,6 +100,20 @@ class TestPreferenceOrder:
         assert stats[StatName.ATTACK_FORCE].value == pytest.approx(0.1 * 2500 * 50, abs=1)
         assert stats[StatName.ATTACK_FORCE].method == "derived"
         assert stats[StatName.ATTACK_RATE].value == 0.4
+
+    def test_a_zero_speed_end_stays_zero_in_the_ram_force_range(self) -> None:
+        facts = [fact("speed", v, "m/s", n=i) for i, v in enumerate([0.0, 10.0, 20.0])]
+        force = build_stat_sheet(TRUCK, facts).stats[StatName.ATTACK_FORCE]
+        assert force.low == 0.0
+
+    def test_a_tiny_fighter_keeps_its_reach_and_range(self) -> None:
+        reach = build_stat_sheet(ANT).stats[StatName.REACH]
+        assert 0 < reach.low < reach.value < reach.high
+        assert reach.confidence == "low"  # derived from a default size
+
+    def test_an_object_keeps_its_reach_default(self) -> None:
+        reach = build_stat_sheet(TOASTER).stats[StatName.REACH]
+        assert (reach.method, reach.value) == ("category_default", 0.0)
 
 
 class TestStoredFacts:
@@ -104,7 +129,7 @@ class TestStoredFacts:
         self, stat_field: str, value: float, unit: str, stat: StatName, expected: float
     ) -> None:
         got = build_stat_sheet(CAT, [fact(stat_field, value, unit)]).stats[stat]
-        assert got.value == pytest.approx(expected, abs=1e-6)
+        assert got.value == pytest.approx(expected, rel=1e-5)  # stored to 6 significant figures
         assert got.unit in ("kg", "m/s", "m")
 
     def test_several_figures_give_the_middle_one_and_their_spread(self) -> None:
@@ -135,8 +160,28 @@ class TestStoredFacts:
     def test_facts_are_read_from_the_database(self, tmp_path: Path) -> None:
         loaded = load_facts(_db_with(tmp_path, "house-cat", mass=4.2), "house-cat")
         assert [(s.fact.field, s.fact.value, s.license) for s in loaded] == [
-            ("mass", 4.2, "CC0 1.0")
+            ("P2067", 4.2, "CC0 1.0")
         ]
+
+    def test_a_real_wikidata_entity_reaches_the_sheet(self, tmp_path: Path) -> None:
+        unit = "http://www.wikidata.org/entity/Q11570"  # kilogram
+        claim = {
+            "id": "Q146$1",
+            "rank": "normal",
+            "mainsnak": {"datavalue": {"value": {"amount": "+4.5", "unit": unit}}},
+        }
+        entity = {"id": "Q146", "claims": {"P2067": [claim]}}
+        connection = connect(tmp_path / "app.db")
+        apply_migrations(connection)
+        store_facts(
+            connection, "house-cat", "wikidata", wikidata_facts(entity), "CC0 1.0", WHEN.isoformat()
+        )
+        mass = build_stat_sheet(CAT, load_facts(connection, "house-cat")).stats[StatName.MASS]
+        assert (mass.value, mass.method, mass.source.quote) == (4.5, "extracted", "mass: 4.5 kg")
+
+    def test_the_quote_keeps_every_stored_digit(self) -> None:
+        mass = build_stat_sheet(TRUCK, [fact("mass", 1234567, "kg")]).stats[StatName.MASS]
+        assert mass.source.quote == "mass: 1234567 kg"
 
 
 class TestEverySheet:
@@ -173,7 +218,7 @@ def _db_with(tmp_path: Path, fighter_id: str, mass: float):
         connection,
         fighter_id,
         "wikidata",
-        [Fact("wikidata", "mass", mass, "kg", "https://www.wikidata.org/wiki/Q1#s1")],
+        [Fact("wikidata", "P2067", mass, "kg", "https://www.wikidata.org/wiki/Q1#s1")],
         "CC0 1.0",
         WHEN.isoformat(),
     )
