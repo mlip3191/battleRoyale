@@ -1,5 +1,6 @@
 """Template scripts are valid, sync to real events, stay short, and never invent a number."""
 
+import dataclasses
 import json
 import socket
 from pathlib import Path
@@ -7,18 +8,23 @@ from pathlib import Path
 import pytest
 
 from app.models.narration import Script
-from app.models.simulation import FairFight, SimulationResult
+from app.models.simulation import EventType, FairFight, FightEvent, SimulationResult
 from app.models.stats import StatSheet
 from app.narration.facts import NarrationFacts, build_facts
 from app.narration.number_guard import find_unsupported_numbers
 from app.narration.templates import (
     MAX_BEATS,
+    MAX_HINT,
     MAX_LINE,
     MIN_BEATS,
+    _hint,
     fit,
     fmt,
     guarded,
+    intro_script,
+    outro_script,
     pick_events,
+    play_by_play_script,
     template_scripts,
 )
 
@@ -184,6 +190,7 @@ def test_small_stat_is_said_and_passes_the_guard() -> None:
     intro, _, _ = template_scripts(facts, RESULT)
     text = " ".join(line.text for line in intro.lines)
     assert "weighs in at 0.04 kilograms (0.088 pounds)" in text
+    assert "0.03" not in text and "0.05" not in text  # sampling bounds are never quoted
     for line in intro.lines:
         assert find_unsupported_numbers(line.text, facts.allowed) == [], line.text
 
@@ -235,3 +242,125 @@ def test_template_line_with_one_invented_digit_falls_back() -> None:
     invented = real.replace("389", "387")
     assert guarded(real, "safe", facts.allowed) == real
     assert guarded(invented, "safe", facts.allowed) == "safe"
+    # The intro itself swaps in a number-free stand-in once 389 (and its roundings) is not allowed.
+    values = frozenset(v for v in facts.allowed.values if abs(v - 389) > 389 * 0.01)
+    narrowed = dataclasses.replace(facts, allowed=dataclasses.replace(facts.allowed, values=values))
+    texts = [ln.text for ln in intro_script(narrowed).lines]
+    assert not any("389" in t for t in texts)
+    bear = narrowed.fighters[0].display_name
+    assert f"{bear} keeps its numbers to itself." in texts
+    for t in texts:
+        assert find_unsupported_numbers(t, narrowed.allowed) == [], t
+
+
+# Every line of every script passes the guard for these facts.
+def _assert_guarded(facts: NarrationFacts, *scripts: Script) -> None:
+    for script in scripts:
+        for ln in script.lines:
+            assert find_unsupported_numbers(ln.text, facts.allowed) == [], ln.text
+
+
+# One fixture event carrying the given engine hint.
+def _event_with_hint(hint: str) -> FightEvent:
+    return RESULT.representative_log[0].model_copy(update={"text_hint": hint})
+
+
+@pytest.mark.parametrize("hint", ["a" * 100, "word " * 30, "x" * 60 + " yy"])
+def test_hint_never_exceeds_the_cap(hint: str) -> None:
+    assert len(_hint(_event_with_hint(hint), "default", use_hint=True)) <= MAX_HINT
+    result = _hinted(hint)
+    facts = _facts("bear-vs-wolves", result)
+    _, pbp, _ = template_scripts(facts, result)
+    for ln in pbp.lines:
+        assert "a" * (MAX_HINT + 1) not in ln.text and "x" * (MAX_HINT + 1) not in ln.text
+    _assert_guarded(facts, pbp)
+
+
+def test_draw_outro_says_draw_and_its_percentage() -> None:
+    result = RESULT.model_copy(
+        update={"outcome": "draw", "win_prob": (0.44, 0.44), "draw_prob": 0.12}
+    )
+    facts = _facts("bear-vs-wolves", result)
+    outro = outro_script(facts)
+    text = " ".join(ln.text for ln in outro.lines)
+    assert "draw" in text.lower()
+    assert "12%" in text
+    _assert_guarded(facts, *template_scripts(facts, result))
+
+
+def test_draw_share_the_guard_rejects_gets_a_number_free_line() -> None:
+    result = RESULT.model_copy(
+        update={"outcome": "draw", "win_prob": (0.474, 0.473), "draw_prob": 0.053}
+    )
+    facts = _facts("bear-vs-wolves", result)
+    outro = outro_script(facts)
+    _assert_guarded(facts, outro)
+    assert any("Plenty of simulated fights ended even." == ln.text for ln in outro.lines)
+
+
+def test_side_zero_win_names_the_bear() -> None:
+    result = RESULT.model_copy(update={"outcome": "win_0"})
+    facts = _facts("bear-vs-wolves", result)
+    outro = outro_script(facts)
+    assert outro.lines[0].text.startswith("Your winner: Grizzly bear")
+    assert f"won {facts.win_pct[0]}%" in outro.lines[1].text
+    _assert_guarded(facts, outro)
+
+
+def test_fair_fight_absent_says_it_did_not_run() -> None:
+    a, b = MATCHUPS["bear-vs-wolves"]
+    facts = build_facts([_sheet(a), _sheet(b)], RESULT, None)
+    assert facts.fair_ran is False
+    outro = outro_script(facts)
+    texts = [ln.text for ln in outro.lines]
+    assert "Want a fair fight? We didn't run the fair-fight check tonight." in texts
+    assert not any("No count makes this one fair" in t for t in texts)
+    _assert_guarded(facts, outro)
+
+
+def test_fair_fight_that_found_no_count_says_so() -> None:
+    a, b = MATCHUPS["bear-vs-wolves"]
+    no_count = FAIR.model_copy(update={"count": None})
+    facts = build_facts([_sheet(a), _sheet(b)], RESULT, no_count)
+    assert facts.fair_ran is True and facts.fair_count is None
+    outro = outro_script(facts)
+    texts = [ln.text for ln in outro.lines]
+    assert "Want a fair fight? No count makes this one fair." in texts
+    assert not any("didn't run" in t for t in texts)
+    _assert_guarded(facts, outro)
+
+
+@pytest.mark.parametrize(
+    ("kind", "words"),
+    [
+        (EventType.ATTACK, "goes on the attack"),
+        (EventType.RETREAT, "backs off"),
+        (EventType.FLEE, "heads for the exit"),
+        (EventType.STALEMATE, "stalemate"),
+    ],
+)
+def test_every_beat_type_validates_and_points_at_its_event(kind: EventType, words: str) -> None:
+    base = RESULT.representative_log[0]
+    others = [base.model_copy(update={"type": t}) for t in (EventType.APPROACH, EventType.MISS)]
+    log = [*others, base.model_copy(update={"type": kind})]
+    result = RESULT.model_copy(update={"representative_log": log})
+    facts = _facts("bear-vs-wolves", result)
+    pbp = play_by_play_script(facts, result)
+    assert Script.model_validate(pbp.model_dump()) == pbp
+    assert any(ln.at_event == 2 and words in ln.text for ln in pbp.lines)
+    _assert_guarded(facts, pbp)
+
+
+def test_large_count_uses_a_thousands_separator() -> None:
+    a, b = MATCHUPS["bear-vs-wolves"]
+    facts = build_facts([_sheet(a), _sheet(b)], RESULT, FAIR, counts=(1, 1000))
+    scripts = template_scripts(facts, RESULT)
+    text = " ".join(ln.text for s in scripts for ln in s.lines)
+    assert "1,000 of them" in text
+    _assert_guarded(facts, *scripts)
+
+
+def test_fmt_tiny_values_never_use_scientific_notation() -> None:
+    said = fmt(2.5e-6)
+    assert said == "0.0000025"
+    assert "e" not in said and "E" not in said

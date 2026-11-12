@@ -1,40 +1,24 @@
 """Template scripts that need no language model: intro, play-by-play, and outro.
 
-Every number is filled in by code from NarrationFacts, so each line passes the number guard.
-Play-by-play lines also carry the engine's text_hint, so each one is run through the guard and
-falls back to a default hint if it fails. Every Script comes back with fallback=True.
+Every number is filled in by code from NarrationFacts, and every line that can carry a number
+(intro, play-by-play, and outro) is run through the number guard, falling back to a number-free
+stand-in if it fails. Play-by-play lines also carry the engine's text_hint, which the same guard
+checks. Every Script comes back with fallback=True.
 """
 
 import re
 from collections.abc import Sequence
+from decimal import Decimal
 
 from app.models.narration import Script, ScriptLine
 from app.models.simulation import EventType, FightEvent, SimulationResult
-from app.narration.facts import KG_TO_LB, MPS_TO_KMH, FighterFacts, NarrationFacts
+from app.narration.facts import FACTOR_WORDS, KG_TO_LB, MPS_TO_KMH, FighterFacts, NarrationFacts
 from app.narration.number_guard import AllowedNumbers, find_unsupported_numbers
 
 MAX_LINE = 200
 MAX_HINT = 60
 MIN_BEATS = 8
 MAX_BEATS = 20
-
-# Plain words for each deciding factor, so the outro needs no numbers to explain it.
-FACTOR_WORDS = {
-    "mass_kg": "sheer mass",
-    "size_m": "size",
-    "top_speed_mps": "speed",
-    "attack_force_n": "hitting power",
-    "attacks_per_s": "attack rate",
-    "reach_m": "reach",
-    "armor_0_1": "armor",
-    "endurance_s": "endurance",
-    "aggression_0_1": "aggression",
-    "group_tactics_0_1": "teamwork",
-    "numbers": "numbers",
-    "terrain": "the terrain",
-    "habitat": "habitat",
-    "abilities": "special abilities",
-}
 
 # Events worth keeping when a long log is cut down to the beat limit.
 KEY_EVENTS = {EventType.KO, EventType.FLEE, EventType.RETREAT, EventType.STALEMATE, EventType.END}
@@ -53,11 +37,11 @@ REACTIONS = (
 
 # A number as an announcer says it: thousands separators, at most one decimal, small values kept.
 def fmt(value: float) -> str:
-    """6000 -> "6,000"; 43.2 -> "43.2"; 1.0 -> "1"; 0.04 -> "0.04" (never rounded to "0")."""
+    """6000 -> "6,000"; 43.2 -> "43.2"; 1.0 -> "1"; 0.04 -> "0.04"; 2.5e-6 -> "0.0000025"."""
     if abs(value) >= 100:
         return f"{round(value):,}"
     if 0 < abs(value) < 1:
-        return f"{value:.2g}"
+        return format(Decimal(f"{value:.2g}"), "f")
     return f"{value:.1f}".rstrip("0").rstrip(".")
 
 
@@ -88,15 +72,41 @@ def guarded(text: str, safe: str, allowed: AllowedNumbers) -> str:
     return safe if find_unsupported_numbers(text, allowed) else text
 
 
+# A guarded, length-checked line: the text if its numbers pass, otherwise the number-free stand-in.
+def safe_line(
+    speaker: str, text: str, safe: str, facts: NarrationFacts, names: Sequence[str] = ()
+) -> ScriptLine:
+    """A ScriptLine whose numbers all pass the guard (`safe` must contain no numbers)."""
+    return line(speaker, guarded(text, safe, facts.allowed), names=names)
+
+
 # How a side is named in the broadcast, with its count when more than one fights.
 def team_name(f: FighterFacts) -> str:
-    """ "Dragon" or "Gray wolf, 6 of them"."""
-    return f"{f.display_name}, {f.count} of them" if f.count > 1 else f.display_name
+    """ "Dragon" or "Gray wolf, 6 of them" (or "1,000 of them")."""
+    return f"{f.display_name}, {f.count:,} of them" if f.count > 1 else f.display_name
 
 
 # The tale-of-the-tape line: mass and top speed, flagged as legend or estimate.
 def tape_line(f: FighterFacts) -> str:
     """One line of stats for a fighter, with the honesty labels the number rule needs."""
+    return _tape(f, _tape_body(f))
+
+
+# The tape line with no stats at all, used when the real one fails the number guard.
+def safe_tape_line(f: FighterFacts) -> str:
+    """ "Gray wolf keeps its numbers to itself." (legend wording kept for mythical fighters)."""
+    return _tape(f, "keeps its numbers to itself")
+
+
+# Wrap a tape body in the fighter's name, with the legend label when it applies.
+def _tape(f: FighterFacts, body: str) -> str:
+    if f.is_legend:
+        return f"{f.display_name}, according to legend, {body}. Legend numbers are estimates."
+    return f"{f.display_name} {body}."
+
+
+# The stats part of a tape line: mass and top speed, each flagged when it is an estimate.
+def _tape_body(f: FighterFacts) -> str:
     mass, speed = f.stat("mass_kg"), f.stat("top_speed_mps")
     parts = []
     if mass is not None:
@@ -111,10 +121,7 @@ def tape_line(f: FighterFacts) -> str:
         kmh = fmt(speed.value * MPS_TO_KMH) if speed.unit == "m/s" else fmt(speed.value)
         unit = "km/h" if speed.unit == "m/s" else _unit(speed.unit)
         parts.append(f"tops out at {est}{kmh} {unit}")
-    body = " and ".join(parts) if parts else "keeps its numbers to itself"
-    if f.is_legend:
-        return f"{f.display_name}, according to legend, {body}. Legend numbers are estimates."
-    return f"{f.display_name} {body}."
+    return " and ".join(parts) if parts else "keeps its numbers to itself"
 
 
 # Spoken name for a stored unit.
@@ -128,12 +135,25 @@ def intro_script(facts: NarrationFacts) -> Script:
     """The intro: 4 to 8 lines about who is fighting, grounded only in the stat sheets."""
     red, blue = facts.fighters
     names = [red.display_name, blue.display_name]
+    red_in, blue_in = "In the red corner: {}!", "And in the blue corner: {}!"
     lines = [
         line("announcer", "Good evening, fight fans, and welcome to Battle Royale!"),
-        line("announcer", f"In the red corner: {team_name(red)}!", names=names),
-        line("color_commentator", tape_line(red), names=names),
-        line("announcer", f"And in the blue corner: {team_name(blue)}!", names=names),
-        line("color_commentator", tape_line(blue), names=names),
+        safe_line(
+            "announcer",
+            red_in.format(team_name(red)),
+            red_in.format(red.display_name),
+            facts,
+            names,
+        ),
+        safe_line("color_commentator", tape_line(red), safe_tape_line(red), facts, names),
+        safe_line(
+            "announcer",
+            blue_in.format(team_name(blue)),
+            blue_in.format(blue.display_name),
+            facts,
+            names,
+        ),
+        safe_line("color_commentator", tape_line(blue), safe_tape_line(blue), facts, names),
     ]
     if red.body == "inert" or blue.body == "inert":
         lines.append(line("color_commentator", "Yes, it is an object. We take it seriously."))
@@ -166,7 +186,8 @@ def pick_events(log: list[FightEvent]) -> list[int]:
 def _hint(event: FightEvent, default: str, use_hint: bool) -> str:
     cleaned = re.sub(r"\s+", " ", re.sub(r"[^A-Za-z ]", " ", event.text_hint)).strip()
     if len(cleaned) > MAX_HINT:
-        cleaned = cleaned[: MAX_HINT + 1].rsplit(" ", 1)[0]
+        head = cleaned[: MAX_HINT + 1]
+        cleaned = head.rsplit(" ", 1)[0] if " " in head else head[:MAX_HINT]
     return cleaned if cleaned and use_hint else default
 
 
@@ -175,7 +196,7 @@ def beat_text(event: FightEvent, facts: NarrationFacts, use_hint: bool = True) -
     """What the announcer says about one event (PG: knockouts and retreats, no gore)."""
     f = facts.fighters[event.side]
     who = (
-        f"{f.display_name}, all {event.group_size} of them,"
+        f"{f.display_name}, all {event.group_size:,} of them,"
         if event.group_size > 1
         else f.display_name
     )
@@ -222,6 +243,24 @@ def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Scri
     return Script(kind="play_by_play", lines=lines, fallback=True)
 
 
+# The fair-fight line: the count that makes it a coin flip, "none found", or "not run tonight".
+def fair_fight_line(facts: NarrationFacts, names: Sequence[str] = ()) -> ScriptLine:
+    """Never claims "no count makes this fair" unless the fair-fight check actually ran."""
+    if facts.fair_count is not None and facts.fair_side is not None:
+        varied = facts.fighters[facts.fair_side].display_name
+        text = (
+            f"Want a fair fight? About {facts.fair_count} of {varied} makes it a coin flip, "
+            f"winning {facts.fair_win_pct}% of the time."
+        )
+        safe = "Want a fair fight? We have a count that makes it a coin flip."
+        return safe_line("color_commentator", text, safe, facts, names)
+    if facts.fair_ran:
+        text = "Want a fair fight? No count makes this one fair."
+    else:
+        text = "Want a fair fight? We didn't run the fair-fight check tonight."
+    return safe_line("color_commentator", text, text, facts)
+
+
 def outro_script(facts: NarrationFacts) -> Script:
     """The outro: verdict, win percentage, deciding factor, and the fair-fight line."""
     red, blue = facts.fighters
@@ -230,38 +269,51 @@ def outro_script(facts: NarrationFacts) -> Script:
     if facts.outcome in ("win_0", "win_1"):
         side = 0 if facts.outcome == "win_0" else 1
         winner = facts.fighters[side]
+        won = (
+            f"{winner.display_name} won {facts.win_pct[side]}% of {facts.runs:,} simulated fights."
+        )
         lines = [
-            line("announcer", f"Your winner: {team_name(winner)}!", names=names),
-            line(
-                "color_commentator",
-                f"{winner.display_name} won {facts.win_pct[side]}% of "
-                f"{facts.runs:,} simulated fights.",
-                names=names,
+            safe_line(
+                "announcer",
+                f"Your winner: {team_name(winner)}!",
+                f"Your winner: {winner.display_name}!",
+                facts,
+                names,
+            ),
+            safe_line(
+                "color_commentator", won, f"{winner.display_name} takes the win.", facts, names
             ),
         ]
     elif facts.outcome == "draw":
         lines = [
             line("announcer", "It's a draw! Nobody takes the belt tonight!"),
-            line("color_commentator", f"{facts.draw_pct}% of simulated fights ended even."),
+            safe_line(
+                "color_commentator",
+                f"{facts.draw_pct}% of simulated fights ended even.",
+                "Plenty of simulated fights ended even.",
+                facts,
+            ),
         ]
     else:
         lines = [
             line("announcer", "No contest! These two never even met."),
-            line("color_commentator", f"{names[0]} and {names[1]} cannot engage.", names=names),
-        ]
-    lines.append(line("announcer", f"The deciding factor: {factor}."))
-    if facts.fair_count is not None and facts.fair_side is not None:
-        varied = facts.fighters[facts.fair_side].display_name
-        lines.append(
-            line(
+            safe_line(
                 "color_commentator",
-                f"Want a fair fight? About {facts.fair_count} of {varied} makes it a coin flip, "
-                f"winning {facts.fair_win_pct}% of the time.",
-                names=names,
-            )
+                f"{names[0]} and {names[1]} cannot engage.",
+                "These two cannot engage.",
+                facts,
+                names,
+            ),
+        ]
+    lines.append(
+        safe_line(
+            "announcer",
+            f"The deciding factor: {factor}.",
+            "The deciding factor: the science.",
+            facts,
         )
-    else:
-        lines.append(line("color_commentator", "Want a fair fight? No count makes this one fair."))
+    )
+    lines.append(fair_fight_line(facts, names))
     lines.append(line("announcer", "That's all from the arena. Good night, everybody!"))
     return Script(kind="outro", lines=lines, fallback=True)
 
