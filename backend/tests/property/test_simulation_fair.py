@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from app.models.matchup import FighterRequest
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation import fair
@@ -183,6 +184,53 @@ def test_the_challenger_wording_follows_the_named_thresholds():
     assert _how_even(0.5 - slight + eps) == "a slight underdog"
     assert _how_even(0.5 + slight + eps) == "a clear favorite"
     assert _how_even(0.5 - slight - eps) == "a clear underdog"
+
+
+# --- test_challengers: the winner as the user saw it ----------------------------------------------
+
+
+def mid_bear():
+    return make_sheet("bear", mass_kg=300, size_m=2.2, attack_force_n=4000)
+
+
+def wolves(count, size_reference=None):
+    return FighterRequest(
+        entity="gray-wolf", count=count, size_reference=size_reference, raw="gray wolves"
+    )
+
+
+def test_a_winner_of_six_is_tested_as_six_and_the_reason_says_so():
+    (alone,) = test_challengers(wolf(), [mid_bear()], terrain=Terrain.ARENA)
+    (pack,) = test_challengers(
+        wolf(), [mid_bear()], terrain=Terrain.ARENA, winner_request=wolves(6)
+    )
+    assert pack.tested_win_prob < alone.tested_win_prob - 0.2  # one bear against six wolves
+    assert "against 6 gray wolves." in pack.reason
+    assert "against Gray wolf." in alone.reason
+
+
+def test_a_winner_with_a_size_reference_is_scaled_to_it():
+    big = make_sheet("elephant", mass_kg=5000, size_m=3.2, attack_force_n=20000, armor_0_1=0.5)
+    (plain,) = test_challengers(wolf(), [mid_bear()], terrain=Terrain.ARENA)
+    (scaled,) = test_challengers(
+        wolf(),
+        [mid_bear()],
+        terrain=Terrain.ARENA,
+        winner_request=wolves(1, "elephant"),
+        winner_reference=big,
+    )
+    assert scaled.tested_win_prob < plain.tested_win_prob - 0.2  # an elephant-sized wolf
+    assert "against Gray wolf (elephant-sized)." in scaled.reason
+
+
+def test_a_size_reference_without_its_sheet_is_left_unscaled_and_does_not_fail():
+    (plain,) = test_challengers(wolf(), [mid_bear()], terrain=Terrain.ARENA)
+    (missing,) = test_challengers(
+        wolf(), [mid_bear()], terrain=Terrain.ARENA, winner_request=wolves(1, "elephant")
+    )
+    assert missing.tested_win_prob == plain.tested_win_prob  # same fight, same seed
+    assert "elephant-sized" not in missing.reason  # it was not scaled, so the text must not say so
+    assert missing.reason == plain.reason
 
 
 # --- the search logic, pinned with a fake engine ----------------------------------------------
