@@ -374,6 +374,7 @@ describe("images that never load", () => {
     vi.useFakeTimers();
     const { scene } = hangingStage();
     scene.create(); // Phaser finished the load and built the stage
+    expect(vi.getTimerCount()).toBe(0); // create() cleared the pending timeout
     const drawn = scene.images.length;
     vi.advanceTimersByTime(LOAD_TIMEOUT_MS * 2);
     expect(scene.load.loadComplete).not.toHaveBeenCalled();
