@@ -336,6 +336,13 @@ async def test_live_style_splits_find_the_seed_sheet(
     assert [s.fighter_id for s in record.stat_sheets] == [fighter_id, "duck"]
 
 
+async def test_live_style_grey_wolf_finds_the_seed_sheet(store: BattleStore) -> None:
+    # "grey" is not the sheet's spelling; the lookup maps it to gray-wolf.
+    record = await battle(store, _fight({"entity": "wolf", "variant": "grey"}, {"entity": "horse"}))
+    assert record.status == "done"
+    assert [s.fighter_id for s in record.stat_sheets] == ["gray-wolf", "horse"]
+
+
 async def test_mock_style_full_name_with_a_descriptive_variant_still_finds_the_sheet(
     store: BattleStore,
 ) -> None:

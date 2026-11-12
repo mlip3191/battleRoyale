@@ -348,3 +348,27 @@ def test_seed_sheet_lookup_uses_a_unique_match_from_the_raw_phrase() -> None:
     assert find_seed_sheet("unicorn", raw="a fluffy unicorn") is None
     assert find_seed_sheet("bear", raw="../fighters") is None
     assert find_seed_sheet("", raw="a grizzly bear") is None
+
+
+def test_seed_sheet_lookup_accepts_grey_and_plural_names() -> None:
+    # Live-style split: entity wolf + British spelling in variant.
+    sheet = find_seed_sheet("wolf", "grey")
+    assert sheet is not None and sheet.fighter_id == "gray-wolf"
+    # Raw phrase with both grey and a plural ("wolves" does not slug to "wolf").
+    sheet = find_seed_sheet("wolf", raw="6 grey wolves")
+    assert sheet is not None and sheet.fighter_id == "gray-wolf"
+    sheet = find_seed_sheet("wolves", "grey")
+    assert sheet is not None and sheet.fighter_id == "gray-wolf"
+    # Plural entity finds the singular sheet when one exists.
+    sheet = find_seed_sheet("ducks")
+    assert sheet is not None and sheet.fighter_id == "duck"
+    # Bare "wolves" must not grab gray-wolf.
+    assert find_seed_sheet("wolves") is None
+    assert find_seed_sheet("wolves", raw="wolves") is None
+    # Names that should still miss still miss.
+    assert find_seed_sheet("bear", "polar") is None
+    assert find_seed_sheet("bear") is None
+    assert find_seed_sheet("bear", raw="a bear") is None
+    # Slugs stay [a-z0-9-]; aliases do not loosen the path check.
+    assert find_seed_sheet("../fighters", "grey") is None
+    assert find_seed_sheet("wolves", raw="../fighters") is None
