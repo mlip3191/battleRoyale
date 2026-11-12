@@ -186,6 +186,7 @@ test("example chips fill the box", () => {
 });
 
 // The fighters with a ready-made stat sheet in data/seed/fighters/ (singular or plural).
+// Hand-copied: keep in sync with that folder's file names when a seed sheet is added or removed.
 const SEED_FIGHTERS = [
   /\bafrican elephants?\b/,
   /\bducks?\b/,

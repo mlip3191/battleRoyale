@@ -21,6 +21,8 @@ type Terrain = Matchup["terrain"];
 // lands (later A05 work), any other matchup ends in "This fight was called off", which would
 // make the suggestions look broken (#205). Bring the showcase-style examples back then.
 // Gorilla vs grizzly bear is left out on purpose until calibration (#47) has looked at it.
+// When the seed list changes, re-check all six chips from intake to a verdict, and update
+// SEED_FIGHTERS in Home.test.tsx to match.
 export const EXAMPLES = [
   "a grizzly bear vs 6 gray wolves in a forest",
   "a honey badger vs a saltwater crocodile",
