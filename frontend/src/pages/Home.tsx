@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  ApiError,
   answerIntake,
   createBattle,
   listShowcase,
@@ -40,6 +41,25 @@ const OFFLINE =
 const LOST_QUESTION =
   "That question got lost on the way to the studio. Please send your matchup again.";
 
+// Shown after about SLOW_MS of waiting, so a slow (but normal) reply doesn't look frozen (D-52).
+const STILL_WORKING = "Still sizing them up…";
+const SLOW_MS = 5_000;
+
+// A busy matchup desk (503) speaks in the server's words; anything else blames the connection.
+function failureMessage(error: unknown) {
+  return error instanceof ApiError && error.status === 503 && error.detail
+    ? error.detail
+    : OFFLINE;
+}
+
+// A question the server no longer has (404: expired or already answered).
+const isLostQuestion = (error: unknown): error is ApiError =>
+  error instanceof ApiError && error.status === 404;
+
+// The server's own lost-question words; a bare "Not Found" (a 404 from no route at all) isn't one.
+const lostMessage = (error: ApiError) =>
+  error.detail && error.detail !== "Not Found" ? error.detail : LOST_QUESTION;
+
 // Where the desk is: waiting for input, talking to the backend, or showing intake's answer
 // (while an answer to its question is on its way, or after that answer failed).
 type Step =
@@ -57,6 +77,8 @@ export default function Home() {
   const [text, setText] = useState("");
   const [step, setStep] = useState<Step>({ kind: "idle" });
   const [showcase, setShowcase] = useState<ShowcaseBattle[]>([]);
+  const [slow, setSlow] = useState(false);
+  const slowTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
   const box = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -65,16 +87,41 @@ export default function Home() {
       .catch(() => setShowcase([]));
   }, []);
 
+  // Leaving the page stops every still-working timer.
+  useEffect(() => {
+    const timers = slowTimers.current;
+    return () => {
+      timers.forEach(clearTimeout);
+      timers.clear();
+    };
+  }, []);
+
+  // Wait for one intake call; past SLOW_MS, show the still-working line. Each call has its own
+  // timer, and the line goes only when no call is left waiting, so overlapping calls don't
+  // hide it early.
+  const wait = (request: Promise<IntakeResult>) => {
+    const timers = slowTimers.current;
+    const timer = setTimeout(() => setSlow(true), SLOW_MS);
+    timers.add(timer);
+    return request.finally(() => {
+      clearTimeout(timer);
+      if (timers.delete(timer) && timers.size === 0) setSlow(false);
+    });
+  };
+
   // Send intake's reply (or a failure) to the screen.
   const handle = (request: Promise<IntakeResult>) => {
     setStep({ kind: "busy" });
-    request
+    wait(request)
       .then((result) => setStep({ kind: "result", result }))
-      .catch(() => setStep({ kind: "error", message: OFFLINE }));
+      .catch((error: unknown) =>
+        setStep({ kind: "error", message: failureMessage(error) }),
+      );
   };
 
   // Answer the clarifying question. The card stays up (buttons off) while the answer is sent,
-  // and stays up with an error if it fails, so the question is never lost.
+  // and stays up with an error if it fails, so the question is never lost. Only when the
+  // server no longer has the question (404) does the card go, so the matchup is typed again.
   const answering = useRef(false);
   const answer = (result: IntakeResult, reply: string) => {
     if (answering.current) return;
@@ -84,9 +131,15 @@ export default function Home() {
     }
     answering.current = true;
     setStep({ kind: "result", result, answering: true });
-    answerIntake(result.pending_id, reply)
+    wait(answerIntake(result.pending_id, reply))
       .then((next) => setStep({ kind: "result", result: next }))
-      .catch(() => setStep({ kind: "result", result, error: OFFLINE }))
+      .catch((error: unknown) =>
+        setStep(
+          isLostQuestion(error)
+            ? { kind: "error", message: lostMessage(error) }
+            : { kind: "result", result, error: failureMessage(error) },
+        ),
+      )
       .finally(() => (answering.current = false));
   };
 
@@ -132,6 +185,9 @@ export default function Home() {
         >
           {step.kind === "busy" ? "Checking the card…" : "FIGHT!"}
         </button>
+        <p className={styles.muted} role="status" aria-live="polite">
+          {slow ? STILL_WORKING : ""}
+        </p>
         <ul className={styles.chips} aria-label="Examples">
           {EXAMPLES.map((example) => (
             <li key={example}>
