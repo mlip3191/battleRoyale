@@ -22,6 +22,7 @@ from app.pipeline import orchestrator, stages
 from app.pipeline.orchestrator import STUB, run_battle
 from app.pipeline.store import STAGES, BattleStore
 from app.research.seed_fighters import find_seed_sheet
+from tests.conftest import mock_settings
 
 SIM_RUNS = 20  # enough to get a verdict; keeps the tests fast
 WAIT_SECONDS = 30.0
@@ -42,7 +43,7 @@ def matchup(first: str, second: str, **extra: Any) -> Matchup:
 # Few simulation runs, so each battle finishes in well under a second.
 @pytest.fixture(autouse=True)
 def _quick_simulation() -> None:
-    use_settings(Settings(_env_file=None, provider_mode="mock", sim_runs=SIM_RUNS))
+    use_settings(mock_settings(sim_runs=SIM_RUNS))
 
 
 @pytest.fixture
@@ -316,3 +317,59 @@ def test_seed_sheet_lookup_matches_names_and_rejects_others() -> None:
     assert find_seed_sheet("unicorn") is None
     assert find_seed_sheet("../fighters") is None
     assert find_seed_sheet("") is None
+
+
+def test_seed_sheet_lookup_tries_variant_plus_entity_then_entity_alone() -> None:
+    for entity, variant, fighter_id in (
+        ("bear", "grizzly", "grizzly-bear"),
+        ("wolf", "gray", "gray-wolf"),
+        ("elephant", "african", "african-elephant"),
+    ):
+        sheet = find_seed_sheet(entity, variant)
+        assert sheet is not None and sheet.fighter_id == fighter_id
+    # Mock-style: full name as entity, descriptive variant with no sheet of its own.
+    sheet = find_seed_sheet("grizzly bear", "adult male")
+    assert sheet is not None and sheet.fighter_id == "grizzly-bear"
+    # Same slug and empty-name rules when a variant is present.
+    assert find_seed_sheet("../fighters", "grizzly") is None
+    assert find_seed_sheet("", "grizzly") is None
+    assert find_seed_sheet("unicorn", "adult") is None
+
+
+def test_seed_sheet_lookup_uses_a_unique_match_from_the_raw_phrase() -> None:
+    for entity, raw, fighter_id in (
+        ("bear", "a grizzly bear", "grizzly-bear"),
+        ("wolf", "6 gray wolves", "gray-wolf"),
+        ("elephant", "an african elephant", "african-elephant"),
+    ):
+        sheet = find_seed_sheet(entity, raw=raw)
+        assert sheet is not None and sheet.fighter_id == fighter_id
+    # Vague raw has no unique sheet: "grizzly" is not in the phrase.
+    assert find_seed_sheet("bear", raw="a bear") is None
+    assert find_seed_sheet("unicorn", raw="a fluffy unicorn") is None
+    assert find_seed_sheet("bear", raw="../fighters") is None
+    assert find_seed_sheet("", raw="a grizzly bear") is None
+
+
+def test_seed_sheet_lookup_accepts_grey_and_plural_names() -> None:
+    # Live-style split: entity wolf + British spelling in variant.
+    sheet = find_seed_sheet("wolf", "grey")
+    assert sheet is not None and sheet.fighter_id == "gray-wolf"
+    # Raw phrase with a British spelling and a plural; the aliases map both words.
+    sheet = find_seed_sheet("wolf", raw="6 grey wolves")
+    assert sheet is not None and sheet.fighter_id == "gray-wolf"
+    sheet = find_seed_sheet("wolves", "grey")
+    assert sheet is not None and sheet.fighter_id == "gray-wolf"
+    # Plural entity finds the singular sheet when one exists.
+    sheet = find_seed_sheet("ducks")
+    assert sheet is not None and sheet.fighter_id == "duck"
+    # Bare "wolves" must not grab gray-wolf.
+    assert find_seed_sheet("wolves") is None
+    assert find_seed_sheet("wolves", raw="wolves") is None
+    # Names that should still miss still miss.
+    assert find_seed_sheet("bear", "polar") is None
+    assert find_seed_sheet("bear") is None
+    assert find_seed_sheet("bear", raw="a bear") is None
+    # Slugs stay [a-z0-9-]; aliases do not loosen the path check.
+    assert find_seed_sheet("../fighters", "grey") is None
+    assert find_seed_sheet("wolves", raw="../fighters") is None

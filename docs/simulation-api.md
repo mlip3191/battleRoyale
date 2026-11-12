@@ -18,7 +18,7 @@ from app.simulation.summary import summary
 | `test_challengers(winner_sheet, candidates, terrain, winner_request=None, winner_reference=None)` | `list[ChallengerSuggestion]`, closest to 50/50 first (may be **empty**: candidates that cannot meet the winner are dropped; `entity` is a display name, not a `fighter_id`). By default the winner duels as one plain fighter; pass the winner's `FighterRequest` (its count and `size_reference`) and the size-reference sheet to duel it as the user saw it ("6 gray wolves", "horse-sized duck"); the reason then names it that way | The "next challenger" step | ~0.3 s for 8 candidates (one plain winner; a winner with a large count makes each duel slower, so check the stage budget when it is wired in) |
 | `summary(result, names)` | `Summary` | The numbers the UI and announcer need | instant |
 
-Timings are typical on a dev laptop at `ENGINE_VERSION 6`; expect similar or faster.
+Timings are typical on a dev laptop at `ENGINE_VERSION 8`; expect similar or faster.
 
 All calls are **deterministic**: the same matchup, sheets, and engine version always give the identical result (the seed is built from the matchup, both `sheet_hash` values, and `ENGINE_VERSION`). That is what lets "same battle requested twice" return the cached answer.
 
@@ -112,7 +112,7 @@ If a fighter has a `size_reference` and no reference sheet is given, `run` raise
 | `hit` | `side` is the **attacker's** side, `actor` the attacker, `target` the one hit; `damage` is the hit. **Swarm hits:** `actor` and `target` are `None`, `group_size` is how many hit, and `damage` is the group total | "bite lands" (swarm: "bites land"), "blast lands", "ram lands", and so on (weapon words below) |
 | `hit` (spines) | **Swapped:** `side` is the **defender's** side, `actor` the spiny defender, `target` the attacker it hurt | "spines jab back" |
 | `miss` | Like `hit`; `damage` is `None`. Swarm fights have no MISS events | "bite misses", "blast misses", and so on |
-| `ko` | `side` is the side that **went down** (or the machine that broke), `actor` is the fallen fighter's index, `target` is `None`; swarm: `actor` is `None` and `group_size` is how many fell. The "more go down" summary KO never has an `actor` (even in a one-by-one fight) and its `t` is the time of the last logged event, not when those fighters fell, so the replay scene must not look an actor up for it | "goes down" / "go down"; "more go down" (a summary of falls that did not fit in the log, see below); "out of action: its operating time ran out" |
+| `ko` | `side` is the side that **went down** (or the machine that broke), `actor` is the fallen fighter's index, `target` is `None`; swarm: `actor` is `None` and `group_size` is how many fell. The "more go down" summary KO never has an `actor` (even in a one-by-one fight) and its `t` is the time of the last logged event, not when those fighters fell, so the replay scene must not look an actor up for it | "goes down" / "go down"; "more go down" (a summary of falls that did not fit in the log, see below); "out of action: its operating time ran out"; "succumbs to venom" (a poisoned survivor of a decided fight: `side` is the survivor's side and `t` is up to 120 s after the last blow; a venom draw then logs a "neither side can win" stalemate) |
 | `retreat` | `side` is the side that ran; `group_size` is how many were left | "breaks and runs" / "break and run" |
 | `flee` | `side` is the side that got away | "escapes" / "escape" |
 | `stalemate` | `side` is 0 | "neither side can win" |

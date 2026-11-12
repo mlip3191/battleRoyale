@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from app.config import Settings, use_settings
+from app.config import use_settings
 from app.models.battle import BattleRecord, StageStatus
 from app.models.matchup import Matchup
 from app.models.media import Asset
@@ -15,6 +15,7 @@ from app.pipeline.orchestrator import FALLBACK_DETAILS, STUB, run_battle
 from app.pipeline.stages import Stubbed
 from app.pipeline.store import STAGES, BattleStore
 from app.simulation import fair
+from tests.conftest import mock_settings
 
 SIM_RUNS = 20  # enough for a verdict; keeps each battle quick
 HARD_TIMEOUT = 20.0  # no battle in this file may take longer than this
@@ -30,7 +31,7 @@ WORK = {"summary": "summary", "challenger": "challenger", "script": "scripts", *
 
 @pytest.fixture(autouse=True)
 def _quick_and_bounded(monkeypatch: pytest.MonkeyPatch) -> None:
-    use_settings(Settings(_env_file=None, provider_mode="mock", sim_runs=SIM_RUNS))
+    use_settings(mock_settings(sim_runs=SIM_RUNS))
     for stage in stages.STAGE_BUDGETS_S:
         monkeypatch.setitem(stages.STAGE_BUDGETS_S, stage, SMALL_BUDGET)
 
@@ -268,14 +269,14 @@ async def test_size_reference_entities_are_looked_up_in_parallel(
     real, looked_up = stages.lookup_sheet, []
     in_flight = most = 0
 
-    async def counting(entity: str) -> Any:
+    async def counting(entity: str, variant: str | None = None, raw: str | None = None) -> Any:
         nonlocal in_flight, most
         looked_up.append(entity)
         in_flight += 1
         most = max(most, in_flight)
         await asyncio.sleep(PAUSE)
         in_flight -= 1
-        return await real(entity)
+        return await real(entity, variant, raw)
 
     replace(monkeypatch, "lookup_sheet", counting)
     record = await battle(store, matchup("duck", "horse", refs=("horse", "duck")))
@@ -300,6 +301,117 @@ async def test_a_missing_fighter_still_fails_research(store: BattleStore) -> Non
     record = await battle(store, matchup("unicorn", "horse", refs=(None, "duck")))
     assert record.status == "failed"
     assert "unicorn" in (stage_of(record, "research").detail or "")
+
+
+def _fight(
+    first: dict[str, object],
+    second: dict[str, object],
+    raw: str = "",
+    terrain: str = "arena",
+) -> Matchup:
+    left = {"raw": first["entity"], **first}
+    right = {"raw": second["entity"], **second}
+    return Matchup.model_validate(
+        {
+            "fighters": [left, right],
+            "raw_text": raw or f"{left['entity']} vs {right['entity']}",
+            "terrain": terrain,
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    "entity, variant, fighter_id",
+    [
+        ("bear", "grizzly", "grizzly-bear"),
+        ("wolf", "gray", "gray-wolf"),
+        ("elephant", "african", "african-elephant"),
+    ],
+)
+async def test_live_style_splits_find_the_seed_sheet(
+    store: BattleStore, entity: str, variant: str, fighter_id: str
+) -> None:
+    # Live intake moves a descriptive word into variant ("bear" + "grizzly").
+    record = await battle(store, _fight({"entity": entity, "variant": variant}, {"entity": "duck"}))
+    assert record.status == "done"
+    assert [s.fighter_id for s in record.stat_sheets] == [fighter_id, "duck"]
+
+
+async def test_live_style_grey_wolf_finds_the_seed_sheet(store: BattleStore) -> None:
+    # "grey" is not the sheet's spelling; the lookup maps it to gray-wolf.
+    record = await battle(store, _fight({"entity": "wolf", "variant": "grey"}, {"entity": "horse"}))
+    assert record.status == "done"
+    assert [s.fighter_id for s in record.stat_sheets] == ["gray-wolf", "horse"]
+
+
+async def test_mock_style_full_name_with_a_descriptive_variant_still_finds_the_sheet(
+    store: BattleStore,
+) -> None:
+    # Mock intake keeps the full name and a label like "adult male".
+    record = await battle(
+        store,
+        _fight(
+            {"entity": "grizzly bear", "variant": "adult male"},
+            {"entity": "gray wolf", "variant": "adult", "count": 6},
+            raw="a grizzly bear vs 6 gray wolves in a forest",
+            terrain="forest",
+        ),
+    )
+    assert record.status == "done"
+    assert [s.fighter_id for s in record.stat_sheets] == ["grizzly-bear", "gray-wolf"]
+
+
+async def test_a_live_style_name_with_no_sheet_still_fails_with_the_plain_message(
+    store: BattleStore,
+) -> None:
+    record = await battle(store, _fight({"entity": "bear", "variant": "polar"}, {"entity": "duck"}))
+    assert record.status == "failed"
+    detail = stage_of(record, "research").detail or ""
+    assert "bear" in detail
+    assert detail == stages.NOT_FOUND.format(name="polar bear")
+
+
+async def test_live_style_raw_phrase_finds_the_seed_sheets(store: BattleStore) -> None:
+    # Live intake this time left the descriptor only in raw, with variant empty.
+    record = await battle(
+        store,
+        _fight(
+            {"entity": "bear", "raw": "a grizzly bear"},
+            {"entity": "wolf", "raw": "6 gray wolves", "count": 6},
+            raw="a grizzly bear vs 6 gray wolves in a forest",
+            terrain="forest",
+        ),
+    )
+    assert record.status == "done"
+    assert [s.fighter_id for s in record.stat_sheets] == ["grizzly-bear", "gray-wolf"]
+
+
+async def test_a_vague_raw_phrase_still_fails_with_the_plain_message(store: BattleStore) -> None:
+    record = await battle(store, _fight({"entity": "bear", "raw": "a bear"}, {"entity": "duck"}))
+    assert record.status == "failed"
+    detail = stage_of(record, "research").detail or ""
+    assert detail == stages.NOT_FOUND.format(name="bear")
+
+
+async def test_the_no_stat_sheet_message_names_the_fighter_as_typed(store: BattleStore) -> None:
+    # A plain name, with no variant.
+    record = await battle(store, _fight({"entity": "unicorn"}, {"entity": "duck"}))
+    assert record.status == "failed"
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="unicorn")
+    # A label-style variant is not shown.
+    record = await battle(
+        store, _fight({"entity": "unicorn", "variant": "adult male"}, {"entity": "duck"})
+    )
+    assert record.status == "failed"
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="unicorn")
+    # If the variant already contains the name, do not double it.
+    record = await battle(
+        store, _fight({"entity": "unicorn", "variant": "white unicorn"}, {"entity": "duck"})
+    )
+    assert record.status == "failed"
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(
+        name="white unicorn"
+    )
 
 
 async def test_the_fair_fight_comes_from_the_real_search(store: BattleStore) -> None:

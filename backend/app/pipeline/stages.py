@@ -7,10 +7,11 @@ the orchestrator marks the stage detail "stub". Stubs remaining: scripts (A06), 
 """
 
 import asyncio
+import hashlib
 import json
 from dataclasses import dataclass, field
 
-from app.config import REPO_ROOT
+from app.config import REPO_ROOT, get_settings
 from app.models.matchup import Matchup
 from app.models.media import Asset
 from app.models.narration import Script
@@ -19,6 +20,7 @@ from app.models.stats import StatSheet
 from app.pipeline import challenger as next_challenger
 from app.research.seed_fighters import find_seed_sheet
 from app.simulation import engine, fair
+from app.simulation.rng import make_seed
 
 # Time limit per stage in seconds, from the ARCHITECTURE §4 stage budget table (research uses
 # the new-fighter budget). The orchestrator reads it on every call, so tests can shrink it.
@@ -37,6 +39,18 @@ CONTRACT_FIXTURES = REPO_ROOT / "backend" / "tests" / "fixtures" / "contracts"
 NOT_FOUND = (
     "We don't have a stat sheet for {name!r} yet. For now, pick one of our ready-made fighters."
 )
+# Age and sex words used as labels by mock intake; they are not shown in the miss message.
+_LABEL_WORDS = frozenset({"adult", "male", "female", "juvenile", "baby", "young"})
+
+
+def _typed_name(entity: str, variant: str | None) -> str:
+    """The fighter as the user would recognise it: descriptive variant plus entity."""
+    kind = (variant or "").strip()
+    if kind and any(part not in _LABEL_WORDS for part in kind.lower().split()):
+        if kind.lower().split()[-len(entity.split()) :] == entity.lower().split():
+            return kind
+        return f"{kind} {entity}"
+    return entity
 
 
 class StageFailed(Exception):
@@ -68,27 +82,38 @@ class Research:
 
 
 # Find one fighter's stat sheet; the single seam G04's get_stat_sheet will replace.
-async def lookup_sheet(entity: str) -> StatSheet | None:
-    return await asyncio.to_thread(find_seed_sheet, entity)
+# variant and raw are tried as described in find_seed_sheet; size references have no
+# variant or raw, so they are looked up by the name alone through this same function.
+async def lookup_sheet(
+    entity: str, variant: str | None = None, raw: str | None = None
+) -> StatSheet | None:
+    return await asyncio.to_thread(find_seed_sheet, entity, variant, raw)
 
 
 # Step 2: look up both fighters and any size_reference entities, all at the same time.
 async def research(matchup: Matchup) -> Research:
-    fighters = [f.entity for f in matchup.fighters]
-    references = [f.size_reference for f in matchup.fighters]
-    names = fighters + [ref for ref in references if ref is not None]
-    found = await asyncio.gather(*(lookup_sheet(name) for name in names))
-    by_name = dict(zip(names, found, strict=True))
-    sheets = []
-    for name in fighters:
-        sheet = by_name[name]
+    fighters = matchup.fighters
+    references = [f.size_reference for f in fighters]
+    found = await asyncio.gather(
+        *(lookup_sheet(f.entity, f.variant, f.raw) for f in fighters),
+        *(lookup_sheet(ref) for ref in references if ref is not None),
+    )
+    sheets: list[StatSheet] = []
+    for fighter, sheet in zip(fighters, found[: len(fighters)], strict=True):
         if sheet is None:
-            raise StageFailed(NOT_FOUND.format(name=name))
+            raise StageFailed(NOT_FOUND.format(name=_typed_name(fighter.entity, fighter.variant)))
         sheets.append(sheet)
-    reference_sheets = [None if ref is None else by_name[ref] for ref in references]
-    missing = [
-        ref for ref, sheet in zip(references, reference_sheets, strict=True) if ref and not sheet
-    ]
+    found_refs = iter(found[len(fighters) :])
+    reference_sheets: list[StatSheet | None] = []
+    missing: list[str] = []
+    for ref in references:
+        if ref is None:
+            reference_sheets.append(None)
+            continue
+        sheet = next(found_refs)
+        reference_sheets.append(sheet)
+        if sheet is None:
+            missing.append(ref)
     return Research(sheets, reference_sheets, missing)
 
 
@@ -101,6 +126,23 @@ def simulation_matchup(matchup: Matchup, found: Research) -> Matchup:
         for f, ref in zip(matchup.fighters, found.reference_sheets, strict=True)
     ]
     return matchup.model_copy(update={"fighters": fighters})
+
+
+# The repeat-battle cache key: the simulation seed (normalized matchup, both sheet hashes,
+# ENGINE_VERSION; ARCHITECTURE §8) plus what else changes the verdict: the size-reference
+# sheets, a hash of each whole sheet (sheet_hash covers only stats; the engine also reads
+# body, weapons, habitat, and lore), and the number of runs.
+def cache_key(matchup: Matchup, found: Research) -> str:
+    seed = make_seed(
+        simulation_matchup(matchup, found), found.sheets[0].sheet_hash, found.sheets[1].sheet_hash
+    )
+    references = ",".join(s.sheet_hash if s else "-" for s in found.reference_sheets)
+    whole = ",".join(
+        hashlib.sha256(s.model_dump_json().encode("utf-8")).hexdigest()
+        for s in (*found.sheets, *(r for r in found.reference_sheets if r))
+    )
+    text = f"seed={seed}|refs={references}|sheets={whole}|runs={get_settings().sim_runs}"
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 # Step 3: the real engine, off the event loop so other battles and streams keep moving.

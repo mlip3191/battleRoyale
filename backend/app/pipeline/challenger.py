@@ -14,6 +14,8 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.config import get_settings
+from app.db.connection import connect
 from app.models.simulation import ChallengerSuggestion, SimulationResult
 from app.models.stats import StatSheet
 from app.models.terrain import Terrain
@@ -65,10 +67,39 @@ def seed_sheets() -> list[StatSheet]:
     return sheets[:MAX_SEED]
 
 
-# Fighters researched for earlier battles, newest first.
-# TODO(A05 part 4): read these from the sheet cache once it exists; until then there are none.
-def cached_sheets(limit: int = MAX_CACHED) -> list[StatSheet]:
-    return []
+# Fighters researched for earlier battles, newest first, from the `stat_sheets` table that G04
+# (issue #35) will create. Assumed shape: one sheet per row as JSON in `sheet_json`, newest
+# row last inserted (`ORDER BY rowid DESC`). If G04 uses different columns or provides a
+# research/ function for this read, this query will need to match; a mismatch or any other
+# read error is caught below and treated as no cached fighters (seed fighters still work).
+def cached_sheets(limit: int = MAX_CACHED, db_path: Path | None = None) -> list[StatSheet]:
+    path = db_path or get_settings().data_dir / "app.db"
+    if not path.is_file():  # never create the database just to read it
+        return []
+    try:
+        connection = connect(path)
+        try:
+            if not connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'stat_sheets'"
+            ).fetchone():
+                return []
+            rows = connection.execute(
+                "SELECT sheet_json FROM stat_sheets ORDER BY rowid DESC LIMIT ?", (limit,)
+            ).fetchall()
+        finally:
+            connection.close()
+    except Exception as error:
+        logger.warning("challenger: could not read cached sheets (%s)", type(error).__name__)
+        return []
+    return [sheet for row in rows if (sheet := _parse_sheet(row["sheet_json"])) is not None]
+
+
+# One saved sheet, or None if it no longer matches the contract.
+def _parse_sheet(text: str) -> StatSheet | None:
+    try:
+        return StatSheet.model_validate_json(text)
+    except ValueError:
+        return None
 
 
 # Seed and cached fighters, minus this matchup's fighters; a fighter in both counts as seed.
