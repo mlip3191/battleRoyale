@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import FileResponse
 
+from app.api.battles import router as battles_router
 from app.api.intake import router as intake_router
 from app.config import REPO_ROOT, Settings, get_settings
 from app.models import contract_schemas
@@ -42,6 +43,7 @@ def create_app(settings: Settings | None = None, frontend_dist: Path = FRONTEND_
         }
 
     app.include_router(intake_router)
+    app.include_router(battles_router)
     if frontend_dist.is_dir():
         _serve_frontend(app, frontend_dist.resolve())
     app.openapi = lambda: _openapi_with_contracts(app)

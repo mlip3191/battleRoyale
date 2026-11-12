@@ -111,7 +111,7 @@ Every value gets a `low` and `high`: the source's range if it gives one, otherwi
 - `attack_force_n`: the force that gives the engine's ramming damage, `RAM_DAMAGE_PER_MOMENTUM × mass × speed ÷ DAMAGE_PER_NEWTON`, using the sheet's own mass and speed. For a fighter with `crushing`, use a speed of at least `CRUSH_MIN_SPEED_MPS`.
 - `attacks_per_s`: the value of `RAM_ATTACKS_PER_S`.
 
-The `note` names the formula or constant and says the engine works out the real hit from them. `RAM_DAMAGE_PER_MOMENTUM`, `RAM_ATTACKS_PER_S`, and `CRUSH_MIN_SPEED_MPS` are defined in PR #71 and are not on `main` yet. Derived ram/crush values do not count toward G05's limit of 2 estimates.
+The `note` names the formula or constant and says the engine works out the real hit from them. `RAM_DAMAGE_PER_MOMENTUM`, `RAM_ATTACKS_PER_S`, and `CRUSH_MIN_SPEED_MPS` are in `backend/app/simulation/constants.py`. Derived ram/crush values do not count toward G05's limit of 2 estimates.
 
 ## Category defaults
 

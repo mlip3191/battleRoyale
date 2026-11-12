@@ -1,9 +1,13 @@
 """F06: fair-fight search and next-challenger testing."""
 
+import math
+from types import SimpleNamespace
+
 import pytest
 
 from app.models.terrain import Terrain
 from app.simulation import constants as c
+from app.simulation import fair
 from app.simulation.engine import run
 from app.simulation.fair import _how_even, fair_fight, fair_fight_search, plural, test_challengers
 from tests.property.sim_helpers import ant, lion, load_sheet, make_sheet, matchup_of
@@ -36,7 +40,15 @@ def test_wolf_vs_house_cats_finds_a_count_within_tolerance_in_few_probes():
     found = search.result
     assert found.count is not None and found.count > 1
     assert found.varied_side == 1  # the cats are the losing side
-    assert abs(found.win_prob_at_count - 0.5) <= c.FAIR_TOLERANCE
+
+    # Counts are whole numbers and 200-run probes are noisy, so do not judge the search by its own
+    # probe. Check the answer with a bigger independent run: one cat fewer is still the underdog
+    # and one cat more is the favorite (0.03 is the noise of 2,000 runs). Any version bump holds.
+    def cats_win_share(cats):
+        return run(matchup_of(1, cats), [wolf(), house_cat()], runs=2000, explain=False).win_prob[1]
+
+    assert cats_win_share(max(1, found.count - 1)) <= 0.5 + 0.03
+    assert cats_win_share(found.count + 1) >= 0.5 - 0.03
     assert search.probes <= c.FAIR_MAX_PROBES
     assert str(found.count) in found.message and "house cats" in found.message
 
@@ -171,3 +183,81 @@ def test_the_challenger_wording_follows_the_named_thresholds():
     assert _how_even(0.5 - slight + eps) == "a slight underdog"
     assert _how_even(0.5 + slight + eps) == "a clear favorite"
     assert _how_even(0.5 - slight - eps) == "a clear underdog"
+
+
+# --- the search logic, pinned with a fake engine ----------------------------------------------
+# The real engine is noisy, so a broken search can still land on an acceptable count. Here `run`
+# is replaced by a noise-free S-curve, so the exact answer and the exact probes are known.
+
+
+def logistic(centre, width=4.0):
+    """Win share of the varied side: 0.5 at `centre`, outside the 0.05 tolerance one step away."""
+    return lambda count: 1 / (1 + math.exp(-(count - centre) / width))
+
+
+def fake_engine(monkeypatch, side, curve):
+    """Replace the engine inside fair.py; returns the list of (count, runs) it was asked for."""
+    asked = []
+
+    def fake_run(matchup, stat_sheets, runs, reference_sheets=None, explain=True):
+        count = matchup.fighters[side].count
+        asked.append((count, runs))
+        win = [1 - curve(count)] * 2
+        win[side] = curve(count)
+        return SimpleNamespace(win_prob=tuple(win), outcome="win_0")
+
+    monkeypatch.setattr(fair, "run", fake_run)
+    return asked
+
+
+def main_result(losing_side):
+    """The main fight's result, which only says who lost."""
+    win = [0.9, 0.9]
+    win[losing_side] = 0.1
+    return SimpleNamespace(win_prob=tuple(win), outcome=f"win_{1 - losing_side}")
+
+
+@pytest.mark.parametrize("side", [0, 1])
+def test_a_losing_side_that_starts_small_doubles_and_then_refines_to_the_exact_count(
+    monkeypatch, side
+):
+    asked = fake_engine(monkeypatch, side, logistic(37))
+    sheets = [wolf(), house_cat()] if side == 1 else [house_cat(), wolf()]
+    search = fair_fight_search(matchup_of(1, 1), sheets, main_result(side))
+    assert search.result.varied_side == side
+    assert search.result.count == 37
+    assert search.result.win_prob_at_count == pytest.approx(0.5)
+    # Doubling until the win share passes 0.55 at 64, then halving the gap 32..64 down to 37.
+    assert [count for count, _ in asked] == [1, 2, 4, 8, 16, 32, 64, 48, 40, 36, 38, 37]
+    assert search.probes == 12 <= c.FAIR_MAX_PROBES
+    assert {runs for _, runs in asked} == {c.FAIR_RUNS}
+
+
+def test_a_losing_side_that_starts_too_big_halves_and_then_refines_to_the_exact_count(monkeypatch):
+    asked = fake_engine(monkeypatch, 0, logistic(37))
+    search = fair_fight_search(matchup_of(100, 1), [house_cat(), wolf()], main_result(0))
+    assert search.result.varied_side == 0
+    assert search.result.count == 37
+    assert [count for count, _ in asked] == [100, 50, 25, 37]
+    assert search.probes == 4
+
+
+def test_the_search_stops_at_the_count_cap_when_no_count_is_fair(monkeypatch):
+    asked = fake_engine(monkeypatch, 1, lambda count: 0.2)
+    search = fair_fight_search(matchup_of(1, 1), [wolf(), house_cat()], main_result(1))
+    counts = [count for count, _ in asked]
+    assert search.result.count is None and search.result.win_prob_at_count is None
+    assert search.result.message == "No fair fight within 10,000 house cats."
+    assert counts == [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 10_000]
+    assert max(counts) == c.FAIR_MAX_COUNT
+    assert search.probes <= c.FAIR_MAX_PROBES
+
+
+def test_the_search_never_runs_more_than_the_probe_limit(monkeypatch):
+    # A step that no count lands near 50/50 on, with the jump too far out for the binary phase to
+    # close in: the search must stop at the limit and give the closest count it saw, as "about".
+    asked = fake_engine(monkeypatch, 1, lambda count: 0.3 if count < 5000 else 0.7)
+    search = fair_fight_search(matchup_of(1, 1), [wolf(), house_cat()], main_result(1))
+    assert len(asked) == search.probes == c.FAIR_MAX_PROBES
+    assert search.result.count is not None and "about" in search.result.message
+    assert 4096 < search.result.count < 8192 or search.result.count < 5000
