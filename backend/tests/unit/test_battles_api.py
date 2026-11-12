@@ -316,3 +316,35 @@ def test_seed_sheet_lookup_matches_names_and_rejects_others() -> None:
     assert find_seed_sheet("unicorn") is None
     assert find_seed_sheet("../fighters") is None
     assert find_seed_sheet("") is None
+
+
+def test_seed_sheet_lookup_tries_variant_plus_entity_then_entity_alone() -> None:
+    for entity, variant, fighter_id in (
+        ("bear", "grizzly", "grizzly-bear"),
+        ("wolf", "gray", "gray-wolf"),
+        ("elephant", "african", "african-elephant"),
+    ):
+        sheet = find_seed_sheet(entity, variant)
+        assert sheet is not None and sheet.fighter_id == fighter_id
+    # Mock-style: full name as entity, descriptive variant with no sheet of its own.
+    sheet = find_seed_sheet("grizzly bear", "adult male")
+    assert sheet is not None and sheet.fighter_id == "grizzly-bear"
+    # Same slug and empty-name rules when a variant is present.
+    assert find_seed_sheet("../fighters", "grizzly") is None
+    assert find_seed_sheet("", "grizzly") is None
+    assert find_seed_sheet("unicorn", "adult") is None
+
+
+def test_seed_sheet_lookup_uses_a_unique_match_from_the_raw_phrase() -> None:
+    for entity, raw, fighter_id in (
+        ("bear", "a grizzly bear", "grizzly-bear"),
+        ("wolf", "6 gray wolves", "gray-wolf"),
+        ("elephant", "an african elephant", "african-elephant"),
+    ):
+        sheet = find_seed_sheet(entity, raw=raw)
+        assert sheet is not None and sheet.fighter_id == fighter_id
+    # Vague raw has no unique sheet: "grizzly" is not in the phrase.
+    assert find_seed_sheet("bear", raw="a bear") is None
+    assert find_seed_sheet("unicorn", raw="a fluffy unicorn") is None
+    assert find_seed_sheet("bear", raw="../fighters") is None
+    assert find_seed_sheet("", raw="a grizzly bear") is None
