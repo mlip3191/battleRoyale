@@ -303,6 +303,12 @@ async def test_the_real_mock_provider_parses_its_default_reply() -> None:
             [100, 1],
             Terrain.ARENA,
         ),
+        # Plural place words singularise to a known battlefield ("woods" -> forest).
+        ("two tigers vs a lion in the woods", ["tiger", "lion"], [2, 1], Terrain.FOREST),
+        # A terrain word inside a fighter's name is not the battlefield.
+        ("a sea turtle vs a goose", ["sea turtle", "goose"], [1, 1], Terrain.ARENA),
+        ("a field mouse vs a house cat", ["field mouse", "house cat"], [1, 1], Terrain.ARENA),
+        ("a snow leopard vs a polar bear", ["snow leopard", "polar bear"], [1, 1], Terrain.ARENA),
     ],
 )
 async def test_the_mock_provider_echoes_any_vs_matchup(
