@@ -270,6 +270,72 @@ async def test_the_real_mock_provider_parses_its_default_reply() -> None:
     assert result.matchup.terrain == Terrain.FOREST
 
 
+# Issue #142 item 5: any "X vs Y" input parses in mock mode, not just the canned default.
+@pytest.mark.parametrize(
+    ("text", "entities", "counts", "terrain"),
+    [
+        ("a horse vs a gorilla", ["horse", "gorilla"], [1, 1], Terrain.ARENA),
+        ("50 ducks vs a honey badger", ["duck", "honey badger"], [50, 1], Terrain.ARENA),
+        (
+            "an african elephant vs 12 gray wolves",
+            ["african elephant", "gray wolf"],
+            [1, 12],
+            Terrain.ARENA,
+        ),
+        (
+            "a honey badger vs a saltwater crocodile",
+            ["honey badger", "saltwater crocodile"],
+            [1, 1],
+            Terrain.ARENA,
+        ),
+        (
+            "a saltwater crocodile vs a horse in the water",
+            ["saltwater crocodile", "horse"],
+            [1, 1],
+            Terrain.WATER,
+        ),
+        ("two tigers vs a lion in a forest", ["tiger", "lion"], [2, 1], Terrain.FOREST),
+        ("a toaster VS. a goose", ["toaster", "goose"], [1, 1], Terrain.ARENA),
+        ("a horse versus a gorilla", ["horse", "gorilla"], [1, 1], Terrain.ARENA),
+        (
+            "100 duck-sized horses vs 1 horse-sized duck",
+            ["horse", "duck"],
+            [100, 1],
+            Terrain.ARENA,
+        ),
+        # Plural place words singularise to a known battlefield ("woods" -> forest).
+        ("two tigers vs a lion in the woods", ["tiger", "lion"], [2, 1], Terrain.FOREST),
+        # A terrain word inside a fighter's name is not the battlefield.
+        ("a sea turtle vs a goose", ["sea turtle", "goose"], [1, 1], Terrain.ARENA),
+        ("a field mouse vs a house cat", ["field mouse", "house cat"], [1, 1], Terrain.ARENA),
+        ("a snow leopard vs a polar bear", ["snow leopard", "polar bear"], [1, 1], Terrain.ARENA),
+    ],
+)
+async def test_the_mock_provider_echoes_any_vs_matchup(
+    text: str, entities: list[str], counts: list[int], terrain: Terrain
+) -> None:
+    result = await parse_matchup(text, chat=MockChatLLM())
+    assert result.status == "ok" and result.matchup is not None
+    left, right = result.matchup.fighters
+    assert [left.entity, right.entity] == entities
+    assert [left.count, right.count] == counts
+    assert result.matchup.terrain == terrain
+
+
+# Size adjectives stay on the echoed raw phrases so the parser can still read them.
+async def test_the_mock_provider_keeps_size_references_on_echoed_matchups() -> None:
+    result = await parse_matchup("100 duck-sized horses vs 1 horse-sized duck", chat=MockChatLLM())
+    assert result.status == "ok" and result.matchup is not None
+    left, right = result.matchup.fighters
+    assert (left.size_reference, right.size_reference) == ("duck", "horse")
+
+
+# One side, or no "vs", still asks the user to rephrase (the mock has nothing to echo).
+async def test_the_mock_provider_still_asks_to_rephrase_a_single_side() -> None:
+    result = await parse_matchup("just a grizzly bear", chat=MockChatLLM())
+    assert result.status == "clarify"
+
+
 async def test_parse_matchup_uses_the_registry_provider_by_default() -> None:
     result = await parse_matchup("a grizzly bear vs 6 gray wolves in a forest")
     assert result.status == "ok"
