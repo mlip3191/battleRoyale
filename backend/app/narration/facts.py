@@ -273,10 +273,11 @@ def fact_lines(facts: NarrationFacts) -> list[str]:
         f"mean duration {facts.mean_duration_s:g} s"
     )
     if facts.fair_count is not None and facts.fair_side is not None:
-        lines.append(
-            f"fair fight: {names[facts.fair_side]} x{facts.fair_count} "
-            f"wins {facts.fair_win_pct}% of the time"
-        )
+        # A count without a probability still names the count, never "None%".
+        fair = f"fair fight: {names[facts.fair_side]} x{facts.fair_count}"
+        if facts.fair_win_pct is not None:
+            fair += f" wins {facts.fair_win_pct}% of the time"
+        lines.append(fair)
     elif facts.fair_ran:
         lines.append("fair fight: checked, and no count makes this one fair")
     return lines
