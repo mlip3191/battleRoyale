@@ -18,7 +18,7 @@ from app.config import Settings, use_settings
 from app.main import create_app
 from app.models.battle import BattleRecord, StageStatus
 from app.models.matchup import Matchup
-from app.pipeline import orchestrator
+from app.pipeline import orchestrator, stages
 from app.pipeline.orchestrator import STUB, run_battle
 from app.pipeline.store import STAGES, BattleStore
 from app.research.seed_fighters import find_seed_sheet
@@ -102,10 +102,18 @@ def test_every_stub_stage_says_stub(client: TestClient) -> None:
     record = wait_until_finished(client, start(client, matchup_body("horse", "duck")))
     for name in STAGES:
         detail = final_stage(record, name).detail
-        if name in ("research", "simulate"):
+        if name in ("research", "simulate", "summary"):
             assert detail != STUB, name
         else:
             assert detail == STUB, name
+
+
+# Each stage went running -> done exactly once; research and simulate came first, in order.
+def assert_each_stage_ran(changes: list[StageStatus]) -> None:
+    pairs = [(c.stage, c.status) for c in changes]
+    assert pairs[:6] == [(stage, status) for stage in STAGES[:3] for status in ("running", "done")]
+    for stage in STAGES:
+        assert [status for name, status in pairs if name == stage] == ["running", "done"], stage
 
 
 async def test_new_battle_starts_with_every_stage_pending(store: BattleStore) -> None:
@@ -115,13 +123,10 @@ async def test_new_battle_starts_with_every_stage_pending(store: BattleStore) ->
     assert record.status == "running"
 
 
-async def test_stages_move_pending_running_done_in_order(store: BattleStore) -> None:
+async def test_stages_move_pending_running_done(store: BattleStore) -> None:
     record = await store.create(matchup("grizzly bear", "gray wolf"))
     await run_battle(record.battle_id, store)
-    changes = await store.changes(record.battle_id)
-    assert [(c.stage, c.status) for c in changes] == [
-        (stage, status) for stage in STAGES for status in ("running", "done")
-    ]
+    assert_each_stage_ran(await store.changes(record.battle_id))
 
 
 def test_unknown_fighter_fails_the_battle_with_a_reason(client: TestClient) -> None:
@@ -134,11 +139,15 @@ def test_unknown_fighter_fails_the_battle_with_a_reason(client: TestClient) -> N
     assert final_stage(record, "simulate").status == "pending"
 
 
-def test_size_swap_fails_plainly_for_now(client: TestClient) -> None:
+def test_size_swap_with_a_seed_reference_reaches_done(client: TestClient) -> None:
     body = matchup_body("duck", "horse", side0={"size_reference": "horse"})
     record = wait_until_finished(client, start(client, body))
-    assert record.status == "failed"
-    assert "aren't supported yet" in (final_stage(record, "research").detail or "")
+    assert record.status == "done"
+    assert (final_stage(record, "research").status, final_stage(record, "research").detail) == (
+        "done",
+        None,
+    )
+    assert record.result is not None
 
 
 def test_simulation_error_fails_the_battle(
@@ -147,7 +156,7 @@ def test_simulation_error_fails_the_battle(
     def broken(*_: Any, **__: Any) -> None:
         raise RuntimeError("boom")
 
-    monkeypatch.setattr(orchestrator.engine, "run", broken)
+    monkeypatch.setattr(stages.engine, "run", broken)
     record = wait_until_finished(client, start(client, matchup_body("horse", "duck")))
     assert record.status == "failed"
     assert final_stage(record, "simulate").detail == orchestrator.SIMULATE_FAILED
@@ -228,10 +237,7 @@ def test_event_stream_sends_every_stage_change_then_end(client: TestClient) -> N
     events = parse_sse(response.text)
     names = [name for name, _ in events]
     assert names == ["stage"] * (2 * len(STAGES)) + ["end"]
-    changes = [StageStatus.model_validate_json(data) for _, data in events[:-1]]
-    assert [(c.stage, c.status) for c in changes] == [
-        (stage, status) for stage in STAGES for status in ("running", "done")
-    ]
+    assert_each_stage_ran([StageStatus.model_validate_json(data) for _, data in events[:-1]])
     assert json.loads(events[-1][1]) == {"status": "done"}
     # Polling after the stream ends returns the same final record.
     assert wait_until_finished(client, battle_id).status == "done"
@@ -250,7 +256,7 @@ def test_event_stream_follows_a_battle_that_is_still_running(
 ) -> None:
     # Hold the simulation until the stream is subscribed, so this is the live path, not replay.
     release, subscribed = threading.Event(), threading.Event()
-    real_run, real_follow = orchestrator.engine.run, store.follow
+    real_run, real_follow = stages.engine.run, store.follow
 
     def held_run(*args: Any, **kwargs: Any) -> Any:
         assert release.wait(timeout=SSE_TIMEOUT)
@@ -260,7 +266,9 @@ def test_event_stream_follows_a_battle_that_is_still_running(
         subscribed.set()
         return real_follow(battle_id)
 
-    monkeypatch.setattr(orchestrator.engine, "run", held_run)
+    monkeypatch.setattr(stages.engine, "run", held_run)
+    # The held simulation must not trip its own time limit while the test waits.
+    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "simulate", SSE_TIMEOUT)
     monkeypatch.setattr(store, "follow", watched_follow)
     try:
         battle_id = start(client, matchup_body("grizzly bear", "gray wolf"))
