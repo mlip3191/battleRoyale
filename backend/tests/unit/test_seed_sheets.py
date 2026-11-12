@@ -16,13 +16,15 @@ SHEET_PATHS = sorted(FIGHTERS_DIR.glob("*.json"))
 PHYSICAL_STATS = [name for name in StatName if name not in ASSUMABLE_STATS]
 RUBRIC_NOTE = re.compile(r"^(aggression|group tactics|armor|durability) level (\d|M): \S")
 MAX_ESTIMATES = 2
-EXCEPTIONS = {"duck": 3, "honey-badger": 3}  # PM decision D-47 (2): these two may have 3
+# PM rulings: the duck and honey badger may have 3 (D-47 (2)), the king cobra 4 and the Roman
+# legionary 3 (D-54). The list is closed: no new entries without a PM ruling.
+EXCEPTIONS = {"duck": 3, "honey-badger": 3, "king-cobra": 4, "roman-legionary": 3}
 
-# Units a quote may use: as stored, km/h for m/s, cm for m, minutes for s, tonnes for kg, and
-# kilograms of force for newtons.
+# Units a quote may use: as stored, km/h for m/s, cm or mm for m, minutes for s, tonnes for kg,
+# and kilograms of force for newtons.
 CONVERSIONS = {
     "m/s": (1.0, 3.6),
-    "m": (1.0, 100.0),
+    "m": (1.0, 100.0, 1000.0),
     "s": (1.0, 1 / 60),
     "kg": (1.0, 0.001),
     "N": (1.0, 1 / 9.80665),
@@ -101,9 +103,8 @@ class TestSeedSheet:
         assert len(estimates) <= allowed, f"{path.stem} estimates: {estimates}"
 
 
-def test_the_estimate_exception_covers_only_duck_and_honey_badger() -> None:
-    assert set(EXCEPTIONS) == {"duck", "honey-badger"}
-    assert all(limit == MAX_ESTIMATES + 1 for limit in EXCEPTIONS.values())
+def test_the_estimate_exceptions_are_exactly_the_ruled_four() -> None:
+    assert EXCEPTIONS == {"duck": 3, "honey-badger": 3, "king-cobra": 4, "roman-legionary": 3}
 
 
 def test_hand_verified_without_a_source_is_rejected() -> None:

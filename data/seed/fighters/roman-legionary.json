@@ -1,0 +1,150 @@
+{
+  "fighter_id": "roman-legionary",
+  "display_name": "Roman legionary",
+  "media_name": "roman legionary",
+  "category": "human_archetype",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "weapon_melee"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 70.0,
+      "unit": "kg",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 35.0,
+      "high": 105.0,
+      "note": "No published body mass for Roman soldiers found for this fighter; category default (estimate 1 of 3, allowed by D-54)."
+    },
+    "size_m": {
+      "value": 1.69,
+      "unit": "m",
+      "source": {
+        "title": "Human height",
+        "url": "https://en.wikipedia.org/w/index.php?title=Human_height&oldid=1384696975",
+        "quote": "The Romans were slightly taller, with an average height of 169 cm (5 ft 7 in) for males and 158 cm (5 ft 2 in) for females.",
+        "retrieved_at": "2026-11-12T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 1.52,
+      "high": 1.86,
+      "note": "Average height of Roman men generally, not soldiers specifically. Range is the standard +/-10%."
+    },
+    "top_speed_mps": {
+      "value": 8.0,
+      "unit": "m/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 4.0,
+      "high": 12.0,
+      "note": "No published sprint speed for an armored soldier found for this fighter; category default (estimate 2 of 3, allowed by D-54)."
+    },
+    "attack_force_n": {
+      "value": 150.0,
+      "unit": "N",
+      "source": {
+        "title": "Forces generated in stabbing attacks (Nolan, Hainsworth and Rutty 2017, Int. J. Legal Med. 132:229)",
+        "url": "https://doi.org/10.1007/s00414-017-1702-7",
+        "quote": "for an unrestrained stab by a man, using their dominant hand, the mean peak force generated was approximately 150 N for pork thigh",
+        "retrieved_at": "2026-11-12T00:00:00Z",
+        "license": "CC BY 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 112.5,
+      "high": 187.5,
+      "note": "Stand-in for a gladius thrust: untrained volunteers stabbing with knives, not soldiers with swords. Range is +/-25%."
+    },
+    "attacks_per_s": {
+      "value": 1.0,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.5,
+      "high": 1.5,
+      "note": "No published sword strike rate found for this fighter; category default (estimate 3 of 3, allowed by D-54)."
+    },
+    "reach_m": {
+      "value": 0.59,
+      "unit": "m",
+      "source": {
+        "title": "Gladius",
+        "url": "https://en.wikipedia.org/w/index.php?title=Gladius&oldid=1384319032",
+        "quote": "Gladii that have been found measured 425–590 mm in length, 36–90 mm in width, and weighed between 1.2 and 1.6 kg.",
+        "retrieved_at": "2026-11-12T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 0.425,
+      "high": 0.59,
+      "note": "The sword's length, counted as reach (docs/research.md: a published weapon length counts). Upper figure of the found gladii; the source gives no mean."
+    },
+    "armor_0_1": {
+      "value": 0.6,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.3,
+      "high": 0.9,
+      "note": "armor level 4: metal body armor and a large shield."
+    },
+    "endurance_s": {
+      "value": 900.0,
+      "unit": "s",
+      "source": {
+        "title": "Gladiator",
+        "url": "https://en.wikipedia.org/w/index.php?title=Gladiator&oldid=1382400603",
+        "quote": "most bouts would have lasted 10 to 15 minutes, or 20 minutes at most.",
+        "retrieved_at": "2026-11-12T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "low",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 600.0,
+      "high": 1200.0,
+      "note": "Stand-in: the length of a gladiator bout, a fighting duration (allowed by the PM on #29). Upper typical figure; low and high are the source's 10 and 20 minutes."
+    },
+    "aggression_0_1": {
+      "value": 0.7,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.35,
+      "high": 1.0,
+      "note": "aggression level 4: trained soldier, confident against most opponents."
+    },
+    "group_tactics_0_1": {
+      "value": 1.0,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.5,
+      "high": 1.0,
+      "note": "group tactics level 5: drilled unit acting as one (the rubric's own example)."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "6477fe8c12e5f095e28f753944c1e1eabd332cd09298ae500560f205ecec0347"
+}
