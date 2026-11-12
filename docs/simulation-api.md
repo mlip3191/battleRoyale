@@ -88,7 +88,7 @@ print(fair.message)
 | **Draw / stalemate** | `outcome == "draw"` | There is no favorite (`summary.favorite is None`); the explainer says it was a stalemate |
 | **A side flees** | RETREAT then FLEE: the runner escapes, the other side wins, and the runner is counted among the survivors. RETREAT **without** FLEE means the runner is too slow to get away and the fight continues | The log tells the story |
 | **A machine runs out of operating time** | a KO event with the hint "out of action: its operating time ran out" | Narrate it as breaking down, not dying |
-| **Swarms** (either side over 200) | Group events: `actor`/`target` are `None` and `group_size` is how many acted or fell (it can be 1). In swarm mode every HIT and KO is a group event, for both sides, and there are no MISS events | Animate a crowd, not individuals. Decide "swarm" from the matchup counts (> 200), not from `group_size`; APPROACH, RETREAT and FLEE are group events in every fight |
+| **Swarms** (either side over 200, or a fight too slow to run one by one, D-50) | Group events: `actor`/`target` are `None` and `group_size` is how many acted or fell (it can be 1). In swarm mode every HIT and KO is a group event, for both sides, and there are no MISS events | Animate a crowd, not individuals. Swarm replays can occur below 200 (150 cats v 1 elephant), so detect a swarm from the events (`actor`/`target` are `None`, or `group_size` is set), not from the matchup counts; APPROACH, RETREAT and FLEE are group events in every fight |
 | **Size reference** ("horse-sized duck") | The first APPROACH event's hint ends with ", scaled to horse size" | See below |
 
 ## Size references ("horse-sized duck")

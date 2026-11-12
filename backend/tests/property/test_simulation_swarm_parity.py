@@ -200,8 +200,13 @@ def test_the_head_count_ceiling_still_applies():
 
 
 def test_the_choice_depends_only_on_the_inputs():
-    results = {_fight([small_cat(), elephant()], 150, 1) for _ in range(5)}
+    """The mode takes no seed and uses no clock: nothing outside the inputs can change it."""
+    results = set()
+    for seed in range(5):
+        random.seed(seed)  # the global generator must not matter
+        results.add(_fight([small_cat(), elephant()], 150, 1))
     assert results == {True}
+    assert _fight([small_cat(), elephant()], 5, 1) is False  # a small fight is not swapped
 
 
 def test_the_expected_work_tracks_the_real_cost():
@@ -225,7 +230,8 @@ def test_the_expected_work_tracks_the_real_cost():
     small = work([wolf(), wolf()], 50, 50)
     big = work([wolf(), wolf()], 200, 200)
     assert small < c.SWARM_WORK_BUDGET < big
-    assert work([small_cat(), elephant()], 150, 1) > 3 * work([small_cat(), elephant()], 50, 1) / 2
+    # Three times the cats means more than 1.5 times the work, not a flat estimate.
+    assert work([small_cat(), elephant()], 150, 1) > 1.5 * work([small_cat(), elephant()], 50, 1)
 
 
 def test_a_fight_sent_to_swarm_mode_by_its_work_agrees_with_one_by_one(monkeypatch):

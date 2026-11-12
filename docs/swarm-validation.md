@@ -1,6 +1,6 @@
 # Swarm mode vs the one-by-one engine
 
-Fights where either side has more than 200 individuals run in **swarm mode** (each side is one group; see [simulation-model.md](simulation-model.md)). Swarm mode exists for speed, but it is a different model from the one-by-one engine, so this page measures how far apart they are. The one-by-one engine is the reference.
+Fights where either side has more than 200 individuals, or where the expected work is over a budget (D-50), run in **swarm mode** (each side is one group; see [simulation-model.md](simulation-model.md)). Swarm mode exists for speed, but it is a different model from the one-by-one engine, so this page measures how far apart they are. The one-by-one engine is the reference.
 
 Reproduce with `uv run --directory backend python scripts/validate_swarm.py` (about 10 s; `--scenario cats` for one group, `--runs` to change the 600 runs per engine). Each fight is simulated twice with the same sheets, once forced through each engine. The table has a **Noise (95%)** column (`1.96 x sqrt(2 p (1-p) / runs)`, with p the one-by-one win share) and marks gaps that are within it. The numbers below were re-run on this branch (merged with `main`) at engine version 8 and reproduce (the script is seeded); if the engine version changes, re-run the script and refresh the tables, since a new version reshuffles every run's random stream.
 

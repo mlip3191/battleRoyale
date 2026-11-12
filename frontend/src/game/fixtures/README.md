@@ -2,14 +2,14 @@
 
 Two real `SimulationResult` logs for big crowds, used to check the battle scene under load: the 50-sprite cap, the "× N" badge, and the frame rate.
 
-| File                       | Matchup               | Events | What it tests                                                                                                                            |
-| -------------------------- | --------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 96     | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                                            |
-| `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 298    | The busiest log: it fills the engine's 300-event cap (`MAX_LOG_EVENTS`) with hits, misses and knock-outs, plus a "more go down" summary. |
+| File                       | Matchup               | Events | What it tests                                                                                                         |
+| -------------------------- | --------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 105    | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                         |
+| `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 103    | A swarm replay below 200 per side (D-50, since engine version 8): group hits and knock-outs, never individual misses. |
 
-- **Made by:** the simulation engine at `ENGINE_VERSION = 7` (`backend/app/simulation/constants.py`).
+- **Made by:** the simulation engine at `ENGINE_VERSION = 8` (`backend/app/simulation/constants.py`).
 - **Fighters:** the stand-in `duck()` and `lion()` sheets from `backend/tests/property/sim_helpers.py` (round numbers, not sourced), in an open field, via `matchup_of(1000, 1)` and `matchup_of(200, 5)`.
-- **Seeds:** `5682432304282561861` (thousand-vs-one) and `1115389761765935616` (two-hundred-vs-five). The same engine version always gives the identical files.
+- **Seeds:** `2253034143055008184` (thousand-vs-one) and `2970169064738633593` (two-hundred-vs-five). The same engine version always gives the identical files.
 
 ## How to watch them in the app
 
