@@ -21,7 +21,7 @@ The five showcase battles (PRODUCT_SPEC §9) run through the engine before the r
 |---|---|---|---|
 | 100 duck-sized horses vs 1 horse-sized duck (open field) | Duck wins 100% (about 94 s). A fair fight needs 275 horses | Yes; the explanation credits the scaling (finding 1, fixed) | 4.4 s |
 | Grizzly vs 6 wolves (forest) | **Wolves 76% / grizzly 24%**, about 36 s, "numbers decided it". A fair fight needs about 2 grizzlies | Yes, but it changed with the real sheets (finding 5) | 1.4 s |
-| Honey badger vs king cobra | Badger wins 100% in about 3 s | Overconfident: the cobra can't hurt it (finding 2) | 0.9 s |
+| Honey badger vs king cobra | Badger wins 100% in about 3 s; the explainer credits its venom resistance. A fair fight needs 30 cobras | Yes: the cobra is venomous now, and the badger shrugs it off (finding 2) | 1.0 s |
 | Roman legionary vs gorilla (forest) | Gorilla 100% | Yes. A fair fight needs about 4 legionaries, a nice talking point | 0.4 s |
 | A dragon vs a main battle tank (open field) | Tank wins 100% (about 84 s) | Possible, but a foregone conclusion (finding 3) | 2.1 s |
 
