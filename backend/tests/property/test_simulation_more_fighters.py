@@ -9,6 +9,7 @@ from app.simulation.engine import run
 from tests.property.sim_helpers import lion, make_sheet, matchup_of
 
 NOISE = 0.02
+SWARM_MARGIN = 0.12  # a regression margin, not a noise margin: the engine is deterministic
 
 
 def win_share(count: int, foe_count: int) -> float:
@@ -53,7 +54,8 @@ def crowd_share(count: int, foes: int) -> float:
 )
 def test_adding_fighters_never_lowers_win_probability_in_swarm_mode_either(base, extra, foes):
     assert base + extra > c.SWARM_THRESHOLD
-    # 150 runs each: the standard error of a gap is 0.03 to 0.06, so 0.12 is about 2 standard errors
+    # The engine is deterministic for a given input, so the margin only guards against a future
+    # engine change; the real gains here are +0.10 to +0.75, far above it.
     # at the worst row. This guards against a real reversal (it is a monotonic check, not an
     # accuracy check: D-45's swarm-vs-one-by-one parity is tested elsewhere).
-    assert crowd_share(base + extra, foes) >= crowd_share(base, foes) - 0.12
+    assert crowd_share(base + extra, foes) >= crowd_share(base, foes) - SWARM_MARGIN
