@@ -37,6 +37,18 @@ CONTRACT_FIXTURES = REPO_ROOT / "backend" / "tests" / "fixtures" / "contracts"
 NOT_FOUND = (
     "We don't have a stat sheet for {name!r} yet. For now, pick one of our ready-made fighters."
 )
+# Age and sex words used as labels by mock intake; they are not shown in the miss message.
+_LABEL_WORDS = frozenset({"adult", "male", "female", "juvenile", "baby", "young"})
+
+
+def _typed_name(entity: str, variant: str | None) -> str:
+    """The fighter as the user would recognise it: descriptive variant plus entity."""
+    kind = (variant or "").strip()
+    if kind and any(part not in _LABEL_WORDS for part in kind.lower().split()):
+        if kind.lower().split()[-len(entity.split()) :] == entity.lower().split():
+            return kind
+        return f"{kind} {entity}"
+    return entity
 
 
 class StageFailed(Exception):
@@ -87,7 +99,7 @@ async def research(matchup: Matchup) -> Research:
     sheets: list[StatSheet] = []
     for fighter, sheet in zip(fighters, found[: len(fighters)], strict=True):
         if sheet is None:
-            raise StageFailed(NOT_FOUND.format(name=fighter.entity))
+            raise StageFailed(NOT_FOUND.format(name=_typed_name(fighter.entity, fighter.variant)))
         sheets.append(sheet)
     found_refs = iter(found[len(fighters) :])
     reference_sheets: list[StatSheet | None] = []

@@ -367,7 +367,7 @@ async def test_a_live_style_name_with_no_sheet_still_fails_with_the_plain_messag
     assert record.status == "failed"
     detail = stage_of(record, "research").detail or ""
     assert "bear" in detail
-    assert detail == stages.NOT_FOUND.format(name="bear")
+    assert detail == stages.NOT_FOUND.format(name="polar bear")
 
 
 async def test_live_style_raw_phrase_finds_the_seed_sheets(store: BattleStore) -> None:
@@ -390,6 +390,27 @@ async def test_a_vague_raw_phrase_still_fails_with_the_plain_message(store: Batt
     assert record.status == "failed"
     detail = stage_of(record, "research").detail or ""
     assert detail == stages.NOT_FOUND.format(name="bear")
+
+
+async def test_the_no_stat_sheet_message_names_the_fighter_as_typed(store: BattleStore) -> None:
+    # A plain name, with no variant.
+    record = await battle(store, _fight({"entity": "unicorn"}, {"entity": "duck"}))
+    assert record.status == "failed"
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="unicorn")
+    # A label-style variant is not shown.
+    record = await battle(
+        store, _fight({"entity": "unicorn", "variant": "adult male"}, {"entity": "duck"})
+    )
+    assert record.status == "failed"
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="unicorn")
+    # If the variant already contains the name, do not double it.
+    record = await battle(
+        store, _fight({"entity": "unicorn", "variant": "white unicorn"}, {"entity": "duck"})
+    )
+    assert record.status == "failed"
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(
+        name="white unicorn"
+    )
 
 
 async def test_the_fair_fight_comes_from_the_real_search(store: BattleStore) -> None:
