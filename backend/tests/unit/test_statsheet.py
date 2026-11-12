@@ -109,6 +109,8 @@ class TestPreferenceOrder:
     def test_a_tiny_fighter_keeps_its_reach_and_range(self) -> None:
         reach = build_stat_sheet(ANT).stats[StatName.REACH]
         assert 0 < reach.low < reach.value < reach.high
+        six_mm = build_stat_sheet(ANT, [fact("length", 6, "mm")]).stats[StatName.REACH]
+        assert six_mm.value == pytest.approx(0.25 * 0.006)
         assert reach.confidence == "low"  # derived from a default size
 
     def test_an_object_keeps_its_reach_default(self) -> None:
@@ -132,10 +134,31 @@ class TestStoredFacts:
         assert got.value == pytest.approx(expected, rel=1e-5)  # stored to 6 significant figures
         assert got.unit in ("kg", "m/s", "m")
 
-    def test_several_figures_give_the_middle_one_and_their_spread(self) -> None:
+    def test_several_figures_give_the_upper_middle_one_and_their_spread(self) -> None:
         facts = [fact("mass", m, "kg", n=i) for i, m in enumerate([3.0, 5.0, 4.0, 6.0])]
         mass = build_stat_sheet(CAT, facts).stats[StatName.MASS]
-        assert (mass.value, mass.low, mass.high) == (4.0, 3.0, 6.0)
+        assert (mass.value, mass.low, mass.high) == (5.0, 3.0, 6.0)
+
+    @pytest.mark.parametrize(
+        ("field", "value", "unit", "stat", "expected"),
+        [
+            ("5-1_AdultBodyMass_g", 6123456, "g", StatName.MASS, 6123.456),
+            ("13-1_AdultHeadBodyLen_mm", 460, "mm", StatName.SIZE, 0.46),
+        ],
+    )
+    def test_pantheria_is_used_when_nothing_better_exists(
+        self, field: str, value: float, unit: str, stat: StatName, expected: float
+    ) -> None:
+        got = build_stat_sheet(CAT, [fact(field, value, unit, source="pantheria")]).stats[stat]
+        assert got.value == pytest.approx(expected, rel=1e-5)
+        assert got.source is not None and f"{value} {unit}" in got.source.quote
+
+    def test_animaltraits_wins_over_pantheria(self) -> None:
+        facts = [
+            fact("5-1_AdultBodyMass_g", 3000, "g", source="pantheria"),
+            fact("body mass", 4.0, "kg", source="animaltraits"),
+        ]
+        assert build_stat_sheet(CAT, facts).stats[StatName.MASS].value == 4.0
 
     def test_size_uses_the_longer_of_length_and_height(self) -> None:
         sheet = build_stat_sheet(CAT, [fact("length", 0.5, "m"), fact("height", 0.3, "m")])
@@ -199,6 +222,24 @@ class TestEverySheet:
             assert stat.low <= stat.value <= stat.high, name
             if name in ASSUMABLE_STATS:
                 assert stat.method == "assumption" and " level " in (stat.note or "")
+
+    @pytest.mark.parametrize(
+        ("name", "weapons"),
+        [("Saguaro cactus", ["spines"]), ("Bulldozer", ["ramming", "crushing"])],
+    )
+    def test_seed_fighters_whose_weapon_changes_the_fight_get_it(
+        self, name: str, weapons: list[str]
+    ) -> None:
+        sheet = get_stat_sheet(name)
+        assert sheet is not None and sheet.weapons == weapons
+
+    def test_crushing_uses_the_minimum_speed(self) -> None:
+        crusher = FighterProfile(
+            "bulldozer", "Bulldozer", "bulldozer", "vehicle", "machine", "land", ("crushing",)
+        )
+        facts = [fact("mass", 20, "t"), fact("speed", 0.5, "m/s")]
+        force = build_stat_sheet(crusher, facts).stats[StatName.ATTACK_FORCE]
+        assert force.value == pytest.approx(0.1 * 20_000 * 1.0)  # speed floored at 1 m/s
 
     def test_a_seed_list_fighter_without_a_sheet_is_built(self) -> None:
         sheet = get_stat_sheet("Pickup truck")

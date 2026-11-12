@@ -87,11 +87,19 @@ def no_extraction(profile: FighterProfile, stat: StatName) -> StatValue | None:
     return None
 
 
-# A seed-list fighter's profile. Weapons aren't in the seed list: machines ram, and everyone else
-# gets "none" until intake or G09 says how they attack (only ramming, crushing, and ranged change
-# the fight; other weapon words are for narration).
+# Weapons for seed-list fighters whose weapon changes the fight. Only ramming, crushing,
+# weapon_ranged, and spines (on an inert body) change it; other weapon words are for narration.
+SEED_WEAPONS: dict[str, tuple[str, ...]] = {
+    "bulldozer": ("ramming", "crushing"),
+    "saguaro-cactus": ("spines",),
+}
+
+
+# A seed-list fighter's profile. Weapons aren't in the seed list: machines ram, the fighters in
+# SEED_WEAPONS get theirs, and everyone else gets "none" until intake or G09 says how they attack.
 def profile_from_seed(fighter: SeedFighter) -> FighterProfile:
     weapons = ("ramming",) if fighter.body == "machine" else ("none",)
+    weapons = SEED_WEAPONS.get(fighter.id, weapons)
     return FighterProfile(
         fighter_id=fighter.id,
         display_name=fighter.display_name,
@@ -129,7 +137,8 @@ def stat_from_facts(stat: StatName, facts: Sequence[StoredFact]) -> StatValue | 
     return None
 
 
-# One field's facts as a stat value: the middle quoted figure, with the spread of all of them
+# One field's facts as a stat value: the middle quoted figure (the upper of the two middle ones,
+# as docs/research.md prefers the upper figure), with the spread of all of them
 # as the range. Facts in an unknown unit or outside the sanity bounds are dropped.
 def _pick(stat: StatName, facts: list[StoredFact]) -> StatValue | None:
     converted = []
@@ -144,13 +153,16 @@ def _pick(stat: StatName, facts: list[StoredFact]) -> StatValue | None:
     if not converted:
         return None
     values = sorted(value for value, _ in converted)
-    middle = statistics.median_low(values)
+    middle = statistics.median_high(values)
     value, chosen = next(pair for pair in converted if pair[0] == middle)
     # Wikidata drops qualifiers such as sex, so one figure is only medium confidence.
     low, high = (values[0], values[-1]) if len(values) > 1 else (None, None)
     low, high = range_for(stat, value, Confidence.MEDIUM, low, high)
     fact = chosen.fact
-    count = f" Middle of {len(values)} stored figures; low and high are the smallest and largest."
+    count = (
+        f" Middle of {len(values)} stored figures (the upper one if two are in the middle); "
+        "low and high are the smallest and largest."
+    )
     return StatValue(
         value=_sig(value),
         unit=STAT_UNITS[stat],
