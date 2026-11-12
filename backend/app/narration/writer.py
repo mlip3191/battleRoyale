@@ -12,6 +12,7 @@ import asyncio
 import json
 import logging
 import re
+import unicodedata
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Literal
@@ -220,7 +221,9 @@ def _read_line(kind: Kind, item: object, values: dict[str, str], n: int) -> Scri
     text = item.get("text")
     if isinstance(text, str):
         text = fill_placeholders(text, values) if kind == "outro" else text
-        item["text"] = " ".join(text.split())
+        item["text"] = " ".join(
+            unicodedata.normalize("NFKC", text).replace("\u200b", "").replace("\u00ad", "").split()
+        )
     try:
         return ScriptLine.model_validate(item)
     except ValidationError as error:

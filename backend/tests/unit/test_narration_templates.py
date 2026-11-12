@@ -289,11 +289,24 @@ def test_draw_outro_says_draw_and_its_percentage() -> None:
     _assert_guarded(facts, *template_scripts(facts, result))
 
 
-def test_draw_share_the_guard_rejects_gets_a_number_free_line() -> None:
+def test_small_draw_share_is_said_as_a_whole_percent() -> None:
+    # A whole-number percentage is allowed at any size, so a 5% draw is said, not hidden.
     result = RESULT.model_copy(
         update={"outcome": "draw", "win_prob": (0.474, 0.473), "draw_prob": 0.053}
     )
     facts = _facts("bear-vs-wolves", result)
+    outro = outro_script(facts)
+    _assert_guarded(facts, outro)
+    assert any("5% of simulated fights ended even." == ln.text for ln in outro.lines)
+
+
+def test_draw_share_the_guard_rejects_gets_a_number_free_line() -> None:
+    result = RESULT.model_copy(
+        update={"outcome": "draw", "win_prob": (0.474, 0.473), "draw_prob": 0.053}
+    )
+    # A draw percentage no probability backs (forced here) is swapped for the number-free line.
+    facts = dataclasses.replace(_facts("bear-vs-wolves", result), draw_pct=42)
+    assert find_unsupported_numbers("42%", facts.allowed)
     outro = outro_script(facts)
     _assert_guarded(facts, outro)
     assert any("Plenty of simulated fights ended even." == ln.text for ln in outro.lines)

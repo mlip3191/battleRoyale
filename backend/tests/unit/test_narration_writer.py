@@ -174,6 +174,27 @@ async def test_guard_rejects_invented_numbers_then_falls_back(bad: str) -> None:
     assert pbp.fallback is False and outro.fallback is False  # the others are unaffected
 
 
+@pytest.mark.parametrize(
+    "hidden",
+    [
+        "ｎｉｎｅ hits landed for the Grizzly bear.",  # full-width "nine"
+        "ni\u200bne hits landed for the Grizzly bear.",  # zero-width space inside "nine"
+        "ni\u00adne hits landed for the Grizzly bear.",  # soft hyphen inside "nine"
+    ],
+)
+async def test_guard_reads_normalized_text(hidden: str) -> None:
+    sample = SAMPLES[GRIZZLY]
+    plain = "nine hits landed for the Grizzly bear."  # 9 is not backed (5 is, for this battle)
+    assert unsupported_numbers(plain, _facts(sample)), "the guard must flag the plain line"
+    reply = json.dumps(_with_line(sample, "announcer_intro", 2, hidden))
+    with pytest.raises(ScriptRejected, match="'nine'"):  # the guard saw the normalized word
+        read_reply("intro", reply, _facts(sample), 13)
+    chat = _chat_with(sample, "announcer_intro", _with_line(sample, "announcer_intro", 2, hidden))
+    intro, _, _ = await _write(sample, chat)
+    assert intro.fallback is True and intro == _templates(sample)[0]
+    assert chat.count("announcer_intro") == 2
+
+
 async def test_guard_rejects_an_invented_number_in_play_by_play() -> None:
     sample = SAMPLES[GRIZZLY]
     bad = _with_line(sample, "play_by_play", 4, "Gorilla lands a punch with 9000 newtons!")
@@ -454,6 +475,42 @@ async def test_draw_outro_uses_draw_pct_and_has_no_winner() -> None:
     _, _, outro = await _write(sample, chat, draw)
     assert outro.fallback is False and chat.count("outro") == 2  # {winner} is unknown in a draw
     assert outro.lines[1].text == "5% of simulated fights ended even."
+
+
+# Lopsided results (win probabilities, draw, CI bounds) and the small percents the outro fills in.
+LOPSIDED = [
+    ((0.94, 0.054), 0.006, ((0.925, 0.955), (0.041, 0.067)), ("5%", "1%")),
+    ((0.93, 0.067), 0.003, ((0.914, 0.946), (0.052, 0.082)), ("7%", "0%")),
+]
+
+
+@pytest.mark.parametrize(("win", "draw", "ci", "small"), LOPSIDED)
+async def test_lopsided_outro_keeps_small_percents(
+    win: tuple[float, float],
+    draw: float,
+    ci: tuple[tuple[float, float], tuple[float, float]],
+    small: tuple[str, str],
+) -> None:
+    sample = SAMPLES[GRIZZLY]
+    update = {"win_prob": win, "draw_prob": draw, "win_prob_ci95": ci, "outcome": "win_0"}
+    result = sample.result.model_copy(update=update)
+    facts = _facts(sample, result)
+    values = outro_placeholders(facts)
+    assert (values["blue_win_pct"], values["draw_pct"]) == small
+    for name in ("red_win_pct", "blue_win_pct", "draw_pct"):
+        assert unsupported_numbers(values[name], facts) == [], name
+    lines = [
+        {"speaker": "announcer", "text": "Your winner, in a landslide: the {winner}!"},
+        {"speaker": "color_commentator", "text": "The {winner} took it {win_pct} of the time."},
+        {"speaker": "announcer", "text": "The Gorilla won {blue_win_pct}. Draws: {draw_pct}."},
+        {"speaker": "color_commentator", "text": "The deciding factor: {deciding_factor}."},
+        {"speaker": "announcer", "text": "{fair_fight}"},
+    ]
+    chat = _chat_with(sample, "outro", {"lines": lines})
+    _, _, outro = await _write(sample, chat, result)
+    assert outro.fallback is False
+    assert chat.count("outro") == 1  # accepted first time, no retry
+    assert outro.lines[2].text == f"The Gorilla won {small[0]}. Draws: {small[1]}."
 
 
 def test_fill_placeholders_keeps_one_percent_sign() -> None:
