@@ -44,17 +44,17 @@ The conclusions held at these sizes before the fixes: matched, one-big-target an
 
 | Fight | One-by-one | Swarm | Gap | Noise (95%) |
 |---|---|---|---|---|
-| 250 v 250 wolves | 0.547 | 0.537 | -0.010 | 0.080 (within noise) |
-| 300 cats v 60 wolves | 0.453 | 0.447 | -0.007 | 0.080 (within noise) |
-| 600 cats v 120 wolves | 0.530 | 0.537 | +0.007 | 0.080 (within noise) |
-| 400 archers v 200 wolves | 0.940 | 0.950 | +0.010 | 0.038 (within noise) |
+| 250 v 250 wolves | 0.523 | 0.527 | +0.003 | 0.080 (within noise) |
+| 300 cats v 60 wolves | 0.527 | 0.507 | -0.020 | 0.080 (within noise) |
+| 600 cats v 120 wolves | 0.503 | 0.483 | -0.020 | 0.080 (within noise) |
+| 400 archers v 200 wolves | 0.950 | 0.967 | +0.017 | 0.035 (within noise) |
 
-Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 for the two crowd fights. (These larger fights last 0.88 to 1.00x as long in swarm mode.) Timings are machine-dependent: 10,000 ants v 1 lion measured 0.6 s on one run and about 1.0 s on another.
+Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 for the two crowd fights. (These larger fights last 0.90 to 1.03x as long in swarm mode.) Timings are machine-dependent: 10,000 ants v 1 lion measured 0.6 s on one run and about 1.0 s on another.
 
 ## What this means for the app
 
 - **Win probabilities from swarm mode are trustworthy** to about ±0.02 for every kind of fight in the validation script, including a crowd of weak fighters against a few strong ones.
-- **Duration and survivor counts from swarm mode are now close** to the one-by-one engine's (durations 0.86 to 1.04x, survivors within a few percent), so a fight at 201 per side reads like the same fight at 199.
+- **Duration and survivor counts from swarm mode are now close** to the one-by-one engine's (durations 0.88 to 1.04x, survivors within a few percent), so a fight at 201 per side reads like the same fight at 199.
 - **Fair-fight search:** probes above 200 per side use swarm mode, and their answers are now as reliable as those below.
 - **F07 benchmark:** "count" cases above 200 per side are fine to include; still flag any swarm-mode matchup in the report.
 - **Swarm mode is cheaper than a long one-by-one fight, not free.** A 201 v 201 fight costs about 0.5 to 0.9 s per 1,000 runs instead of 0.14 s, but 150 cats v 1 elephant costs about 32 s one by one, so D-50 (#183) chooses swarm mode by expected work, not head count. Every fight that newly switches must agree with the one-by-one engine within ±0.03.

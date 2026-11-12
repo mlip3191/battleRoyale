@@ -262,3 +262,13 @@ def test_swarm_steps_never_get_longer_than_the_cap_however_long_the_fight(monkey
     assert out.duration_s > 200  # a long fight, where the old steps were longest
     # The first 30 s use finer steps; after that no step is longer than the cap.
     assert len(steps) >= (out.duration_s - 40) / c.SWARM_STEP_MAX_S
+
+
+def test_a_fight_that_hits_the_time_limit_gets_no_extra_combat_in_swarm_mode(monkeypatch):
+    # The closing step at 600 s used to be a full combat step (up to 60 s of extra fighting),
+    # so swarm survivors came out about 10% low in a draw. Now it is about 4% low.
+    from tests.property.sim_helpers import ant, lion
+
+    one, swarm = both(monkeypatch, [ant(), lion()], 1500, 1, runs=20)
+    assert one.draw_prob == swarm.draw_prob == 1.0
+    assert swarm.mean_survivors[0] >= 0.93 * one.mean_survivors[0]  # 0.96 now, 0.89 without the fix
