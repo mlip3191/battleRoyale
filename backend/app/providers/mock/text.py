@@ -9,6 +9,7 @@ from typing import Any
 
 from app.config import REPO_ROOT
 from app.providers.base import ChatMessage, DecisionAnswer, DecisionQuestion
+from app.providers.mock.safety import mock_block_reason
 
 # Canned replies live with the test fixtures (ARCHITECTURE §7), one JSON file per prompt name.
 FIXTURE_DIR = REPO_ROOT / "backend" / "tests" / "fixtures" / "providers"
@@ -35,6 +36,126 @@ def canned_reply(kind: str, prompt_name: str, value: object, fixture_dir: Path) 
     raise LookupError(f"Mock {kind} fixture '{prompt_name}' has no reply for input {key}.")
 
 
+# A trailing place phrase on a side: "a horse in the water" -> "a horse".
+_TERRAIN_TAIL = re.compile(r"\s+((?:in|on|at|inside|into)\s+.+)$", re.I)
+
+
+# The parser's raw-phrase squash, imported so the copy cannot drift.
+def _squash(text: str) -> str:
+    from app.intake.parser import _squash as squash
+
+    return squash(text)
+
+
+# The user's matchup, unwrapped from the first data-block message (not a retry prompt).
+def _user_matchup_text(messages: list[ChatMessage]) -> str | None:
+    from app.intake.llm_io import INPUT_END, INPUT_START
+
+    for message in messages:
+        content = message.get("content") or ""
+        if message.get("role") != "user" or INPUT_START not in content:
+            continue
+        inner = content.split(INPUT_START, 1)[1]
+        if INPUT_END in inner:
+            inner = inner.split(INPUT_END, 1)[0]
+        return inner.strip()
+    return None
+
+
+# True when the canned reply's raw phrases all appear in the user's text (two sides).
+def _fixture_fits_text(reply: Any, text: str) -> bool:
+    data = _squash(text)
+    if isinstance(reply, str):
+        try:
+            reply = json.loads(reply)
+        except json.JSONDecodeError:
+            return False
+    if not isinstance(reply, dict):
+        return False
+    fighters = reply.get("fighters") or []
+    if len(fighters) != 2:
+        return False
+    return all(
+        isinstance(fighter, dict) and fighter.get("raw") and _squash(str(fighter["raw"])) in data
+        for fighter in fighters
+    )
+
+
+# True when a phrase names a known battlefield (forest, water, and so on).
+# Plural place words ("woods", "mountains") are singularised the same way as the parser.
+def _has_known_terrain(phrase: str) -> bool:
+    from app.intake.rules import TERRAIN_WORDS, singular_word
+
+    words = " ".join(singular_word(w) for w in re.findall(r"[a-z]+", phrase.lower()))
+    return any(re.search(rf"\b{re.escape(name)}\b", words) for name in TERRAIN_WORDS)
+
+
+# Drop a trailing "in the water" / "in a forest" so the entity is just the fighter.
+def _strip_terrain_tail(side: str) -> str:
+    side = side.strip()
+    match = _TERRAIN_TAIL.search(side)
+    if match is None or not _has_known_terrain(match.group(1)):
+        return side
+    return side[: match.start()].strip() or side
+
+
+# The battlefield words in a trailing "in the ..." phrase only, so a terrain word
+# inside a fighter's name ("sea turtle", "field mouse") is not the battlefield.
+def _terrain_phrase(text: str) -> str | None:
+    from app.intake.parser import typed_sides
+    from app.intake.rules import TERRAIN_WORDS, singular_word
+
+    for side in typed_sides(text):
+        match = _TERRAIN_TAIL.search(side)
+        if match is None or not _has_known_terrain(match.group(1)):
+            continue
+        words = " ".join(singular_word(w) for w in re.findall(r"[a-z]+", match.group(1).lower()))
+        for name in sorted(TERRAIN_WORDS, key=len, reverse=True):
+            if re.search(rf"\b{re.escape(name)}\b", words):
+                return name
+    return None
+
+
+# A ParsedMatchup-shaped reply from an "X vs Y" request, for mock mode (#142 item 5).
+# Code in the parser still decides counts, names, size references, and terrain.
+def echo_intake_reply(text: str) -> dict[str, Any] | None:
+    from app.intake.parser import typed_sides
+
+    sides = [part.strip() for part in typed_sides(text) if part.strip()]
+    if len(sides) != 2:
+        return None
+    fighters: list[dict[str, Any]] = []
+    for side in sides:
+        raw = _strip_terrain_tail(side)
+        if _squash(raw) not in _squash(text):
+            raw = side.strip()
+        fighters.append(
+            {
+                "raw": raw,
+                "entity": raw,
+                "count": None,
+                "variant": None,
+                "size_reference": None,
+            }
+        )
+    return {
+        "fighters": fighters,
+        "terrain": _terrain_phrase(text),
+        "needs_clarification": None,
+        "assumptions": [],
+    }
+
+
+# True when a canned classifier reply is the plain "allowed" label.
+def _says_allowed(reply: Any) -> bool:
+    if isinstance(reply, str):
+        try:
+            reply = json.loads(reply)
+        except json.JSONDecodeError:
+            return False
+    return isinstance(reply, dict) and reply.get("verdict") == "allowed"
+
+
 class MockChatLLM:
     """Replies from tests/fixtures/providers/chat/<prompt_name>.json."""
 
@@ -50,6 +171,25 @@ class MockChatLLM:
         json_schema: dict[str, Any] | None = None,
     ) -> str:
         reply = canned_reply("chat", prompt_name, messages, self.fixture_dir)
+        # #142 item 5: the intake_parse default is the grizzly-vs-wolves reply, which the
+        # parser rejects for any other input. Echo the user's two sides instead, so the
+        # front end can demo any matchup offline.
+        if prompt_name == "intake_parse":
+            text = _user_matchup_text(messages)
+            if text and not _fixture_fits_text(reply, text):
+                echoed = echo_intake_reply(text)
+                if echoed is not None:
+                    return json.dumps(echoed)
+        # #240: the safety_classify default allows everything, so the mock also checks the
+        # user's text against a short keyword list (mock/safety.py) for obvious real people,
+        # named characters, gods, and firearms. Keywords only tighten: a fixture reply that
+        # already blocks is kept. Live mode never comes here.
+        if prompt_name == "safety_classify":
+            text = _user_matchup_text(messages)
+            if text and _says_allowed(reply):
+                reason = mock_block_reason(text)
+                if reason is not None:
+                    return json.dumps({"verdict": reason})
         return reply if isinstance(reply, str) else json.dumps(reply)
 
 

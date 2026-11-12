@@ -280,3 +280,51 @@ def test_unicode_fractions_and_leftover_words_pass_when_allowed() -> None:
         "4 trillion bees",
     ):
         assert find_unsupported_numbers(text, allowed) == [], text
+
+
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("a twofold increase", 2.0),
+        ("a threefold increase", 3.0),
+        ("a fivefold increase", 5.0),
+        ("a twentyfold increase", 20.0),
+        ("a twelvefold increase", 12.0),
+        ("a millionfold increase", 1e6),
+    ],
+)
+def test_any_number_word_fold_is_read(text: str, value: float) -> None:
+    # "twofold" is a multiplier, not the free-pass "two", so it must match an allowed value.
+    [found] = extract_numbers(text)
+    assert found.value == pytest.approx(value)
+    assert not found.ordinary
+    assert find_unsupported_numbers(text, NARROW), text
+    assert find_unsupported_numbers(text, AllowedNumbers(values=frozenset({value}))) == [], text
+
+
+def test_fold_needs_a_number_word_stem() -> None:
+    assert extract_numbers("the manifold scaffold") == []
+
+
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("two-fifths of the pack", 2 / 5),
+        ("one-fifth of the pack", 1 / 5),
+        ("three-fifths of the pack", 3 / 5),
+        ("one half of the pack", 1 / 2),
+        ("three fourths of the pack", 3 / 4),
+        ("five-sixths of the pack", 5 / 6),
+        ("seven eighths of the pack", 7 / 8),
+        ("nine-tenths of the pack", 9 / 10),
+    ],
+)
+def test_unit_fractions_beyond_thirds_are_read(text: str, value: float) -> None:
+    # The top and bottom are allowed on their own and "one"/"two" always pass, so only the
+    # fraction's value can trip the guard.
+    parts = AllowedNumbers(values=frozenset({1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0}))
+    [found] = extract_numbers(text)
+    assert found.value == pytest.approx(value)
+    assert not found.ordinary
+    assert find_unsupported_numbers(text, parts), text
+    assert find_unsupported_numbers(text, AllowedNumbers(values=frozenset({value}))) == [], text

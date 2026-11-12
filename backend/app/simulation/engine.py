@@ -3,6 +3,7 @@
 import heapq
 import math
 import random
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -25,6 +26,7 @@ from app.simulation.fighters import (
     plural_word,
     sample_template,
     scale_factor,
+    venom_dose,
 )
 from app.simulation.rng import make_seed, run_rng
 from app.simulation.terrain import can_engage
@@ -157,6 +159,10 @@ def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] |
         limit = min(foe.max_hp, foe.morale * foe.max_hp * foe.count)
         if attacks * damage_per_hit(me, foe) >= limit:
             return None
+        # A venomous bite can be lethal after the fight (D-44): if the most doses possible could
+        # reach a full dose on one target, the result is not certain.
+        if attacks * venom_dose(me, foe) >= 1.0:
+            return None
     if math.isinf(min(stops)):  # no machine stops, so the clock runs out (a stop at 600 s counts)
         return DRAW, c.MAX_FIGHT_S
     return (1 if stops[0] < stops[1] else 0), end
@@ -265,6 +271,7 @@ def _run_individuals(
 ) -> RunOutcome:
     alive_list = [list(range(sides[0].count)), list(range(sides[1].count))]
     alive_set = [set(a) for a in alive_list]
+    venom = [[0.0] * sides[0].count, [0.0] * sides[1].count]  # share of a lethal dose carried
     hp = [[sides[s].max_hp] * sides[s].count for s in (0, 1)]
     start_hp = [sides[s].max_hp * sides[s].count for s in (0, 1)]
     total_hp = list(start_hp)
@@ -333,8 +340,25 @@ def _run_individuals(
         return False
 
     def finish(t: float) -> RunOutcome:
+        end = t
+        for side in (0, 1):
+            # A side was wiped out: a survivor carrying a lethal dose still dies (D-44), which
+            # can leave nobody standing (a draw). Venom takes minutes, so it acts after the fight.
+            if not alive_list[1 - side] and alive_list[side]:
+                doomed = [i for i in alive_list[side] if venom[side][i] >= 1.0]
+                if doomed:
+                    end = min(t + c.VENOM_ONSET_S, c.MAX_FIGHT_S)
+                    for i in doomed:
+                        alive_list[side].remove(i)
+                        alive_set[side].discard(i)
+                        log(
+                            FightEvent(
+                                t=end, type=EventType.KO, side=side, actor=i,
+                                text_hint="succumbs to venom",
+                            )
+                        )  # fmt: skip
         alive = [len(alive_list[0]), len(alive_list[1])]
-        return _outcome(alive, t, events, record_events)
+        return _outcome(alive, end, events, record_events)
 
     while queue:
         t, _, s, i = heapq.heappop(queue)
@@ -367,6 +391,8 @@ def _run_individuals(
             heal(foe_side, target, t)
             total_hp[foe_side] -= min(dmg[s], max(hp[foe_side][target], 0.0))
             hp[foe_side][target] -= dmg[s]
+            if me.venomous:
+                venom[foe_side][target] += venom_dose(me, sides[foe_side])
             if record_events:
                 log(
                     FightEvent(
@@ -467,6 +493,77 @@ def _apply_hits(
     return kills, left, full_hp - rest * dmg
 
 
+def _spread_tracked(
+    hits: int,
+    dmg: float,
+    n: int,
+    hurt: tuple[list[float], list[float]],
+    full_hp: float,
+    g: int,
+    rng: random.Random,
+) -> tuple[int, int, tuple[list[float], list[float]]]:
+    """Spread `hits` over `g` fronts of a bin of `n` fighters, remembering each wounded one.
+
+    `hurt` is (fronts, reserve): the defenders being fought right now, and wounded defenders
+    nobody is fighting at the moment; everyone else is at full health. As in the one-by-one
+    engine, attackers stay on their target until it falls, so the fronts persist from step to
+    step: a front that has taken damage keeps taking it. Only when the number of fronts changes
+    do defenders move between the fronts and the reserve (never healing on the way). Each hit
+    picks one of the `g` fronts at random. Returns (kills, n_left, (fronts, reserve)).
+    """
+    g = max(1, min(g, n))
+    fronts, reserve = list(hurt[0]), list(hurt[1])
+    if len(fronts) > g:  # fewer attackers: a random subset keeps its targets
+        rng.shuffle(fronts)
+        reserve += fronts[g:]
+        fronts = fronts[:g]
+    fresh = n - len(fronts) - len(reserve)  # defenders still at full health
+    if not reserve:
+        fronts += [full_hp] * (g - len(fronts))
+    while len(fronts) < g:
+        if reserve and (fresh <= 0 or rng.random() < len(reserve) / (len(reserve) + fresh)):
+            fronts.append(reserve.pop(rng.randrange(len(reserve))))
+        else:
+            fronts.append(full_hp)
+            fresh -= 1
+    kills = 0
+    # Attackers stay on their targets, so each front gets a steady share of the hits: an equal
+    # split, with the remainder going to random fronts (no fresh random draw per front per step).
+    # Fronts with the same hit points are handled together, which is what makes this fast: after
+    # an equal split most fronts are identical.
+    share, extra = divmod(hits, g)
+    survivors: list[float] = []  # fronts that took no kill
+    killers: list[float] = []  # fronts that killed and started on a new fighter
+    groups = list(Counter(fronts).items())  # (hit points, how many fronts have them)
+    fronts_left, extra_left = g, extra
+    for position, (hp, size) in enumerate(groups):
+        if position == len(groups) - 1:
+            lucky = extra_left  # the leftover hits all land on the last group
+        elif extra_left:
+            low = max(0, extra_left - (fronts_left - size))
+            lucky = min(
+                size, extra_left, max(low, rng.binomialvariate(size, extra_left / fronts_left))
+            )
+        else:
+            lucky = 0
+        extra_left -= lucky
+        fronts_left -= size
+        for count, mine in ((size - lucky, share), (lucky, share + 1)):
+            if count:
+                k, _, f = _apply_hits(mine, dmg, n, hp, full_hp)
+                kills += k * count
+                (killers if k else survivors).extend([f] * count)
+    kills = min(kills, n - len(survivors))  # fronts that took no kill are still alive
+    n_left = n - kills
+    # A front that killed continues on a fresh fighter only if one is still waiting.
+    waiting = n_left - len(reserve) - len(survivors)
+    kept = survivors + killers[: max(0, waiting)]
+    # Fighters killed beyond the fresh ones came out of the wounded waiting in the reserve.
+    for _ in range(max(0, len(kept) + len(reserve) - n_left)):
+        reserve.pop(rng.randrange(len(reserve)))
+    return kills, n_left, (kept, reserve)
+
+
 def _run_swarm(
     sides: list[Template],
     rng: random.Random,
@@ -477,7 +574,7 @@ def _run_swarm(
 ) -> RunOutcome:
     """Aggregated fight for big groups: each side is one bin of identical fighters."""
     n = [sides[0].count, sides[1].count]
-    front = [sides[0].max_hp, sides[1].max_hp]
+    hurt: list[tuple[list[float], list[float]]] = [([], []), ([], [])]  # (fronts, reserve)
     hit_p = [hit_chance(sides[0], sides[1]), hit_chance(sides[1], sides[0])]
     dmg = [damage_per_hit(sides[0], sides[1]), damage_per_hit(sides[1], sides[0])]
     spike = [damage_per_hit(sides[s], sides[1 - s]) if sides[s].spiky else 0.0 for s in (0, 1)]
@@ -492,7 +589,10 @@ def _run_swarm(
         for s in (0, 1):
             if sides[s].regen_per_s > 0 and n[s] > 0:
                 heal_hp = sides[s].regen_per_s * sides[s].max_hp * dt
-                front[s] = min(sides[s].max_hp, front[s] + heal_hp)
+                hurt[s] = (
+                    [min(sides[s].max_hp, h + heal_hp) for h in hurt[s][0]],
+                    [min(sides[s].max_hp, h + heal_hp) for h in hurt[s][1]],
+                )
         # Machines stop in order of their operating time, and the first to stop loses, as in the
         # one-by-one engine (both stopping in the same step is not a mutual wipe-out).
         stop_order = sorted((0, 1), key=lambda x: sides[x].endurance_s)
@@ -517,6 +617,8 @@ def _run_swarm(
                 return _outcome(n, stopped_at, events, record_events)
         if n[0] == 0 or n[1] == 0:
             return _outcome(n, t, events, record_events)
+        if t >= c.MAX_FIGHT_S:
+            break  # the closing step only checks for a machine stop; no fighting past the limit
         # The sides act in random order each step, so equal swarms do not always wipe each
         # other out at the same instant (and neither side gets a built-in first strike).
         order = (0, 1) if rng.random() < 0.5 else (1, 0)
@@ -546,8 +648,9 @@ def _run_swarm(
                         text_hint=f"{plural_word(me.weapon_word)} land",
                     )
                 )
-            kills, n[foe], front[foe] = _apply_hits(
-                hits, dmg[s], n[foe], front[foe], sides[foe].max_hp
+            g = n[foe] if me.ranged else min(n[foe], engaged)
+            kills, n[foe], hurt[foe] = _spread_tracked(
+                hits, dmg[s], n[foe], hurt[foe], sides[foe].max_hp, g, rng
             )
             if kills:
                 if record_events:
@@ -560,7 +663,10 @@ def _run_swarm(
                             text_hint="go down" if kills > 1 else "goes down",
                         )
                     )
-            remaining = (n[foe] - 1) * sides[foe].max_hp + front[foe] if n[foe] else 0.0
+            wounded = hurt[foe][0] + hurt[foe][1]
+            remaining = (
+                (n[foe] - len(wounded)) * sides[foe].max_hp + sum(wounded) if n[foe] else 0.0
+            )
             if (
                 retreating is None
                 and n[foe] > 0
@@ -602,8 +708,8 @@ def _run_swarm(
                             text_hint="spines jab back",
                         )
                     )
-                back, n[s], front[s] = _apply_hits(
-                    hits, spike[foe], n[s], front[s], sides[s].max_hp
+                back, n[s], hurt[s] = _spread_tracked(
+                    hits, spike[foe], n[s], hurt[s], sides[s].max_hp, engaged, rng
                 )
                 if back:
                     if record_events:
@@ -618,7 +724,13 @@ def _run_swarm(
                         )
         if n[0] == 0 or n[1] == 0:
             return _outcome(n, t, events, record_events)
-        t = _tick_up(t + dt)
+        t_next = _tick_up(t + dt)
+        if t_next > c.MAX_FIGHT_S > t:
+            # Steps grow late in the fight and can jump past the limit. Take one last step exactly
+            # at the limit so a machine whose operating time ends in between (say at 590 s) is
+            # still stopped, as it is with fewer than 200 on a side.
+            t_next = c.MAX_FIGHT_S
+        t = t_next
     return _outcome(n, c.MAX_FIGHT_S, events, record_events)
 
 
