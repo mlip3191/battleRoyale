@@ -600,9 +600,15 @@ def _run_swarm(
     start_hp = [sides[s].max_hp * sides[s].count for s in (0, 1)]
     retreating: int | None = None
     t = _tick_up(min(starts))
+    # The step cap is for the fights the work rule sends to swarm mode (D-50), which are small in
+    # head count but long. Fights over the head-count threshold were validated without it and
+    # would be several times slower with it (10,000 ants v 1 lion: 0.8 s to 2.9 s).
+    step_cap = (
+        c.SWARM_STEP_MAX_S if max(sides[0].count, sides[1].count) <= c.SWARM_THRESHOLD else math.inf
+    )
 
     while t <= c.MAX_FIGHT_S:
-        dt = min(max(c.SWARM_STEP_S, t * c.SWARM_STEP_GROWTH), c.SWARM_STEP_MAX_S)
+        dt = min(max(c.SWARM_STEP_S, t * c.SWARM_STEP_GROWTH), step_cap)
         for s in (0, 1):
             if sides[s].regen_per_s > 0 and n[s] > 0:
                 heal_hp = sides[s].regen_per_s * sides[s].max_hp * dt

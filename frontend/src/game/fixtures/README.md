@@ -4,7 +4,7 @@ Two real `SimulationResult` logs for big crowds, used to check the battle scene 
 
 | File                       | Matchup               | Events | What it tests                                                                                                         |
 | -------------------------- | --------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 105    | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                         |
+| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 93    | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                         |
 | `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 103    | A swarm replay below 200 per side (D-50, since engine version 8): group hits and knock-outs, never individual misses. |
 
 - **Made by:** the simulation engine at `ENGINE_VERSION = 8` (`backend/app/simulation/constants.py`).

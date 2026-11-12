@@ -64,7 +64,8 @@ SWARM_STEP_S = 0.5
 # Steps lengthen as a fight goes on: at least this share of the elapsed time (assumption:
 # keeps long swarm fights fast while early, decisive moments stay finely resolved).
 SWARM_STEP_GROWTH = 0.1
-# ...but never longer than this (assumption). Without a cap a long, slow fight (150 cats against
+# ...but never longer than this (assumption), in fights with at most SWARM_THRESHOLD on each side
+# (the ones the work rule sends here). Without a cap a long, slow fight (150 cats against
 # one elephant) takes steps of 30 s or more and the crowd is overrated by 0.13; see
 # docs/swarm-validation.md.
 SWARM_STEP_MAX_S = 3.0
