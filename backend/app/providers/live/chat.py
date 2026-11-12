@@ -6,20 +6,29 @@ import httpx
 
 from app.config import Settings
 from app.providers.base import ChatMessage
-from app.providers.live.http import ProviderError, post_json
+from app.providers.live.http import RETRIES, ProviderError, post_json
 
 if TYPE_CHECKING:
     from app.providers.registry import ServiceConfig
 
 
 class LiveChatLLM:
-    """Calls the course chat model; json_schema turns on schema-constrained output."""
+    """Calls the course chat model; json_schema turns on schema-constrained output.
+
+    timeout_s and retries default to the shared provider settings; intake passes shorter ones."""
 
     def __init__(
-        self, config: "ServiceConfig", settings: Settings, client: httpx.AsyncClient | None = None
+        self,
+        config: "ServiceConfig",
+        settings: Settings,
+        client: httpx.AsyncClient | None = None,
+        *,
+        timeout_s: float | None = None,
+        retries: int = RETRIES,
     ) -> None:
         self.config = config
-        self.timeout_s = settings.provider_timeout_s
+        self.timeout_s = settings.provider_timeout_s if timeout_s is None else timeout_s
+        self.retries = retries
         self.client = client
 
     # Send the messages and return the reply text.
@@ -44,6 +53,7 @@ class LiveChatLLM:
             payload=payload,
             timeout_s=self.timeout_s,
             client=self.client,
+            retries=self.retries,
         )
         try:
             content = reply["choices"][0]["message"]["content"]
