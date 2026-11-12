@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from app.config import Settings, use_settings
+from app.config import use_settings
 from app.models.battle import BattleRecord, StageStatus
 from app.models.matchup import Matchup
 from app.models.media import Asset
@@ -15,6 +15,7 @@ from app.pipeline.orchestrator import FALLBACK_DETAILS, STUB, run_battle
 from app.pipeline.stages import Stubbed
 from app.pipeline.store import STAGES, BattleStore
 from app.simulation import fair
+from tests.conftest import mock_settings
 
 SIM_RUNS = 20  # enough for a verdict; keeps each battle quick
 HARD_TIMEOUT = 20.0  # no battle in this file may take longer than this
@@ -30,7 +31,7 @@ WORK = {"summary": "summary", "challenger": "challenger", "script": "scripts", *
 
 @pytest.fixture(autouse=True)
 def _quick_and_bounded(monkeypatch: pytest.MonkeyPatch) -> None:
-    use_settings(Settings(_env_file=None, provider_mode="mock", sim_runs=SIM_RUNS))
+    use_settings(mock_settings(sim_runs=SIM_RUNS))
     for stage in stages.STAGE_BUDGETS_S:
         monkeypatch.setitem(stages.STAGE_BUDGETS_S, stage, SMALL_BUDGET)
 

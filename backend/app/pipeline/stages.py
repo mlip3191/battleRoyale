@@ -7,10 +7,11 @@ the orchestrator marks the stage detail "stub". Stubs remaining: scripts (A06), 
 """
 
 import asyncio
+import hashlib
 import json
 from dataclasses import dataclass, field
 
-from app.config import REPO_ROOT
+from app.config import REPO_ROOT, get_settings
 from app.models.matchup import Matchup
 from app.models.media import Asset
 from app.models.narration import Script
@@ -19,6 +20,7 @@ from app.models.stats import StatSheet
 from app.pipeline import challenger as next_challenger
 from app.research.seed_fighters import find_seed_sheet
 from app.simulation import engine, fair
+from app.simulation.rng import make_seed
 
 # Time limit per stage in seconds, from the ARCHITECTURE §4 stage budget table (research uses
 # the new-fighter budget). The orchestrator reads it on every call, so tests can shrink it.
@@ -124,6 +126,23 @@ def simulation_matchup(matchup: Matchup, found: Research) -> Matchup:
         for f, ref in zip(matchup.fighters, found.reference_sheets, strict=True)
     ]
     return matchup.model_copy(update={"fighters": fighters})
+
+
+# The repeat-battle cache key: the simulation seed (normalized matchup, both sheet hashes,
+# ENGINE_VERSION; ARCHITECTURE §8) plus what else changes the verdict: the size-reference
+# sheets, a hash of each whole sheet (sheet_hash covers only stats; the engine also reads
+# body, weapons, habitat, and lore), and the number of runs.
+def cache_key(matchup: Matchup, found: Research) -> str:
+    seed = make_seed(
+        simulation_matchup(matchup, found), found.sheets[0].sheet_hash, found.sheets[1].sheet_hash
+    )
+    references = ",".join(s.sheet_hash if s else "-" for s in found.reference_sheets)
+    whole = ",".join(
+        hashlib.sha256(s.model_dump_json().encode("utf-8")).hexdigest()
+        for s in (*found.sheets, *(r for r in found.reference_sheets if r))
+    )
+    text = f"seed={seed}|refs={references}|sheets={whole}|runs={get_settings().sim_runs}"
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 # Step 3: the real engine, off the event loop so other battles and streams keep moving.
