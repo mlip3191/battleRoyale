@@ -246,13 +246,15 @@ def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Scri
 # The fair-fight line: the count that makes it a coin flip, "none found", or "not run tonight".
 def fair_fight_line(facts: NarrationFacts, names: Sequence[str] = ()) -> ScriptLine:
     """Never claims "no count makes this fair" unless the fair-fight check actually ran."""
+    safe = "Want a fair fight? We have a count that makes it a coin flip."
     if facts.fair_count is not None and facts.fair_side is not None:
+        if facts.fair_win_pct is None:  # a count with no probability: never say "None%"
+            return safe_line("color_commentator", safe, safe, facts)
         varied = facts.fighters[facts.fair_side].display_name
         text = (
             f"Want a fair fight? About {facts.fair_count} of {varied} makes it a coin flip, "
             f"winning {facts.fair_win_pct}% of the time."
         )
-        safe = "Want a fair fight? We have a count that makes it a coin flip."
         return safe_line("color_commentator", text, safe, facts, names)
     if facts.fair_ran:
         text = "Want a fair fight? No count makes this one fair."

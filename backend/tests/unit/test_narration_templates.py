@@ -285,6 +285,7 @@ def test_draw_outro_says_draw_and_its_percentage() -> None:
     text = " ".join(ln.text for ln in outro.lines)
     assert "draw" in text.lower()
     assert "12%" in text
+    assert "even" in text
     _assert_guarded(facts, *template_scripts(facts, result))
 
 
@@ -327,6 +328,19 @@ def test_fair_fight_that_found_no_count_says_so() -> None:
     texts = [ln.text for ln in outro.lines]
     assert "Want a fair fight? No count makes this one fair." in texts
     assert not any("didn't run" in t for t in texts)
+    _assert_guarded(facts, outro)
+
+
+def test_fair_fight_count_without_probability_never_says_none() -> None:
+    a, b = MATCHUPS["bear-vs-wolves"]
+    no_prob = FAIR.model_copy(update={"win_prob_at_count": None})
+    facts = build_facts([_sheet(a), _sheet(b)], RESULT, no_prob)
+    assert facts.fair_count is not None and facts.fair_win_pct is None
+    outro = outro_script(facts)
+    texts = [ln.text for ln in outro.lines]
+    assert "Want a fair fight? We have a count that makes it a coin flip." in texts
+    assert not any("None%" in t or "None" in t for t in texts)
+    assert not any("No count makes this one fair" in t for t in texts)
     _assert_guarded(facts, outro)
 
 
