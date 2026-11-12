@@ -92,7 +92,7 @@
       "method": "hand_verified",
       "low": 0.425,
       "high": 0.59,
-      "note": "The sword's length, counted as reach (docs/research.md: a published weapon length counts). Upper figure of the found gladii; the source gives no mean."
+      "note": "The sword's length, counted as reach (docs/research.md: a published weapon length counts). Upper figure of the found Mainz-type gladii (late 1st century BC to late 1st century AD); the source gives no mean."
     },
     "armor_0_1": {
       "value": 0.6,
@@ -120,7 +120,7 @@
       "method": "hand_verified",
       "low": 600.0,
       "high": 1200.0,
-      "note": "Stand-in: the length of a gladiator bout, a fighting duration (allowed by the PM on #29). Upper typical figure; low and high are the source's 10 and 20 minutes."
+      "note": "Stand-in: the length of a gladiator bout, a fighting duration (allowed by the PM on #29). Upper typical figure; low and high are the source's 10 and 20 minutes. Bout length for gladiators generally; heavily armed fighters tired faster, so this may overstate a legionary's stamina."
     },
     "aggression_0_1": {
       "value": 0.7,
@@ -146,5 +146,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "6477fe8c12e5f095e28f753944c1e1eabd332cd09298ae500560f205ecec0347"
+  "sheet_hash": "c77f66530b04f1e6cf4ce27d8c103920962aeb0134c856a827955ef25884308b"
 }

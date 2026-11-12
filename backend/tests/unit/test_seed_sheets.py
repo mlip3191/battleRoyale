@@ -20,11 +20,11 @@ MAX_ESTIMATES = 2
 # legionary 3 (D-54). The list is closed: no new entries without a PM ruling.
 EXCEPTIONS = {"duck": 3, "honey-badger": 3, "king-cobra": 4, "roman-legionary": 3}
 
-# Units a quote may use: as stored, km/h for m/s, cm or mm for m, minutes for s, tonnes for kg,
-# and kilograms of force for newtons.
+# Units a quote may use: as stored, km/h for m/s, cm for m (mm too when the quote says "mm"),
+# minutes for s, tonnes for kg, and kilograms of force for newtons.
 CONVERSIONS = {
     "m/s": (1.0, 3.6),
-    "m": (1.0, 100.0, 1000.0),
+    "m": (1.0, 100.0),
     "s": (1.0, 1 / 60),
     "kg": (1.0, 0.001),
     "N": (1.0, 1 / 9.80665),
@@ -42,6 +42,8 @@ def quote_has_number(stat: StatValue) -> bool:
     found = re.findall(r"\d[\d,]*(?:\.\d+)?", stat.source.quote)
     numbers = [float(n.replace(",", "")) for n in found]
     factors = CONVERSIONS.get(stat.unit, (1.0,))
+    if stat.unit == "m" and re.search(r"\bmm\b", stat.source.quote):
+        factors += (1000.0,)
     return any(abs(number - stat.value * f) < 0.05 for number in numbers for f in factors)
 
 
