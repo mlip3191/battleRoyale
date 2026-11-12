@@ -253,3 +253,15 @@ def test_fact_lines_name_the_fair_fight_side(facts: NarrationFacts) -> None:
     assert "fair fight: Gray wolf x4 wins 49% of the time" in text
     assert "Gray wolf wins 55%" in text
     assert "side 0" not in text and "side 1" not in text
+
+
+def test_fact_lines_fair_count_without_probability() -> None:
+    sheets, result = _inputs()
+    fair = FairFight(varied_side=1, count=4, win_prob_at_count=None, message="Fair at 4.")
+    facts = build_facts(sheets, result, fair)
+    assert (facts.fair_count, facts.fair_win_pct, facts.fair_side) == (4, None, 1)
+    lines = fact_lines(facts)
+    text = "\n".join(lines)
+    assert "fair fight: Gray wolf x4" in lines
+    assert "None" not in text and "None%" not in text
+    assert "no count makes this one fair" not in text
