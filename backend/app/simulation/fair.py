@@ -1,5 +1,6 @@
 """Fair-fight search ("a fair fight needs 37 house cats") and next-challenger testing."""
 
+import logging
 from dataclasses import dataclass
 
 from app.models.matchup import FighterRequest, Matchup
@@ -8,6 +9,8 @@ from app.models.stats import StatSheet
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.engine import run
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -205,18 +208,23 @@ def test_challengers(
     "6 gray wolves" is tested as six and the reason says so. The candidate is always one fighter.
     """
     suggestions: list[ChallengerSuggestion] = []
-    # The reason says "X-sized" only when the winner is really scaled (sheet given).
-    scaled = winner_reference is not None
+    # The winner's side is the same for every candidate, so it is worked out once.
+    winner_side = FighterRequest(entity=winner_sheet.fighter_id, raw=winner_sheet.display_name)
+    references: list[StatSheet | None] | None = None
+    scaled = False
+    if winner_request is not None:
+        winner_side = winner_request.model_copy(update={"entity": winner_sheet.fighter_id})
+        if winner_request.size_reference and winner_reference is not None:
+            references = [winner_reference, None]
+            scaled = True
+        elif winner_request.size_reference:
+            logger.warning(
+                "test_challengers: size_reference without a reference sheet; testing unscaled"
+            )
+            winner_side.size_reference = None  # no sheet to scale from: leave it unscaled
+    # The reason says "X-sized" only when the winner is really scaled.
     winner_text = _winner_text(winner_sheet, winner_request, scaled)
     for candidate in candidates:
-        winner_side = FighterRequest(entity=winner_sheet.fighter_id, raw=winner_sheet.display_name)
-        references: list[StatSheet | None] | None = None
-        if winner_request is not None:
-            winner_side = winner_request.model_copy(update={"entity": winner_sheet.fighter_id})
-            if winner_request.size_reference and winner_reference is not None:
-                references = [winner_reference, None]
-            else:
-                winner_side.size_reference = None  # no sheet to scale from: leave it unscaled
         duel = Matchup(
             fighters=[
                 winner_side,
