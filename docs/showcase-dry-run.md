@@ -35,7 +35,7 @@ The first run of this dry run said "Attack rate decided it: Duck (2 attacks per 
 The first run of this dry run found that a sheet could list `venom` but the engine had no venom mechanic, so a king cobra's 100 N bite did almost nothing to a 10 kg badger and the badger won 100%. **Decided (D-42, refined by D-44):** model venom as a dose that works after the fight, with assumption-labeled constants and a resistance entry for the honey badger. That is now in the engine (#81).
 - With the stand-in cobra carrying `venom` and the badger using the `honey-badger` id, battle 3 is still a **100% badger win in about 3 s**, and the explainer now reads "Honey badger's venom resistance decided it: it shrugs off bites that would kill others."
 - Without the resistance entry (the same badger under another id), the badger wins 83% and the other 17% are draws, because the poisoned badger dies after the fight; the fight lasts about 23 s, and the explainer says "Size decided it", which does not mention venom (the sensitivity check ranks size higher).
-- Venom resolves 120 s after the last blow and only when a side is wiped out. Swarm mode (above 200 per side) ignores it.
+- Venom resolves 120 s after the last blow and only when a side is wiped out. Swarm mode ignores it, whatever made the fight a swarm (head count, or the work rule of D-50).
 
 ### 3. The dragon can't touch a 60-tonne tank
 Hit points scale with mass (10 hp per kg), so the tank has 600,000. The dragon's breath is about 5,000 damage per hit.
