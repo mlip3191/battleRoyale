@@ -26,6 +26,7 @@ from app.simulation.fighters import (
     plural_word,
     sample_template,
     scale_factor,
+    venom_dose,
 )
 from app.simulation.rng import make_seed, run_rng
 from app.simulation.terrain import can_engage
@@ -158,6 +159,10 @@ def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] |
         limit = min(foe.max_hp, foe.morale * foe.max_hp * foe.count)
         if attacks * damage_per_hit(me, foe) >= limit:
             return None
+        # A venomous bite can be lethal after the fight (D-44): if the most doses possible could
+        # reach a full dose on one target, the result is not certain.
+        if attacks * venom_dose(me, foe) >= 1.0:
+            return None
     if math.isinf(min(stops)):  # no machine stops, so the clock runs out (a stop at 600 s counts)
         return DRAW, c.MAX_FIGHT_S
     return (1 if stops[0] < stops[1] else 0), end
@@ -266,6 +271,7 @@ def _run_individuals(
 ) -> RunOutcome:
     alive_list = [list(range(sides[0].count)), list(range(sides[1].count))]
     alive_set = [set(a) for a in alive_list]
+    venom = [[0.0] * sides[0].count, [0.0] * sides[1].count]  # share of a lethal dose carried
     hp = [[sides[s].max_hp] * sides[s].count for s in (0, 1)]
     start_hp = [sides[s].max_hp * sides[s].count for s in (0, 1)]
     total_hp = list(start_hp)
@@ -334,8 +340,25 @@ def _run_individuals(
         return False
 
     def finish(t: float) -> RunOutcome:
+        end = t
+        for side in (0, 1):
+            # A side was wiped out: a survivor carrying a lethal dose still dies (D-44), which
+            # can leave nobody standing (a draw). Venom takes minutes, so it acts after the fight.
+            if not alive_list[1 - side] and alive_list[side]:
+                doomed = [i for i in alive_list[side] if venom[side][i] >= 1.0]
+                if doomed:
+                    end = min(t + c.VENOM_ONSET_S, c.MAX_FIGHT_S)
+                    for i in doomed:
+                        alive_list[side].remove(i)
+                        alive_set[side].discard(i)
+                        log(
+                            FightEvent(
+                                t=end, type=EventType.KO, side=side, actor=i,
+                                text_hint="succumbs to venom",
+                            )
+                        )  # fmt: skip
         alive = [len(alive_list[0]), len(alive_list[1])]
-        return _outcome(alive, t, events, record_events)
+        return _outcome(alive, end, events, record_events)
 
     while queue:
         t, _, s, i = heapq.heappop(queue)
@@ -368,6 +391,8 @@ def _run_individuals(
             heal(foe_side, target, t)
             total_hp[foe_side] -= min(dmg[s], max(hp[foe_side][target], 0.0))
             hp[foe_side][target] -= dmg[s]
+            if me.venomous:
+                venom[foe_side][target] += venom_dose(me, sides[foe_side])
             if record_events:
                 log(
                     FightEvent(
