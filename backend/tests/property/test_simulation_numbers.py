@@ -151,14 +151,17 @@ def timed(matchup, sheets, runs=1000):
     return result, time.perf_counter() - start
 
 
-def test_100_vs_1000_finishes_under_three_seconds():
+def test_100_vs_1000_is_not_grossly_slow():
     _, seconds = timed(matchup_of(100, 1000), [ant(), ant()])
-    assert seconds < 3.0
+    # Under 1 s on a laptop; 10 s catches a gross slowdown even on a slow, loaded runner (#224).
+    assert seconds < 10.0
 
 
-def test_10000_ants_vs_one_lion_finishes_under_three_seconds():
+def test_10000_ants_vs_one_lion_is_not_grossly_slow():
     _, seconds = timed(matchup_of(10_000, 1), [ant(), lion()])
-    assert seconds < 3.0
+    # About 0.6 s on a laptop. It failed once at the old 3 s limit in a loaded full-suite run, so
+    # the limit is 10 s; the real budget is checked in the pipeline, not here (#224).
+    assert seconds < 10.0
 
 
 def test_plural_weapon_words_are_spelled_correctly():
