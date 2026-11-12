@@ -4,12 +4,12 @@ Two real `SimulationResult` logs for big crowds, used to check the battle scene 
 
 | File                       | Matchup               | Events | What it tests                                                                                                                            |
 | -------------------------- | --------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 94     | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                                            |
+| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 96     | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                                            |
 | `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 298    | The busiest log: it fills the engine's 300-event cap (`MAX_LOG_EVENTS`) with hits, misses and knock-outs, plus a "more go down" summary. |
 
-- **Made by:** the simulation engine at `ENGINE_VERSION = 6` (`backend/app/simulation/constants.py`).
+- **Made by:** the simulation engine at `ENGINE_VERSION = 7` (`backend/app/simulation/constants.py`).
 - **Fighters:** the stand-in `duck()` and `lion()` sheets from `backend/tests/property/sim_helpers.py` (round numbers, not sourced), in an open field, via `matchup_of(1000, 1)` and `matchup_of(200, 5)`.
-- **Seeds:** `1934678293278295529` (thousand-vs-one) and `1674945847517282953` (two-hundred-vs-five). The same engine version always gives the identical files.
+- **Seeds:** `5682432304282561861` (thousand-vs-one) and `1115389761765935616` (two-hundred-vs-five). The same engine version always gives the identical files.
 
 ## How to watch them in the app
 
@@ -36,4 +36,4 @@ uv run python -c "import sys; sys.path[:0] = ['.', 'tests/property']; from app.s
 uv run python -c "import sys; sys.path[:0] = ['.', 'tests/property']; from app.simulation.engine import run; from sim_helpers import duck, lion, matchup_of; print(run(matchup_of(200, 5), [duck(), lion()]).model_dump_json(indent=2))" > ../frontend/src/game/fixtures/two-hundred-vs-five.json
 ```
 
-Then update the engine version, seeds and event counts above, run `npm run format` (Prettier tidies the JSON), and run `npm run check`.
+A test (`backend/tests/property/test_crowd_fixtures.py`) fails with "regenerate the crowd fixtures" when the files no longer match the engine. Then update the engine version, seeds and event counts above, run `npm run format` (Prettier tidies the JSON), and run `npm run check`.
