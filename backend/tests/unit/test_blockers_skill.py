@@ -2,7 +2,9 @@
 
 The script is read-only and calls `gh`; these tests never run the real `gh` or touch the network.
 The encoding tests pin the Windows fix from #211: `gh` prints UTF-8, but Windows Python decodes
-and prints with cp1252 unless told otherwise.
+and prints with cp1252 unless told otherwise. Windows decoding is simulated by the fake
+`subprocess.run` below (`windows_run`), so these tests behave the same on every OS; they don't
+prove a real Windows machine works.
 """
 
 import importlib.util
