@@ -8,6 +8,7 @@ import pytest
 from app.models.simulation import EventType
 from app.models.stats import StatName, StatSheet
 from app.simulation import constants as c
+from app.simulation import engine
 from app.simulation.engine import _Pool, run, run_once
 from app.simulation.fighters import max_engagers, sample_template
 from app.simulation.rng import run_rng
@@ -151,17 +152,31 @@ def timed(matchup, sheets, runs=1000):
     return result, time.perf_counter() - start
 
 
-def test_100_vs_1000_is_not_grossly_slow():
-    _, seconds = timed(matchup_of(100, 1000), [ant(), ant()])
-    # Under 1 s on a laptop; 10 s catches a gross slowdown even on a slow, loaded runner (#224).
-    assert seconds < 10.0
+# The cost of a swarm fight is the number of times it spreads a step's hits over the defenders
+# (`_spread_tracked`), so that is what is counted: the same on every machine, unlike seconds (#224).
+def swarm_steps(monkeypatch, matchup, sheets, runs=1000):
+    calls = []
+    real = engine._spread_tracked
+
+    def counting(*args, **kwargs):
+        calls.append(1)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(engine, "_spread_tracked", counting)
+    run(matchup, sheets, runs=runs, explain=False)
+    return len(calls)
 
 
-def test_10000_ants_vs_one_lion_is_not_grossly_slow():
-    _, seconds = timed(matchup_of(10_000, 1), [ant(), lion()])
-    # About 0.6 s on a laptop. It failed once at the old 3 s limit in a loaded full-suite run, so
-    # the limit is 10 s; the real budget is checked in the pipeline, not here (#224).
-    assert seconds < 10.0
+def test_100_vs_1000_takes_few_swarm_steps(monkeypatch):
+    # 1,515 steps for 1,000 runs today (about 0.1 s on a laptop); the fight ends in a step or two.
+    assert swarm_steps(monkeypatch, matchup_of(100, 1000), [ant(), ant()]) <= 3_000
+
+
+def test_10000_ants_vs_one_lion_takes_a_bounded_number_of_swarm_steps(monkeypatch):
+    # 109,885 steps for 1,000 runs today (about 0.9 s on a laptop). The step cap of D-50 applies
+    # only to fights with at most SWARM_THRESHOLD on each side; applied to this fight it would
+    # cost about 3.5 times as many steps (2.9 s), which this limit catches on any machine.
+    assert swarm_steps(monkeypatch, matchup_of(10_000, 1), [ant(), lion()]) <= 150_000
 
 
 def test_plural_weapon_words_are_spelled_correctly():

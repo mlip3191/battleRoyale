@@ -354,7 +354,7 @@ def test_seed_sheet_lookup_accepts_grey_and_plural_names() -> None:
     # Live-style split: entity wolf + British spelling in variant.
     sheet = find_seed_sheet("wolf", "grey")
     assert sheet is not None and sheet.fighter_id == "gray-wolf"
-    # Raw phrase with both grey and a plural ("wolves" does not slug to "wolf").
+    # Raw phrase with a British spelling and a plural; the aliases map both words.
     sheet = find_seed_sheet("wolf", raw="6 grey wolves")
     assert sheet is not None and sheet.fighter_id == "gray-wolf"
     sheet = find_seed_sheet("wolves", "grey")

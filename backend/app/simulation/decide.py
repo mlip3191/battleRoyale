@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from app.models.matchup import Matchup
 from app.models.stats import ASSUMABLE_STATS, StatName, StatSheet
 from app.simulation import constants as c
-from app.simulation.fighters import effective_habitat
+from app.simulation.fighters import effective_habitat, venom_resistance
 from app.simulation.terrain import modifier
 
 if TYPE_CHECKING:
@@ -141,6 +141,11 @@ def decide(
     if any(s.lore and s.lore.abilities for s in sheets):
         effect("abilities", matchup, [_without_abilities(s) for s in sheets], True)
 
+    if any("venom" in s.weapons for s in sheets):
+        effect("venom", matchup, [_without_venom(s) for s in sheets], True)
+        if any(venom_resistance(s) > 0 for s in sheets):
+            effect("resistance", matchup, [_without_resistance(s) for s in sheets], True)
+
     # When nothing mattered (or the fight was a stalemate), the factor named below is only a
     # placeholder: the UI and the announcer must rely on the explainer text, not the factor name.
     if not cache:
@@ -149,9 +154,14 @@ def decide(
     signed, size = cache[factor]
     stat_names = {s.value for s in StatName}
     key: StatName | str = StatName(factor) if factor in stat_names else factor
-    shown = StatName.MASS if factor == "scaling" else key  # scaling is reported as size
+    # Scaling is reported as size; venom and resistance as attack force (D-44: no new contract
+    # value), with the sentence naming venom or resistance.
+    shown = {"scaling": StatName.MASS, "venom": StatName.ATTACK_FORCE}.get(factor, key)
+    if factor == "resistance":
+        shown = StatName.ATTACK_FORCE
     wins = [sum(o.winner == side for o in base) for side in (0, 1)]
-    if len(base) - wins[0] - wins[1] > max(wins):
+    draws_from_venom = factor in ("venom", "resistance")  # a poisoned survivor makes a draw
+    if len(base) - wins[0] - wins[1] > max(wins) and not draws_from_venom:
         return Decision(shown, _explain_stalemate())  # most runs were draws: nobody "won"
     if size < c.MIN_EFFECT:
         if base_won >= 0.9:
@@ -188,6 +198,21 @@ def _without_abilities(sheet: StatSheet) -> StatSheet:
     return sheet.model_copy(update={"lore": lore})
 
 
+def _without_venom(sheet: StatSheet) -> StatSheet:
+    """The same fighter with its venom removed (for the sensitivity check)."""
+    if "venom" not in sheet.weapons:
+        return sheet
+    weapons = [w for w in sheet.weapons if w != "venom"] or ["teeth"]
+    return sheet.model_copy(update={"weapons": weapons})
+
+
+def _without_resistance(sheet: StatSheet) -> StatSheet:
+    """The same fighter with no venom resistance (a fighter id the table does not list)."""
+    if venom_resistance(sheet) == 0:
+        return sheet
+    return sheet.model_copy(update={"fighter_id": "unresisted"})
+
+
 def _explain_stalemate() -> str:
     return "A stalemate: neither side could finish the other before the time limit."
 
@@ -220,6 +245,23 @@ def _explain(
             "A crowd can wear down even a tougher fighter, and a lone fighter can only face "
             "so many at once."
         )
+    if key == "venom":
+        biter = next(i for i in (fav, foe) if "venom" in sheets[i].weapons)
+        if biter == fav or not helped:
+            return (
+                f"{sheets[biter].display_name}'s venom decided it: a poisoned survivor dies "
+                "minutes after the fight, so a fighter can lose the brawl and still take its "
+                "foe with it."
+            )
+        return f"{fav_name} came out ahead in spite of {foe_name}'s venom."
+    if key == "resistance":
+        holder = next(i for i in (fav, foe) if venom_resistance(sheets[i]) > 0)
+        who = sheets[holder].display_name
+        if holder == fav:
+            return (
+                f"{who}'s venom resistance decided it: it shrugs off bites that would kill others."
+            )
+        return f"{fav_name} came out ahead in spite of {who}'s venom resistance."
     if key == "abilities":
         owner = fav if helped else foe
         powers = sheets[owner].lore.abilities if sheets[owner].lore else []
