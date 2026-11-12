@@ -13,6 +13,7 @@ nothing is cached.
 """
 
 import asyncio
+import functools
 import hashlib
 import json
 import logging
@@ -210,23 +211,52 @@ async def make_images(
     unique: dict[str, StatSheet] = {}
     for sheet in sheets:
         unique.setdefault(sheet.fighter_id, sheet)
-    jobs: list[tuple[ImageRequest, Awaitable[Asset]]] = [
-        (sprite_request(s), make_sprite(s, provider=provider, media_dir=media_dir))
+    jobs = [
+        _bounded(
+            _placeholder_request("sprite", s.fighter_id),
+            functools.partial(sprite_request, s),
+            functools.partial(make_sprite, s, provider=provider, media_dir=media_dir),
+            timeout_s,
+        )
         for s in unique.values()
     ]
     jobs.append(
-        (
-            battlefield_request(matchup.terrain),
-            make_battlefield(matchup.terrain, provider=provider, media_dir=media_dir),
+        _bounded(
+            _placeholder_request("battlefield", matchup.terrain.value),
+            functools.partial(battlefield_request, matchup.terrain),
+            functools.partial(
+                make_battlefield, matchup.terrain, provider=provider, media_dir=media_dir
+            ),
+            timeout_s,
         )
     )
-    return list(await asyncio.gather(*(_bounded(req, job, timeout_s) for req, job in jobs)))
+    return list(await asyncio.gather(*jobs))
 
 
-# Run one picture within its time limit; anything going wrong gives its placeholder.
-async def _bounded(request: ImageRequest, job: Awaitable[Asset], timeout_s: float) -> Asset:
+# A promptless request with the usual asset_id and path, for when the real one can't be built.
+def _placeholder_request(kind: Literal["sprite", "battlefield"], key: str) -> ImageRequest:
+    name = f"{key}-{style.STYLE_VERSION}"
+    size = style.SPRITE_SIZE if kind == "sprite" else style.BATTLEFIELD_SIZE
+    return ImageRequest(
+        kind=kind,
+        asset_id=f"{kind}-{name}",
+        path=Path(f"{kind}s") / f"{name}.png",
+        prompt=None,
+        size=size,
+    )
+
+
+# Build and run one picture within its time limit; anything going wrong gives its placeholder.
+async def _bounded(
+    placeholder: ImageRequest,
+    build: Callable[[], ImageRequest],
+    start: Callable[[], Awaitable[Asset]],
+    timeout_s: float,
+) -> Asset:
+    request = placeholder
     try:
-        return await asyncio.wait_for(job, timeout_s)
+        request = build()
+        return await asyncio.wait_for(start(), timeout_s)
     except Exception as error:
         logger.warning("image %s fell back (%s)", request.asset_id, type(error).__name__)
         return request.asset(fallback=True)
@@ -274,5 +304,8 @@ def _recompress(data: bytes) -> bytes:
 def _save(file: Path, data: bytes) -> None:
     file.parent.mkdir(parents=True, exist_ok=True)
     partial = file.with_name(f".{file.name}.{uuid.uuid4().hex}.tmp")
-    partial.write_bytes(data)
-    os.replace(partial, file)
+    try:
+        partial.write_bytes(data)
+        os.replace(partial, file)
+    finally:
+        partial.unlink(missing_ok=True)

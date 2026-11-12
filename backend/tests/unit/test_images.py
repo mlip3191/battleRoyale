@@ -27,6 +27,7 @@ from app.providers.live.image import LiveImageGen
 from app.providers.mock.image import silhouette_png
 from app.providers.registry import ProviderConfigError, ServiceConfig, get_provider
 from app.research.seed_fighters import find_seed_sheet
+from app.safety import media_names
 from tests.conftest import mock_settings
 from tests.png_helpers import DRAWN, FakeImages, keyed_sprite_png, write_png
 from tests.property.sim_helpers import load_sheet, make_dragon
@@ -196,6 +197,25 @@ async def test_a_bad_or_uncut_picture_gives_a_placeholder(tmp_path: Path, edited
     assert not list(tmp_path.rglob("*.png"))
 
 
+def test_a_failed_write_leaves_no_temp_file_and_no_picture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real_write_bytes = Path.write_bytes
+
+    def write_then_fail(self: Path, data: bytes) -> int:
+        if self.name.endswith(".tmp"):
+            real_write_bytes(self, data)
+            raise OSError("disk full")
+        return real_write_bytes(self, data)
+
+    monkeypatch.setattr(Path, "write_bytes", write_then_fail)
+    file = tmp_path / "sprites" / "gray-wolf-v1.png"
+    with pytest.raises(OSError, match="disk full"):
+        images._save(file, b"picture")
+    assert not list(tmp_path.rglob("*.tmp"))
+    assert not file.exists()
+
+
 async def test_make_images_returns_placeholders_when_the_provider_fails(tmp_path: Path) -> None:
     fake = FakeImages(fail=True)
     assets = await images.make_images(
@@ -214,6 +234,28 @@ async def test_make_images_never_raises_when_live_settings_are_missing(
     monkeypatch.setattr(images, "get_provider", missing)
     assets = await images.make_images(matchup(), [sheet("duck")], media_dir=tmp_path)
     assert len(assets) == 2 and all(a.fallback for a in assets)
+
+
+@pytest.mark.parametrize("brands_text", [None, "words: [unclosed\n"])
+async def test_make_images_never_raises_when_the_brands_file_is_missing_or_broken(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, brands_text: str | None
+) -> None:
+    brands = tmp_path / "media_brands.yaml"
+    if brands_text is not None:
+        brands.write_text(brands_text, encoding="utf-8")
+    monkeypatch.setattr(media_names, "BRANDS_PATH", brands)
+    media_names._brands.cache_clear()
+    try:
+        assets = await images.make_images(
+            matchup(), [sheet("gray wolf")], provider=FakeImages(), media_dir=tmp_path
+        )
+    finally:
+        media_names._brands.cache_clear()
+    assert [a.kind for a in assets] == ["sprite", "battlefield"]
+    sprite, battlefield = assets
+    assert sprite.fallback and sprite.url == ""
+    assert sprite.asset_id == f"sprite-gray-wolf-{style.STYLE_VERSION}"
+    assert not battlefield.fallback
 
 
 async def test_a_slow_picture_times_out_into_a_placeholder(tmp_path: Path) -> None:
