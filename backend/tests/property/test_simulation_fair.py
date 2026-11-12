@@ -36,7 +36,15 @@ def test_wolf_vs_house_cats_finds_a_count_within_tolerance_in_few_probes():
     found = search.result
     assert found.count is not None and found.count > 1
     assert found.varied_side == 1  # the cats are the losing side
-    assert abs(found.win_prob_at_count - 0.5) <= c.FAIR_TOLERANCE
+
+    # Counts are whole numbers and 200-run probes are noisy, so do not judge the search by its own
+    # probe. Check the answer with a bigger independent run: one cat fewer is still the underdog
+    # and one cat more is the favorite (0.03 is the noise of 2,000 runs). Any version bump holds.
+    def cats_win_share(cats):
+        return run(matchup_of(1, cats), [wolf(), house_cat()], runs=2000, explain=False).win_prob[1]
+
+    assert cats_win_share(max(1, found.count - 1)) <= 0.5 + 0.03
+    assert cats_win_share(found.count + 1) >= 0.5 - 0.03
     assert search.probes <= c.FAIR_MAX_PROBES
     assert str(found.count) in found.message and "house cats" in found.message
 
