@@ -73,6 +73,8 @@ test("normal motion: the replay animates", async () => {
   expect(screen.queryByText(/key moments only/)).toBeNull();
 });
 
+// This one only reads the stylesheet text, so it is a tripwire for someone deleting the global
+// rule, not proof that nothing moves. The Phaser tests above are the real reduced-motion guard.
 test("the page's own animations are CSS only, so the global reduced-motion rule stops them", () => {
   expect(indexCss).toMatch(
     /@media \(prefers-reduced-motion: reduce\)[\s\S]*animation: none !important/,

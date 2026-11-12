@@ -1,7 +1,7 @@
 // The broadcast page (D07): the ticker while research and the simulation run, then the intro card
 // with captions, the fight replay with play-by-play captions, and the verdict reveal.
 // The show's logic lives in broadcast-flow.ts; this file only lays it out.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import { Link, useParams } from "react-router-dom";
 import { NOT_FOUND, useBattle } from "../api/useBattle.ts";
 import AudioBar from "../components/AudioBar.tsx";
@@ -33,9 +33,11 @@ import type { ScriptLine } from "../api/client.ts";
 import styles from "./battle.module.css";
 
 // A way out of any dead end.
-const BackHome = () => (
+const BackHome = ({ linkRef }: { linkRef: Ref<HTMLAnchorElement> }) => (
   <p>
-    <Link to="/">Back to the studio</Link>
+    <Link ref={linkRef} to="/">
+      Back to the studio
+    </Link>
   </p>
 );
 
@@ -75,6 +77,7 @@ function Broadcast({ id }: { id: string }) {
   const controls = useFocusRescue();
   const startButton = useRef<HTMLButtonElement>(null);
   const verdictTitle = useRef<HTMLHeadingElement>(null);
+  const backHome = useRef<HTMLAnchorElement>(null);
 
   // A newer battle record can start the show; adjust during render, not in an effect.
   const show = nextShow(stored, { type: "update", battle });
@@ -82,12 +85,16 @@ function Broadcast({ id }: { id: string }) {
   const act = (action: ShowAction) => setShow((s) => nextShow(s, action));
   const captionsPaused = pausedIn === show;
 
-  // The show's buttons go away as it moves on. If the viewer was on one, focus goes to the new part
-  // of the show: the verdict's heading, or Start the fight. In the fight the stage takes it, on its
-  // Play/Pause button once ready (claimFocus below). Focus elsewhere on the page is left alone.
+  // The show's buttons (and the ticker's Pause button) go away as it moves on. If the viewer was
+  // on one, focus goes to the new part of the show: the verdict's heading, or Start the fight. In
+  // the fight the stage takes it, on its Play/Pause button once ready (claimFocus below). A fight
+  // called off under the ticker sends it to the way home. Focus elsewhere on the page, or given
+  // up by a click on a blank part of it, is left alone.
+  const failed = battle?.status === "failed";
   useEffect(() => {
     if (show.phase === "verdict") controls.rescue(verdictTitle.current);
     else if (show.phase === "intro") controls.rescue(startButton.current);
+    else if (failed) controls.rescue(backHome.current);
   });
 
   // Intro and outro lines step along on a timer; the line count restarts with each phase.
@@ -111,7 +118,6 @@ function Broadcast({ id }: { id: string }) {
     return () => clearTimeout(timer);
   }, [current, captionsPaused, isLast, lineIndex, show.phase]);
 
-  const failed = battle?.status === "failed";
   const running = battle?.stages.find((s) => s.status === "running");
   const first = battle?.matchup.fighters[0]?.entity ?? "the fighters";
   // One ticker for every state, so its status region stays mounted and only its text changes.
@@ -156,8 +162,8 @@ function Broadcast({ id }: { id: string }) {
           />
         )
       )}
-      <LoadingTicker message={tickerMessage} />
-      {(failed || (!battle && error)) && <BackHome />}
+      <LoadingTicker message={tickerMessage} focusGroup={controls} />
+      {(failed || (!battle && error)) && <BackHome linkRef={backHome} />}
       {note && <p className={styles.note}>{note}</p>}
 
       {show.phase === "intro" && (

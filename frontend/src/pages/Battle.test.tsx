@@ -321,6 +321,34 @@ test("keyboard: focus is never moved when the viewer wasn't on a show button", (
   expect(document.activeElement).toBe(document.body);
 });
 
+test("keyboard: the ticker ending under Pause ticker moves focus to Start the fight", () => {
+  const view = show(running);
+  button("Pause ticker").focus();
+  state.value = { battle: done, error: null };
+  view.rerender(page("/battle/b1"));
+  expect(screen.queryByRole("button", { name: "Pause ticker" })).toBeNull();
+  expect(document.activeElement).toBe(button("Start the fight"));
+});
+
+test("keyboard: a fight called off under Pause ticker moves focus to the way home", () => {
+  const view = show(running);
+  button("Pause ticker").focus();
+  state.value = { battle: { ...running, status: "failed" }, error: null };
+  view.rerender(page("/battle/b1"));
+  expect(screen.queryByRole("button", { name: "Pause ticker" })).toBeNull();
+  expect(document.activeElement).toBe(backHome());
+});
+
+test("keyboard: focus given up on purpose is not pulled back by the next caption", () => {
+  vi.useFakeTimers();
+  show(done);
+  button("Pause captions").focus();
+  act(() => button("Pause captions").blur()); // a click on a blank part of the page
+  act(() => vi.advanceTimersByTime(lineMs(intro[0].text)));
+  expect(captions().textContent).toContain(intro[1].text);
+  expect(document.activeElement).toBe(document.body);
+});
+
 test("a caption pause belongs to its part of the show: the outro starts unpaused", () => {
   vi.useFakeTimers();
   show(done);

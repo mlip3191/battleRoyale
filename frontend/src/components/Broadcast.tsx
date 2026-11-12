@@ -1,6 +1,7 @@
 // The broadcast frame's building blocks, shared by every page.
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useFocusRescue, type FocusRescue } from "./focus-rescue.ts";
 import styles from "./broadcast.module.css";
 
 // Class for text only screen readers see (e.g. a page heading the design doesn't show).
@@ -45,14 +46,33 @@ export function LowerThird({
 // An empty message hides the ticker bar but keeps the region in place.
 // The crawl can be paused (WCAG 2.2.2); the button sits outside the status region so it is not
 // announced with each update, and it hides when reduced motion already stops the crawl.
-export function LoadingTicker({ message }: { message: string }) {
+// The button goes away with the message. If the viewer was on it, keyboard focus stays at the
+// ticker's place on the page instead of dropping to the top; a page that knows a better place
+// passes its own focusGroup and moves focus itself.
+export function LoadingTicker({
+  message,
+  focusGroup,
+}: {
+  message: string;
+  focusGroup?: Pick<FocusRescue, "onFocus" | "onBlur">;
+}) {
   const text = useRef<HTMLSpanElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const own = useFocusRescue();
+  const group = focusGroup ?? own;
   const [paused, setPaused] = useState(false);
   useEffect(() => {
     if (text.current) text.current.textContent = message;
-  }, [message]);
+    if (!message && !focusGroup) own.rescue(box.current);
+  }, [message, focusGroup, own]);
   return (
-    <div className={styles.tickerBox}>
+    <div
+      ref={box}
+      className={styles.tickerBox}
+      tabIndex={-1}
+      onFocus={group.onFocus}
+      onBlur={group.onBlur}
+    >
       <div role="status" aria-live="polite">
         <div className={`${styles.ticker} ${paused ? styles.paused : ""}`}>
           <span ref={text} className={styles.tickerText} />

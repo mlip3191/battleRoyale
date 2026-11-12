@@ -34,11 +34,15 @@ export function useFocusRescue(): FocusRescue {
       onFocus: () => {
         inside = true;
       },
-      // Focus moving to another element outside the group means the viewer moved on. A removed
-      // control (or the window losing focus) gives no next element, so the group keeps its claim.
+      // Focus moving to another element outside the group means the viewer moved on. So does
+      // focus leaving for nothing while the control is still there (a click on a blank part of
+      // the page). A removed control fires no blur, and the window losing focus keeps the claim.
       onBlur: (e) => {
         const next = e.relatedTarget;
-        if (next && !e.currentTarget.contains(next)) inside = false;
+        const movedOn = next
+          ? !e.currentTarget.contains(next)
+          : document.hasFocus() && e.target.isConnected;
+        if (movedOn) inside = false;
       },
       claim,
       rescue: (target) => {

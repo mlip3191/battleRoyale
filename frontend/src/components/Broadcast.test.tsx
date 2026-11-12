@@ -1,7 +1,7 @@
 // The shared broadcast pieces: the ticker's live region and the decorative banner option.
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import { LoadingTicker, LowerThird } from "./Broadcast.tsx";
 import css from "./broadcast.module.css?raw";
 
@@ -51,6 +51,34 @@ test("the moving ticker can be paused and resumed (WCAG 2.2.2), outside the stat
 test("an empty ticker has no pause button", () => {
   render(<LoadingTicker message="" />);
   expect(screen.queryByRole("button")).toBeNull();
+});
+
+test("keyboard: the Pause ticker button going away leaves focus at the ticker, not the top of the page", () => {
+  const { container, rerender } = render(
+    <LoadingTicker message="Researching" />,
+  );
+  screen.getByRole("button", { name: "Pause ticker" }).focus();
+  rerender(<LoadingTicker message="" />);
+  expect(screen.queryByRole("button")).toBeNull();
+  expect(document.activeElement).toBe(container.firstElementChild);
+  expect(container.firstElementChild!.getAttribute("tabindex")).toBe("-1");
+});
+
+test("keyboard: the ticker ending moves nothing when the viewer wasn't on its button", () => {
+  const { rerender } = render(<LoadingTicker message="Researching" />);
+  rerender(<LoadingTicker message="" />);
+  expect(document.activeElement).toBe(document.body);
+});
+
+test("keyboard: a page that passes its own focus group is left to move focus itself", () => {
+  const group = { onFocus: vi.fn(), onBlur: vi.fn() };
+  const { rerender } = render(
+    <LoadingTicker message="Researching" focusGroup={group} />,
+  );
+  screen.getByRole("button", { name: "Pause ticker" }).focus();
+  expect(group.onFocus).toHaveBeenCalled();
+  rerender(<LoadingTicker message="" focusGroup={group} />);
+  expect(document.activeElement).toBe(document.body);
 });
 
 test("reduced motion: the ticker wraps instead of crawling, and its pause button hides", () => {

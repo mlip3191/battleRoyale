@@ -88,6 +88,16 @@ test("leaving the page stops the sound, even for tracks that arrived after the b
   expect(pause).toHaveBeenCalledTimes(2);
 });
 
+test("a track changing while the sound plays puts the button back to Play sound", async () => {
+  const { rerender } = render(
+    <AudioBar narration="/media/a.mp3" music={null} />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Play sound" }));
+  await screen.findByRole("button", { name: "Pause sound" });
+  rerender(<AudioBar narration="/media/b.mp3" music={null} />);
+  expect(screen.getByRole("button", { name: "Play sound" })).toBeTruthy();
+});
+
 test("Mute is a toggle that mutes every track", () => {
   render(<AudioBar narration="/media/a.mp3" music="/media/m.mp3" />);
   const mute = screen.getByRole("button", { name: "Mute" });

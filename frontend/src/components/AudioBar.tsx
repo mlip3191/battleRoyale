@@ -33,9 +33,13 @@ export default function AudioBar({ narration, music }: AudioBarProps) {
   // Stop the sound when the bar goes away (leaving the page). The tracks are picked up again
   // whenever they change, so ones that arrive after the bar appears are stopped too. (React has
   // already let go of the elements when this cleanup runs, so it can't read the refs then.)
+  // A changed track stops the sound the same way, so the button goes back to "Play sound" too.
   useEffect(() => {
     const tracks = [voice.current, song.current];
-    return () => tracks.forEach((t) => t && !t.paused && t.pause());
+    return () => {
+      tracks.forEach((t) => t && !t.paused && t.pause());
+      setPlaying(false);
+    };
   }, [narration, music]);
 
   if (!narration && !music) return null;
