@@ -1,17 +1,17 @@
 {
-  "seed": 2970169064738633593,
+  "seed": 6642410140495138710,
   "runs": 1000,
-  "win_prob": [0.016, 0.984],
+  "win_prob": [0.007, 0.993],
   "draw_prob": 0.0,
   "win_prob_ci95": [
-    [0.009872155867426248, 0.02583228196419978],
-    [0.9741677180358003, 0.9901278441325737]
+    [0.0033948250792319975, 0.01437849692694906],
+    [0.9856215030730511, 0.996605174920768]
   ],
-  "mean_survivors": [1.103, 5.0],
-  "mean_duration_s": 52.941,
+  "mean_survivors": [0.441, 5.0],
+  "mean_duration_s": 53.304199999999994,
   "outcome": "win_1",
-  "deciding_factor": "mass_kg",
-  "deciding_factor_explainer": "Size decided it: Lion (190 kg) against Duck (1.2 kg).",
+  "deciding_factor": "attack_force_n",
+  "deciding_factor_explainer": "Strength decided it: Lion (4000 N) against Duck (30 N).",
   "representative_log": [
     {
       "t": 0.0,
@@ -40,7 +40,7 @@
       "actor": null,
       "target": null,
       "group_size": 1,
-      "damage": 190.1,
+      "damage": 201.6,
       "text_hint": "bites land"
     },
     {
@@ -56,21 +56,11 @@
     {
       "t": 0.9,
       "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 29,
-      "damage": 32.5,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 0.9,
-      "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
       "group_size": 1,
-      "damage": 190.1,
+      "damage": 201.6,
       "text_hint": "bites land"
     },
     {
@@ -84,117 +74,37 @@
       "text_hint": "goes down"
     },
     {
-      "t": 1.4,
+      "t": 0.9,
       "type": "hit",
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 30,
-      "damage": 33.6,
+      "group_size": 28,
+      "damage": 34.3,
       "text_hint": "bites land"
     },
     {
       "t": 1.4,
       "type": "hit",
-      "side": 1,
+      "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 2,
-      "damage": 380.2,
+      "group_size": 27,
+      "damage": 33.1,
       "text_hint": "bites land"
     },
     {
       "t": 1.4,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 2,
-      "damage": null,
-      "text_hint": "go down"
-    },
-    {
-      "t": 1.9,
-      "type": "hit",
-      "side": 1,
-      "actor": null,
-      "target": null,
-      "group_size": 3,
-      "damage": 570.3,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 1.9,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 3,
-      "damage": null,
-      "text_hint": "go down"
-    },
-    {
-      "t": 1.9,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 32,
-      "damage": 35.9,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 2.4,
-      "type": "hit",
-      "side": 1,
-      "actor": null,
-      "target": null,
-      "group_size": 3,
-      "damage": 570.3,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 2.4,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 3,
-      "damage": null,
-      "text_hint": "go down"
-    },
-    {
-      "t": 2.4,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 34,
-      "damage": 38.1,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 2.9,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 23,
-      "damage": 25.8,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 2.9,
       "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
       "group_size": 1,
-      "damage": 190.1,
+      "damage": 201.6,
       "text_hint": "bites land"
     },
     {
-      "t": 2.9,
+      "t": 1.4,
       "type": "ko",
       "side": 0,
       "actor": null,
@@ -204,27 +114,27 @@
       "text_hint": "goes down"
     },
     {
-      "t": 3.4,
+      "t": 1.9,
       "type": "hit",
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 29,
-      "damage": 32.5,
+      "group_size": 20,
+      "damage": 24.5,
       "text_hint": "bites land"
     },
     {
-      "t": 3.4,
+      "t": 1.9,
       "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
       "group_size": 2,
-      "damage": 380.2,
+      "damage": 403.3,
       "text_hint": "bites land"
     },
     {
-      "t": 3.4,
+      "t": 1.9,
       "type": "ko",
       "side": 0,
       "actor": null,
@@ -234,13 +144,83 @@
       "text_hint": "go down"
     },
     {
+      "t": 2.4,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 28,
+      "damage": 34.3,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 2.4,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 1,
+      "damage": 201.6,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 2.4,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 2.9,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 28,
+      "damage": 34.3,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 3.4,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 26,
+      "damage": 31.9,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 3.4,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 4,
+      "damage": 806.6,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 3.4,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 4,
+      "damage": null,
+      "text_hint": "go down"
+    },
+    {
       "t": 3.9,
       "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 2,
-      "damage": 380.2,
+      "group_size": 1,
+      "damage": 201.6,
       "text_hint": "bites land"
     },
     {
@@ -249,9 +229,9 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 2,
+      "group_size": 1,
       "damage": null,
-      "text_hint": "go down"
+      "text_hint": "goes down"
     },
     {
       "t": 3.9,
@@ -260,7 +240,7 @@
       "actor": null,
       "target": null,
       "group_size": 27,
-      "damage": 30.3,
+      "damage": 33.1,
       "text_hint": "bites land"
     },
     {
@@ -269,8 +249,8 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 31,
-      "damage": 34.7,
+      "group_size": 25,
+      "damage": 30.7,
       "text_hint": "bites land"
     },
     {
@@ -279,8 +259,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 3,
-      "damage": 570.3,
+      "group_size": 2,
+      "damage": 403.3,
       "text_hint": "bites land"
     },
     {
@@ -289,7 +269,7 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 3,
+      "group_size": 2,
       "damage": null,
       "text_hint": "go down"
     },
@@ -300,7 +280,7 @@
       "actor": null,
       "target": null,
       "group_size": 2,
-      "damage": 380.2,
+      "damage": 403.3,
       "text_hint": "bites land"
     },
     {
@@ -320,7 +300,7 @@
       "actor": null,
       "target": null,
       "group_size": 27,
-      "damage": 30.3,
+      "damage": 33.1,
       "text_hint": "bites land"
     },
     {
@@ -329,8 +309,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 2,
-      "damage": 380.2,
+      "group_size": 1,
+      "damage": 201.6,
       "text_hint": "bites land"
     },
     {
@@ -339,9 +319,9 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 2,
+      "group_size": 1,
       "damage": null,
-      "text_hint": "go down"
+      "text_hint": "goes down"
     },
     {
       "t": 5.4,
@@ -349,8 +329,8 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 30,
-      "damage": 33.6,
+      "group_size": 28,
+      "damage": 34.3,
       "text_hint": "bites land"
     },
     {
@@ -359,8 +339,8 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 32,
-      "damage": 35.9,
+      "group_size": 33,
+      "damage": 40.5,
       "text_hint": "bites land"
     },
     {
@@ -370,7 +350,7 @@
       "actor": null,
       "target": null,
       "group_size": 1,
-      "damage": 190.1,
+      "damage": 201.6,
       "text_hint": "bites land"
     },
     {
@@ -389,42 +369,12 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 3,
-      "damage": 570.3,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 6.6,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 3,
-      "damage": null,
-      "text_hint": "go down"
-    },
-    {
-      "t": 6.6,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 35,
-      "damage": 39.2,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 7.3,
-      "type": "hit",
-      "side": 1,
-      "actor": null,
-      "target": null,
       "group_size": 1,
-      "damage": 190.1,
+      "damage": 201.6,
       "text_hint": "bites land"
     },
     {
-      "t": 7.3,
+      "t": 6.6,
       "type": "ko",
       "side": 0,
       "actor": null,
@@ -434,97 +384,67 @@
       "text_hint": "goes down"
     },
     {
+      "t": 6.6,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 36,
+      "damage": 44.2,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 7.3,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 3,
+      "damage": 604.9,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 7.3,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 3,
+      "damage": null,
+      "text_hint": "go down"
+    },
+    {
       "t": 7.3,
       "type": "hit",
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 40,
-      "damage": 44.8,
+      "group_size": 41,
+      "damage": 50.3,
       "text_hint": "bites land"
     },
     {
       "t": 8.1,
       "type": "hit",
-      "side": 1,
+      "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 4,
-      "damage": 760.3,
+      "group_size": 41,
+      "damage": 50.3,
       "text_hint": "bites land"
     },
     {
       "t": 8.1,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 4,
-      "damage": null,
-      "text_hint": "go down"
-    },
-    {
-      "t": 8.1,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 47,
-      "damage": 52.7,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 9.0,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 47,
-      "damage": 52.7,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 9.0,
-      "type": "hit",
-      "side": 1,
-      "actor": null,
-      "target": null,
-      "group_size": 4,
-      "damage": 760.3,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 9.0,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 4,
-      "damage": null,
-      "text_hint": "go down"
-    },
-    {
-      "t": 9.9,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 49,
-      "damage": 54.9,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 9.9,
       "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
       "group_size": 2,
-      "damage": 380.2,
+      "damage": 403.3,
       "text_hint": "bites land"
     },
     {
-      "t": 9.9,
+      "t": 8.1,
       "type": "ko",
       "side": 0,
       "actor": null,
@@ -534,47 +454,17 @@
       "text_hint": "go down"
     },
     {
-      "t": 10.9,
-      "type": "hit",
-      "side": 1,
-      "actor": null,
-      "target": null,
-      "group_size": 3,
-      "damage": 570.3,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 10.9,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 3,
-      "damage": null,
-      "text_hint": "go down"
-    },
-    {
-      "t": 10.9,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 62,
-      "damage": 69.5,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 12.0,
+      "t": 9.0,
       "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
       "group_size": 5,
-      "damage": 950.4,
+      "damage": 1008.2,
       "text_hint": "bites land"
     },
     {
-      "t": 12.0,
+      "t": 9.0,
       "type": "ko",
       "side": 0,
       "actor": null,
@@ -584,57 +474,27 @@
       "text_hint": "go down"
     },
     {
-      "t": 12.0,
+      "t": 9.0,
       "type": "hit",
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 68,
-      "damage": 76.2,
+      "group_size": 50,
+      "damage": 61.3,
       "text_hint": "bites land"
     },
     {
-      "t": 13.2,
-      "type": "hit",
-      "side": 1,
-      "actor": null,
-      "target": null,
-      "group_size": 3,
-      "damage": 570.3,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 13.2,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 3,
-      "damage": null,
-      "text_hint": "go down"
-    },
-    {
-      "t": 13.2,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 75,
-      "damage": 84.0,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 14.6,
+      "t": 9.9,
       "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
       "group_size": 4,
-      "damage": 760.3,
+      "damage": 806.6,
       "text_hint": "bites land"
     },
     {
-      "t": 14.6,
+      "t": 9.9,
       "type": "ko",
       "side": 0,
       "actor": null,
@@ -644,13 +504,133 @@
       "text_hint": "go down"
     },
     {
+      "t": 9.9,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 54,
+      "damage": 66.2,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 10.9,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 53,
+      "damage": 65.0,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 10.9,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 7,
+      "damage": 1411.5,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 10.9,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 7,
+      "damage": null,
+      "text_hint": "go down"
+    },
+    {
+      "t": 12.0,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 3,
+      "damage": 604.9,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 12.0,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 3,
+      "damage": null,
+      "text_hint": "go down"
+    },
+    {
+      "t": 12.0,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 65,
+      "damage": 79.7,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 13.2,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 71,
+      "damage": 87.1,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 13.2,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 4,
+      "damage": 806.6,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 13.2,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 4,
+      "damage": null,
+      "text_hint": "go down"
+    },
+    {
+      "t": 14.6,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 3,
+      "damage": 604.9,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 14.6,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 3,
+      "damage": null,
+      "text_hint": "go down"
+    },
+    {
       "t": 14.6,
       "type": "hit",
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 84,
-      "damage": 94.1,
+      "group_size": 74,
+      "damage": 90.8,
       "text_hint": "bites land"
     },
     {
@@ -659,8 +639,8 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 87,
-      "damage": 97.5,
+      "group_size": 88,
+      "damage": 107.9,
       "text_hint": "bites land"
     },
     {
@@ -669,8 +649,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 5,
-      "damage": 950.4,
+      "group_size": 3,
+      "damage": 604.9,
       "text_hint": "bites land"
     },
     {
@@ -679,7 +659,7 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 5,
+      "group_size": 3,
       "damage": null,
       "text_hint": "go down"
     },
@@ -689,8 +669,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 6,
-      "damage": 1140.5,
+      "group_size": 7,
+      "damage": 1411.5,
       "text_hint": "bites land"
     },
     {
@@ -699,7 +679,7 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 6,
+      "group_size": 7,
       "damage": null,
       "text_hint": "go down"
     },
@@ -709,9 +689,29 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 98,
-      "damage": 109.8,
+      "group_size": 96,
+      "damage": 117.8,
       "text_hint": "bites land"
+    },
+    {
+      "t": 19.6,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 7,
+      "damage": 1411.5,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 19.6,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 7,
+      "damage": null,
+      "text_hint": "go down"
     },
     {
       "t": 19.6,
@@ -719,22 +719,22 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 111,
-      "damage": 124.4,
+      "group_size": 108,
+      "damage": 132.5,
       "text_hint": "bites land"
     },
     {
-      "t": 19.6,
+      "t": 21.6,
       "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
       "group_size": 9,
-      "damage": 1710.8,
+      "damage": 1814.7,
       "text_hint": "bites land"
     },
     {
-      "t": 19.6,
+      "t": 21.6,
       "type": "ko",
       "side": 0,
       "actor": null,
@@ -745,16 +745,26 @@
     },
     {
       "t": 21.6,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 115,
+      "damage": 141.1,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 23.8,
       "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
       "group_size": 10,
-      "damage": 1900.9,
+      "damage": 2016.4,
       "text_hint": "bites land"
     },
     {
-      "t": 21.6,
+      "t": 23.8,
       "type": "ko",
       "side": 0,
       "actor": null,
@@ -764,44 +774,14 @@
       "text_hint": "go down"
     },
     {
-      "t": 21.6,
-      "type": "hit",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 116,
-      "damage": 130.0,
-      "text_hint": "bites land"
-    },
-    {
       "t": 23.8,
       "type": "hit",
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 138,
-      "damage": 154.6,
+      "group_size": 137,
+      "damage": 168.1,
       "text_hint": "bites land"
-    },
-    {
-      "t": 23.8,
-      "type": "hit",
-      "side": 1,
-      "actor": null,
-      "target": null,
-      "group_size": 9,
-      "damage": 1710.8,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 23.8,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 9,
-      "damage": null,
-      "text_hint": "go down"
     },
     {
       "t": 26.2,
@@ -810,7 +790,7 @@
       "actor": null,
       "target": null,
       "group_size": 10,
-      "damage": 1900.9,
+      "damage": 2016.4,
       "text_hint": "bites land"
     },
     {
@@ -830,7 +810,7 @@
       "actor": null,
       "target": null,
       "group_size": 142,
-      "damage": 159.1,
+      "damage": 174.2,
       "text_hint": "bites land"
     },
     {
@@ -839,8 +819,8 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 164,
-      "damage": 183.8,
+      "group_size": 162,
+      "damage": 198.7,
       "text_hint": "bites land"
     },
     {
@@ -849,8 +829,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 9,
-      "damage": 1710.8,
+      "group_size": 15,
+      "damage": 3024.6,
       "text_hint": "bites land"
     },
     {
@@ -859,9 +839,19 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 9,
+      "group_size": 15,
       "damage": null,
       "text_hint": "go down"
+    },
+    {
+      "t": 31.8,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 161,
+      "damage": 197.5,
+      "text_hint": "bites land"
     },
     {
       "t": 31.8,
@@ -869,8 +859,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 13,
-      "damage": 2471.1,
+      "group_size": 11,
+      "damage": 2218.0,
       "text_hint": "bites land"
     },
     {
@@ -879,48 +869,58 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 13,
+      "group_size": 11,
       "damage": null,
       "text_hint": "go down"
     },
     {
-      "t": 31.8,
+      "t": 34.8,
+      "type": "hit",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 158,
+      "damage": 193.8,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 34.8,
+      "type": "hit",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 15,
+      "damage": 3024.6,
+      "text_hint": "bites land"
+    },
+    {
+      "t": 34.8,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 15,
+      "damage": null,
+      "text_hint": "go down"
+    },
+    {
+      "t": 34.8,
       "type": "retreat",
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 77,
+      "group_size": 64,
       "damage": null,
       "text_hint": "break and run"
     },
     {
-      "t": 34.8,
-      "type": "hit",
-      "side": 1,
-      "actor": null,
-      "target": null,
-      "group_size": 12,
-      "damage": 2281.0,
-      "text_hint": "bites land"
-    },
-    {
-      "t": 34.8,
-      "type": "ko",
-      "side": 0,
-      "actor": null,
-      "target": null,
-      "group_size": 12,
-      "damage": null,
-      "text_hint": "go down"
-    },
-    {
       "t": 37.8,
       "type": "hit",
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 11,
-      "damage": 2091.0,
+      "group_size": 14,
+      "damage": 2822.9,
       "text_hint": "bites land"
     },
     {
@@ -929,7 +929,7 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 11,
+      "group_size": 14,
       "damage": null,
       "text_hint": "go down"
     },
@@ -939,8 +939,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 14,
-      "damage": 2661.2,
+      "group_size": 12,
+      "damage": 2419.7,
       "text_hint": "bites land"
     },
     {
@@ -949,7 +949,7 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 14,
+      "group_size": 12,
       "damage": null,
       "text_hint": "go down"
     },
@@ -959,8 +959,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 10,
-      "damage": 1900.9,
+      "group_size": 12,
+      "damage": 2419.7,
       "text_hint": "bites land"
     },
     {
@@ -969,7 +969,7 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 10,
+      "group_size": 12,
       "damage": null,
       "text_hint": "go down"
     },
@@ -979,8 +979,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 14,
-      "damage": 2661.2,
+      "group_size": 11,
+      "damage": 2218.0,
       "text_hint": "bites land"
     },
     {
@@ -989,7 +989,7 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 14,
+      "group_size": 11,
       "damage": null,
       "text_hint": "go down"
     },
@@ -999,8 +999,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 14,
-      "damage": 2661.2,
+      "group_size": 12,
+      "damage": 2419.7,
       "text_hint": "bites land"
     },
     {
@@ -1009,7 +1009,7 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 14,
+      "group_size": 12,
       "damage": null,
       "text_hint": "go down"
     },
@@ -1019,8 +1019,8 @@
       "side": 1,
       "actor": null,
       "target": null,
-      "group_size": 2,
-      "damage": 380.2,
+      "group_size": 6,
+      "damage": 1209.8,
       "text_hint": "bites land"
     },
     {
@@ -1029,7 +1029,7 @@
       "side": 0,
       "actor": null,
       "target": null,
-      "group_size": 2,
+      "group_size": 3,
       "damage": null,
       "text_hint": "go down"
     },

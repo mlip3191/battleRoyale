@@ -7,7 +7,7 @@ from typing import Any
 
 import pytest
 
-from app.config import Settings, use_settings
+from app.config import use_settings
 from app.models.matchup import Matchup
 from app.models.simulation import SimulationResult
 from app.models.stats import StatSheet
@@ -18,6 +18,7 @@ from app.pipeline.store import BattleStore
 from app.providers.base import DecisionAnswer, DecisionQuestion
 from app.research.seed_fighters import load_seed_fighters
 from app.simulation import fair
+from tests.conftest import mock_settings
 
 SIM_RUNS = 20
 MATCHUP_IDS = {"grizzly-bear", "gray-wolf"}
@@ -26,7 +27,7 @@ STAGE_BUDGET_S = 10.0  # ARCHITECTURE §4, stage 8
 
 @pytest.fixture(autouse=True)
 def _mock_mode() -> None:
-    use_settings(Settings(_env_file=None, provider_mode="mock", sim_runs=SIM_RUNS))
+    use_settings(mock_settings(sim_runs=SIM_RUNS))
 
 
 def fight(first: str = "grizzly bear", second: str = "gray wolf") -> Matchup:

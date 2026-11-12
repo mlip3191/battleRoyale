@@ -19,7 +19,17 @@ from app.simulation.fair import fair_fight
 from app.simulation.rng import run_rng
 from tests.property.sim_helpers import make_dragon, make_sheet, matchup_of
 
-WEAPONS = [["teeth"], ["claws"], ["weapon_ranged"], ["ramming"], ["crushing"], ["spines"], ["none"]]
+WEAPONS = [
+    ["teeth"],
+    ["venom"],
+    ["venom", "teeth"],
+    ["claws"],
+    ["weapon_ranged"],
+    ["ramming"],
+    ["crushing"],
+    ["spines"],
+    ["none"],
+]
 
 
 def random_sheet(rng: random.Random, tag: str):

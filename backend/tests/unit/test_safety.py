@@ -1,6 +1,7 @@
 """Safety gate (A04 part 1): code rules, the classifier, and the gate on a Matchup."""
 
 import json
+from pathlib import Path
 from typing import Any, get_args
 
 import pytest
@@ -9,6 +10,7 @@ from app.intake.llm_io import INPUT_END, INPUT_START
 from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.providers.base import ChatMessage
 from app.providers.live.http import ProviderError
+from app.providers.mock.text import MockChatLLM
 from app.safety import (
     SafetyUnavailable,
     blocked_result,
@@ -231,6 +233,76 @@ async def test_classifier_recovers_when_the_retry_works() -> None:
     assert verdict.allowed
 
 
+# --- The mock classifier (mock mode only, #240) --------------------------------------------
+
+# Mike's examples from #240: obvious real people, characters, gods, and firearms.
+MOCK_BLOCKS = [
+    ("Napoleon vs a grizzly bear", "real_person"),
+    ("Taylor Swift vs a goose", "real_person"),
+    ("Batman vs a goose", "copyrighted_character"),
+    ("Zeus vs a bear", "deity"),
+    ("a grizzly bear vs a handgun", "weapon"),
+    ("an AK-47 vs a bear", "weapon"),
+]
+
+
+@pytest.mark.parametrize(("text", "reason"), MOCK_BLOCKS)
+async def test_the_mock_classifier_blocks_obvious_people_characters_deities_and_firearms(
+    text: str, reason: str
+) -> None:
+    verdict = await classify_text(text, chat=MockChatLLM())
+    assert (verdict.allowed, verdict.reason, verdict.layer) == (False, reason, "classifier")
+    assert verdict.message == MESSAGES[reason]
+
+
+@pytest.mark.parametrize(
+    ("text", "reason"),
+    [
+        ("an ak47 vs a bear", "weapon"),
+        ("an AK 47 vs a bear", "weapon"),
+        ("3 grenades vs a goose", "weapon"),
+        ("Spider-Man vs a goose", "copyrighted_character"),
+        ("NAPOLEON BONAPARTE vs a moose", "real_person"),
+        ("Zeus vs a handgun", "deity"),  # several problems: the prompt's first reason wins
+        ("Batman vs Napoleon", "real_person"),
+    ],
+)
+async def test_the_mock_classifier_matches_spellings_plurals_and_the_first_reason(
+    text: str, reason: str
+) -> None:
+    verdict = await classify_text(text, chat=MockChatLLM())
+    assert (verdict.reason, verdict.layer) == (reason, "classifier")
+
+
+# Ordinary fighters, some with names close to a listed word ("thor", "bomb", "gun", "tank").
+MOCK_ALLOWED = [
+    *(text for text in ALLOWED_PHRASES if "Napoleon" not in text),
+    "a toaster vs a goose",
+    "a thorny devil vs a goose",
+    "a bombardier beetle vs a hornet",
+    "a gunboat vs a kraken",
+    "a medieval knight vs a samurai",
+]
+
+
+@pytest.mark.parametrize("text", MOCK_ALLOWED)
+async def test_the_mock_classifier_still_allows_ordinary_matchups(text: str) -> None:
+    assert (await classify_text(text, chat=MockChatLLM())).allowed, text
+
+
+async def test_a_blocking_fixture_reply_wins_over_the_mock_keywords(tmp_path: Path) -> None:
+    (tmp_path / "chat").mkdir()
+    fixture = tmp_path / "chat" / f"{PROMPT_NAME}.json"
+    fixture.write_text('{"default": {"verdict": "other"}}', encoding="utf-8")
+    verdict = await classify_text("a grizzly bear vs a handgun", chat=MockChatLLM(tmp_path))
+    assert verdict.reason == "other"
+
+
+async def test_the_mock_classifier_still_needs_its_fixture(tmp_path: Path) -> None:
+    with pytest.raises(LookupError):
+        await classify_text("Zeus vs a bear", chat=MockChatLLM(fixture_dir=tmp_path))
+
+
 # --- The gate on a whole Matchup (for A05) --------------------------------------------------
 
 
@@ -260,6 +332,19 @@ async def test_check_matchup_code_rules_block_before_any_classifier_call() -> No
     m = matchup(("a wolf", "toddler", None), ("a bear", "bear", None))
     verdict = await check_matchup(m, chat=chat)
     assert (verdict.reason, verdict.layer) == ("minor", "rules") and chat.texts == []
+
+
+@pytest.mark.parametrize(
+    ("raw", "entity", "reason"),
+    [("a toddler", "toddler", "minor"), ("my friend John Smith", "john smith", "real_person")],
+)
+async def test_code_rules_still_block_first_with_the_mock_classifier(
+    raw: str, entity: str, reason: str
+) -> None:
+    m = matchup((raw, entity, None), ("a goose", "goose", None))
+    verdict = await check_matchup(m)  # mock mode: the default chat provider is the mock
+    assert (verdict.allowed, verdict.reason, verdict.layer) == (False, reason, "rules")
+    assert verdict.message == MESSAGES[reason]
 
 
 async def test_check_matchup_fails_closed_on_an_outage() -> None:

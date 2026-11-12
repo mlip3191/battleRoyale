@@ -4,12 +4,12 @@ Two real `SimulationResult` logs for big crowds, used to check the battle scene 
 
 | File                       | Matchup               | Events | What it tests                                                                                                         |
 | -------------------------- | --------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 93     | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                         |
-| `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 103    | A swarm replay below 200 per side (D-50, since engine version 8): group hits and knock-outs, never individual misses. |
+| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 96     | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                         |
+| `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 103    | A swarm replay below 200 per side (D-50, since engine version 9): group hits and knock-outs, never individual misses. |
 
-- **Made by:** the simulation engine at `ENGINE_VERSION = 8` (`backend/app/simulation/constants.py`).
+- **Made by:** the simulation engine at `ENGINE_VERSION = 9` (`backend/app/simulation/constants.py`).
 - **Fighters:** the stand-in `duck()` and `lion()` sheets from `backend/tests/property/sim_helpers.py` (round numbers, not sourced), in an open field, via `matchup_of(1000, 1)` and `matchup_of(200, 5)`.
-- **Seeds:** `2253034143055008184` (thousand-vs-one) and `2970169064738633593` (two-hundred-vs-five). The same engine version always gives the identical files.
+- **Seeds:** `80807545943446929` (thousand-vs-one) and `6642410140495138710` (two-hundred-vs-five). The same engine version always gives the identical files.
 
 ## How to watch them in the app
 
