@@ -31,6 +31,41 @@ CONVERSIONS: dict[str, tuple[float, ...]] = {
     "N": (0.001,),  # kilonewtons
 }
 
+# Rubric stats on a 0-1 scale are assumptions, not measurements or probabilities.
+RUBRIC_UNIT = "0-1"
+
+# Plain words for a deciding factor (matches #218's templates).
+FACTOR_WORDS = {
+    "mass_kg": "sheer mass",
+    "size_m": "size",
+    "top_speed_mps": "speed",
+    "attack_force_n": "hitting power",
+    "attacks_per_s": "attack rate",
+    "reach_m": "reach",
+    "armor_0_1": "armor",
+    "endurance_s": "endurance",
+    "aggression_0_1": "aggression",
+    "group_tactics_0_1": "teamwork",
+    "numbers": "numbers",
+    "terrain": "the terrain",
+    "habitat": "habitat",
+    "abilities": "special abilities",
+}
+
+# Plain labels for stat names in the fact list.
+STAT_WORDS = {
+    "mass_kg": "mass",
+    "size_m": "size",
+    "top_speed_mps": "top speed",
+    "attack_force_n": "attack force",
+    "attacks_per_s": "attack rate",
+    "reach_m": "reach",
+    "armor_0_1": "armor",
+    "endurance_s": "endurance",
+    "aggression_0_1": "aggression",
+    "group_tactics_0_1": "teamwork",
+}
+
 
 @dataclass(frozen=True)
 class StatFact:
@@ -76,6 +111,7 @@ class NarrationFacts:
     deciding_factor: str
     mean_duration_s: float
     mean_survivors: tuple[float, float]
+    fair_ran: bool
     fair_count: int | None
     fair_win_pct: int | None
     fair_side: int | None
@@ -163,15 +199,13 @@ def _allowed(
 ) -> AllowedNumbers:
     values: set[float] = set()
     percents: set[float] = set()
-    for sheet in sheets:
-        values |= {float(d) for d in re.findall(r"\d+", sheet.display_name)}
+    for side, sheet in enumerate(sheets):
+        # Digits from the name the fact list shows, not the raw one.
+        values |= {float(d) for d in re.findall(r"\d+", safe_name(sheet.display_name, side))}
+        # Only sourced values: no code-made sampling bounds, and rubric stats never as percents.
         for stat in sheet.stats.values():
-            for v in (stat.value, stat.low, stat.high):
-                if v is None:
-                    continue
-                values |= _stat_numbers(v, stat.unit)
-                if stat.unit == "0-1":
-                    percents |= _roundings(v * 100)
+            values |= _stat_numbers(stat.value, stat.unit)
+    # Percentages come only from real probabilities.
     probs = [*result.win_prob, result.draw_prob, *(b for ci in result.win_prob_ci95 for b in ci)]
     for p in probs:
         values |= _roundings(p)
@@ -182,9 +216,10 @@ def _allowed(
     for survivors in result.mean_survivors:
         values |= _roundings(survivors)
     odds = _odds(result.win_prob)
+    # The fair fight counts only when it found a count, the same rule build_facts uses.
     if fair is not None and fair.count is not None:
         values.add(float(fair.count))
-    if fair is not None and fair.win_prob_at_count is not None:
+    if fair is not None and fair.count is not None and fair.win_prob_at_count is not None:
         values |= _roundings(fair.win_prob_at_count)
         percents |= _roundings(fair.win_prob_at_count * 100)
         odds |= _odds([fair.win_prob_at_count])
@@ -213,6 +248,7 @@ def build_facts(
         deciding_factor=str(result.deciding_factor),
         mean_duration_s=result.mean_duration_s,
         mean_survivors=result.mean_survivors,
+        fair_ran=fair_fight is not None,
         fair_count=fair_fight.count if has_fair and fair_fight is not None else None,
         fair_win_pct=pct(fair_p) if has_fair and fair_p is not None else None,
         fair_side=fair_fight.varied_side if has_fair and fair_fight is not None else None,
@@ -222,20 +258,40 @@ def build_facts(
 
 def fact_lines(facts: NarrationFacts) -> list[str]:
     """The fact list as short text lines, for a prompt (part 2) or for debugging."""
+    names = [f.display_name for f in facts.fighters]
     lines = []
     for f in facts.fighters:
         legend = ", according to legend" if f.is_legend else ""
-        lines.append(f"side {f.side}: {f.display_name} x{f.count} ({f.category}, {f.body}{legend})")
+        lines.append(f"{f.display_name} x{f.count} ({f.category}, {f.body}{legend})")
         for s in f.stats:
-            estimate = " (estimate)" if s.is_estimate else ""
-            lines.append(f"  {f.display_name} {s.name}: {s.value:g} {s.unit}{estimate}")
+            lines.append(f"  {f.display_name} {STAT_WORDS.get(s.name, s.name)}: {_stat_text(s)}")
+    factor = FACTOR_WORDS.get(facts.deciding_factor, facts.deciding_factor.replace("_", " "))
     lines.append(
-        f"result: {facts.outcome}; win {facts.win_pct[0]}% / {facts.win_pct[1]}%, "
-        f"draw {facts.draw_pct}%, {facts.runs} runs; deciding factor {facts.deciding_factor}; "
+        f"result: {_outcome_text(facts.outcome, names)}; "
+        f"{names[0]} wins {facts.win_pct[0]}%, {names[1]} wins {facts.win_pct[1]}%, "
+        f"draw {facts.draw_pct}%, {facts.runs} runs; deciding factor: {factor}; "
         f"mean duration {facts.mean_duration_s:g} s"
     )
-    if facts.fair_count is not None:
+    if facts.fair_count is not None and facts.fair_side is not None:
         lines.append(
-            f"fair fight: {facts.fair_count} of side {facts.fair_side} wins {facts.fair_win_pct}%"
+            f"fair fight: {names[facts.fair_side]} x{facts.fair_count} "
+            f"wins {facts.fair_win_pct}% of the time"
         )
+    elif facts.fair_ran:
+        lines.append("fair fight: checked, and no count makes this one fair")
     return lines
+
+
+# A stat's value and unit, tagged as an assumption (0-1 rubric) or an estimate.
+def _stat_text(s: StatFact) -> str:
+    if s.unit == RUBRIC_UNIT:
+        return f"{s.value:g} on a 0-1 scale (assumption)"
+    estimate = " (estimate)" if s.is_estimate else ""
+    return f"{s.value:g} {s.unit}{estimate}"
+
+
+# The outcome in plain words, using display names instead of side numbers.
+def _outcome_text(outcome: str, names: Sequence[str]) -> str:
+    if outcome.startswith("win_"):
+        return f"{names[int(outcome[-1])]} wins"
+    return outcome.replace("_", " ")

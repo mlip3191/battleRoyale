@@ -65,7 +65,7 @@ def test_result_numbers(facts: NarrationFacts) -> None:
 
 @pytest.mark.parametrize(
     "value",
-    [389.0, 350.1, 427.9, 13.33, 13.3, 48.0, 29.8, 858.0, 7.9, 1000.0, 74.2, 1.2, 4.0, 6.0, 0.55],
+    [389.0, 13.33, 13.3, 48.0, 29.8, 858.0, 7.9, 1000.0, 74.2, 1.2, 4.0, 6.0, 0.55],
 )
 def test_allowed_values_include_stats_conversions_and_results(
     facts: NarrationFacts, value: float
@@ -75,10 +75,8 @@ def test_allowed_values_include_stats_conversions_and_results(
     assert value in facts.allowed.values
 
 
-@pytest.mark.parametrize("value", [38.0, 55.0, 7.0, 49.0, 35.0, 58.0, 30.0])
-def test_allowed_percents_include_win_draw_ci_fair_and_0_1_stats(
-    facts: NarrationFacts, value: float
-) -> None:
+@pytest.mark.parametrize("value", [38.0, 55.0, 7.0, 49.0, 35.0, 58.0, 41.0])
+def test_allowed_percents_include_win_draw_ci_and_fair(facts: NarrationFacts, value: float) -> None:
     assert value in facts.allowed.percents
 
 
@@ -94,7 +92,18 @@ def test_values_under_one_keep_two_significant_figures() -> None:
     assert 0.0 not in _roundings(0.04)
 
 
-# Small integers like 4, 6, 12 and 40% really are backed by this battle's stats, ranges, and
+def test_roundings_edge_cases() -> None:
+    # 2.4 m does not allow "2"; the same holds for negatives.
+    assert 2.0 not in _roundings(2.4)
+    assert -2.0 not in _roundings(-2.4)
+    assert -2.4 in _roundings(-2.4)
+    # Zero stays zero.
+    assert _roundings(0.0) == {0.0}
+    # The value itself is always allowed, even when it rounds to something else.
+    assert 9.96 in _roundings(9.96)
+
+
+# Small integers like 4, 6, 12 and 40% really are backed by this battle's stats, results, and
 # conversions, so the invented numbers below are ones the fixture battle does not contain.
 @pytest.mark.parametrize(
     "text",
@@ -133,12 +142,57 @@ def test_real_set_passes_supported_numbers(facts: NarrationFacts, text: str) -> 
     assert find_unsupported_numbers(text, facts.allowed) == [], text
 
 
-def test_known_limit_small_percent_from_any_stat_passes(facts: NarrationFacts) -> None:
-    # Known limit: the guard checks values, not meaning. The bear's group_tactics_0_1 is 0.1, so
-    # "10%" is allowed anywhere, even as an invented chance. The real set holds every 0-1 stat
-    # (and its range) as a percentage, so small round percentages are often backed by accident.
-    assert 10.0 in facts.allowed.percents
-    assert find_unsupported_numbers("The bear has a 10% chance!", facts.allowed) == []
+def test_percent_forms_come_only_from_real_probabilities(facts: NarrationFacts) -> None:
+    # Rubric stats (aggression, armor, teamwork) are not probabilities,
+    # so they never become percents.
+    for invented in ("10%", "50%", "70%", "100%", "5%"):
+        assert find_unsupported_numbers(f"The bear has a {invented} chance!", facts.allowed)
+    assert find_unsupported_numbers("The wolves win 55% of the time.", facts.allowed) == []
+    # A stat's code-made sampling bound is not a claim about the fighter.
+    assert find_unsupported_numbers("The bear weighs 428 kilograms.", facts.allowed)
+
+
+# The bear and wolf sheets and the simulation result from the contract fixtures.
+def _inputs() -> tuple[list[StatSheet], SimulationResult]:
+    sheets = [
+        StatSheet.model_validate(_json("stat-sheet.json")),
+        StatSheet.model_validate(_json("stat-sheet-gray-wolf.json")),
+    ]
+    return sheets, SimulationResult.model_validate(_json("simulation-result.json"))
+
+
+def test_fair_ran_tells_not_run_from_no_count(facts: NarrationFacts) -> None:
+    sheets, result = _inputs()
+    not_run = build_facts(sheets, result, None)
+    assert not not_run.fair_ran and not_run.fair_count is None
+    no_count = FairFight(
+        varied_side=1, count=None, win_prob_at_count=None, message="No fair count."
+    )
+    ran = build_facts(sheets, result, no_count)
+    assert ran.fair_ran and ran.fair_count is None
+    assert facts.fair_ran
+    assert (facts.fair_count, facts.fair_win_pct, facts.fair_side) == (4, 49, 1)
+
+
+def test_fair_probability_without_count_is_not_allowed() -> None:
+    sheets, result = _inputs()
+    fair = FairFight(varied_side=1, count=None, win_prob_at_count=0.61, message="No fair count.")
+    allowed = build_facts(sheets, result, fair).allowed
+    # 0.61 / 61% is not a fixture simulation probability, so it could only come from the fair fight.
+    assert 61.0 not in allowed.percents
+    assert 0.61 not in allowed.values
+    assert not any(abs(o - 0.61 / 0.39) < 1e-9 for o in allowed.odds)
+
+
+def test_name_digits_come_from_the_safe_name() -> None:
+    sheets, result = _inputs()
+    # 63 characters: safe_name trims it to 60, so "98765" becomes "98".
+    long_name = "A" * 57 + " 98765"
+    sheets[0] = sheets[0].model_copy(update={"display_name": long_name})
+    facts = build_facts(sheets, result)
+    assert facts.fighters[0].display_name.endswith(" 98")
+    assert 98.0 in facts.allowed.values
+    assert 98765.0 not in facts.allowed.values
 
 
 def test_odds_include_head_to_head_ratio(facts: NarrationFacts) -> None:
@@ -181,5 +235,21 @@ def test_fact_lines_mark_estimates_and_legend() -> None:
     result = SimulationResult.model_validate(_json("simulation-result.json"))
     lines = fact_lines(build_facts([dragon, bear], result))
     assert "according to legend" in lines[0]
-    assert any("Dragon mass_kg: 6000 kg (estimate)" in ln for ln in lines)
-    assert any("Grizzly bear - adult male mass_kg: 389 kg" == ln.strip() for ln in lines)
+    assert any("Dragon mass: 6000 kg (estimate)" in ln for ln in lines)
+    assert any("Grizzly bear - adult male mass: 389 kg" == ln.strip() for ln in lines)
+    # A 0-1 rubric stat is an assumption, not an estimate.
+    assert any(
+        "Grizzly bear - adult male armor: 0.3 on a 0-1 scale (assumption)" == ln.strip()
+        for ln in lines
+    )
+    text = "\n".join(lines)
+    assert "deciding factor: numbers;" in text
+    assert "mass_kg" not in text
+    assert "side 0" not in text and "side 1" not in text
+
+
+def test_fact_lines_name_the_fair_fight_side(facts: NarrationFacts) -> None:
+    text = "\n".join(fact_lines(facts))
+    assert "fair fight: Gray wolf x4 wins 49% of the time" in text
+    assert "Gray wolf wins 55%" in text
+    assert "side 0" not in text and "side 1" not in text
