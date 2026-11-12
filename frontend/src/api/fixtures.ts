@@ -5,8 +5,12 @@ import battleDone from "../fixtures/battle-record-done.json";
 import intakeResult from "../fixtures/intake-result.json";
 import grizzly from "../fixtures/stat-sheet.json";
 import wolf from "../fixtures/stat-sheet-gray-wolf.json";
+import thousandVsOne from "../game/fixtures/thousand-vs-one.json";
+import twoHundredVsFive from "../game/fixtures/two-hundred-vs-five.json";
 
 type BattleRecord = components["schemas"]["BattleRecord"];
+type FighterRequest = components["schemas"]["FighterRequest"];
+type SimulationResult = components["schemas"]["SimulationResult"];
 type StatSheet = components["schemas"]["StatSheet"];
 
 export const BATTLE_MS = 10_000;
@@ -65,8 +69,61 @@ export function battleAt(id: string, elapsedMs: number): BattleRecord {
   };
 }
 
+// Reserved ids that open a big-crowd replay at once, to check the frame rate (see
+// src/game/fixtures/README.md). Only fixtures mode knows them; the real API treats them like any id.
+export const CROWD_BATTLES = new Map<string, SimulationResult>([
+  ["thousand-vs-one", thousandVsOne as unknown as SimulationResult],
+  ["two-hundred-vs-five", twoHundredVsFive as unknown as SimulationResult],
+]);
+
+// A side's head count, read from its opening "approach" event in the log.
+const headCount = (result: SimulationResult, side: number) =>
+  result.representative_log.find(
+    (e) => e.type === "approach" && e.side === side,
+  )?.group_size ?? 1;
+
+// One side of the stand-in matchup the crowd logs were made from.
+const standIn = (entity: string, plural: string, count: number) =>
+  ({
+    entity,
+    count,
+    variant: null,
+    size_reference: null,
+    raw: count === 1 ? `a ${entity}` : `${count} ${plural}`,
+  }) satisfies FighterRequest;
+
+// A finished battle that replays a crowd log: stand-in ducks vs a stand-in lion, no sheets or scripts.
+export function crowdBattle(id: string): BattleRecord | null {
+  const result = CROWD_BATTLES.get(id);
+  if (!result) return null;
+  const fighters = [
+    standIn("duck", "ducks", headCount(result, 0)),
+    standIn("lion", "lions", headCount(result, 1)),
+  ];
+  return {
+    ...done,
+    battle_id: id,
+    matchup: {
+      fighters,
+      terrain: "open_field",
+      raw_text: `${fighters[0].raw} vs ${fighters[1].raw} in an open field`,
+      assumptions: ["Stand-in fighters with round-number stats (no sources)"],
+    },
+    stat_sheets: [],
+    result,
+    fair_fight: null,
+    challenger: null,
+    scripts: [],
+    assets: [],
+    stages: done.stages.map((s) => ({ ...s, status: "done", detail: null })),
+    status: "done",
+  };
+}
+
 // Any id works; an id seen for the first time starts its battle clock now.
 export function getBattle(id: string) {
+  const crowd = crowdBattle(id);
+  if (crowd) return later(crowd);
   if (!started.has(id)) started.set(id, Date.now());
   return later(battleAt(id, Date.now() - started.get(id)!));
 }
