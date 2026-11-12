@@ -35,6 +35,107 @@ def canned_reply(kind: str, prompt_name: str, value: object, fixture_dir: Path) 
     raise LookupError(f"Mock {kind} fixture '{prompt_name}' has no reply for input {key}.")
 
 
+# Same split the intake parser uses, so "vs", "versus", "v." and "against" all work.
+_SIDE_SPLIT = re.compile(r"\s+(?:vs\.?|versus|v\.|against)\s+", re.I)
+# A trailing place phrase on a side: "a horse in the water" -> "a horse".
+_TERRAIN_TAIL = re.compile(r"\s+((?:in|on|at|inside|into)\s+.+)$", re.I)
+
+
+# Lowercase with single spaces and no hyphens, matching the parser's raw-phrase check.
+def _squash(text: str) -> str:
+    return " ".join(text.lower().replace("-", " ").split())
+
+
+# The user's matchup, unwrapped from the first data-block message (not a retry prompt).
+def _user_matchup_text(messages: list[ChatMessage]) -> str | None:
+    from app.intake.llm_io import INPUT_END, INPUT_START
+
+    for message in messages:
+        content = message.get("content") or ""
+        if message.get("role") != "user" or INPUT_START not in content:
+            continue
+        inner = content.split(INPUT_START, 1)[1]
+        if INPUT_END in inner:
+            inner = inner.split(INPUT_END, 1)[0]
+        return inner.strip()
+    return None
+
+
+# True when the canned reply's raw phrases all appear in the user's text (two sides).
+def _fixture_fits_text(reply: Any, text: str) -> bool:
+    data = _squash(text)
+    if isinstance(reply, str):
+        try:
+            reply = json.loads(reply)
+        except json.JSONDecodeError:
+            return False
+    if not isinstance(reply, dict):
+        return False
+    fighters = reply.get("fighters") or []
+    if len(fighters) != 2:
+        return False
+    return all(
+        isinstance(fighter, dict) and fighter.get("raw") and _squash(str(fighter["raw"])) in data
+        for fighter in fighters
+    )
+
+
+# True when a phrase names a known battlefield (forest, water, and so on).
+def _has_known_terrain(phrase: str) -> bool:
+    from app.intake.rules import TERRAIN_WORDS
+
+    lower = phrase.lower()
+    return any(re.search(rf"\b{re.escape(name)}\b", lower) for name in TERRAIN_WORDS)
+
+
+# Drop a trailing "in the water" / "in a forest" so the entity is just the fighter.
+def _strip_terrain_tail(side: str) -> str:
+    side = side.strip()
+    match = _TERRAIN_TAIL.search(side)
+    if match is None or not _has_known_terrain(match.group(1)):
+        return side
+    return side[: match.start()].strip() or side
+
+
+# The battlefield words in the request, if any; None means the arena (no assumption note).
+def _terrain_phrase(text: str) -> str | None:
+    from app.intake.rules import TERRAIN_WORDS
+
+    lower = text.lower()
+    for name in sorted(TERRAIN_WORDS, key=len, reverse=True):
+        if re.search(rf"\b{re.escape(name)}\b", lower):
+            return name
+    return None
+
+
+# A ParsedMatchup-shaped reply from an "X vs Y" request, for mock mode (#142 item 5).
+# Code in the parser still decides counts, names, size references, and terrain.
+def echo_intake_reply(text: str) -> dict[str, Any] | None:
+    sides = [part.strip() for part in _SIDE_SPLIT.split(text.strip()) if part.strip()]
+    if len(sides) != 2:
+        return None
+    fighters: list[dict[str, Any]] = []
+    for side in sides:
+        raw = _strip_terrain_tail(side)
+        if _squash(raw) not in _squash(text):
+            raw = side.strip()
+        fighters.append(
+            {
+                "raw": raw,
+                "entity": raw,
+                "count": None,
+                "variant": None,
+                "size_reference": None,
+            }
+        )
+    return {
+        "fighters": fighters,
+        "terrain": _terrain_phrase(text),
+        "needs_clarification": None,
+        "assumptions": [],
+    }
+
+
 class MockChatLLM:
     """Replies from tests/fixtures/providers/chat/<prompt_name>.json."""
 
@@ -50,6 +151,15 @@ class MockChatLLM:
         json_schema: dict[str, Any] | None = None,
     ) -> str:
         reply = canned_reply("chat", prompt_name, messages, self.fixture_dir)
+        # #142 item 5: the intake_parse default is the grizzly-vs-wolves reply, which the
+        # parser rejects for any other input. Echo the user's two sides instead, so the
+        # front end can demo any matchup offline.
+        if prompt_name == "intake_parse":
+            text = _user_matchup_text(messages)
+            if text and not _fixture_fits_text(reply, text):
+                echoed = echo_intake_reply(text)
+                if echoed is not None:
+                    return json.dumps(echoed)
         return reply if isinstance(reply, str) else json.dumps(reply)
 
 
