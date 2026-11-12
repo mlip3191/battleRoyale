@@ -9,6 +9,7 @@ from typing import Any
 
 from app.config import REPO_ROOT
 from app.providers.base import ChatMessage, DecisionAnswer, DecisionQuestion
+from app.providers.mock.safety import mock_block_reason
 
 # Canned replies live with the test fixtures (ARCHITECTURE §7), one JSON file per prompt name.
 FIXTURE_DIR = REPO_ROOT / "backend" / "tests" / "fixtures" / "providers"
@@ -145,6 +146,16 @@ def echo_intake_reply(text: str) -> dict[str, Any] | None:
     }
 
 
+# True when a canned classifier reply is the plain "allowed" label.
+def _says_allowed(reply: Any) -> bool:
+    if isinstance(reply, str):
+        try:
+            reply = json.loads(reply)
+        except json.JSONDecodeError:
+            return False
+    return isinstance(reply, dict) and reply.get("verdict") == "allowed"
+
+
 class MockChatLLM:
     """Replies from tests/fixtures/providers/chat/<prompt_name>.json."""
 
@@ -169,6 +180,16 @@ class MockChatLLM:
                 echoed = echo_intake_reply(text)
                 if echoed is not None:
                     return json.dumps(echoed)
+        # #240: the safety_classify default allows everything, so the mock also checks the
+        # user's text against a short keyword list (mock/safety.py) for obvious real people,
+        # named characters, gods, and firearms. Keywords only tighten: a fixture reply that
+        # already blocks is kept. Live mode never comes here.
+        if prompt_name == "safety_classify":
+            text = _user_matchup_text(messages)
+            if text and _says_allowed(reply):
+                reason = mock_block_reason(text)
+                if reason is not None:
+                    return json.dumps({"verdict": reason})
         return reply if isinstance(reply, str) else json.dumps(reply)
 
 
