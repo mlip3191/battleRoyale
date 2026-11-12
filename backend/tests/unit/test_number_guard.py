@@ -235,3 +235,48 @@ def test_zero_bottom_fraction_is_flagged_even_when_sides_are_allowed() -> None:
 def test_fraction_passes_when_value_and_sides_are_allowed() -> None:
     allowed = AllowedNumbers(values=frozenset({1.0, 2.0, 0.5}))
     assert find_unsupported_numbers("It covers 1/2 the ring.", allowed) == []
+
+
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("3½ tall", 3.5),
+        ("½ the ring", 0.5),
+        ("⅔ of the pack", 2 / 3),
+        ("a tenfold increase", 10.0),
+        ("a hundredfold increase", 100.0),
+        ("a thousandfold increase", 1000.0),
+        ("two-thirds of the pack", 2 / 3),
+        ("one-third of the pack", 1 / 3),
+        ("two thirds of the pack", 2 / 3),
+        ("one third of the pack", 1 / 3),
+        ("a trillion bees", 1e12),
+        ("trillions of bees", 1e12),
+        ("4 trillion bees", 4e12),
+    ],
+)
+def test_unicode_fractions_and_leftover_words_are_read(text: str, value: float) -> None:
+    # 1, 2, 3, and 4 are allowed on their own, and "two" always passes, so only the
+    # combined value (3.5, 2/3, 4 trillion) can trip the guard.
+    parts = AllowedNumbers(values=frozenset({1.0, 2.0, 3.0, 4.0}))
+    [found] = extract_numbers(text)
+    assert found.value == pytest.approx(value)
+    assert find_unsupported_numbers(text, parts), text
+
+
+def test_unicode_fractions_and_leftover_words_pass_when_allowed() -> None:
+    allowed = AllowedNumbers(
+        values=frozenset({3.5, 0.5, 2 / 3, 1 / 3, 10.0, 100.0, 1000.0, 1e12, 4e12})
+    )
+    for text in (
+        "3½ tall",
+        "½ the ring",
+        "two-thirds of the pack",
+        "one-third of the pack",
+        "a tenfold increase",
+        "a hundredfold increase",
+        "a thousandfold increase",
+        "a trillion bees",
+        "4 trillion bees",
+    ):
+        assert find_unsupported_numbers(text, allowed) == [], text
