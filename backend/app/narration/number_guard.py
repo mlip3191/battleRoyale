@@ -1,9 +1,11 @@
 """The number guard: find every number in a script line that the inputs do not support.
 
-It reads digits ("1,200", "3,5", "1/2", "1e3", "2 point 5", "3rd"), number words ("four hundred
-and twelve", "forty-two", "two point five", "a dozen", "a score", "three quarters"), quantity words
-("half", "twice", "thrice", "double", "triple", "tens", "dozens", "hundreds", "thousands",
-"millions"), ordinals ("third" to "twentieth"), percentages ("40%", "forty per cent"), and ratios
+It reads digits ("1,200", "3,5", "1/2", "½", "3½", "1e3", "2 point 5", "3rd"),
+number words ("four hundred and twelve", "forty-two", "two point five", "a dozen", "a score",
+"three quarters", "two-thirds", "a trillion"), quantity words ("half", "twice", "thrice",
+"double", "triple", "tens", "dozens", "hundreds", "thousands", "millions", "trillions",
+"tenfold", "hundredfold", "thousandfold"), ordinals ("third" to "twentieth"), percentages
+("40%", "forty per cent"), and ratios
 ("8:1", "eight to one", "8-to-1"). ARCHITECTURE "The number rule": a plain number must match an
 allowed value (within rounding), a percentage an allowed percentage, and a ratio either two allowed
 values or a win-odds ratio. "one", "two", "first", "second", "1st", "2nd" on their own are always
@@ -39,7 +41,7 @@ _ORDINALS = _numbered(
     "fifteenth sixteenth seventeenth eighteenth nineteenth twentieth", 3
 )  # fmt: skip
 _SCALES = {
-    "thousand": 1e3, "million": 1e6, "billion": 1e9, "dozen": 12.0,
+    "thousand": 1e3, "million": 1e6, "billion": 1e9, "trillion": 1e12, "dozen": 12.0,
     "score": 20.0, "quarter": 0.25, "quarters": 0.25,
 }  # fmt: skip
 # Scale words that only count after "a" or a number ("a score", "three quarters", not "the score").
@@ -47,17 +49,36 @@ _COUNTED = {"score", "quarter", "quarters"}
 _STANDALONE = {
     "half": 0.5, "twice": 2.0, "double": 2.0, "thrice": 3.0, "triple": 3.0, "tens": 10.0,
     "dozens": 12.0, "hundreds": 100.0, "thousands": 1e3, "millions": 1e6, "billions": 1e9,
+    "trillions": 1e12, "tenfold": 10.0, "hundredfold": 100.0, "thousandfold": 1e3,
 }  # fmt: skip
 # Scale words that multiply a digit right before them: "4 thousand" is 4,000, "7 dozen" is 84.
 _DIGIT_SCALES = {
-    "hundred": 100.0, "thousand": 1e3, "million": 1e6, "billion": 1e9, "dozen": 12.0, "score": 20.0,
+    "hundred": 100.0, "thousand": 1e3, "million": 1e6, "billion": 1e9, "trillion": 1e12,
+    "dozen": 12.0, "score": 20.0,
 }  # fmt: skip
+
+# Unicode vulgar fractions, alone ("½") or after a whole number ("3½").
+_VULGAR = {
+    "½": 1 / 2, "⅓": 1 / 3, "⅔": 2 / 3, "¼": 1 / 4, "¾": 3 / 4,
+    "⅕": 1 / 5, "⅖": 2 / 5, "⅗": 3 / 5, "⅘": 4 / 5,
+    "⅙": 1 / 6, "⅚": 5 / 6, "⅐": 1 / 7,
+    "⅛": 1 / 8, "⅜": 3 / 8, "⅝": 5 / 8, "⅞": 7 / 8,
+    "⅑": 1 / 9, "⅒": 1 / 10,
+}  # fmt: skip
+
+# "two" alone always passes, so "two-thirds" must be read as one number (2/3).
+_UNIT_FRACTIONS = {
+    "one third": 1 / 3,
+    "two thirds": 2 / 3,
+}
+
 
 _TOKEN = re.compile(
     r"(?P<num>\d+(?:\.\d+)?e[+-]?\d+"  # exponent: 1e3, 2.5e-2
     r"|\d+/\d+"  # fraction: 1/2
     r"|\d+ point \d+"  # spoken decimal: 2 point 5
     r"|\d{1,3}(?:,\d{3})+(?!\d)(?:\.\d+)?"  # thousands separators: 1,200
+    r"|\d*(?:[" + "".join(_VULGAR) + r"])"  # Unicode vulgar: ½, 3½
     r"|\d+(?:[.,]\d+)?)"  # plain or decimal (point or comma): 3.5, 3,5
     r"(?P<ord>st|nd|rd|th)?|(?P<word>[a-z]+)|(?P<sym>[^\sa-z\d])"
 )
@@ -124,6 +145,9 @@ def _fraction_parts(s: str) -> tuple[float, float] | None:
 # The value of a digit token: fractions divide (a zero bottom has no value, so it is infinite),
 # "point" and a lone comma are decimal points.
 def _digits_value(s: str) -> float:
+    if s and s[-1] in _VULGAR:
+        whole = float(s[:-1]) if s[:-1] else 0.0
+        return whole + _VULGAR[s[-1]]
     parts = _fraction_parts(s)
     if parts is not None:
         top, bottom = parts
@@ -235,6 +259,22 @@ def _read_scaled_digit(tokens: list[_Tok], i: int) -> tuple[_Tok, int]:
     return _num(value, tokens[i].start, end), j
 
 
+# "one-third" / "two thirds": the unit word, an optional hyphen, and the fraction word.
+def _read_unit_fraction(tokens: list[_Tok], i: int) -> tuple[_Tok, int] | None:
+    if i >= len(tokens) or tokens[i].kind != "word":
+        return None
+    a = tokens[i]
+    j = i + 1
+    if j < len(tokens) and tokens[j].kind == "sym" and tokens[j].text == "-":
+        j += 1
+    if j >= len(tokens) or tokens[j].kind != "word":
+        return None
+    value = _UNIT_FRACTIONS.get(f"{a.text} {tokens[j].text}")
+    if value is None:
+        return None
+    return _num(value, a.start, tokens[j].end), j + 1
+
+
 # Turn tokens into a list where each number is one item and other tokens stay as they are.
 def _numbers_and_tokens(tokens: list[_Tok]) -> list[_Tok]:
     items: list[_Tok] = []
@@ -242,7 +282,10 @@ def _numbers_and_tokens(tokens: list[_Tok]) -> list[_Tok]:
     while i < len(tokens):
         tok, nums, nxt = tokens[i], [], i + 1
         single = _ORDINALS.get(tok.text) or _STANDALONE.get(tok.text)
-        if tok.kind == "num" and tok.parts is not None:
+        frac = _read_unit_fraction(tokens, i)
+        if frac is not None:
+            nums, nxt = [frac[0]], frac[1]
+        elif tok.kind == "num" and tok.parts is not None:
             nums = [_num(tok.value, tok.start, tok.end, parts=tok.parts)]
         elif tok.kind == "num":
             scaled, nxt = _read_scaled_digit(tokens, i)
