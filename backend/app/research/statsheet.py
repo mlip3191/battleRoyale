@@ -209,12 +209,17 @@ def _ram_force(profile: FighterProfile, mass: StatValue, speed: StatValue) -> St
     return _derived(
         force(mass.value, speed.value),
         StatName.ATTACK_FORCE,
-        force(mass.low or mass.value, speed.low or speed.value),
-        force(mass.high or mass.value, speed.high or speed.value),
+        force(_end(mass.low, mass.value), _end(speed.low, speed.value)),
+        force(_end(mass.high, mass.value), _end(speed.high, speed.value)),
         "Ramming machine: attack_force_n = RAM_DAMAGE_PER_MOMENTUM x mass_kg x top_speed_mps / "
         "DAMAGE_PER_NEWTON. The engine works out the real hit from mass and speed.",
         digits=0,
     )
+
+
+# One end of a range, or the value when the range is missing (a 0.0 end is a real end).
+def _end(bound: float | None, value: float) -> float:
+    return value if bound is None else bound
 
 
 def _derived(
