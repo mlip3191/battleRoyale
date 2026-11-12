@@ -38,6 +38,7 @@ def fighter_slug(name: str) -> str:
 
 
 # Other spellings and word forms the seed lookup should treat as the sheet's word.
+# Add a word here when a new seed sheet needs another spelling or plural.
 _ALIASES = {
     "grey": "gray",
     "wolves": "wolf",
@@ -89,7 +90,7 @@ def _sheet_at(slug: str, sheets_dir: Path) -> StatSheet | None:
 
 
 # Unique seed sheet for a live-style raw phrase: "6 gray wolves" + entity "wolf"
-# finds gray-wolf, even though "wolves" does not slug to "wolf". A vague phrase
+# finds gray-wolf; the aliases map "wolves" to "wolf". A vague phrase
 # like "a bear" matches no unique sheet (the prefix is not in the phrase).
 def _sheet_from_raw(entity: str, raw: str | None, sheets_dir: Path) -> StatSheet | None:
     if not raw or not raw.strip():
