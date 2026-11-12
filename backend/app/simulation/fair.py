@@ -205,7 +205,7 @@ def test_challengers(
     "6 gray wolves" is tested as six and the reason says so. The candidate is always one fighter.
     """
     suggestions: list[ChallengerSuggestion] = []
-    # The reason says "X-sized" only when the winner is really scaled (its reference sheet is given).
+    # The reason says "X-sized" only when the winner is really scaled (sheet given).
     scaled = winner_reference is not None
     winner_text = _winner_text(winner_sheet, winner_request, scaled)
     for candidate in candidates:
