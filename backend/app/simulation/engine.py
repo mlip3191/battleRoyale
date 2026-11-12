@@ -634,6 +634,8 @@ def _run_swarm(
                 return _outcome(n, stopped_at, events, record_events)
         if n[0] == 0 or n[1] == 0:
             return _outcome(n, t, events, record_events)
+        if t >= c.MAX_FIGHT_S:
+            break  # the closing step only checks for a machine stop; no fighting past the limit
         # The sides act in random order each step, so equal swarms do not always wipe each
         # other out at the same instant (and neither side gets a built-in first strike).
         order = (0, 1) if rng.random() < 0.5 else (1, 0)
