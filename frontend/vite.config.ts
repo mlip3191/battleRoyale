@@ -14,7 +14,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
-    // Let theme.test.ts read the real theme file (CSS is otherwise stubbed out in tests).
-    css: { include: [/src\/index\.css/] },
+    // Let tests read real stylesheets: the theme file, and any CSS imported as text with ?raw
+    // (CSS is otherwise stubbed out in tests).
+    css: { include: [/src\/index\.css/, /\.css\?raw$/] },
   },
 });

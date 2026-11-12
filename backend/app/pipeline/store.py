@@ -14,6 +14,7 @@ from typing import Any, get_args
 
 from app.models.battle import BattleRecord, StageStatus
 from app.models.matchup import Matchup
+from app.models.media import Asset
 
 # Every stage, in ARCHITECTURE §4 order (taken from the contract so they never drift apart).
 STAGES: tuple[str, ...] = get_args(StageStatus.model_fields["stage"].annotation)
@@ -73,6 +74,15 @@ class BattleStore:
             record = self._records[battle_id]
             data = record.model_dump() | fields
             self._records[battle_id] = BattleRecord.model_validate(data)
+            signal.notify_all()
+
+    # Add media assets to the record; several stages add theirs at the same time.
+    async def add_assets(self, battle_id: str, assets: list[Asset]) -> None:
+        signal = self._signals[battle_id]
+        async with signal:
+            record = self._records[battle_id]
+            added = [asset.model_copy() for asset in assets]
+            self._records[battle_id] = record.model_copy(update={"assets": record.assets + added})
             signal.notify_all()
 
     # Yield each stage change as it happens (earlier ones first); stop once the battle ends.
