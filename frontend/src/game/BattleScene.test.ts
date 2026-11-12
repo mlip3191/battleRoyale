@@ -1,11 +1,15 @@
 // The battle scene on a stand-in Phaser: it replays beats, uses placeholders, and keeps still
 // in reduced-motion mode (key frames only, no shaking, no tweens).
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import type Phaser from "phaser";
 import type { FightEvent, SimulationResult } from "../api/client.ts";
 import fixture from "../fixtures/simulation-result.json";
 import thousand from "./fixtures/thousand-vs-one.json";
-import { createBattleScene, type BattleSceneOptions } from "./BattleScene.ts";
+import {
+  LOAD_TIMEOUT_MS,
+  createBattleScene,
+  type BattleSceneOptions,
+} from "./BattleScene.ts";
 import { FakeScene, fakePhaser } from "./fake-phaser.ts";
 import { MAX_SPRITES_PER_SIDE, layoutStage } from "./layout.ts";
 import { buildTimeline, keyFrames } from "./timeline.ts";
@@ -314,5 +318,74 @@ describe("reduced motion", () => {
     expect(wolves[1].alpha).toBe(0);
     expect(wolves.every((w, i) => w.x !== startX[i])).toBe(true);
     expect(scene.tweens.add).not.toHaveBeenCalled();
+  });
+});
+
+// #221: with no media server (fixtures mode), image requests hang: they neither finish nor fail.
+describe("images that never load", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // A scene whose sprites and battlefield all have URLs, booted on a loader that never finishes.
+  function hangingStage() {
+    const fighters = [
+      { entity: "grizzly bear", count: 1 },
+      { entity: "gray wolf", count: 6 },
+    ];
+    const onEvent = vi.fn();
+    const onFinish = vi.fn();
+    const layouts = layoutStage(fighters, []).map((side, i) => ({
+      ...side,
+      spriteUrl: `/media/sprites/side-${i}.png`,
+    })) as BattleSceneOptions["layouts"];
+    const scene = new BattleScene({
+      timeline: buildTimeline(result, [1, 6]),
+      layouts,
+      battlefieldUrl: "/media/battlefields/forest.png",
+      outcome: result.outcome,
+      reducedMotion: false,
+      onEvent,
+      onFinish,
+    }) as Scene;
+    scene.preload(); // the loader starts and never finishes on its own
+    return { scene, onEvent, onFinish };
+  }
+
+  test("after the timeout the stage stops waiting, draws placeholders, and replays", () => {
+    vi.useFakeTimers();
+    const { scene, onEvent, onFinish } = hangingStage();
+    expect(scene.load.image).toHaveBeenCalledTimes(3);
+    vi.advanceTimersByTime(LOAD_TIMEOUT_MS - 1);
+    expect(scene.load.loadComplete).not.toHaveBeenCalled();
+    expect(scene.images).toHaveLength(0); // still waiting: nothing drawn yet
+    vi.advanceTimersByTime(1);
+    expect(scene.load.loadComplete).toHaveBeenCalledTimes(1);
+    const keys = scene.images.map((i) => i.text);
+    expect(keys.filter((k) => k === "placeholder-0")).toHaveLength(1);
+    expect(keys.filter((k) => k === "placeholder-1")).toHaveLength(6);
+    expect(scene.rects.length).toBeGreaterThan(0); // the drawn backdrop, not the battlefield image
+    playAll(scene);
+    expect(onEvent).toHaveBeenCalledTimes(result.representative_log.length);
+    expect(onFinish).toHaveBeenCalledTimes(1);
+  });
+
+  test("images that arrive in time cancel the timeout", () => {
+    vi.useFakeTimers();
+    const { scene } = hangingStage();
+    scene.create(); // Phaser finished the load and built the stage
+    const drawn = scene.images.length;
+    vi.advanceTimersByTime(LOAD_TIMEOUT_MS * 2);
+    expect(scene.load.loadComplete).not.toHaveBeenCalled();
+    expect(scene.images).toHaveLength(drawn); // the stage was not built twice
+  });
+
+  test("a game destroyed while loading never ends the load late", () => {
+    vi.useFakeTimers();
+    const { scene } = hangingStage();
+    scene.loading = false; // Phaser's destroyed loader is no longer loading
+    vi.advanceTimersByTime(LOAD_TIMEOUT_MS);
+    expect(scene.load.loadComplete).not.toHaveBeenCalled();
+    expect(scene.images).toHaveLength(0);
   });
 });
