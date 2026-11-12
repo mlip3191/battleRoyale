@@ -1,6 +1,7 @@
 """Live embedder and document parser, with HTTP replaced by fake responses."""
 
 import json
+import logging
 from collections.abc import Callable
 
 import httpx
@@ -8,11 +9,20 @@ import pytest
 
 from app.config import Settings
 from app.providers import base
-from app.providers.live.doc_parser import LiveDocParser, split_pieces, strip_markup
+from app.providers.live.doc_parser import (
+    MAX_TOKENS,
+    PIECE_CHARS,
+    PROMPT_PATH,
+    LiveDocParser,
+    clean_reply,
+    split_pieces,
+    strip_markup,
+)
 from app.providers.live.embedder import BATCH_SIZE, LiveEmbedder
 from app.providers.live.http import ProviderError
 from app.providers.registry import get_provider, service_config
 
+MODEL_CONTEXT_TOKENS = 8192  # the course parser's max_model_len, from its /v1/models reply
 DECOY_HOST = "course.test"
 DECOY_KEY = "decoy-key"
 Handler = Callable[[httpx.Request], httpx.Response]
@@ -184,14 +194,93 @@ async def test_parser_skips_the_endpoint_for_plain_text() -> None:
     assert await parser_with(handler).parse(b"plain", "text/plain") == "plain"
 
 
-async def test_parser_refuses_a_cut_off_reply() -> None:
+def test_a_full_piece_and_its_reply_fit_the_models_context() -> None:
+    # Measured live on Wikipedia HTML: about 2.8 characters per token, so 2.5 is a safe bound.
+    prompt_chars = len(PROMPT_PATH.read_text(encoding="utf-8"))
+    template_tokens = 50  # chat-template overhead around the message
+    needed = (PIECE_CHARS + prompt_chars) / 2.5 + template_tokens + MAX_TOKENS
+    assert needed <= MODEL_CONTEXT_TOKENS
+
+
+def test_a_fraction_is_not_turned_into_an_exponent() -> None:
+    text = strip_markup("<p>21.2<sup>1</sup>⁄<sub>4</sub> hands, 10<sup>6</sup> kg</p>")
+    assert "21.2 1⁄" in text and "^1" not in text and "10^6" in text
+    assert "^" not in clean_reply("21.2<sup>1</sup>⁄<sub>4</sub> hands")
+
+
+def test_attributes_holding_a_closing_bracket_do_not_leak_into_the_text() -> None:
+    html = """<p><span data-mw='{"wt":"[[Page|1758]] > x"}'>Linnaeus</span></p>"""
+    assert strip_markup(html) == "<p>Linnaeus</p>"
+
+
+def test_an_echoed_footnote_is_dropped_from_a_reply() -> None:
+    assert clean_reply("500 kg<sup>[1]</sup>") == "500 kg"
+
+
+def test_split_pieces_prefers_a_space_when_there_are_no_tags() -> None:
+    assert split_pieces("alpha 12345 beta", limit=9) == ["alpha ", "12345 ", "beta"]
+
+
+def test_strip_markup_drops_footnote_marks_and_link_tags() -> None:
+    html = '<p>Weighs <a href="/x">500</a> kg<sup id="r">[1]</sup> <span>total</span></p>'
+    assert strip_markup(html) == "<p>Weighs 500 kg total</p>"
+
+
+def test_strip_markup_keeps_real_exponents_readable() -> None:
+    assert strip_markup("<p>About 10<sup>6</sup> m<sup>3</sup></p>") == "<p>About 10^6 m^3</p>"
+    assert strip_markup("1.2 × 10<sup>-3</sup>") == "1.2 × 10^-3"
+
+
+def test_strip_markup_drops_wikipedia_style_footnotes() -> None:
+    footnote = (
+        '<sup class="mw-ref reference" id="cite_ref-1"><a href="#n"><span>'
+        '<span class="cite-bracket">[</span>1<span class="cite-bracket">]</span>'
+        "</span></a></sup>"
+    )
+    assert strip_markup(f"<p>500 kg{footnote}</p>") == "<p>500 kg</p>"
+
+
+def test_clean_reply_never_splits_a_number_at_an_inline_tag() -> None:
+    assert clean_reply("5<b>0</b>0 kg") == "500 kg"
+    assert clean_reply("10<sup>6</sup> kg") == "10^6 kg"
+
+
+def test_clean_reply_removes_leftover_tags_and_entities() -> None:
+    assert clean_reply("<p>173&#160;cm &amp; 500 kg</p>") == "173 cm & 500 kg"
+
+
+def test_clean_reply_keeps_comparisons_that_look_like_tags() -> None:
+    assert clean_reply("mass < 5 kg and speed > 3") == "mass < 5 kg and speed > 3"
+
+
+async def test_a_cut_off_piece_is_retried_as_two_smaller_pieces() -> None:
+    sizes: list[int] = []
+
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/v1/models":
             return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
-        return chat_reply("partial", finish_reason="length")
+        content = json.loads(request.content)["messages"][0]["content"]
+        piece = content.split("<document>\n")[1].split("\n</document>")[0]
+        sizes.append(len(piece))
+        return chat_reply("part", "length" if len(piece) > 2_000 else "stop")
 
-    with pytest.raises(ProviderError, match="cut off"):
-        await parser_with(handler).parse(b"<p>long</p>", "text/html")
+    page = ("<p>" + "x" * 90 + "</p>") * 30  # about 2,900 characters, one piece
+    assert await parser_with(handler).parse(page.encode(), "text/html") == "part\npart"
+    assert sizes[0] == len(page) and all(size <= 2_000 for size in sizes[1:])
+
+
+async def test_a_small_piece_that_loops_uses_the_pages_own_text_and_logs(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        return chat_reply("partial garbage", finish_reason="length")
+
+    with caplog.at_level(logging.WARNING, logger="app.providers.live.doc_parser"):
+        text = await parser_with(handler).parse(b"<p>Weighs 500 kg</p>", "text/html")
+    assert text == "Weighs 500 kg"  # never the cut-off reply: no text lost or invented
+    assert "looped" in caplog.text
 
 
 async def test_parser_rejects_a_document_type_it_cannot_read() -> None:

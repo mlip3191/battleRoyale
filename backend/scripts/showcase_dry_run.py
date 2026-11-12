@@ -3,10 +3,11 @@
 From the repo root:
   uv run --directory backend python scripts/showcase_dry_run.py
 
-The real sheets come from tasks G05 and G09. Until then, every fighter except the grizzly and the
-gray wolf (contract fixtures with real citations) is a stand-in with round numbers from common
-reference values. They are NOT sourced and must never reach the UI: this script only checks that
-the engine gives sensible, explainable results for the demo, and shows what to tune if not.
+The real sheets come from tasks G05 and G09. So far only the grizzly and the gray wolf are real
+(the hand-verified seed sheets in data/seed/fighters/); every other fighter is a stand-in with
+round numbers from common reference values. They are NOT sourced and must never reach the UI:
+this script only checks that the engine gives sensible, explainable results for the demo, and
+shows what to tune if not.
 """
 
 import argparse
@@ -30,16 +31,20 @@ from app.simulation.summary import Summary, summary  # noqa: E402
 # path); moving `sim_helpers` breaks it. `make_sheet` labels every overridden stat as an unsourced
 # stand-in (#86), but the numbers are still invented, so the stand-in sheets built here must never
 # be shown, saved, or used as fixtures.
-from tests.property.sim_helpers import FIXTURES, make_dragon, make_sheet, matchup_of  # noqa: E402
+from tests.property.sim_helpers import make_dragon, make_sheet, matchup_of  # noqa: E402
+
+SEED_FIGHTERS = Path(__file__).resolve().parents[2] / "data" / "seed" / "fighters"
 
 BANNER = (
-    "STAND-IN SHEETS: only the grizzly and the gray wolf are real; every other fighter is an "
-    "unsourced stand-in.\nEngine check only, not demo results."
+    "STAND-IN SHEETS: only the grizzly and the gray wolf are real (G05 seed sheets); every other "
+    "fighter is an unsourced stand-in.\nEngine check only, not demo results."
 )
 
 
-def fixture(name: str) -> StatSheet:
-    return StatSheet.model_validate(json.loads((FIXTURES / name).read_text("utf-8")))
+def seed_sheet(name: str) -> StatSheet:
+    """A real, hand-verified seed sheet (G05) by file name, e.g. "gray-wolf"."""
+    path = SEED_FIGHTERS / f"{name}.json"
+    return StatSheet.model_validate(json.loads(path.read_text("utf-8")))
 
 
 def stand_ins() -> dict[str, StatSheet]:
@@ -100,7 +105,7 @@ class Battle:
 
 def battles() -> list[Battle]:
     s = stand_ins()
-    bear, wolf = fixture("stat-sheet.json"), fixture("stat-sheet-gray-wolf.json")
+    bear, wolf = seed_sheet("grizzly-bear"), seed_sheet("gray-wolf")
     return [
         Battle(
             "100 duck-sized horses vs 1 horse-sized duck",

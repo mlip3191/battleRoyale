@@ -5,7 +5,7 @@ import pytest
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.engine import run
-from app.simulation.fair import fair_fight, fair_fight_search, plural, test_challengers
+from app.simulation.fair import _how_even, fair_fight, fair_fight_search, plural, test_challengers
 from tests.property.sim_helpers import ant, lion, load_sheet, make_sheet, matchup_of
 
 
@@ -36,10 +36,15 @@ def test_wolf_vs_house_cats_finds_a_count_within_tolerance_in_few_probes():
     found = search.result
     assert found.count is not None and found.count > 1
     assert found.varied_side == 1  # the cats are the losing side
-    gap = abs(found.win_prob_at_count - 0.5)
-    # 200-run probes are noisy, and counts are whole numbers: the answer is either within the
-    # tolerance, or it is the closest count found and says "about" (then within 3 tolerances).
-    assert gap <= c.FAIR_TOLERANCE or (gap <= 3 * c.FAIR_TOLERANCE and "about" in found.message)
+
+    # Counts are whole numbers and 200-run probes are noisy, so do not judge the search by its own
+    # probe. Check the answer with a bigger independent run: one cat fewer is still the underdog
+    # and one cat more is the favorite (0.03 is the noise of 2,000 runs). Any version bump holds.
+    def cats_win_share(cats):
+        return run(matchup_of(1, cats), [wolf(), house_cat()], runs=2000, explain=False).win_prob[1]
+
+    assert cats_win_share(max(1, found.count - 1)) <= 0.5 + 0.03
+    assert cats_win_share(found.count + 1) >= 0.5 - 0.03
     assert search.probes <= c.FAIR_MAX_PROBES
     assert str(found.count) in found.message and "house cats" in found.message
 
@@ -163,3 +168,14 @@ def test_test_challengers_is_not_collected_as_a_test():
 def test_challenger_win_probability_is_the_challengers_not_the_winners():
     (weak,) = test_challengers(wolf(), [house_cat()], terrain=Terrain.ARENA)
     assert weak.tested_win_prob == pytest.approx(0.0, abs=0.05)
+
+
+def test_the_challenger_wording_follows_the_named_thresholds():
+    tol, slight, eps = c.FAIR_TOLERANCE, c.CHALLENGER_SLIGHT_GAP, 1e-6  # eps: stay off float edges
+    assert _how_even(0.5 + tol - eps) == _how_even(0.5 - tol + eps) == "a coin flip"
+    assert _how_even(0.5 + tol + eps) == "a slight favorite"
+    assert _how_even(0.5 - tol - eps) == "a slight underdog"
+    assert _how_even(0.5 + slight - eps) == "a slight favorite"
+    assert _how_even(0.5 - slight + eps) == "a slight underdog"
+    assert _how_even(0.5 + slight + eps) == "a clear favorite"
+    assert _how_even(0.5 - slight - eps) == "a clear underdog"

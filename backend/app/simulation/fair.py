@@ -171,9 +171,9 @@ def fair_fight(
 
 def _how_even(p: float) -> str:
     gap = abs(p - 0.5)
-    if gap <= 0.05:
+    if gap <= c.FAIR_TOLERANCE:
         return "a coin flip"
-    side = "a slight" if gap <= 0.15 else "a clear"
+    side = "a slight" if gap <= c.CHALLENGER_SLIGHT_GAP else "a clear"
     return f"{side} {'favorite' if p > 0.5 else 'underdog'}"
 
 
