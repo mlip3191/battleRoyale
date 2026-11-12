@@ -54,7 +54,7 @@ Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 
 ## What this means for the app
 
 - **Win probabilities from swarm mode are trustworthy** to about ±0.02 for every kind of fight in the validation script, including a crowd of weak fighters against a few strong ones.
-- **Duration and survivor counts from swarm mode are now close** to the one-by-one engine's (durations 0.86 to 1.04x, survivors within a few percent), so a fight at 201 per side reads like the same fight at 199.
+- **Duration and survivor counts from swarm mode are now close** to the one-by-one engine's (durations 0.88 to 1.04x, survivors within a few percent), so a fight at 201 per side reads like the same fight at 199.
 - **Fair-fight search:** probes above 200 per side use swarm mode, and their answers are now as reliable as those below.
 - **F07 benchmark:** "count" cases above 200 per side are fine to include; still flag any swarm-mode matchup in the report.
 - **Swarm mode is cheaper than a long one-by-one fight, not free.** A 201 v 201 fight costs about 0.5 to 0.9 s per 1,000 runs instead of 0.14 s, but 150 cats v 1 elephant costs about 32 s one by one, so D-50 (#183) chooses swarm mode by expected work, not head count. Every fight that newly switches must agree with the one-by-one engine within ±0.03.

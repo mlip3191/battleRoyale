@@ -155,3 +155,13 @@ def test_identical_fronts_are_processed_as_one_group(monkeypatch):
     rng = random.Random(0)
     _spread_tracked(1000, 1.0, 5000, ([], []), 100.0, 400, rng)  # 2.5 hits each: 400 fronts
     assert len(calls) <= 2
+
+
+def test_a_fight_that_hits_the_time_limit_gets_no_extra_combat_in_swarm_mode(monkeypatch):
+    # The closing step at 600 s used to be a full combat step (up to 60 s of extra fighting),
+    # so swarm survivors came out about 10% low in a draw. Now it is about 4% low.
+    from tests.property.sim_helpers import ant, lion
+
+    one, swarm = both(monkeypatch, [ant(), lion()], 1500, 1, runs=20)
+    assert one.draw_prob == swarm.draw_prob == 1.0
+    assert swarm.mean_survivors[0] >= 0.93 * one.mean_survivors[0]  # 0.96 now, 0.89 without the fix
