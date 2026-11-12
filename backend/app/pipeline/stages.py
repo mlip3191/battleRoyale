@@ -45,6 +45,8 @@ def _typed_name(entity: str, variant: str | None) -> str:
     """The fighter as the user would recognise it: descriptive variant plus entity."""
     kind = (variant or "").strip()
     if kind and any(part not in _LABEL_WORDS for part in kind.lower().split()):
+        if kind.lower().split()[-len(entity.split()) :] == entity.lower().split():
+            return kind
         return f"{kind} {entity}"
     return entity
 

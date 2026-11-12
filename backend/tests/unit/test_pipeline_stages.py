@@ -403,6 +403,14 @@ async def test_the_no_stat_sheet_message_names_the_fighter_as_typed(store: Battl
     )
     assert record.status == "failed"
     assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="unicorn")
+    # If the variant already contains the name, do not double it.
+    record = await battle(
+        store, _fight({"entity": "unicorn", "variant": "white unicorn"}, {"entity": "duck"})
+    )
+    assert record.status == "failed"
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(
+        name="white unicorn"
+    )
 
 
 async def test_the_fair_fight_comes_from_the_real_search(store: BattleStore) -> None:
