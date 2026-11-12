@@ -217,3 +217,4 @@ def test_a_size_reference_without_its_sheet_is_left_unscaled_and_does_not_fail()
         wolf(), [mid_bear()], terrain=Terrain.ARENA, winner_request=wolves(1, "elephant")
     )
     assert missing.tested_win_prob == plain.tested_win_prob  # same fight, same seed
+    assert "elephant-sized" not in missing.reason  # it was not scaled, so the text must not say so

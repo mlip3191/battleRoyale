@@ -177,14 +177,14 @@ def _how_even(p: float) -> str:
     return f"{side} {'favorite' if p > 0.5 else 'underdog'}"
 
 
-def _winner_text(winner_sheet: StatSheet, request: FighterRequest | None) -> str:
+def _winner_text(winner_sheet: StatSheet, request: FighterRequest | None, scaled: bool) -> str:
     """How the reason names the winner: "Gray wolf", or "6 gray wolves (horse-sized)"."""
     if request is None:
         return winner_sheet.display_name
     text = winner_sheet.display_name
     if request.count > 1:
         text = f"{request.count:,} {plural(winner_sheet.display_name, request.count)}"
-    if request.size_reference:
+    if scaled and request.size_reference:
         text += f" ({request.size_reference}-sized)"
     return text
 
@@ -205,7 +205,9 @@ def test_challengers(
     "6 gray wolves" is tested as six and the reason says so. The candidate is always one fighter.
     """
     suggestions: list[ChallengerSuggestion] = []
-    winner_text = _winner_text(winner_sheet, winner_request)
+    # The reason says "X-sized" only when the winner is really scaled (its reference sheet is given).
+    scaled = winner_reference is not None
+    winner_text = _winner_text(winner_sheet, winner_request, scaled)
     for candidate in candidates:
         winner_side = FighterRequest(entity=winner_sheet.fighter_id, raw=winner_sheet.display_name)
         references: list[StatSheet | None] | None = None
