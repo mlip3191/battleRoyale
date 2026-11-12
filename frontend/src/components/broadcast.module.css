@@ -54,6 +54,32 @@
   animation: crawl 12s linear infinite;
 }
 
+.paused .tickerText {
+  animation-play-state: paused;
+}
+
+.tickerBox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tickerBox > [role="status"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.tickerPause {
+  min-height: 2.75rem;
+  padding: 0.3rem 0.8rem;
+  font: 700 0.9rem var(--font-digits);
+  color: var(--text);
+  background: var(--panel);
+  border: 2px solid var(--hot);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
 /* No message: hide the bar, but the status region around it stays for screen readers. */
 .ticker:has(.tickerText:empty) {
   display: none;
@@ -83,9 +109,14 @@
 }
 
 /* With motion off the ticker stops crawling, so let long messages wrap instead of being cut off. */
+/* The pause button has nothing to stop then, so it hides too. */
 @media (prefers-reduced-motion: reduce) {
   .ticker {
     white-space: normal;
+  }
+
+  .tickerPause {
+    display: none;
   }
 }
 
