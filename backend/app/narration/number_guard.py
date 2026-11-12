@@ -2,10 +2,10 @@
 
 It reads digits ("1,200", "3,5", "1/2", "½", "3½", "1e3", "2 point 5", "3rd"),
 number words ("four hundred and twelve", "forty-two", "two point five", "a dozen", "a score",
-"three quarters", "two-thirds", "a trillion"), quantity words ("half", "twice", "thrice",
-"double", "triple", "tens", "dozens", "hundreds", "thousands", "millions", "trillions",
-"tenfold", "hundredfold", "thousandfold"), ordinals ("third" to "twentieth"), percentages
-("40%", "forty per cent"), and ratios
+"three quarters", "two-thirds", "three-fifths", "a trillion"), quantity words ("half", "twice",
+"thrice", "double", "triple", "tens", "dozens", "hundreds", "thousands", "millions", "trillions",
+and any number word plus "fold": "twofold", "twentyfold", "thousandfold"), ordinals ("third" to
+"twentieth"), percentages ("40%", "forty per cent"), and ratios
 ("8:1", "eight to one", "8-to-1"). ARCHITECTURE "The number rule": a plain number must match an
 allowed value (within rounding), a percentage an allowed percentage, and a ratio either two allowed
 values or a win-odds ratio. "one", "two", "first", "second", "1st", "2nd" on their own are always
@@ -49,7 +49,7 @@ _COUNTED = {"score", "quarter", "quarters"}
 _STANDALONE = {
     "half": 0.5, "twice": 2.0, "double": 2.0, "thrice": 3.0, "triple": 3.0, "tens": 10.0,
     "dozens": 12.0, "hundreds": 100.0, "thousands": 1e3, "millions": 1e6, "billions": 1e9,
-    "trillions": 1e12, "tenfold": 10.0, "hundredfold": 100.0, "thousandfold": 1e3,
+    "trillions": 1e12,
 }  # fmt: skip
 # Scale words that multiply a digit right before them: "4 thousand" is 4,000, "7 dozen" is 84.
 _DIGIT_SCALES = {
@@ -66,10 +66,20 @@ _VULGAR = {
     "⅑": 1 / 9, "⅒": 1 / 10,
 }  # fmt: skip
 
-# "two" alone always passes, so "two-thirds" must be read as one number (2/3).
+# Fraction words and their bottoms, singular and plural: "half"/"halves" through "tenth"/"tenths".
+_FRACTION_WORDS = {"half": 2, "halves": 2, "quarter": 4, "quarters": 4} | {
+    word + plural: bottom
+    for word, bottom in _ORDINALS.items()
+    if bottom <= 10
+    for plural in ("", "s")
+}
+# "one" and "two" alone always pass, so "two-fifths" must be read as one number (2/5):
+# "one" to "nine" over any fraction word.
 _UNIT_FRACTIONS = {
-    "one third": 1 / 3,
-    "two thirds": 2 / 3,
+    f"{top} {word}": _UNITS[top] / bottom
+    for top in _UNITS
+    if top != "zero"
+    for word, bottom in _FRACTION_WORDS.items()
 }
 
 
@@ -154,6 +164,19 @@ def _digits_value(s: str) -> float:
         return top / bottom if bottom else math.inf
     s = re.sub(r",(?=\d{3}(?!\d))", "", s.replace(" point ", "."))
     return float(s.replace(",", "."))
+
+
+# The value of a number word plus "fold" ("twofold", "twentyfold", "thousandfold"), else None.
+def _fold_value(word: str) -> float | None:
+    stem = word.removesuffix("fold")
+    if stem == word:
+        return None
+    if stem == "hundred":
+        return 100.0
+    value = _UNITS.get(stem) or _TEENS.get(stem) or _TENS.get(stem)
+    if value is None and stem in _SCALES and stem not in _COUNTED:
+        value = _SCALES[stem]
+    return None if value is None else float(value)
 
 
 # Classify a number word for the grammar: unit, teen, tens, hundred, scale, or None.
@@ -281,7 +304,7 @@ def _numbers_and_tokens(tokens: list[_Tok]) -> list[_Tok]:
     i = 0
     while i < len(tokens):
         tok, nums, nxt = tokens[i], [], i + 1
-        single = _ORDINALS.get(tok.text) or _STANDALONE.get(tok.text)
+        single = _ORDINALS.get(tok.text) or _STANDALONE.get(tok.text) or _fold_value(tok.text)
         frac = _read_unit_fraction(tokens, i)
         if frac is not None:
             nums, nxt = [frac[0]], frac[1]
