@@ -19,10 +19,12 @@ from app.db.migrate import apply_migrations
 from app.main import create_app
 from app.models.battle import BattleRecord
 from app.models.matchup import Matchup
+from app.models.stats import Habitat
 from app.pipeline import challenger, stages
 from app.pipeline.orchestrator import CACHED, run_battle
 from app.pipeline.store import STAGES, BattleStore
 from app.research.seed_fighters import find_seed_sheet
+from app.simulation import rng as sim_rng
 from tests.conftest import mock_settings
 
 SIM_RUNS = 20
@@ -244,3 +246,48 @@ def test_cached_sheets_reads_the_newest_rows(tmp_path: Path) -> None:
     connection.close()
     found = challenger.cached_sheets(limit=3, db_path=tmp_path / "app.db")
     assert [s.fighter_id for s in found] == ["gray-wolf", "duck"]
+
+
+def _sheets_for(*names: str) -> stages.Research:
+    sheets = []
+    for name in names:
+        sheet = find_seed_sheet(name)
+        assert sheet is not None, name
+        sheets.append(sheet)
+    return stages.Research(sheets=sheets, reference_sheets=[None] * len(sheets))
+
+
+def test_cache_key_changes_when_engine_runs_or_non_stat_fields_change(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # sheet_hash covers only stats, so a stale cache is possible unless the whole sheet
+    # (and ENGINE_VERSION, and sim_runs) is part of the key.
+    found = _sheets_for("grizzly bear", "gray wolf")
+    fight = matchup("grizzly bear", "gray wolf")
+    base = stages.cache_key(fight, found)
+
+    monkeypatch.setattr(sim_rng, "ENGINE_VERSION", f"{sim_rng.ENGINE_VERSION}-changed")
+    assert stages.cache_key(fight, found) != base
+    monkeypatch.setattr(sim_rng, "ENGINE_VERSION", sim_rng.ENGINE_VERSION.removesuffix("-changed"))
+    assert stages.cache_key(fight, found) == base
+
+    use_settings(mock_settings(sim_runs=SIM_RUNS + 1))
+    assert stages.cache_key(fight, found) != base
+    use_settings(mock_settings(sim_runs=SIM_RUNS))
+    assert stages.cache_key(fight, found) == base
+
+    original = found.sheets[0]
+    other_habitat = Habitat.WATER if original.habitat != Habitat.WATER else Habitat.AIR
+    habitat = original.model_copy(update={"habitat": other_habitat})
+    weapons = original.model_copy(update={"weapons": ["none"]})
+    assert habitat.sheet_hash == original.sheet_hash
+    assert weapons.sheet_hash == original.sheet_hash
+    wet = stages.Research(
+        sheets=[habitat, found.sheets[1]], reference_sheets=found.reference_sheets
+    )
+    armed = stages.Research(
+        sheets=[weapons, found.sheets[1]], reference_sheets=found.reference_sheets
+    )
+    assert stages.cache_key(fight, wet) != base
+    assert stages.cache_key(fight, armed) != base
+    assert stages.cache_key(fight, wet) != stages.cache_key(fight, armed)

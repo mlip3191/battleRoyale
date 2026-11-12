@@ -126,7 +126,9 @@ async def run_battle(battle_id: str, store: BattleStore) -> None:
 
 # Everything that needs the verdict, all at once; each of these may only end "fallback".
 # With a cached battle, a saved fair fight or challenger is copied instead of worked out
-# again; one the cached battle lacks (None) is worked out fresh.
+# again; one the cached battle lacks (None) is worked out fresh. A copied value can come
+# from a stage that ended "fallback"; it is still marked "cached", which is fine for a
+# repeat battle.
 async def _after_simulate(
     battle_id: str,
     store: BattleStore,

@@ -107,13 +107,18 @@ def simulation_matchup(matchup: Matchup, found: Research) -> Matchup:
 
 # The repeat-battle cache key: the simulation seed (normalized matchup, both sheet hashes,
 # ENGINE_VERSION; ARCHITECTURE §8) plus what else changes the verdict: the size-reference
-# sheets and the number of runs.
+# sheets, a hash of each whole sheet (sheet_hash covers only stats; the engine also reads
+# body, weapons, habitat, and lore), and the number of runs.
 def cache_key(matchup: Matchup, found: Research) -> str:
     seed = make_seed(
         simulation_matchup(matchup, found), found.sheets[0].sheet_hash, found.sheets[1].sheet_hash
     )
     references = ",".join(s.sheet_hash if s else "-" for s in found.reference_sheets)
-    text = f"seed={seed}|refs={references}|runs={get_settings().sim_runs}"
+    whole = ",".join(
+        hashlib.sha256(s.model_dump_json().encode("utf-8")).hexdigest()
+        for s in (*found.sheets, *(r for r in found.reference_sheets if r))
+    )
+    text = f"seed={seed}|refs={references}|sheets={whole}|runs={get_settings().sim_runs}"
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
