@@ -55,161 +55,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/battles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Battle */
+        post: operations["create_battle_api_battles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/battles/{battle_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Battle */
+        get: operations["read_battle_api_battles__battle_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/battles/{battle_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Battle Events */
+        get: operations["battle_events_api_battles__battle_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * FighterRequest
-         * @description One side of the matchup, as understood from the user's words.
-         */
-        FighterRequest: {
-            /**
-             * Entity
-             * @description Normalized name of the fighter, e.g. "grizzly bear".
-             */
-            entity: string;
-            /**
-             * Count
-             * @description How many of them fight on this side (1 to 10,000).
-             * @default 1
-             */
-            count: number;
-            /**
-             * Variant
-             * @description Which kind, e.g. "adult male" or "polar"; empty when not specified.
-             * @default null
-             */
-            variant: string | null;
-            /**
-             * Size Reference
-             * @description Another entity this fighter is sized like ("horse-sized duck" -> "horse"). Only a name,
-             *     never a number: code computes the scale factor from both stat sheets' mass_kg.
-             * @default null
-             */
-            size_reference: string | null;
-            /**
-             * Raw
-             * @description The user's own words for this fighter.
-             */
-            raw: string;
-        };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /**
-         * IntakeAnswer
-         * @description Body of POST /api/intake/{pending_id}/answer.
-         */
-        IntakeAnswer: {
-            /** Answer */
-            answer: string;
-        };
-        /**
-         * IntakeRequest
-         * @description Body of POST /api/intake.
-         */
-        IntakeRequest: {
-            /** Text */
-            text: string;
-        };
-        /**
-         * IntakeResult
-         * @description Intake's answer: a matchup, a clarifying question, or a block.
-         */
-        IntakeResult: {
-            /**
-             * Status
-             * @description ok = ready to research; clarify = ask the user first; blocked = refused.
-             * @enum {string}
-             */
-            status: "ok" | "clarify" | "blocked";
-            /**
-             * @description The parsed matchup when status is ok.
-             * @default null
-             */
-            matchup: components["schemas"]["Matchup"] | null;
-            /**
-             * Question
-             * @description The clarifying question when status is clarify.
-             * @default null
-             */
-            question: string | null;
-            /**
-             * Options
-             * @description Two to four suggested answers to the question.
-             * @default []
-             */
-            options: string[];
-            /**
-             * Pending Id
-             * @description Id to send back with the user's answer to a clarifying question.
-             * @default null
-             */
-            pending_id: string | null;
-            /**
-             * Blocked Reason
-             * @description Why the request was refused. deity = named gods or religious figures; weapon = modern
-             *     firearms, explosives, WMD; out_of_scope = abstract ideas, places, landforms,
-             *     celestial bodies.
-             * @default null
-             */
-            blocked_reason: ("real_person" | "minor" | "sexual" | "hate" | "self_harm" | "copyrighted_character" | "deity" | "weapon" | "out_of_scope" | "nonsense" | "other") | null;
-            /**
-             * Message
-             * @description Friendly text shown to the user.
-             * @default null
-             */
-            message: string | null;
-        };
-        /**
-         * Matchup
-         * @description A parsed battle request: exactly two sides on one terrain.
-         */
-        Matchup: {
-            /**
-             * Fighters
-             * @description The two sides (the MVP supports exactly two).
-             */
-            fighters: components["schemas"]["FighterRequest"][];
-            /**
-             * @description Where they fight; the arena when the user didn't say.
-             * @default arena
-             */
-            terrain: components["schemas"]["Terrain"];
-            /**
-             * Raw Text
-             * @description The user's full request, word for word.
-             */
-            raw_text: string;
-            /**
-             * Assumptions
-             * @description Choices intake made for the user, e.g. "Assumed adult male grizzly".
-             * @default []
-             */
-            assumptions: string[];
-        };
-        /**
-         * Terrain
-         * @description The battlefield; it changes who can reach whom and how fast they move.
-         * @enum {string}
-         */
-        Terrain: "arena" | "open_field" | "forest" | "water" | "shoreline" | "urban" | "mountain";
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
-        };
         /**
          * Ability
          * @description Special powers of mythical creatures; each has one documented engine effect.
@@ -438,25 +338,44 @@ export interface components {
             text_hint: string;
         };
         /**
-         * FighterMatch
-         * @description One row of GET /api/fighters?q=: a fighter whose name matches the search text.
+         * FighterRequest
+         * @description One side of the matchup, as understood from the user's words.
          */
-        FighterMatch: {
+        FighterRequest: {
             /**
-             * Fighter Id
-             * @description Stable fighter id, e.g. "grizzly-bear".
+             * Entity
+             * @description Normalized name of the fighter, e.g. "grizzly bear".
              */
-            fighter_id: string;
+            entity: string;
             /**
-             * Display Name
-             * @description Name shown to the user.
+             * Count
+             * @description How many of them fight on this side (1 to 10,000).
+             * @default 1
              */
-            display_name: string;
+            count: number;
             /**
-             * Cached
-             * @description True when a stat sheet is already saved, so the battle can skip research.
+             * Variant
+             * @description Which kind, e.g. "adult male" or "polar"; empty when not specified.
+             * @default null
              */
-            cached: boolean;
+            variant: string | null;
+            /**
+             * Size Reference
+             * @description Another entity this fighter is sized like ("horse-sized duck" -> "horse"). Only a name,
+             *     never a number: code computes the scale factor from both stat sheets' mass_kg.
+             * @default null
+             */
+            size_reference: string | null;
+            /**
+             * Raw
+             * @description The user's own words for this fighter.
+             */
+            raw: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
         };
         /**
          * Habitat
@@ -464,6 +383,71 @@ export interface components {
          * @enum {string}
          */
         Habitat: "land" | "water" | "air" | "amphibious";
+        /**
+         * IntakeAnswer
+         * @description Body of POST /api/intake/{pending_id}/answer.
+         */
+        IntakeAnswer: {
+            /** Answer */
+            answer: string;
+        };
+        /**
+         * IntakeRequest
+         * @description Body of POST /api/intake.
+         */
+        IntakeRequest: {
+            /** Text */
+            text: string;
+        };
+        /**
+         * IntakeResult
+         * @description Intake's answer: a matchup, a clarifying question, or a block.
+         */
+        IntakeResult: {
+            /**
+             * Status
+             * @description ok = ready to research; clarify = ask the user first; blocked = refused.
+             * @enum {string}
+             */
+            status: "ok" | "clarify" | "blocked";
+            /**
+             * @description The parsed matchup when status is ok.
+             * @default null
+             */
+            matchup: components["schemas"]["Matchup"] | null;
+            /**
+             * Question
+             * @description The clarifying question when status is clarify.
+             * @default null
+             */
+            question: string | null;
+            /**
+             * Options
+             * @description Two to four suggested answers to the question.
+             * @default []
+             */
+            options: string[];
+            /**
+             * Pending Id
+             * @description Id to send back with the user's answer to a clarifying question.
+             * @default null
+             */
+            pending_id: string | null;
+            /**
+             * Blocked Reason
+             * @description Why the request was refused. deity = named gods or religious figures; weapon = modern
+             *     firearms, explosives, WMD; out_of_scope = abstract ideas, places, landforms,
+             *     celestial bodies.
+             * @default null
+             */
+            blocked_reason: ("real_person" | "minor" | "sexual" | "hate" | "self_harm" | "copyrighted_character" | "deity" | "weapon" | "out_of_scope" | "nonsense" | "other") | null;
+            /**
+             * Message
+             * @description Friendly text shown to the user.
+             * @default null
+             */
+            message: string | null;
+        };
         /**
          * LoreProfile
          * @description How a mythical creature is modeled on real animals, according to legend.
@@ -494,6 +478,33 @@ export interface components {
             heads: number | null;
             /** @description The sentence in the myth's article that justifies the analogs and abilities. */
             source: components["schemas"]["Source"];
+        };
+        /**
+         * Matchup
+         * @description A parsed battle request: exactly two sides on one terrain.
+         */
+        Matchup: {
+            /**
+             * Fighters
+             * @description The two sides (the MVP supports exactly two).
+             */
+            fighters: components["schemas"]["FighterRequest"][];
+            /**
+             * @description Where they fight; the arena when the user didn't say.
+             * @default arena
+             */
+            terrain: components["schemas"]["Terrain"];
+            /**
+             * Raw Text
+             * @description The user's full request, word for word.
+             */
+            raw_text: string;
+            /**
+             * Assumptions
+             * @description Choices intake made for the user, e.g. "Assumed adult male grizzly".
+             * @default []
+             */
+            assumptions: string[];
         };
         /**
          * Script
@@ -540,22 +551,6 @@ export interface components {
              * @default null
              */
             at_event: number | null;
-        };
-        /**
-         * ShowcaseBattle
-         * @description One row of GET /api/battles?showcase=true: a saved showcase battle.
-         */
-        ShowcaseBattle: {
-            /**
-             * Battle Id
-             * @description Id of the saved battle.
-             */
-            battle_id: string;
-            /**
-             * Title
-             * @description Matchup title shown on the home page, e.g. "Grizzly bear vs Gray wolf".
-             */
-            title: string;
         };
         /**
          * SimulationResult
@@ -812,6 +807,62 @@ export interface components {
              */
             note: string | null;
         };
+        /**
+         * Terrain
+         * @description The battlefield; it changes who can reach whom and how fast they move.
+         * @enum {string}
+         */
+        Terrain: "arena" | "open_field" | "forest" | "water" | "shoreline" | "urban" | "mountain";
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
+        /**
+         * FighterMatch
+         * @description One row of GET /api/fighters?q=: a fighter whose name matches the search text.
+         */
+        FighterMatch: {
+            /**
+             * Fighter Id
+             * @description Stable fighter id, e.g. "grizzly-bear".
+             */
+            fighter_id: string;
+            /**
+             * Display Name
+             * @description Name shown to the user.
+             */
+            display_name: string;
+            /**
+             * Cached
+             * @description True when a stat sheet is already saved, so the battle can skip research.
+             */
+            cached: boolean;
+        };
+        /**
+         * ShowcaseBattle
+         * @description One row of GET /api/battles?showcase=true: a saved showcase battle.
+         */
+        ShowcaseBattle: {
+            /**
+             * Battle Id
+             * @description Id of the saved battle.
+             */
+            battle_id: string;
+            /**
+             * Title
+             * @description Matchup title shown on the home page, e.g. "Grizzly bear vs Gray wolf".
+             */
+            title: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -898,6 +949,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IntakeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_battle_api_battles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Matchup"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BattleCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_battle_api_battles__battle_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                battle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BattleRecord"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    battle_events_api_battles__battle_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                battle_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
