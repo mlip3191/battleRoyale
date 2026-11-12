@@ -137,9 +137,9 @@
       "method": "assumption",
       "low": 0.4,
       "high": 1.0,
-      "note": "group tactics level 4: tank platoons fight in radio contact under drilled doctrine."
+      "note": "group tactics level 4: tank platoons coordinate by radio, like a pack hunting together. Not level 5 (acting as one), since each tank still moves and fights on its own; not level 2, since they do coordinate."
     }
   },
   "schema_version": 1,
-  "sheet_hash": "a6b02e585e83c9ccab68daa259c7ea624115a5fd2bb1f5fc7d5b54c9bfe9b767"
+  "sheet_hash": "1df6f5a5f776cb042021d727e986864bb425e4b235d97c5410faa7ac8ece7587"
 }
