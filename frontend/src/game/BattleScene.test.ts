@@ -282,7 +282,7 @@ describe("reduced motion", () => {
     expect(scene.texts.some((t) => t.text === "GRAY WOLF WINS!")).toBe(true);
   });
 
-  test("the picture changes only at key frames (start, each KO, end)", () => {
+  test("the picture changes only at key frames (start, walk-ins, each KO, end)", () => {
     const log = [
       ev({ type: "approach", side: 0 }),
       ev({ type: "approach", side: 1, group_size: 3 }),
@@ -299,7 +299,7 @@ describe("reduced motion", () => {
     const keys = new Set(
       keyFrames(buildTimeline(r, [1, 3]).beats).map((b) => b.index),
     );
-    expect([...keys]).toEqual([0, 3, 6]);
+    expect([...keys]).toEqual([0, 1, 3, 6]);
 
     scene.play();
     const snapshots: string[] = [];
@@ -309,7 +309,7 @@ describe("reduced motion", () => {
       const after = JSON.stringify(wolves.map((w) => [w.x, w.alpha]));
       if (before !== after) snapshots.push(after);
     }
-    // The approach shows at the start, wolf 1 drops at the KO, and the escape shows at the end.
+    // Each side jumps in at its approach, wolf 1 drops at the KO, and the escape shows at the end.
     expect(snapshots.length).toBeLessThanOrEqual(keys.size);
     expect(wolves[1].alpha).toBe(0);
     expect(wolves.every((w, i) => w.x !== startX[i])).toBe(true);
