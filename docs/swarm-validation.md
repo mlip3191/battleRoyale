@@ -31,14 +31,12 @@ Full tables are printed by the script. Speed is the point of swarm mode, but tim
 
 Every scenario above is 125 per side or fewer, but swarm mode only runs above 200 per side. These larger fights can be reproduced with `uv run --directory backend python scripts/validate_swarm.py --scenario large --runs 300` (opt-in because it is the slowest group, about 8 s at 300 runs). A teammate first ran them at 150-300 runs each (one-by-one vs swarm, win share of the first side):
 
-| Fight | Runs | One-by-one | Swarm | Gap |
-|---|---|---|---|---|
-| 250 v 250 wolves | 0.547 | 0.537 | -0.010 | 0.080 (within noise) |
-| 312 v 250 wolves | 200 | 0.600 | 0.600 | 0.000 |
-| 300 wolves v 1 bear | 300 | 1.000 | 1.000 | 0.000 |
-| 300 cats v 60 wolves | 0.453 | 0.447 | -0.007 | 0.080 (within noise) |
-| 600 cats v 120 wolves | 0.530 | 0.537 | +0.007 | 0.080 (within noise) |
-| 400 archers v 200 wolves | 0.940 | 0.950 | +0.010 | 0.038 (within noise) |
+| Fight | Runs | One-by-one | Swarm | Gap | Noise (95%) |
+|---|---|---|---|---|---|
+| 250 v 250 wolves | 300 | 0.467 | 0.473 | +0.007 | 0.080 (within noise) |
+| 300 cats v 60 wolves | 300 | 0.427 | 0.623 | **+0.197** | 0.079 |
+| 600 cats v 120 wolves | 300 | 0.503 | 0.650 | **+0.147** | 0.080 |
+| 400 archers v 200 wolves | 300 | 0.967 | 0.977 | +0.010 | 0.029 (within noise) |
 
 The conclusions held at these sizes before the fixes: matched, one-big-target and ranged fights agreed, and a crowd of weak fighters against a few strong ones was overrated by 0.16 to 0.20.
 
@@ -46,12 +44,12 @@ The conclusions held at these sizes before the fixes: matched, one-big-target an
 
 | Fight | One-by-one | Swarm | Gap | Noise (95%) |
 |---|---|---|---|---|
-| 250 v 250 wolves | 0.547 | 0.543 | -0.003 | 0.080 (within noise) |
-| 300 cats v 60 wolves | 0.453 | 0.453 | +0.000 | 0.080 (within noise) |
-| 600 cats v 120 wolves | 0.530 | 0.530 | +0.000 | 0.080 (within noise) |
-| 400 archers v 200 wolves | 0.940 | 0.953 | +0.013 | 0.038 (within noise) |
+| 250 v 250 wolves | 0.547 | 0.537 | -0.010 | 0.080 (within noise) |
+| 300 cats v 60 wolves | 0.453 | 0.447 | -0.007 | 0.080 (within noise) |
+| 600 cats v 120 wolves | 0.530 | 0.537 | +0.007 | 0.080 (within noise) |
+| 400 archers v 200 wolves | 0.940 | 0.950 | +0.010 | 0.038 (within noise) |
 
-Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 for the two crowd fights. (These larger fights last 0.86 to 0.88x as long in swarm mode.) Timings are machine-dependent: 10,000 ants v 1 lion measured 0.6 s on one run and about 1.0 s on another.
+Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 for the two crowd fights. (These larger fights last 0.88 to 1.00x as long in swarm mode.) Timings are machine-dependent: 10,000 ants v 1 lion measured 0.6 s on one run and about 1.0 s on another.
 
 ## What this means for the app
 

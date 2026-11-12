@@ -31,6 +31,7 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 - [Product spec](docs/PRODUCT_SPEC.md) — what we build and how it's judged
 - [Architecture](docs/ARCHITECTURE.md) — modules, contracts, API, providers, edge cases
 - [Team process](docs/TEAM_PROCESS.md) — branches, PRs, reviews, QA bot, secrets, CI
+- [Filing issues](docs/issues.md) — how to use /new-issue, labels, and the board
 - [Decisions](docs/DECISIONS.md) — what's decided and what's still open
 - [Lanes and tasks](docs/plan/LANES.md) — who does what, with a ready-to-paste prompt for every task
 

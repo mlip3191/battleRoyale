@@ -1,0 +1,59 @@
+/* The Phaser replay box and its controls, in the broadcast theme (src/index.css tokens). */
+.stage {
+  margin: 1rem 0;
+}
+
+.canvas {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--bg);
+  border: 3px solid var(--neon);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.canvas canvas {
+  display: block;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.button {
+  min-width: 3rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 1rem;
+  font: 700 1rem var(--font-score);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--panel);
+  border: 2px solid var(--neon);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.button[aria-pressed="true"] {
+  color: var(--banner-text);
+  background: var(--banner);
+  border-color: var(--banner);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.note {
+  color: var(--danger);
+}
+
+.hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}

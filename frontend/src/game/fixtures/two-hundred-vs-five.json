@@ -1,0 +1,2997 @@
+{
+  "seed": 1115389761765935616,
+  "runs": 1000,
+  "win_prob": [0.007, 0.993],
+  "draw_prob": 0.0,
+  "win_prob_ci95": [
+    [0.0033948250792319975, 0.01437849692694906],
+    [0.9856215030730511, 0.996605174920768]
+  ],
+  "mean_survivors": [0.46, 5.0],
+  "mean_duration_s": 54.5534,
+  "outcome": "win_1",
+  "deciding_factor": "mass_kg",
+  "deciding_factor_explainer": "Size decided it: Lion (190 kg) against Duck (1.2 kg).",
+  "representative_log": [
+    {
+      "t": 0.0,
+      "type": "approach",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 200,
+      "damage": null,
+      "text_hint": "closes in"
+    },
+    {
+      "t": 0.0,
+      "type": "approach",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 5,
+      "damage": null,
+      "text_hint": "closes in"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 177,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 24,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 198,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 52,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 127,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 28,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 115,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 159,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 156,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.4,
+      "type": "hit",
+      "side": 0,
+      "actor": 88,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 73,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 12,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 20,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 103,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 92,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 132,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 36,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 53,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "miss",
+      "side": 0,
+      "actor": 58,
+      "target": 2,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 148,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "miss",
+      "side": 0,
+      "actor": 195,
+      "target": 2,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 85,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 110,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 66,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 154,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 41,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 38,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 67,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "miss",
+      "side": 0,
+      "actor": 106,
+      "target": 4,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 40,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 117,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 8,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 131,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 0,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 78,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 107,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 196,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 173,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 59,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 165,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "hit",
+      "side": 1,
+      "actor": 2,
+      "target": 57,
+      "group_size": 1,
+      "damage": 173.4,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 57,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 0.7,
+      "type": "hit",
+      "side": 1,
+      "actor": 4,
+      "target": 72,
+      "group_size": 1,
+      "damage": 173.4,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 72,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 0.8,
+      "type": "hit",
+      "side": 1,
+      "actor": 1,
+      "target": 13,
+      "group_size": 1,
+      "damage": 173.4,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 0.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 13,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 1.0,
+      "type": "hit",
+      "side": 1,
+      "actor": 0,
+      "target": 134,
+      "group_size": 1,
+      "damage": 173.4,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 134,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 1.1,
+      "type": "miss",
+      "side": 0,
+      "actor": 156,
+      "target": 3,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 1.1,
+      "type": "hit",
+      "side": 0,
+      "actor": 24,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.1,
+      "type": "hit",
+      "side": 0,
+      "actor": 127,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.1,
+      "type": "hit",
+      "side": 0,
+      "actor": 28,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.1,
+      "type": "hit",
+      "side": 0,
+      "actor": 198,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.1,
+      "type": "hit",
+      "side": 0,
+      "actor": 159,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.1,
+      "type": "hit",
+      "side": 0,
+      "actor": 88,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.1,
+      "type": "hit",
+      "side": 0,
+      "actor": 177,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.1,
+      "type": "hit",
+      "side": 0,
+      "actor": 115,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 0,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 8,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 67,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 66,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 12,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 132,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 52,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 40,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 53,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 41,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 195,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 110,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 20,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 58,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 85,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 165,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 38,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 78,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 106,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 173,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 196,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "miss",
+      "side": 0,
+      "actor": 107,
+      "target": 2,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 92,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 117,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 59,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 103,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 154,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "miss",
+      "side": 0,
+      "actor": 73,
+      "target": 3,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 131,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.2,
+      "type": "hit",
+      "side": 0,
+      "actor": 148,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.3,
+      "type": "hit",
+      "side": 1,
+      "actor": 3,
+      "target": 80,
+      "group_size": 1,
+      "damage": 173.4,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 80,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 1.3,
+      "type": "hit",
+      "side": 0,
+      "actor": 36,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.5,
+      "type": "miss",
+      "side": 1,
+      "actor": 2,
+      "target": 47,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 1.7,
+      "type": "miss",
+      "side": 1,
+      "actor": 4,
+      "target": 199,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 1.8,
+      "type": "miss",
+      "side": 0,
+      "actor": 24,
+      "target": 3,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 1.8,
+      "type": "hit",
+      "side": 0,
+      "actor": 28,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.8,
+      "type": "miss",
+      "side": 0,
+      "actor": 127,
+      "target": 3,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 1.8,
+      "type": "hit",
+      "side": 1,
+      "actor": 1,
+      "target": 110,
+      "group_size": 1,
+      "damage": 173.4,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 110,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 1.8,
+      "type": "hit",
+      "side": 0,
+      "actor": 115,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.8,
+      "type": "hit",
+      "side": 0,
+      "actor": 88,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.8,
+      "type": "hit",
+      "side": 0,
+      "actor": 198,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.8,
+      "type": "hit",
+      "side": 0,
+      "actor": 156,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.8,
+      "type": "hit",
+      "side": 0,
+      "actor": 159,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.8,
+      "type": "hit",
+      "side": 0,
+      "actor": 177,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 41,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 52,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 195,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 67,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 78,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 148,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 132,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 92,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 131,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 196,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 66,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 85,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 165,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 8,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 154,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 106,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 58,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 103,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "miss",
+      "side": 0,
+      "actor": 107,
+      "target": 2,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 53,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 117,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 38,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 173,
+      "target": 2,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 20,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "miss",
+      "side": 0,
+      "actor": 169,
+      "target": 3,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 73,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 12,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 0,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 1.9,
+      "type": "hit",
+      "side": 0,
+      "actor": 59,
+      "target": 1,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.0,
+      "type": "hit",
+      "side": 0,
+      "actor": 40,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.0,
+      "type": "hit",
+      "side": 0,
+      "actor": 36,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.0,
+      "type": "miss",
+      "side": 1,
+      "actor": 0,
+      "target": 7,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "bite misses"
+    },
+    {
+      "t": 2.3,
+      "type": "hit",
+      "side": 1,
+      "actor": 3,
+      "target": 167,
+      "group_size": 1,
+      "damage": 173.4,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 167,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 2.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 115,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 156,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.5,
+      "type": "hit",
+      "side": 1,
+      "actor": 2,
+      "target": 47,
+      "group_size": 1,
+      "damage": 173.4,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 47,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 2.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 88,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 28,
+      "target": 4,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 159,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 177,
+      "target": 0,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.5,
+      "type": "hit",
+      "side": 0,
+      "actor": 24,
+      "target": 3,
+      "group_size": 1,
+      "damage": 1.2,
+      "text_hint": "bite lands"
+    },
+    {
+      "t": 2.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 199,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 2.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 133,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 3.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 113,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 3.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 38,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 4.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 7,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 4.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 65,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 4.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 21,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 5.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 173,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 5.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 91,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 5.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 54,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 6.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 197,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 6.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 123,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 6.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 28,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 6.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 155,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 7.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 149,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 7.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 117,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 7.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 135,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 8.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 61,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 8.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 156,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 8.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 76,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 8.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 159,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 9.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 142,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 9.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 45,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 9.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 107,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 9.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 187,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 9.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 77,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 10.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 2,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 10.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 165,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 10.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 126,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 11.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 129,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 11.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 32,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 11.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 64,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 11.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 108,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 12.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 90,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 12.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 12,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 12.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 79,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 12.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 17,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 12.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 6,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 13.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 56,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 13.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 37,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 13.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 99,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 14.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 14,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 14.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 143,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 14.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 152,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 15.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 43,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 15.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 120,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 16.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 35,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 16.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 121,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 16.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 82,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 16.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 158,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 16.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 124,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 17.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 177,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 17.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 109,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 17.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 186,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 17.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 104,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 17.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 48,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 18.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 25,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 18.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 151,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 18.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 141,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 18.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 78,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 19.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 30,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 19.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 164,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 19.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 179,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 19.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 40,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 20.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 95,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 20.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 144,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 20.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 24,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 20.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 194,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 21.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 146,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 21.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 89,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 21.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 175,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 21.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 190,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 21.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 68,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 22.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 118,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 22.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 58,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 22.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 19,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 22.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 183,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 23.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 87,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 23.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 70,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 23.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 23,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 23.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 101,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 24.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 181,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 24.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 139,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 24.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 114,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 25.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 166,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 25.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 116,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 25.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 9,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 25.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 176,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 26.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 189,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 26.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 188,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 26.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 147,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 26.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 196,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 26.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 122,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 27.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 71,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 27.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 140,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 27.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 168,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 27.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 34,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 28.0,
+      "type": "ko",
+      "side": 0,
+      "actor": 29,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 28.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 170,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 28.3,
+      "type": "ko",
+      "side": 0,
+      "actor": 111,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 28.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 154,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 29.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 92,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 29.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 115,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 30.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 103,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 30.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 100,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 30.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 102,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 30.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 73,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 31.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 171,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 31.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 20,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 31.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 145,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 31.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 16,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 32.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 131,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 32.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 66,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 32.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 83,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 32.8,
+      "type": "ko",
+      "side": 0,
+      "actor": 153,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 33.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 112,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 33.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 55,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 33.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 161,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 33.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 22,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 33.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 163,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 34.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 198,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 34.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 67,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 34.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 0,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 34.6,
+      "type": "ko",
+      "side": 0,
+      "actor": 182,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 34.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 27,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 35.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 42,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 35.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 130,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 35.2,
+      "type": "retreat",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 65,
+      "damage": null,
+      "text_hint": "breaks and runs"
+    },
+    {
+      "t": 35.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 138,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 35.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 3,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 35.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 81,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 36.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 84,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 36.4,
+      "type": "ko",
+      "side": 0,
+      "actor": 33,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 36.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 191,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 36.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 4,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 37.1,
+      "type": "ko",
+      "side": 0,
+      "actor": 150,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 37.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 53,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 37.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 18,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 37.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 36,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 37.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 62,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 38.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 49,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 39.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 162,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 39.2,
+      "type": "ko",
+      "side": 0,
+      "actor": 8,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 39.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 178,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 39.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 86,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 39.9,
+      "type": "ko",
+      "side": 0,
+      "actor": 157,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 40.5,
+      "type": "ko",
+      "side": 0,
+      "actor": 98,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 40.7,
+      "type": "ko",
+      "side": 0,
+      "actor": 180,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "goes down"
+    },
+    {
+      "t": 53.9,
+      "type": "ko",
+      "side": 0,
+      "actor": null,
+      "target": null,
+      "group_size": 45,
+      "damage": null,
+      "text_hint": "more go down"
+    },
+    {
+      "t": 53.9,
+      "type": "end",
+      "side": 1,
+      "actor": null,
+      "target": null,
+      "group_size": 1,
+      "damage": null,
+      "text_hint": "the fight is over"
+    }
+  ]
+}
