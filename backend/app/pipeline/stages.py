@@ -68,27 +68,38 @@ class Research:
 
 
 # Find one fighter's stat sheet; the single seam G04's get_stat_sheet will replace.
-async def lookup_sheet(entity: str) -> StatSheet | None:
-    return await asyncio.to_thread(find_seed_sheet, entity)
+# variant and raw are tried as described in find_seed_sheet; size references have no
+# variant or raw, so they are looked up by the name alone through this same function.
+async def lookup_sheet(
+    entity: str, variant: str | None = None, raw: str | None = None
+) -> StatSheet | None:
+    return await asyncio.to_thread(find_seed_sheet, entity, variant, raw)
 
 
 # Step 2: look up both fighters and any size_reference entities, all at the same time.
 async def research(matchup: Matchup) -> Research:
-    fighters = [f.entity for f in matchup.fighters]
-    references = [f.size_reference for f in matchup.fighters]
-    names = fighters + [ref for ref in references if ref is not None]
-    found = await asyncio.gather(*(lookup_sheet(name) for name in names))
-    by_name = dict(zip(names, found, strict=True))
-    sheets = []
-    for name in fighters:
-        sheet = by_name[name]
+    fighters = matchup.fighters
+    references = [f.size_reference for f in fighters]
+    found = await asyncio.gather(
+        *(lookup_sheet(f.entity, f.variant, f.raw) for f in fighters),
+        *(lookup_sheet(ref) for ref in references if ref is not None),
+    )
+    sheets: list[StatSheet] = []
+    for fighter, sheet in zip(fighters, found[: len(fighters)], strict=True):
         if sheet is None:
-            raise StageFailed(NOT_FOUND.format(name=name))
+            raise StageFailed(NOT_FOUND.format(name=fighter.entity))
         sheets.append(sheet)
-    reference_sheets = [None if ref is None else by_name[ref] for ref in references]
-    missing = [
-        ref for ref, sheet in zip(references, reference_sheets, strict=True) if ref and not sheet
-    ]
+    found_refs = iter(found[len(fighters) :])
+    reference_sheets: list[StatSheet | None] = []
+    missing: list[str] = []
+    for ref in references:
+        if ref is None:
+            reference_sheets.append(None)
+            continue
+        sheet = next(found_refs)
+        reference_sheets.append(sheet)
+        if sheet is None:
+            missing.append(ref)
     return Research(sheets, reference_sheets, missing)
 
 
