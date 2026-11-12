@@ -195,6 +195,7 @@ const SEED_FIGHTERS = [
   /\bgrizzly bears?\b/,
   /\bhoney badgers?\b/,
   /\bhorses?\b/,
+  /\bmain battle tanks?\b/,
   /\bsaltwater crocodiles?\b/,
 ];
 const seedIn = (side: string) => SEED_FIGHTERS.filter((f) => f.test(side));
