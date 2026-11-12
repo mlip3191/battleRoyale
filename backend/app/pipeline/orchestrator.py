@@ -14,7 +14,7 @@ lends its verdict, plus its fair fight and challenger when it has them; each cop
 TODO, remaining A05 pieces (issue #36):
 - when the owning modules land, swap the stubs in stages.py for real calls: research
   (G04 get_stat_sheet, with the all-estimate fallback sheet and banner), scripts (A06),
-  audio and music (A07), images (A08). Stub output is not saved to the record today.
+  audio and music (A07). Stub output is not saved to the record today.
 - seed-sheet lookup ignores `variant`; match variants once variant sheets exist.
 """
 
@@ -55,6 +55,7 @@ FALLBACK_DETAILS = {
 # Notes for a stage whose fallback path still produced something worth saving.
 FALLBACK_WITH_VALUE = {
     "challenger": "Next challenger picked by quick tests of seed fighters this time.",
+    "images": "Placeholder shapes for some of the pictures this time.",
 }
 # For a stage with a saved stand-in value but no note of its own above.
 FALLBACK_WITH_VALUE_GENERIC = "A quick stand-in was used for this step this time."

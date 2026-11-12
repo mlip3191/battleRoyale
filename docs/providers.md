@@ -93,6 +93,23 @@ Base URL: `http://<host>:9006`
   - request keys: `{"model": "str", "prompt": "str", "size": "str", "n": "int"}`
   - reply shape: `{"created": "int", "data": [{"b64_json": "str", "url": "NoneType", "revised_prompt": "NoneType"}, "(1 items)"], "output_format": "str", "size": "str", "cot_output": "NoneType", "metrics": {"stage_durations": {"queue_wait_ms": "float", "stage_0_gen_ms": "float"}, "peak_memory_mb": "float"}}`
 
+**Hand-tested request shapes (A08, `backend/app/providers/live/image.py`).** Added by hand, not by the smoke script (re-running `smoke_providers.py` rewrites this file, so copy this part back); checked against the service's own `/openapi.json` and real calls.
+- There is no `IMAGE_MODEL` setting: the adapter asks `GET /v1/models` once and uses `data[0].id`.
+- `POST /v1/images/generations` — JSON body. Accepted fields: `model`, `prompt`, `size` (`"WIDTHxHEIGHT"`), `n`, `seed` (int), `num_inference_steps` (int), `guidance_scale` (float), `negative_prompt`, `output_format` (`"png"`), `response_format` (`"b64_json"`). The PNG is `data[0].b64_json`. The same seed and prompt give the same picture.
+- `POST /v1/images/edits` — **multipart/form-data, not JSON.** The PNG goes in a file part named `image`; every other field (`prompt`, `model`, `n`, `size`, `seed`, `output_format`, `response_format`, `negative_prompt`, `num_inference_steps`, `guidance_scale`) is a form string. Same reply shape as generations.
+  ```
+  curl -H "Authorization: Bearer <key>" -F image=@sprite.png -F prompt="..." -F model=<model> \
+       -F size=512x512 -F seed=1234 -F output_format=png -F response_format=b64_json \
+       http://<host>:9006/v1/images/edits
+  ```
+- The model returns **RGB PNGs with no alpha** (about 770 KB at 512x512). Asking for a "transparent background" only paints a fake grey checkerboard, and the `background` form field does not give real alpha.
+
+**How sprites get a transparent background** (`backend/app/media/images.py`, `backend/app/media/png.py`): draw the sprite, then call the edit endpoint with "Replace the entire background with one flat solid pure magenta color (#FF00FF)…". The reply's background is a fairly even magenta. Code then takes the median colour of the border pixels as the key colour, flood-fills from every border pixel through pixels within a tolerance of it (the sprite's dark outline stops the fill), makes those pixels transparent, and saves a compressed RGBA PNG (a few KB instead of ~770 KB). A result whose four corners are still opaque is treated as a failure (placeholder art, nothing cached).
+
+**Style lock** (`backend/app/media/style.py`, `STYLE_VERSION`): every request sends the same seed, size (sprites 512x512, battlefields 768x432), and negative prompt; sprites all use one template and one background edit prompt. `num_inference_steps` and `guidance_scale` are not sent (server defaults). Changing any of these means bumping `STYLE_VERSION`, which also changes the cache file names in `data/media/`.
+
+**Pre-drawing the demo sprites:** `uv run --directory backend python scripts/pregen_sprites.py` (with `PROVIDER_MODE=live`) draws a sprite for every seed fighter and a battlefield for every terrain, cached in `data/media/` per fighter id (or terrain) and style version, checks that every sprite is a PNG with four transparent corners, and prints a PASS/FAIL table (exit code 1 on any failure). `--thumbs DIR` writes small thumbnails and a contact sheet for a PR; `--force` redraws everything. It prints only ids, timings, sizes, and PASS/FAIL.
+
 ## `tts` — Text-to-Speech and Voice Cloning
 
 Base URL: `http://<host>:9008`

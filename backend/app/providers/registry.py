@@ -62,6 +62,7 @@ def _live_factories() -> dict[ProviderName, Callable[[ServiceConfig, Settings], 
     from app.providers.live.chat import LiveChatLLM
     from app.providers.live.doc_parser import LiveDocParser
     from app.providers.live.embedder import LiveEmbedder
+    from app.providers.live.image import LiveImageGen
     from app.providers.live.rerank import LiveReranker
     from app.providers.live.structured import LiveStructuredLLM
 
@@ -71,6 +72,7 @@ def _live_factories() -> dict[ProviderName, Callable[[ServiceConfig, Settings], 
         "embedder": LiveEmbedder,
         "reranker": LiveReranker,
         "doc_parser": LiveDocParser,
+        "image": LiveImageGen,
     }
 
 
