@@ -185,6 +185,38 @@ test("example chips fill the box", () => {
   expect(box.value).toBe(EXAMPLES[0]);
 });
 
+// The fighters with a ready-made stat sheet in data/seed/fighters/ (singular or plural).
+const SEED_FIGHTERS = [
+  /\bafrican elephants?\b/,
+  /\bducks?\b/,
+  /\bgorillas?\b/,
+  /\bgray (wolf|wolves)\b/,
+  /\bgrizzly bears?\b/,
+  /\bhoney badgers?\b/,
+  /\bhorses?\b/,
+  /\bsaltwater crocodiles?\b/,
+];
+const seedIn = (side: string) => SEED_FIGHTERS.filter((f) => f.test(side));
+
+test("the six example chips use only seed fighters, with no size swaps (#205)", () => {
+  expect(EXAMPLES).toHaveLength(6);
+  expect(new Set(EXAMPLES).size).toBe(6);
+  for (const example of EXAMPLES) {
+    const sides = example.split(" vs ");
+    expect(sides, example).toHaveLength(2);
+    expect(example, example).not.toMatch(/sized/i);
+    // Each side names exactly one seed fighter, and the two sides differ.
+    const [left, right] = sides.map(seedIn);
+    expect(left, example).toHaveLength(1);
+    expect(right, example).toHaveLength(1);
+    expect(left[0], example).not.toBe(right[0]);
+    // Not yet calibrated (#47): gorilla vs grizzly bear stays off the list.
+    expect(/gorilla/.test(example) && /grizzly/.test(example), example).toBe(
+      false,
+    );
+  }
+});
+
 test("every control is labeled and reachable with Tab", async () => {
   api.postIntake.mockResolvedValue(ok);
   ask(open(), "a grizzly bear vs 6 gray wolves");
