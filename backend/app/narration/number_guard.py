@@ -12,6 +12,7 @@ allowed, so "one punch" or "these two" never trips it; digits ("2"), percentages
 Pure standard-library code, no I/O, safe to call on every line.
 """
 
+import math
 import re
 from dataclasses import dataclass
 from typing import Literal
@@ -47,6 +48,10 @@ _STANDALONE = {
     "half": 0.5, "twice": 2.0, "double": 2.0, "thrice": 3.0, "triple": 3.0, "tens": 10.0,
     "dozens": 12.0, "hundreds": 100.0, "thousands": 1e3, "millions": 1e6, "billions": 1e9,
 }  # fmt: skip
+# Scale words that multiply a digit right before them: "4 thousand" is 4,000, "7 dozen" is 84.
+_DIGIT_SCALES = {
+    "hundred": 100.0, "thousand": 1e3, "million": 1e6, "billion": 1e9, "dozen": 12.0, "score": 20.0,
+}  # fmt: skip
 
 _TOKEN = re.compile(
     r"(?P<num>\d+(?:\.\d+)?e[+-]?\d+"  # exponent: 1e3, 2.5e-2
@@ -80,6 +85,8 @@ class FoundNumber:
     """Second side of a ratio."""
     ordinary: bool = False
     """True for the always-allowed "one", "two", "first", "second" phrasing."""
+    parts: tuple[float, float] | None = None
+    """Top and bottom of a digit fraction ("3/4"); value is then their quotient."""
 
 
 @dataclass
@@ -92,18 +99,35 @@ class _Tok:
     end: int
     value: float = 0.0
     ordinary: bool = False
+    parts: tuple[float, float] | None = None
 
 
 # A whole number spanning start..end of the text.
-def _num(value: float, start: int, end: int, ordinary: bool = False) -> _Tok:
-    return _Tok("number", "", start, end, value, ordinary)
+def _num(
+    value: float,
+    start: int,
+    end: int,
+    ordinary: bool = False,
+    parts: tuple[float, float] | None = None,
+) -> _Tok:
+    return _Tok("number", "", start, end, value, ordinary, parts)
 
 
-# The value of a digit token: fractions divide, "point" and a lone comma are decimal points.
+# The two sides of a digit fraction ("3/4" -> (3, 4)), or None for any other digit token.
+def _fraction_parts(s: str) -> tuple[float, float] | None:
+    if "/" not in s:
+        return None
+    top, bottom = s.split("/")
+    return float(top), float(bottom)
+
+
+# The value of a digit token: fractions divide (a zero bottom has no value, so it is infinite),
+# "point" and a lone comma are decimal points.
 def _digits_value(s: str) -> float:
-    if "/" in s:
-        top, bottom = (float(p) for p in s.split("/"))
-        return top / bottom if bottom else top
+    parts = _fraction_parts(s)
+    if parts is not None:
+        top, bottom = parts
+        return top / bottom if bottom else math.inf
     s = re.sub(r",(?=\d{3}(?!\d))", "", s.replace(" point ", "."))
     return float(s.replace(",", "."))
 
@@ -132,7 +156,8 @@ def _tokenize(text: str) -> list[_Tok]:
     for m in _TOKEN.finditer(text.lower()):
         if m.group("num"):
             kind = "ord" if m.group("ord") else "num"
-            tokens.append(_Tok(kind, m.group(0), m.start(), m.end(), _digits_value(m["num"])))
+            value, parts = _digits_value(m["num"]), _fraction_parts(m["num"])
+            tokens.append(_Tok(kind, m.group(0), m.start(), m.end(), value, parts=parts))
         else:
             kind = "word" if m.group("word") else "sym"
             tokens.append(_Tok(kind, m.group(kind), m.start(), m.end()))
@@ -202,6 +227,14 @@ def _read_words(tokens: list[_Tok], i: int) -> tuple[list[_Tok], int]:
     return found, j
 
 
+# Read a digit and the scale words right after it as one number ("4 thousand", "3.9 hundred").
+def _read_scaled_digit(tokens: list[_Tok], i: int) -> tuple[_Tok, int]:
+    value, end, j = tokens[i].value, tokens[i].end, i + 1
+    while j < len(tokens) and tokens[j].kind == "word" and tokens[j].text in _DIGIT_SCALES:
+        value, end, j = value * _DIGIT_SCALES[tokens[j].text], tokens[j].end, j + 1
+    return _num(value, tokens[i].start, end), j
+
+
 # Turn tokens into a list where each number is one item and other tokens stay as they are.
 def _numbers_and_tokens(tokens: list[_Tok]) -> list[_Tok]:
     items: list[_Tok] = []
@@ -209,9 +242,13 @@ def _numbers_and_tokens(tokens: list[_Tok]) -> list[_Tok]:
     while i < len(tokens):
         tok, nums, nxt = tokens[i], [], i + 1
         single = _ORDINALS.get(tok.text) or _STANDALONE.get(tok.text)
-        if tok.kind in ("num", "ord"):
-            ordinary = tok.kind == "ord" and tok.value in (1.0, 2.0)
-            nums = [_num(tok.value, tok.start, tok.end, ordinary)]
+        if tok.kind == "num" and tok.parts is not None:
+            nums = [_num(tok.value, tok.start, tok.end, parts=tok.parts)]
+        elif tok.kind == "num":
+            scaled, nxt = _read_scaled_digit(tokens, i)
+            nums = [scaled]
+        elif tok.kind == "ord":
+            nums = [_num(tok.value, tok.start, tok.end, tok.value in (1.0, 2.0))]
         elif tok.kind == "word" and single is not None:
             nums = [_num(float(single), tok.start, tok.end)]
         elif tok.kind == "word" and (_word_class(tok.text) or tok.text == "a"):
@@ -257,7 +294,7 @@ def extract_numbers(text: str) -> list[FoundNumber]:
             k += width
         else:
             span = text[item.start : item.end]
-            found.append(FoundNumber(span, item.value, ordinary=item.ordinary))
+            found.append(FoundNumber(span, item.value, ordinary=item.ordinary, parts=item.parts))
             k += 1
     return found
 
@@ -265,6 +302,13 @@ def extract_numbers(text: str) -> list[FoundNumber]:
 # True when x matches any allowed number within the rounding tolerance.
 def _near(x: float, pool: frozenset[float]) -> bool:
     return any(abs(x - a) <= max(ABS_TOL, REL_TOL * abs(a)) for a in pool)
+
+
+# A digit fraction is said as its digits, so the value and both written sides must be allowed:
+# "50/50" is not 1, and a zero bottom ("5/0") never is.
+def _fraction_supported(top: float, bottom: float, values: frozenset[float]) -> bool:
+    sides = _near(top, values) and _near(bottom, values)
+    return bottom != 0 and sides and _near(top / bottom, values)
 
 
 def is_supported(number: FoundNumber, allowed: AllowedNumbers) -> bool:
@@ -275,6 +319,8 @@ def is_supported(number: FoundNumber, allowed: AllowedNumbers) -> bool:
         a, b = number.value, number.right
         both = _near(a, allowed.values) and _near(b, allowed.values)
         return both or (b != 0 and any(abs(a / b - o) <= ODDS_REL_TOL * o for o in allowed.odds))
+    if number.parts is not None:
+        return _fraction_supported(*number.parts, allowed.values)
     return number.ordinary or _near(number.value, allowed.values)
 
 

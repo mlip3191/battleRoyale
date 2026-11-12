@@ -186,3 +186,52 @@ def test_ratio_passes_when_it_matches_win_odds() -> None:
 def test_ratio_passes_when_both_sides_are_allowed() -> None:
     allowed = AllowedNumbers(values=frozenset({8.0, 1.0}))
     assert find_unsupported_numbers("an 8-to-1 favorite", allowed) == []
+
+
+# Every part of the QA cases is allowed on its own, so only the combined value can trip the guard.
+QA_SET = AllowedNumbers(
+    values=frozenset({1.0, 2.0, 3.0, 4.0, 5.0, 7.0, 12.0, 100.0, 389.0, 1000.0})
+)
+
+
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("4 thousand wolves", 4000.0),
+        ("7 dozen wolves", 84.0),
+        ("3.9 hundred wolves", 390.0),
+        ("3 hundred wolves", 300.0),
+        ("2 score wolves", 40.0),
+    ],
+)
+def test_digit_and_scale_word_are_one_number(text: str, value: float) -> None:
+    # Each digit and scale is allowed on its own; 389 is left out because 390 rounds to it.
+    parts = AllowedNumbers(values=frozenset({2.0, 3.0, 3.9, 4.0, 7.0, 12.0, 20.0, 100.0, 1000.0}))
+    [found] = extract_numbers(text)
+    assert found.value == pytest.approx(value)
+    assert find_unsupported_numbers(text, parts), text
+
+
+def test_digit_and_scale_word_pass_when_combined_value_is_allowed() -> None:
+    allowed = AllowedNumbers(values=frozenset({4000.0, 84.0}))
+    assert find_unsupported_numbers("4 thousand wolves and 7 dozen bees", allowed) == []
+
+
+def test_spelled_scale_still_caught() -> None:
+    assert find_unsupported_numbers("four thousand wolves", QA_SET)
+
+
+@pytest.mark.parametrize("text", ["50/50 odds", "5/0 odds"])
+def test_fraction_needs_both_sides_and_value(text: str) -> None:
+    # "50/50" divides to the allowed 1, and "5/0" has no value at all; both must be flagged.
+    assert find_unsupported_numbers(text, QA_SET), text
+
+
+def test_zero_bottom_fraction_is_flagged_even_when_sides_are_allowed() -> None:
+    allowed = AllowedNumbers(values=frozenset({0.0, 5.0}))
+    assert find_unsupported_numbers("5/0 odds", allowed)
+
+
+def test_fraction_passes_when_value_and_sides_are_allowed() -> None:
+    allowed = AllowedNumbers(values=frozenset({1.0, 2.0, 0.5}))
+    assert find_unsupported_numbers("It covers 1/2 the ring.", allowed) == []
