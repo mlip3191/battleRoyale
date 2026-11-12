@@ -1,6 +1,7 @@
 """Live DocParser: turns fetched HTML into plain text on the course document parsing endpoint."""
 
 import html as html_text
+import logging
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -12,6 +13,8 @@ from app.providers.live.http import ProviderError, get_json, post_json
 
 if TYPE_CHECKING:
     from app.providers.registry import ServiceConfig
+
+logger = logging.getLogger(__name__)
 
 PROMPT_PATH = Path(__file__).parents[3] / "prompts" / "doc-parse-html.md"
 # Converting a long page piece takes far longer than a normal call, so it has its own limit.
@@ -90,13 +93,16 @@ class LiveDocParser:
         pieces = split_pieces(strip_markup(data.decode("utf-8", errors="replace")))
         return "\n".join([await self._parse_or_split(piece) for piece in pieces])
 
-    # Convert a piece; if the reply is cut off, retry it as two smaller pieces.
+    # Convert a piece; a cut-off reply is retried as two halves. A small piece that still loops
+    # uses the page's own text with its tags removed, so no words or numbers are lost or invented.
     async def _parse_or_split(self, piece: str) -> str:
         try:
             return await self._parse_piece(piece)
         except CutOffReply:
             if len(piece) <= MIN_PIECE_CHARS:
-                raise
+                logger.warning("Parser looped on a %d-character piece; used its text.", len(piece))
+                return clean_reply(piece)
+        logger.info("Parser reply cut off; splitting a %d-character piece.", len(piece))
         halves = split_pieces(piece, limit=len(piece) // 2 + 1)
         return "\n".join([await self._parse_or_split(half) for half in halves])
 
