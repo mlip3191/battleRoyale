@@ -162,7 +162,8 @@ class IndexedSheets:
         for key in [*wanted, base]:
             if key in self.index:
                 return self.index[key]
-        raise BenchmarkError(f"no stat sheet for {fighter.entity!r} (variant {fighter.variant!r})")
+        suffix = f" (variant {fighter.variant!r})" if fighter.variant else ""
+        raise BenchmarkError(f"no stat sheet for {fighter.entity!r}{suffix}")
 
 
 def _load_sheets_from(directory: Path, patterns: tuple[str, ...]) -> list[StatSheet]:
