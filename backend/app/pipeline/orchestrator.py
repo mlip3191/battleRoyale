@@ -36,6 +36,10 @@ STUB = "stub"
 SIMULATE_FAILED = "The simulation hit a snag, so there's no verdict this time. Please try again."
 RESEARCH_FAILED = "We couldn't look up these fighters this time. Please try again."
 RESEARCH_TOO_SLOW = "Looking up the fighters took too long. Please try again."
+# No "try again": the same fight would run past its budget again.
+SIMULATE_TOO_SLOW = "That fight is too big to simulate quickly. Try smaller numbers."
+# What to tell the user when a required stage runs past its budget.
+TOO_SLOW = {"research": RESEARCH_TOO_SLOW, "simulate": SIMULATE_TOO_SLOW}
 UNEXPECTED = "Something went wrong behind the scenes. Please try again."
 CANCELLED = "This battle was stopped before it finished. Please try again."
 # Plain notes for stages that ended with a stand-in; the battle carries on without them.
@@ -151,7 +155,7 @@ async def _required[T](stage: str, work: Callable[[], Awaitable[T]], failed: str
         raise
     except TimeoutError as error:
         logger.warning("stage %s ran past its budget", stage)
-        raise StageFailed(RESEARCH_TOO_SLOW if stage == "research" else failed) from error
+        raise StageFailed(TOO_SLOW.get(stage, failed)) from error
     except Exception as error:
         logger.exception("stage %s failed", stage)
         raise StageFailed(failed) from error
