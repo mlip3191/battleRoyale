@@ -9,10 +9,9 @@ simulate failing fails the battle; any later stage failing ends "fallback" and t
 goes on. The battle is "done" if and only if simulate succeeded, and it never stays "running".
 
 TODO, remaining A05 pieces (issue #36):
-- part 3: the real challenger stage (StructuredLLM over seed and cached fighters only, then
-  simulation.test_challengers), replacing the stub in stages.py.
 - part 4: save the BattleRecord to the `battles` table after every change (store.py is memory
-  only), and reuse the stored result for the same matchup and sheet hashes (cache).
+  only), and reuse the stored result for the same matchup and sheet hashes (cache); feed the
+  cached fighters to the challenger (`challenger.cached_sheets`).
 - when the owning modules land, swap the stubs in stages.py for real calls: research
   (G04 get_stat_sheet, with the all-estimate fallback sheet and banner), scripts (A06),
   audio and music (A07), images (A08). Stub output is not saved to the record today.
@@ -51,6 +50,12 @@ FALLBACK_DETAILS = {
     "music": "No music this time.",
     "images": "Placeholder shapes instead of pictures this time.",
 }
+# Notes for a stage whose fallback path still produced something worth saving.
+FALLBACK_WITH_VALUE = {
+    "challenger": "Next challenger picked by quick tests of seed fighters this time.",
+}
+# For a stage with a saved stand-in value but no note of its own above.
+FALLBACK_WITH_VALUE_GENERIC = "A quick stand-in was used for this step this time."
 
 # Running battles; holding a reference keeps a task from being garbage-collected mid-fight.
 _tasks: set[asyncio.Task[None]] = set()
@@ -120,7 +125,7 @@ async def _after_simulate(
                 battle_id,
                 store,
                 "challenger",
-                lambda: stages.challenger(found, result),
+                lambda: stages.challenger(matchup, found, result),
                 "challenger",
             )
         )
@@ -164,7 +169,8 @@ async def _required[T](stage: str, work: Callable[[], Awaitable[T]], failed: str
 # Run a stage the battle can do without, within its budget. Real output is saved under
 # `field`; stub output is not (the fixtures describe a different battle). On error, timeout,
 # or a failed save the stage ends "fallback" with a plain note and None comes back, so one
-# stage's trouble never cancels its siblings.
+# stage's trouble never cancels its siblings. A stage that reports its own fallback also ends
+# "fallback", keeping any value it still found.
 async def _optional[T](
     battle_id: str,
     store: BattleStore,
@@ -175,9 +181,17 @@ async def _optional[T](
     await store.set_stage(battle_id, stage, "running")
     try:
         out = await asyncio.wait_for(work(), stages.STAGE_BUDGETS_S[stage])
-        if not out.stub:
+        if not out.stub and out.value is not None:
             await _save(battle_id, store, field, out.value)
-        await store.set_stage(battle_id, stage, "done", STUB if out.stub else None)
+        if out.fallback:
+            note = (
+                FALLBACK_DETAILS[stage]
+                if out.value is None
+                else FALLBACK_WITH_VALUE.get(stage, FALLBACK_WITH_VALUE_GENERIC)
+            )
+            await store.set_stage(battle_id, stage, "fallback", note)
+        else:
+            await store.set_stage(battle_id, stage, "done", STUB if out.stub else None)
         return out
     except Exception:
         logger.warning("battle %s: stage %s fell back", battle_id, stage, exc_info=True)
