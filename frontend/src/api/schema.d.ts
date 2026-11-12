@@ -148,6 +148,12 @@ export interface components {
              * @default false
              */
             fallback: boolean;
+            /**
+             * Script Kind
+             * @description For narration_audio: which Script it reads. None for every other kind.
+             * @default null
+             */
+            script_kind: ("intro" | "play_by_play" | "outro") | null;
         };
         /**
          * BattleCreated
