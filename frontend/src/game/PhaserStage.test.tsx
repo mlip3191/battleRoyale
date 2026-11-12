@@ -9,10 +9,11 @@ import {
 } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import type { BattleRecord, SimulationResult } from "../api/client.ts";
+import type { Asset, BattleRecord, SimulationResult } from "../api/client.ts";
 import done from "../fixtures/battle-record-done.json";
 import type { BattleStage } from "./BattleScene.ts";
 import { games } from "./fake-phaser.ts";
+import type { SideLayout } from "./layout.ts";
 import PhaserStage from "./PhaserStage.tsx";
 
 vi.mock("phaser", async () => (await import("./fake-phaser.ts")).fakePhaser);
@@ -283,4 +284,112 @@ test("normal motion: a note explains the damage numbers' unit", async () => {
   await sceneOf();
   expect(screen.getByText(/relative hit points/)).toBeTruthy();
   expect(screen.queryByText(/key moments only/)).toBeNull();
+});
+
+// The options a game's scene was built with.
+const optsOf = (index: number) =>
+  (
+    games[index].config.scene[0] as unknown as {
+      opts: { battlefieldUrl: string | null; layouts: SideLayout[] };
+    }
+  ).opts;
+
+test("pictures that arrive after the stage started get a fresh stage that draws them", async () => {
+  const el = (assets: Asset[]) => (
+    <PhaserStage
+      battleId="b1"
+      result={result}
+      matchup={battle.matchup}
+      assets={assets}
+    />
+  );
+  const view = render(el([]));
+  await sceneOf(0);
+  expect(optsOf(0).battlefieldUrl).toBeNull();
+  view.rerender(el(structuredClone(battle.assets)));
+  await sceneOf(1);
+  expect(games[0].destroy).toHaveBeenCalledTimes(1);
+  expect(optsOf(1).battlefieldUrl).toBe("/media/battlefields/forest.png");
+  expect(optsOf(1).layouts.map((l) => l.spriteUrl)).toEqual([
+    "/media/sprites/grizzly-bear.png",
+    "/media/sprites/gray-wolf.png",
+  ]);
+  // New sound or the same pictures again never restart it.
+  view.rerender(
+    el([
+      ...structuredClone(battle.assets),
+      { ...battle.assets[0], asset_id: "x", kind: "music" },
+    ]),
+  );
+  await new Promise((r) => setTimeout(r, 20));
+  expect(games).toHaveLength(2);
+});
+
+test("keyboard: Skip to end moves focus to Replay instead of losing it", async () => {
+  render(stageEl());
+  await sceneOf();
+  const skip = screen.getByRole("button", { name: "Skip to end" });
+  skip.focus();
+  fireEvent.click(skip);
+  expect(document.activeElement).toBe(
+    screen.getByRole("button", { name: "Replay" }),
+  );
+});
+
+test("keyboard: the fight ending under Pause moves focus to Replay", async () => {
+  render(stageEl());
+  const scene = await sceneOf();
+  fireEvent.click(screen.getByRole("button", { name: "Play" }));
+  screen.getByRole("button", { name: "Pause" }).focus();
+  runFrames(scene);
+  expect(document.activeElement).toBe(
+    screen.getByRole("button", { name: "Replay" }),
+  );
+});
+
+test("keyboard: Replay moves focus to Pause once the fresh game is ready", async () => {
+  render(stageEl());
+  await sceneOf();
+  fireEvent.click(screen.getByRole("button", { name: "Skip to end" }));
+  const replay = screen.getByRole("button", { name: "Replay" });
+  replay.focus();
+  fireEvent.click(replay);
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Pause" }),
+    ),
+  );
+});
+
+test("keyboard: the page can hand focus to Play/Pause when the stage is ready", async () => {
+  const claimFocus = vi.fn(() => true);
+  render(
+    <PhaserStage
+      result={result}
+      matchup={battle.matchup}
+      autoPlay
+      claimFocus={claimFocus}
+    />,
+  );
+  const pause = await screen.findByRole("button", { name: "Pause" });
+  await waitFor(() => expect(document.activeElement).toBe(pause));
+  expect(claimFocus).toHaveBeenCalledTimes(1);
+});
+
+test("keyboard: focus elsewhere is left alone when the stage gets ready or ends", async () => {
+  render(
+    <>
+      <button type="button">Elsewhere</button>
+      <PhaserStage
+        result={result}
+        matchup={battle.matchup}
+        claimFocus={() => false}
+      />
+    </>,
+  );
+  const elsewhere = screen.getByRole("button", { name: "Elsewhere" });
+  elsewhere.focus();
+  await sceneOf();
+  fireEvent.click(screen.getByRole("button", { name: "Skip to end" }));
+  expect(document.activeElement).toBe(elsewhere);
 });
