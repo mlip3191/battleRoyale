@@ -37,6 +37,21 @@ def fighter_slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
+# Other spellings and word forms the seed lookup should treat as the sheet's word.
+# Add a word here when a new seed sheet needs another spelling or plural.
+_ALIASES = {
+    "grey": "gray",
+    "wolves": "wolf",
+    "ducks": "duck",
+}
+
+
+def _canonical_slug(name: str) -> str:
+    """Slug a name, then map known alternate spellings to the sheet's word."""
+    parts = [_ALIASES.get(part, part) for part in fighter_slug(name).split("-") if part]
+    return "-".join(parts)
+
+
 # The hand-verified sheet for a fighter, or None when there is no seed sheet for it.
 # Live intake may put a descriptive word in variant ("grizzly" + "bear"), or drop it
 # from both fields and leave it only in raw ("a grizzly bear" + entity "bear").
@@ -59,7 +74,7 @@ def find_seed_sheet(
         names.append(f"{kind} {entity}")
     names.append(entity)
     for name in names:
-        sheet = _sheet_at(fighter_slug(name), sheets_dir)
+        sheet = _sheet_at(_canonical_slug(name), sheets_dir)
         if sheet is not None:
             return sheet
     return _sheet_from_raw(entity, raw, sheets_dir)
@@ -75,15 +90,15 @@ def _sheet_at(slug: str, sheets_dir: Path) -> StatSheet | None:
 
 
 # Unique seed sheet for a live-style raw phrase: "6 gray wolves" + entity "wolf"
-# finds gray-wolf, even though "wolves" does not slug to "wolf". A vague phrase
+# finds gray-wolf; the aliases map "wolves" to "wolf". A vague phrase
 # like "a bear" matches no unique sheet (the prefix is not in the phrase).
 def _sheet_from_raw(entity: str, raw: str | None, sheets_dir: Path) -> StatSheet | None:
     if not raw or not raw.strip():
         return None
-    entity_slug = fighter_slug(entity)
+    entity_slug = _canonical_slug(entity)
     if not entity_slug:
         return None
-    raw_tokens = {part for part in fighter_slug(raw).split("-") if part and not part.isdigit()}
+    raw_tokens = {part for part in _canonical_slug(raw).split("-") if part and not part.isdigit()}
     matches: list[Path] = []
     try:
         entries = sheets_dir.iterdir()
