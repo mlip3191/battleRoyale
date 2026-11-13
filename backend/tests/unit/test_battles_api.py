@@ -19,7 +19,7 @@ from app.main import create_app
 from app.models.battle import BattleRecord, StageStatus
 from app.models.matchup import Matchup
 from app.pipeline import orchestrator, stages
-from app.pipeline.orchestrator import STUB, run_battle
+from app.pipeline.orchestrator import FALLBACK_WITH_VALUE, STUB, run_battle
 from app.pipeline.store import STAGES, BattleStore
 from app.research.seed_fighters import find_seed_sheet
 from tests.conftest import mock_settings
@@ -96,7 +96,12 @@ def test_battle_reaches_done_with_a_verdict(client: TestClient) -> None:
     assert record.result is not None
     assert record.result.runs == SIM_RUNS
     assert record.result.outcome in {"win_0", "win_1", "draw", "no_contest"}
-    assert all(stage.status == "done" for stage in record.stages)
+    assert all(stage.status == "done" for stage in record.stages if stage.stage != "script")
+    # The mock play-by-play is the template on purpose, so the script stage ends "fallback"
+    # with all three scripts still saved.
+    script = final_stage(record, "script")
+    assert (script.status, script.detail) == ("fallback", FALLBACK_WITH_VALUE["script"])
+    assert [s.kind for s in record.scripts] == ["intro", "play_by_play", "outro"]
     # The real challenger stage ran on the mock decision model and saved its pick.
     assert record.challenger is not None
     assert record.challenger.entity not in {s.display_name for s in record.stat_sheets}
@@ -107,18 +112,20 @@ def test_every_stub_stage_says_stub(client: TestClient) -> None:
     record = wait_until_finished(client, start(client, matchup_body("horse", "duck")))
     for name in STAGES:
         detail = final_stage(record, name).detail
-        if name in ("research", "simulate", "summary", "challenger", "images"):
+        if name in ("research", "simulate", "summary", "challenger", "script", "images"):
             assert detail != STUB, name
         else:
             assert detail == STUB, name
 
 
 # Each stage went running -> done exactly once; research and simulate came first, in order.
+# The script ends "fallback" instead: on mocks the play-by-play is the template on purpose.
 def assert_each_stage_ran(changes: list[StageStatus]) -> None:
     pairs = [(c.stage, c.status) for c in changes]
     assert pairs[:6] == [(stage, status) for stage in STAGES[:3] for status in ("running", "done")]
     for stage in STAGES:
-        assert [status for name, status in pairs if name == stage] == ["running", "done"], stage
+        end = "fallback" if stage == "script" else "done"
+        assert [status for name, status in pairs if name == stage] == ["running", end], stage
 
 
 async def test_new_battle_starts_with_every_stage_pending(store: BattleStore) -> None:
