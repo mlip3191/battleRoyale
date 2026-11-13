@@ -148,8 +148,8 @@ def test_live_mode_fails_fast_naming_missing_settings_but_never_values() -> None
         get_provider("chat", settings)
     assert "CHAT_LLM_MODEL" in str(error.value) and "COURSE_API_KEY" in str(error.value)
     assert DECOY_HOST not in str(error.value)
-    with pytest.raises(ProviderConfigError, match="No live 'image' adapter"):
-        get_provider("image", settings)
+    with pytest.raises(ProviderConfigError, match="No live 'tts' adapter"):
+        get_provider("tts", settings)
 
 
 def test_live_mode_builds_the_chat_adapter_and_per_service_keys_win() -> None:

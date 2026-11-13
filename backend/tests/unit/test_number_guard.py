@@ -328,3 +328,65 @@ def test_unit_fractions_beyond_thirds_are_read(text: str, value: float) -> None:
     assert not found.ordinary
     assert find_unsupported_numbers(text, parts), text
     assert find_unsupported_numbers(text, AllowedNumbers(values=frozenset({value}))) == [], text
+
+
+# Issue #249: Roman numerals, ordinals past "twentieth", more quantity words, "one hundredth",
+# and circled digits are numbers too. Each is flagged when nothing is allowed and passes when
+# its own value is allowed.
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("It's round XIV and he looks fresh", 14.0),  # Roman numeral
+        ("Round II goes to the bear.", 2.0),  # Roman numeral, no "two" pass
+        ("Round IV goes to the bear.", 4.0),  # Roman numeral
+        ("Welcome to Battle Royale MMXXVI!", 2026.0),  # Roman numeral
+        ("That is the twenty-first swing!", 21.0),  # compound ordinal
+        ("That is the thirty-third swing!", 33.0),  # compound ordinal
+        ("That is the forty-fifth swing!", 45.0),  # compound ordinal
+        ("That is the thirty third swing!", 33.0),  # compound ordinal with a space
+        ("That is the ninety-ninth swing!", 99.0),  # compound ordinal
+        ("That is the twenty-second swing!", 22.0),  # compound ordinal ending in "second"
+        ("That is the thirtieth swing!", 30.0),  # tens ordinal
+        ("That is the fortieth swing!", 40.0),  # tens ordinal
+        ("That is the hundredth swing!", 100.0),  # hundredth
+        ("A couple of punches land.", 2.0),  # couple, no "two" pass
+        ("A pair of claws swing.", 2.0),  # pair, no "two" pass
+        ("A trio of punches land.", 3.0),  # trio
+        ("A century of evolution!", 100.0),  # century
+        ("A decade of training!", 10.0),  # decade
+        ("A gross of bees pour in!", 144.0),  # gross
+        ("A myriad of bees pour in!", 10000.0),  # myriad
+        ("That is quadruple the speed!", 4.0),  # quadruple
+        ("It lasts one hundredth of a second.", 0.01),  # fraction
+        ("Bout ① goes to the bear.", 1.0),  # circled 1
+        ("Bout ③ goes to the bear.", 3.0),  # circled 3
+        ("Bout ⑳ goes to the bear.", 20.0),  # circled 20
+        ("Bout ⓪ goes to the bear.", 0.0),  # circled 0
+    ],
+)
+def test_roman_late_ordinal_quantity_and_circled_forms_are_read(text: str, value: float) -> None:
+    [found] = extract_numbers(text)
+    assert found.value == pytest.approx(value)
+    assert not found.ordinary
+    assert find_unsupported_numbers(text, AllowedNumbers()), text
+    assert find_unsupported_numbers(text, AllowedNumbers(values=frozenset({value}))) == [], text
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "I MIX it up, DID you see that CIVIL display?",  # caps words that only look Roman
+        "I think I can.",  # the pronoun "I"
+        "Round xiv in lower case is just letters.",  # Roman numerals must be all caps
+        "One punch, and these two know it.",  # ordinary "one" and "two"
+        "That is gross!",  # "gross" without a count is not 144
+        "The pair circle each other.",  # "pair" without a count is not read
+    ],
+)
+def test_words_that_look_like_new_forms_are_not_numbers(text: str) -> None:
+    assert find_unsupported_numbers(text, AllowedNumbers()) == [], text
+
+
+def test_roman_numeral_reads_original_casing() -> None:
+    assert extract_numbers("I MIX DID CIVIL") == []
+    assert [n.value for n in extract_numbers("XIV and xiv")] == [14.0]

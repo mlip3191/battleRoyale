@@ -35,6 +35,34 @@ async def post_json(
     )
 
 
+# POST multipart/form-data (text fields plus file parts) and return the parsed JSON reply,
+# with the same retries as post_json. files maps a field name to (filename, bytes, mime).
+async def post_multipart(
+    *,
+    provider: str,
+    base_url: str,
+    path: str,
+    api_key: str,
+    fields: dict[str, str],
+    files: dict[str, tuple[str, bytes, str]],
+    timeout_s: float,
+    client: httpx.AsyncClient | None = None,
+    retries: int = RETRIES,
+) -> Any:
+    return await _request_json(
+        "POST",
+        provider,
+        base_url,
+        path,
+        api_key,
+        None,
+        timeout_s,
+        client,
+        retries,
+        form=(fields, files),
+    )
+
+
 # GET a JSON reply, with the same retries as post_json.
 async def get_json(
     *,
@@ -62,17 +90,19 @@ async def _request_json(
     timeout_s: float,
     client: httpx.AsyncClient | None,
     retries: int = RETRIES,
+    form: tuple[dict[str, str], dict[str, tuple[str, bytes, str]]] | None = None,
 ) -> Any:
     headers = {"Authorization": f"Bearer {api_key}"}
+    body: dict[str, Any] = (
+        {"json": payload} if form is None else {"data": form[0], "files": form[1]}
+    )
     owned = client is None
     client = client or httpx.AsyncClient(timeout=timeout_s)
     try:
         for attempt in range(retries + 1):
             started = time.perf_counter()
             try:
-                response = await client.request(
-                    method, base_url + path, json=payload, headers=headers
-                )
+                response = await client.request(method, base_url + path, headers=headers, **body)
             except httpx.TransportError as error:
                 problem = f"{type(error).__name__}"
             else:

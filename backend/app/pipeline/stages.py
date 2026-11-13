@@ -3,7 +3,7 @@
 Each function calls the owning module's public function where it exists. Where the module is
 not built yet, a stub returns the matching contract fixture and the result says `stub=True`, so
 the orchestrator marks the stage detail "stub". Stubs remaining: scripts (A06), audio and music
-(A07), images (A08). Research reads the seed sheets until G04's get_stat_sheet lands.
+(A07). Research reads the seed sheets until G04's get_stat_sheet lands.
 """
 
 import asyncio
@@ -12,6 +12,7 @@ import json
 from dataclasses import dataclass, field
 
 from app.config import REPO_ROOT, get_settings
+from app.media import images as media_images
 from app.models.matchup import Matchup
 from app.models.media import Asset
 from app.models.narration import Script
@@ -195,9 +196,11 @@ async def music(found: Research) -> Stubbed[list[Asset]]:
     return Stubbed([_asset_fixture()], stub=True)
 
 
-# Step 6 (stub until A08): fighter sprites and the battlefield.
+# Step 6: fighter sprites and the battlefield (media/images.py, A08). Pictures that could not be
+# drawn come back as placeholders (fallback=True, no URL); then the stage ends "fallback".
 async def images(matchup: Matchup, found: Research) -> Stubbed[list[Asset]]:
-    return Stubbed([_asset_fixture()], stub=True)
+    assets = await media_images.make_images(matchup, found.sheets)
+    return Stubbed(assets, fallback=any(asset.fallback for asset in assets))
 
 
 def _asset_fixture() -> Asset:
