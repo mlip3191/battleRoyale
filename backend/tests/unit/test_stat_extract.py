@@ -107,7 +107,7 @@ def test_a_value_outside_the_sanity_bounds_is_rejected(caplog) -> None:
     passages = [Passage(1, "Cat", URL, "CC BY-SA 4.0", None, "It runs at 5000 km/h.", 0.1)]
     reply = answer(5000, "km/h", "It runs at 5000 km/h.", passage=1)
     with caplog.at_level(logging.WARNING):
-        assert verified_value(StatName.SPEED, reply, passages, {}) is None
+        assert verified_value(StatName.SPEED, reply, passages, {URL: WHEN}) is None
     assert "outside" in caplog.text
 
 
@@ -239,3 +239,68 @@ def test_the_unit_must_follow_the_number_in_the_quote(caplog) -> None:
 )
 def test_number_has_unit_in_quote(number, unit, quote, ok) -> None:
     assert number_has_unit_in_quote(number, unit, quote) is ok
+
+
+@pytest.mark.parametrize(
+    ("passage", "value", "quote"),
+    [
+        ("It weighs 15 kg.", 5, "5 kg"),
+        ("It weighs 0.5 kg.", 5, "5 kg"),
+        ("It weighs 1,200 kg.", 200, "200 kg"),
+        ("It holds on for 5 seconds.", 5, "5 s"),
+    ],
+)
+def test_a_quote_cut_out_of_a_bigger_number_or_word_is_rejected(passage, value, quote) -> None:
+    passages = [Passage(1, "Cat", URL, "CC BY-SA 4.0", None, passage, 0.1)]
+    stat = StatName.ENDURANCE if quote.endswith(" s") else StatName.MASS
+    reply = answer(value, quote.split(" ")[1], quote, passage=1)
+    assert verified_value(stat, reply, passages, {URL: WHEN}) is None
+
+
+@pytest.mark.parametrize(
+    ("number", "unit", "quote"),
+    [
+        (5, "m", "it swims at 5 m/s"),
+        (5, "kg", "a load of 5 kg/m"),
+        (5, "in", "about 5 in the wild"),
+        (5, "mm", "about 5 Mm across"),
+    ],
+)
+def test_a_unit_running_into_another_is_rejected(number, unit, quote) -> None:
+    assert not number_has_unit_in_quote(number, unit, quote)
+
+
+def test_real_units_still_match_after_tightening() -> None:
+    assert number_has_unit_in_quote(12, "in", "about 12 in (30 cm) long")
+    assert number_has_unit_in_quote(5, "kg", "weighs 4–5 kg.")
+    assert number_has_unit_in_quote(5, "m/s", "runs at 5 m/s")
+    assert number_has_unit_in_quote(13, "Minutes", "for up to 13 minutes")
+
+
+def test_unexpected_errors_extract_nothing(monkeypatch) -> None:
+    async def evidence(connection, embedder, reranker, fighter_id, stat):
+        return PASSAGES
+
+    monkeypatch.setattr(extract, "evidence_for", evidence)
+    not_json = FakeChat(ValueError("200 reply that isn't JSON"))
+    assert (
+        asyncio.run(extract.extract_stat(None, (not_json, None, None), CAT, StatName.MASS)) is None
+    )
+
+    async def broken(connection, embedder, reranker, fighter_id, stat):
+        raise ValueError("embedder reply isn't JSON")
+
+    monkeypatch.setattr(extract, "evidence_for", broken)
+    assert (
+        asyncio.run(extract.extract_stat(None, (FakeChat(), None, None), CAT, StatName.MASS))
+        is None
+    )
+
+
+def test_a_page_with_no_fetch_date_or_a_huge_quote_is_rejected() -> None:
+    quote = "typically weigh 4–5 kg"
+    assert verified_value(StatName.MASS, answer(5, "kg", quote), PASSAGES, {}) is None
+    long_passage = "x " * 200 + quote
+    passages = [Passage(1, "Cat", URL, "CC BY-SA 4.0", None, long_passage, 0.1)]
+    reply = answer(5, "kg", long_passage, passage=1)
+    assert verified_value(StatName.MASS, reply, passages, {URL: WHEN}) is None

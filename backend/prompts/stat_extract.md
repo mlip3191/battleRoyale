@@ -18,10 +18,11 @@ What each stat means:
 
 How to answer:
 1. Find the sentence that states this stat for this fighter, with a number written in digits.
-   Prefer the figure for a typical adult. If the sentence gives a range, use its upper figure.
-   If it gives an average, use the average.
+   Prefer the figure for a typical adult. If the sentence states an average or typical
+   figure, use that. Otherwise, if it gives only a range, use the range's upper figure.
 2. "quote" is that sentence (or the part of it holding the number), copied character for
-   character from the passage, with the number in it.
+   character from the passage, with the number and its unit in it. Start and end on whole
+   words: never cut a number or a word in half. Keep it under 300 characters.
 3. "value" is the number exactly as the quote writes it, in the quote's unit, with no
    conversion (for "9.0 lb", the value is 9.0 and the unit is "lb").
 4. "unit" is the unit as the quote writes it, such as "kg", "lb", "cm", "ft", "km/h", "mph",
@@ -33,6 +34,6 @@ How to answer:
    than a wrong number.
 
 Reply with JSON only, matching the schema:
-{"found": true, "passage": 2, "value": 9.0, "unit": "lb", "quote": "..."}
+{"found": true, "passage": <passage number>, "value": <number>, "unit": "<unit>", "quote": "<sentence>"}
 or
 {"found": false, "passage": null, "value": null, "unit": null, "quote": null}
