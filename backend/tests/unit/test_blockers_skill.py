@@ -9,6 +9,7 @@ prove a real Windows machine works.
 
 import importlib.util
 import io
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -164,3 +165,94 @@ def test_main_prints_on_a_windows_console_with_you_first(
     assert "🟠 P1" in out
     assert out.index("**Dillon** (you)") < out.index("**Adam**")
     assert "PR #2: first review (by José). *Café 🔴*" in out
+
+
+# A teammate's PR that touches a critical file, so "Critical files approval" fails until the PM
+# approves. `reviews` and `commits` vary per test (#277).
+def critical_pr(reviews: list[dict[str, Any]], commits: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "number": 9,
+        "title": "Edit ARCHITECTURE",
+        "author": {"login": "afondale"},
+        "isDraft": False,
+        "baseRefName": "main",
+        "headRefName": "branch-9",
+        "reviewDecision": "",
+        "reviews": reviews,
+        "reviewRequests": [],
+        "statusCheckRollup": [{"name": "Critical files approval", "conclusion": "FAILURE"}],
+        "mergeable": "MERGEABLE",
+        "commits": commits,
+        "body": "",
+        "updatedAt": "2026-11-11T00:00:00Z",
+    }
+
+
+def review(state: str, at: str) -> dict[str, Any]:
+    return {"author": {"login": "jnunez"}, "state": state, "submittedAt": at}
+
+
+def commit(headline: str, at: str) -> dict[str, Any]:
+    return {"messageHeadline": headline, "committedDate": at}
+
+
+# Run the script with --json on one critical-files PR; return each person's actions on it.
+def actions_for(
+    blockers: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys: Any, pr: dict[str, Any]
+) -> dict[str, list[str]]:
+    monkeypatch.setattr(sys, "argv", ["blockers.py", "--json", "--as", "jnunez"])
+    monkeypatch.setattr(blockers, "gh", lambda *args: [pr] if args[:2] == ("pr", "list") else [])
+    blockers.main()
+    out: dict[str, list[str]] = {}
+    for item in json.loads(capsys.readouterr().out)["items"]:
+        out.setdefault(item["who"], []).append(item["action"])
+    return out
+
+
+FIRST = commit("Edit ARCHITECTURE", "2026-11-10T10:00:00Z")
+
+
+def test_no_pm_review_yet_asks_the_pm_to_review_and_approve(
+    blockers: ModuleType, team_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    actions = actions_for(blockers, monkeypatch, capsys, critical_pr([], [FIRST]))
+    assert actions["jnunez"] == ["review + approve (touches critical files)"]
+
+
+def test_a_pm_changes_request_with_no_push_leaves_the_pm_out(
+    blockers: ModuleType, team_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    pr = critical_pr([review("CHANGES_REQUESTED", "2026-11-10T12:00:00Z")], [FIRST])
+    actions = actions_for(blockers, monkeypatch, capsys, pr)
+    assert "jnunez" not in actions
+    assert actions["afondale"] == ["address José's changes request"]
+
+
+def test_a_push_after_the_changes_request_gives_the_pm_one_re_review(
+    blockers: ModuleType, team_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    fix = commit("Fix the review", "2026-11-11T09:00:00Z")
+    pr = critical_pr([review("CHANGES_REQUESTED", "2026-11-10T12:00:00Z")], [FIRST, fix])
+    actions = actions_for(blockers, monkeypatch, capsys, pr)
+    assert len(actions["jnunez"]) == 1
+    assert actions["jnunez"][0].startswith("re-review (fixes pushed after your changes request")
+
+
+def test_a_merge_only_push_still_leaves_the_pm_out(
+    blockers: ModuleType, team_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    merge = commit("Merge remote-tracking branch 'origin/main'", "2026-11-11T09:00:00Z")
+    pr = critical_pr([review("CHANGES_REQUESTED", "2026-11-10T12:00:00Z")], [FIRST, merge])
+    actions = actions_for(blockers, monkeypatch, capsys, pr)
+    assert "jnunez" not in actions
+
+
+def test_a_push_after_the_pm_approved_asks_for_a_re_approval(
+    blockers: ModuleType, team_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    later = commit("One more fix", "2026-11-11T09:00:00Z")
+    pr = critical_pr([review("APPROVED", "2026-11-10T12:00:00Z")], [FIRST, later])
+    actions = actions_for(blockers, monkeypatch, capsys, pr)
+    assert actions["jnunez"] == [
+        "re-approve on the latest commit, then re-run the critical-files check"
+    ]

@@ -235,12 +235,15 @@ def main() -> None:
                 for r in p["reviews"]
                 if r["author"]["login"] == pm and r["state"] in ("APPROVED", "CHANGES_REQUESTED")
             ]
-            act = (
-                "re-approve on the latest commit, then re-run the critical-files check"
-                if mine and mine[-1]["state"] == "APPROVED"
-                else "review + approve (touches critical files)"
-            )
-            add(tier_for(1, downstream), pm, f"PR #{n}", act, title, downstream)
+            # After the PM's changes request the ball is the author's, or (once they push) the
+            # PM's "re-review" line below covers it, so no critical-files line here (#277).
+            if not (mine and mine[-1]["state"] == "CHANGES_REQUESTED"):
+                act = (
+                    "re-approve on the latest commit, then re-run the critical-files check"
+                    if mine and mine[-1]["state"] == "APPROVED"
+                    else "review + approve (touches critical files)"
+                )
+                add(tier_for(1, downstream), pm, f"PR #{n}", act, title, downstream)
 
         # Changes requested: whoever holds the ball.
         latest = {}
