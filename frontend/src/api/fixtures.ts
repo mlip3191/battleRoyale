@@ -5,8 +5,6 @@ import battleDone from "../fixtures/battle-record-done.json";
 import intakeResult from "../fixtures/intake-result.json";
 import grizzly from "../fixtures/stat-sheet.json";
 import wolf from "../fixtures/stat-sheet-gray-wolf.json";
-import thousandVsOne from "../game/fixtures/thousand-vs-one.json";
-import twoHundredVsFive from "../game/fixtures/two-hundred-vs-five.json";
 
 type BattleRecord = components["schemas"]["BattleRecord"];
 type FighterRequest = components["schemas"]["FighterRequest"];
@@ -69,11 +67,22 @@ export function battleAt(id: string, elapsedMs: number): BattleRecord {
   };
 }
 
+// Read a crowd log out of its lazily loaded JSON module.
+const crowdLog = (file: Promise<{ default: unknown }>) =>
+  file.then((module) => module.default as SimulationResult);
+
 // Reserved ids that open a big-crowd replay at once, to check the frame rate (see
 // src/game/fixtures/README.md). Only fixtures mode knows them; the real API treats them like any id.
-export const CROWD_BATTLES = new Map<string, SimulationResult>([
-  ["thousand-vs-one", thousandVsOne as unknown as SimulationResult],
-  ["two-hundred-vs-five", twoHundredVsFive as unknown as SimulationResult],
+// Each log loads only when its id is asked for, so the big files stay out of the main bundle (#215).
+export const CROWD_BATTLES = new Map<string, () => Promise<SimulationResult>>([
+  [
+    "thousand-vs-one",
+    () => crowdLog(import("../game/fixtures/thousand-vs-one.json")),
+  ],
+  [
+    "two-hundred-vs-five",
+    () => crowdLog(import("../game/fixtures/two-hundred-vs-five.json")),
+  ],
 ]);
 
 // A side's head count, read from its opening "approach" event in the log.
@@ -93,9 +102,14 @@ const standIn = (entity: string, plural: string, count: number) =>
   }) satisfies FighterRequest;
 
 // A finished battle that replays a crowd log: stand-in ducks vs a stand-in lion, no sheets or scripts.
-export function crowdBattle(id: string): BattleRecord | null {
-  const result = CROWD_BATTLES.get(id);
-  if (!result) return null;
+// Null at once for any other id; a reserved id loads its log first.
+export function crowdBattle(id: string): Promise<BattleRecord> | null {
+  const load = CROWD_BATTLES.get(id);
+  return load ? load().then((result) => crowdRecord(id, result)) : null;
+}
+
+// The finished battle record built around one crowd log.
+function crowdRecord(id: string, result: SimulationResult): BattleRecord {
   const fighters = [
     standIn("duck", "ducks", headCount(result, 0)),
     standIn("lion", "lions", headCount(result, 1)),
@@ -123,7 +137,7 @@ export function crowdBattle(id: string): BattleRecord | null {
 // Any id works; an id seen for the first time starts its battle clock now.
 export function getBattle(id: string) {
   const crowd = crowdBattle(id);
-  if (crowd) return later(crowd);
+  if (crowd) return crowd.then(later);
   if (!started.has(id)) started.set(id, Date.now());
   return later(battleAt(id, Date.now() - started.get(id)!));
 }
