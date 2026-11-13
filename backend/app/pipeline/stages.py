@@ -9,6 +9,7 @@ reads the seed sheets until G04's get_stat_sheet lands.
 import asyncio
 import hashlib
 import json
+import logging
 from dataclasses import dataclass, field
 
 from app.config import REPO_ROOT, get_settings
@@ -19,10 +20,14 @@ from app.models.narration import Script
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
 from app.models.stats import StatSheet
 from app.narration import writer
+from app.narration.facts import build_facts
+from app.narration.templates import template_scripts
 from app.pipeline import challenger as next_challenger
 from app.research.seed_fighters import find_seed_sheet
 from app.simulation import engine, fair
 from app.simulation.rng import make_seed
+
+logger = logging.getLogger(__name__)
 
 # Time limit per stage in seconds, from the ARCHITECTURE §4 stage budget table (research uses
 # the new-fighter budget). The orchestrator reads it on every call, so tests can shrink it.
@@ -36,6 +41,9 @@ STAGE_BUDGETS_S: dict[str, float] = {
     "music": 60.0,
     "images": 60.0,
 }
+# Share of the script budget the model writer gets; the rest leaves time to swap in the
+# templates and save them before the orchestrator's cut-off.
+SCRIPT_WRITER_SHARE = 0.8
 
 CONTRACT_FIXTURES = REPO_ROOT / "backend" / "tests" / "fixtures" / "contracts"
 NOT_FOUND = (
@@ -183,6 +191,8 @@ async def challenger(
 # Steps 4–5: intro, play-by-play, and outro scripts (narration/writer.py, A06). The outro's
 # fair-fight line needs `fair_fight` (None if the summary gave nothing). A script the model could
 # not write comes back as its template (fallback=True); then the stage ends "fallback".
+# A slow model must not leave the battle silent: if the writer runs past its share of the
+# stage budget, all three template scripts are used instead (also fallback=True).
 async def scripts(
     matchup: Matchup,
     found: Research,
@@ -190,7 +200,15 @@ async def scripts(
     fair_fight: FairFight | None = None,
 ) -> Stubbed[list[Script]]:
     counts = [fighter.count for fighter in matchup.fighters]
-    written = await writer.write_scripts(found.sheets, result, fair_fight, counts=counts)
+    deadline = STAGE_BUDGETS_S["script"] * SCRIPT_WRITER_SHARE
+    try:
+        written = await asyncio.wait_for(
+            writer.write_scripts(found.sheets, result, fair_fight, counts=counts), deadline
+        )
+    except TimeoutError:
+        logger.warning("script writer ran past %.1fs; using the template scripts", deadline)
+        facts = build_facts(found.sheets, result, fair_fight, counts)
+        written = template_scripts(facts, result)
     return Stubbed(written, fallback=any(script.fallback for script in written))
 
 

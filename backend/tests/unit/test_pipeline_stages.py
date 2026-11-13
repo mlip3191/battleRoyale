@@ -233,6 +233,25 @@ async def test_audio_and_music_still_run_when_the_script_falls_back(
     assert (stage_of(record, "audio").status, stage_of(record, "music").status) == ("done", "done")
 
 
+async def test_a_slow_script_writer_saves_template_scripts(
+    store: BattleStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A model slower than the stage budget: the battle keeps all three template scripts.
+    class SlowChat:
+        async def complete(self, *args: Any, **kwargs: Any) -> str:
+            await asyncio.sleep(TOO_LONG)
+            return ""
+
+    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "script", 0.5)
+    monkeypatch.setattr(writer, "get_provider", lambda *_a, **_k: SlowChat())
+    record = await battle(store)
+    script = stage_of(record, "script")
+    assert (script.status, script.detail) == ("fallback", FALLBACK_WITH_VALUE["script"])
+    assert [s.kind for s in record.scripts] == ["intro", "play_by_play", "outro"]
+    assert all(s.fallback for s in record.scripts)
+    assert expected_fair_line(record) in outro_lines(record)
+
+
 async def test_research_past_its_budget_fails_the_battle(
     store: BattleStore, monkeypatch: pytest.MonkeyPatch
 ) -> None:
