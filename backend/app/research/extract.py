@@ -19,7 +19,7 @@ from app.intake.llm_io import CALL_ERRORS, data_block
 from app.models.stats import Confidence, Source, StatName, StatSheet, StatValue
 from app.providers.base import ChatLLM, ChatMessage, Embedder, Reranker
 from app.research.defaults import PHYSICAL_ORDER
-from app.research.evidence_check import evidence_is_valid
+from app.research.evidence_check import evidence_is_valid, number_has_unit_in_quote
 from app.research.ranges import range_for, within_sanity_bounds
 from app.research.retrieve import Passage, evidence_for
 from app.research.statsheet import (
@@ -122,6 +122,11 @@ def verified_value(
     passage = passages[answer.passage - 1]
     if not evidence_is_valid(answer.value, answer.quote, passage.text):
         logger.warning("Rejected %s: number not in quote, or quote not in passage.", stat.value)
+        return None
+    if not number_has_unit_in_quote(answer.value, answer.unit, answer.quote):
+        logger.warning(
+            "Rejected %s: the quote doesn't give %r after the number.", stat.value, answer.unit
+        )
         return None
     try:
         value = to_stat_unit(answer.value, answer.unit, stat)

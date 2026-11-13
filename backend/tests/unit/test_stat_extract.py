@@ -11,6 +11,7 @@ from app.models.stats import ASSUMABLE_STATS, StatName
 from app.providers.live.http import ProviderError
 from app.providers.mock.text import MockChatLLM
 from app.research import extract
+from app.research.evidence_check import number_has_unit_in_quote
 from app.research.extract import (
     ExtractReply,
     ask_model,
@@ -205,3 +206,36 @@ def test_an_evidence_outage_extracts_nothing(monkeypatch) -> None:
     chat = FakeChat()
     assert asyncio.run(extract.extract_stat(None, (chat, None, None), CAT, StatName.MASS)) is None
     assert chat.calls == 0
+
+
+def test_the_unit_must_follow_the_number_in_the_quote(caplog) -> None:
+    quote = "Adult domestic cats typically weigh 4–5 kg (8.8–11.0 lb)."
+    with caplog.at_level(logging.WARNING):
+        assert check(StatName.MASS, answer(8.8, "kg", quote)) is None  # 8.8 is in lb
+    assert "after the number" in caplog.text
+    low_end = check(StatName.MASS, answer(4, "kg", quote))  # "4–5 kg": the range's unit
+    assert low_end is not None and low_end.value == 4.0
+    assert (
+        check(
+            StatName.SPEED,
+            answer(1.5, "km/h", "They run at up to 48 km/h and stand about 1.5 ft tall"),
+        )
+        is None
+    )
+
+
+@pytest.mark.parametrize(
+    ("number", "unit", "quote", "ok"),
+    [
+        (13, "minutes", "for up to 13 minutes", True),
+        (13, "minute", "for up to 13 minutes", True),
+        (5, "kg", "weighs 4 to 5 kg", True),
+        (4, "kg", "weighs 4 to 5 kg", True),
+        (1593.8, "Newtons", "a bite force of 1593.8 Newtons (162.5 kgf)", True),
+        (162.5, "N", "a bite force of 1593.8 Newtons (162.5 kgf)", False),
+        (5, "m", "about 5 mm long", False),
+        (5, "", "about 5 kg", False),
+    ],
+)
+def test_number_has_unit_in_quote(number, unit, quote, ok) -> None:
+    assert number_has_unit_in_quote(number, unit, quote) is ok
