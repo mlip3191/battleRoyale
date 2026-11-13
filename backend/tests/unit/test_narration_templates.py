@@ -400,6 +400,45 @@ def test_fair_fight_line_names_the_fighters_in_plain_english(
     assert find_unsupported_numbers(text, facts.allowed) == []
 
 
+# Issue #250 review: a proper first word keeps its capital ("African elephants", not "african").
+@pytest.mark.parametrize(
+    ("seed", "count", "said"),
+    [
+        ("african-elephant.json", 3, "About 3 African elephants make it a coin flip"),
+        ("roman-legionary.json", 2, "About 2 Roman legionaries make it a coin flip"),
+        ("african-lion.json", 2, "About 2 African lions make it a coin flip"),
+    ],
+)
+def test_fair_fight_line_keeps_proper_adjectives_capitalized(
+    seed: str, count: int, said: str
+) -> None:
+    facts = _fair_facts(_sheet(seed), count)
+    text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
+    assert text == f"Want a fair fight? {said}, winning 49% of the time."
+    assert find_unsupported_numbers(text, facts.allowed) == []
+
+
+# Casing and irregular plurals for names with no seed sheet, renamed from the gorilla sheet.
+@pytest.mark.parametrize(
+    ("name", "count", "said"),
+    [
+        ("House mouse", 3, "About 3 house mice make it a coin flip"),
+        ("Triceratops", 2, "About 2 triceratops make it a coin flip"),
+        ("Siberian tiger", 2, "About 2 Siberian tigers make it a coin flip"),
+        ("Komodo dragon", 2, "About 2 Komodo dragons make it a coin flip"),
+        ("Nile crocodile", 4, "About 4 Nile crocodiles make it a coin flip"),
+    ],
+)
+def test_fair_fight_line_pins_casing_and_irregular_plurals(
+    name: str, count: int, said: str
+) -> None:
+    sheet = _sheet("gorilla.json").model_copy(update={"display_name": name})
+    facts = _fair_facts(sheet, count)
+    text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
+    assert text == f"Want a fair fight? {said}, winning 49% of the time."
+    assert find_unsupported_numbers(text, facts.allowed) == []
+
+
 # The line is still number-guarded: a count that is not in the facts falls back.
 def test_fair_fight_line_with_an_unsupported_count_still_falls_back() -> None:
     facts = _fair_facts(_sheet("gorilla.json"), 3)

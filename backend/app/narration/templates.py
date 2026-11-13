@@ -244,11 +244,27 @@ def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Scri
     return Script(kind="play_by_play", lines=lines, fallback=True)
 
 
+# First words that are proper adjectives or place names, so they keep their capital after a count:
+# "3 African elephants", not "3 african elephants" (#250).
+PROPER_FIRST_WORDS = frozenset(
+    {
+        "African", "American", "Antarctic", "Arabian", "Arctic", "Asian", "Atlantic",
+        "Australian", "Aztec", "Bengal", "Bornean", "Burmese", "Canada", "Chinese", "Egyptian",
+        "European", "Galapagos", "German", "Gila", "Greek", "Greenland", "Highland", "Himalayan",
+        "Indian", "Japanese", "Kodiak", "Komodo", "Labrador", "Maasai", "Mongol", "Nile",
+        "Norse", "Pacific", "Persian", "Roman", "Shetland", "Siberian", "Spartan", "Sumatran",
+        "Tasmanian", "Viking", "Zulu",
+    }
+)  # fmt: skip
+
+
 # A fighter's name said after a count: "Gray wolf" -> "gray wolves", or "gray wolf" for one.
 def counted_name(name: str, count: int) -> str:
     """Lower-case the first letter of an ordinary name ("Gorilla"), keep "T. rex" or "TV" as is,
+    keep a proper first word such as "African" or "Roman" (PROPER_FIRST_WORDS) capitalized,
     and use the intake parser's plural rules (#236) when more than one fights."""
-    noun = name[:1].lower() + name[1:] if name[1:2].islower() else name
+    proper = name.split(" ", 1)[0] in PROPER_FIRST_WORDS
+    noun = name[:1].lower() + name[1:] if name[1:2].islower() and not proper else name
     return noun if count == 1 else plural(noun)
 
 
