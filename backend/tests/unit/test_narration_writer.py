@@ -426,7 +426,7 @@ async def test_outro_placeholders_are_filled_with_real_numbers() -> None:
     assert outro.fallback is False
     assert f"Grizzly bear took it {facts.win_pct[0]}% of the time across 1,000" in text
     assert "The deciding factor tonight: sheer mass." in text
-    assert "About 3 of Gorilla makes it a coin flip, winning 50% of the time." in text
+    assert "About 3 gorillas make it a coin flip, winning 50% of the time." in text
     assert "{" not in text and "}" not in text
 
 
