@@ -10,7 +10,7 @@ import asyncio
 import json
 import logging
 import sqlite3
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -36,6 +36,10 @@ logger = logging.getLogger(__name__)
 PROMPT_NAME = "stat_extract"
 PROMPT_PATH = Path(__file__).parents[2] / "prompts" / f"{PROMPT_NAME}.md"
 ATTEMPTS = 2
+# A quote longer than this holds too many numbers to pin one down; it is rejected.
+MAX_QUOTE_CHARS = 300
+# At most this many stats are extracted at once, so one sheet can't flood the providers.
+PARALLEL_STATS = 3
 # Stats a ramming machine always gets from the ram formula, so they are never extracted.
 RAM_DERIVED = (StatName.ATTACK_FORCE, StatName.ATTACK_RATE)
 
@@ -119,7 +123,13 @@ def verified_value(
     if not 1 <= answer.passage <= len(passages):
         logger.warning("Rejected %s: passage %s doesn't exist.", stat.value, answer.passage)
         return None
+    if len(answer.quote) > MAX_QUOTE_CHARS:
+        logger.warning("Rejected %s: the quote is over %s characters.", stat.value, MAX_QUOTE_CHARS)
+        return None
     passage = passages[answer.passage - 1]
+    if passage.url not in retrieved:
+        logger.warning("Rejected %s: no fetch date stored for its page.", stat.value)
+        return None
     if not evidence_is_valid(answer.value, answer.quote, passage.text):
         logger.warning("Rejected %s: number not in quote, or quote not in passage.", stat.value)
         return None
@@ -143,7 +153,7 @@ def verified_value(
             title=passage.doc_title,
             url=passage.url,
             quote=answer.quote,
-            retrieved_at=retrieved.get(passage.url, datetime.now(UTC)),
+            retrieved_at=retrieved[passage.url],
             license=passage.license,
         ),
         confidence=Confidence.MEDIUM,
@@ -177,17 +187,19 @@ async def extract_stat(
     stat: StatName,
 ) -> StatValue | None:
     chat, embedder, reranker = providers
+    # Anything unexpected (a reply that isn't JSON, a bad stored URL or date, no knowledge base
+    # yet) means nothing extracted for this stat, never a failed sheet.
     try:
         passages = await evidence_for(connection, embedder, reranker, profile.fighter_id, stat)
-    except CALL_ERRORS as error:
-        logger.warning("No evidence for %s (%s).", stat.value, type(error).__name__)
+        if not passages:
+            return None
+        answer = await ask_model(chat, profile, stat, passages)
+        if answer is None:
+            return None
+        return verified_value(stat, answer, passages, fetch_dates(connection, profile.fighter_id))
+    except (*CALL_ERRORS, ValueError, sqlite3.Error) as error:
+        logger.warning("Nothing extracted for %s (%s).", stat.value, type(error).__name__)
         return None
-    if not passages:
-        return None
-    answer = await ask_model(chat, profile, stat, passages)
-    if answer is None:
-        return None
-    return verified_value(stat, answer, passages, fetch_dates(connection, profile.fighter_id))
 
 
 # The physical stats worth asking the model about: not filled by a stored fact, and not one a
@@ -208,8 +220,12 @@ async def build_sheet_with_evidence(
     facts = load_facts(connection, profile.fighter_id)
     filled = {stat for stat in PHYSICAL_ORDER if stat_from_facts(stat, facts) is not None}
     wanted = stats_to_extract(profile, filled)
-    values = await asyncio.gather(
-        *(extract_stat(connection, providers, profile, stat) for stat in wanted)
-    )
+    limit = asyncio.Semaphore(PARALLEL_STATS)
+
+    async def one(stat: StatName) -> StatValue | None:
+        async with limit:
+            return await extract_stat(connection, providers, profile, stat)
+
+    values = await asyncio.gather(*(one(stat) for stat in wanted))
     extracted = {stat: value for stat, value in zip(wanted, values, strict=True) if value}
     return build_stat_sheet(profile, facts, lambda _profile, stat: extracted.get(stat))
