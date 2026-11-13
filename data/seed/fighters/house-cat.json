@@ -1,0 +1,145 @@
+{
+  "fighter_id": "house-cat",
+  "display_name": "House cat",
+  "media_name": "house cat",
+  "category": "mammal",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "teeth",
+    "claws"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 5.0,
+      "unit": "kg",
+      "source": {
+        "title": "Cat",
+        "url": "https://en.wikipedia.org/w/index.php?title=Cat&oldid=1383752142",
+        "quote": "Adult domestic cats typically weigh 4–5 kg (8.8–11.0 lb).",
+        "retrieved_at": "2026-11-13T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 4.0,
+      "high": 5.0,
+      "note": "Upper figure of the typical adult range; the source gives no mean."
+    },
+    "size_m": {
+      "value": 0.46,
+      "unit": "m",
+      "source": {
+        "title": "Cat",
+        "url": "https://en.wikipedia.org/w/index.php?title=Cat&oldid=1383752142",
+        "quote": "It averages about 46 cm (18 in) in head-to-body length and 23–25 cm (9.1–9.8 in) in height, with about 30 cm (12 in) long tails.",
+        "retrieved_at": "2026-11-13T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 0.414,
+      "high": 0.506,
+      "note": "Average head-and-body length, tail not counted. Range is the standard +/-10%."
+    },
+    "top_speed_mps": {
+      "value": 12.0,
+      "unit": "m/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 6.0,
+      "high": 18.0,
+      "note": "No published top speed found for this animal (the Cat article gives none, and Garland 1983's table has no domestic cat); category default (estimate 1 of 3, allowed by D-55)."
+    },
+    "attack_force_n": {
+      "value": 219.0,
+      "unit": "N",
+      "source": {
+        "title": "Craniometric Characteristics of Selected Carnivora Species Kept in Captivity in Relation to Bite Force and Bending Strength of the Upper Canines (Różycka et al. 2024, Animals 14(9):1367)",
+        "url": "https://doi.org/10.3390/ani14091367",
+        "quote": "The bite force of smaller cats, such as domestic cats, is around 219–126 N on canines and 407–217 N on carnassials.",
+        "retrieved_at": "2026-11-13T00:00:00Z",
+        "license": "CC BY 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 126.0,
+      "high": 219.0,
+      "note": "Canine bite, estimated from skulls. Upper figure of the stated range; the source gives no mean (D-55)."
+    },
+    "attacks_per_s": {
+      "value": 1.5,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.75,
+      "high": 2.25,
+      "note": "No published strike rate found for this animal; category default (estimate 2 of 3, allowed by D-55)."
+    },
+    "reach_m": {
+      "value": 0.115,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.086,
+      "high": 0.144,
+      "note": "reach = 0.25 x size_m, from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.15,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.075,
+      "high": 0.225,
+      "note": "armor level 1: fur."
+    },
+    "endurance_s": {
+      "value": 300.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "No published fighting endurance found for this animal; category default (estimate 3 of 3, allowed by D-55)."
+    },
+    "aggression_0_1": {
+      "value": 0.5,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.25,
+      "high": 0.75,
+      "note": "aggression level 3: hunts or defends itself, avoids risky fights; cat fights are usually short."
+    },
+    "group_tactics_0_1": {
+      "value": 0.1,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.05,
+      "high": 0.15,
+      "note": "group tactics level 1: solitary, always hunts alone."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "a824154a8dee5c2236113bfa425fbaffb2137cc36e2f92192e54458441d83ca2"
+}
