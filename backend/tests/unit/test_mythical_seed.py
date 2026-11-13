@@ -8,6 +8,7 @@ import yaml
 from app.config import REPO_ROOT
 from app.models.stats import Ability, LoreProfile
 from app.research.seed_fighters import load_seed_fighters
+from app.safety.media_names import safe_media_name
 
 MYTHICAL_PATH = REPO_ROOT / "data" / "seed" / "mythical.yaml"
 ID_PATTERN = re.compile(r"^[a-z]+(-[a-z]+)*$")
@@ -66,3 +67,9 @@ def test_the_dragon_matches_the_showcase_plan() -> None:
     assert lore.body_analog == "saltwater crocodile"
     assert lore.size_analog == "African elephant"
     assert set(lore.abilities) == {Ability.FLIGHT, Ability.BREATH_WEAPON}
+
+
+# Every media_name must be safe to put in an image or music prompt (ARCHITECTURE section 11).
+def test_media_names_are_safe_for_prompts() -> None:
+    for creature in load_creatures():
+        assert safe_media_name(creature["media_name"]) == creature["media_name"], creature["id"]
