@@ -29,15 +29,15 @@
       "note": "Stand-in: the nominal weight of one medium crawler (Caterpillar D6), used for a generic bulldozer because the Bulldozer article gives no figures. The same article gives 16-20 t depending on configuration. Range is the standard +/-10%."
     },
     "size_m": {
-      "value": 5.578,
+      "value": 5.0,
       "unit": "m",
       "source": null,
-      "confidence": "medium",
-      "is_estimate": false,
-      "method": "derived",
-      "low": 5.386,
-      "high": 5.758,
-      "note": "size = D9 length x (mass_kg / D9 mass)^(1/3) = 8.1 m x (16,000 / 48,988)^(1/3), scaling a heavy dozer down to a medium one of the same shape. D9 figures from the Caterpillar D9 infobox (https://en.wikipedia.org/w/index.php?title=Caterpillar_D9&oldid=1382142968): \"Length 26.5 ft (8.1 m)\" and \"Weight 108,000 lb (48,988 kg)\". Low and high use the low and high mass."
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 2.5,
+      "high": 7.5,
+      "note": "No length published for a medium bulldozer (the D6 article gives none); category default (estimate 1 of 2)."
     },
     "top_speed_mps": {
       "value": 3.25,
@@ -54,7 +54,7 @@
       "method": "hand_verified",
       "low": 2.44,
       "high": 4.06,
-      "note": "Stand-in: 11.7 km/h = 3.25 m/s, the forward speed of a heavy crawler (infobox), used because no medium-dozer speed is published; crawlers of all sizes travel at similar speeds. Range is +/-25%."
+      "note": "Stand-in: 11.7 km/h = 3.25 m/s, the forward speed of a heavy crawler (Caterpillar D9 infobox), used because the D6 article gives no speed (accepted by the PM on #254). Range is +/-25%."
     },
     "attack_force_n": {
       "value": 5200.0,
@@ -63,8 +63,8 @@
       "confidence": "medium",
       "is_estimate": false,
       "method": "derived",
-      "low": 3510.0,
-      "high": 7150.0,
+      "low": 3513.6,
+      "high": 7145.6,
       "note": "Ramming machine: attack_force_n = RAM_DAMAGE_PER_MOMENTUM x mass_kg x top_speed_mps / DAMAGE_PER_NEWTON (0.005 x 16,000 x 3.25 / 0.05). The engine works out the real hit from mass and speed. Low and high use the low and high mass and speed."
     },
     "attacks_per_s": {
@@ -79,14 +79,14 @@
       "note": "Ramming machine: RAM_ATTACKS_PER_S, the engine's fixed ramming rate."
     },
     "reach_m": {
-      "value": 1.395,
+      "value": 1.25,
       "unit": "m",
       "source": null,
-      "confidence": "medium",
+      "confidence": "low",
       "is_estimate": false,
       "method": "derived",
-      "low": 1.046,
-      "high": 1.743,
+      "low": 0.94,
+      "high": 1.56,
       "note": "reach = 0.25 x size_m, from size_m."
     },
     "armor_0_1": {
@@ -109,7 +109,7 @@
       "method": "category_default",
       "low": 1800.0,
       "high": 5400.0,
-      "note": "No published operating range or fuel endurance found for this machine; category default (estimate 1 of 2)."
+      "note": "No published operating range or fuel endurance found for this machine; category default (estimate 2 of 2)."
     },
     "aggression_0_1": {
       "value": 1.0,
@@ -135,5 +135,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "81a60c63e266ca6bbfc3cd99ec10d512ea51b5dd5de02c85cb3d72025fb434ee"
+  "sheet_hash": "6ea8cb27b6b17040efb4cfb496cd1beabf24d9b0fade227b373d963b08656f53"
 }

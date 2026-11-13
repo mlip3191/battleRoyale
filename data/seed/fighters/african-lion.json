@@ -113,21 +113,15 @@
       "note": "armor level 2: thick mane over the neck."
     },
     "endurance_s": {
-      "value": 780.0,
+      "value": 300.0,
       "unit": "s",
-      "source": {
-        "title": "Lion",
-        "url": "https://en.wikipedia.org/w/index.php?title=Lion&oldid=1383140093",
-        "quote": "It can hold the prey's throat for up to 13 minutes, until the prey stops moving.",
-        "retrieved_at": "2026-11-12T00:00:00Z",
-        "license": "CC BY-SA 4.0"
-      },
+      "source": null,
       "confidence": "low",
-      "is_estimate": false,
-      "method": "hand_verified",
-      "low": 390.0,
-      "high": 1170.0,
-      "note": "Stand-in: the longest throat hold, a fighting duration. Longest, not typical; the article also says lions are not known for their stamina. Range is +/-50%."
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "No published fighting endurance found for this animal; category default (estimate 2 of 2)."
     },
     "aggression_0_1": {
       "value": 0.7,
@@ -153,5 +147,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "b19cca3f0469621b1a03992497596f015217042fa7591106f0143d7d42dd1e07"
+  "sheet_hash": "498e8af7bd1a5f110b5153956365701946e3e6915bb185bf87f1cf5953799670"
 }
