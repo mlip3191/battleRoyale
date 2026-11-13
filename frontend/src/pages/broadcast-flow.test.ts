@@ -41,6 +41,7 @@ const asset = (kind: Asset["kind"], url: string): Asset => ({
   url,
   prompt_hash: "h",
   fallback: false,
+  script_kind: null,
 });
 
 describe("show phases", () => {

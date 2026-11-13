@@ -104,7 +104,7 @@ Every value gets a `low` and `high`: the source's range if it gives one, otherwi
 - A number taken from another page as a stand-in, such as the elephant's trunk lift used as blow force, is `hand_verified`, with its quote in `source`.
 - A chase or pursuit figure isn't fighting endurance. Use the category default and keep the quote in the `note`.
 
-**G05's estimate limit.** No seed sheet may have more than 2 of its 7 physical stats as estimates. Every `category_default` counts, and `derived` values don't. The one exception, by PM decision on PR 139, is the duck and the honey badger, which may have 3 estimates, each labeled in its `note`.
+**G05's estimate limit.** No seed sheet may have more than 2 of its 7 physical stats as estimates. Every `category_default` counts, and `derived` values don't. There are four exceptions, by PM decision, each estimate labeled in its `note`: the duck and the honey badger may have 3 (PR 139), the king cobra 4 and the Roman legionary 3 (D-54, #29). The list is closed; every other sheet stays at 2 or fewer.
 
 **Machines that ram or crush.** The engine computes their damage from mass and speed and uses a fixed attack rate (task F08), but the stat sheet still requires `attack_force_n` and `attacks_per_s`, and neither may be an `assumption` on a non-mythical fighter. Mark both `derived` and store:
 
@@ -228,6 +228,7 @@ The sources approved in DECISIONS D-20. Licenses were checked against each sourc
 | **von Wachenfelt, Nilsson and Ventorp 2011** (SLU report 2011:20, *Säkra häststall*) | Horse kick force, one attributed sentence from the English conclusions | No license stated; approved by the PM for one short, attributed sentence (PR 148) | Cite the report and link its permanent page, https://res.slu.se/id/publ/34072 |
 | **IFAW, "9 mammals, sharks, and reptiles with the strongest bite"** (ifaw.org) | Gorilla bite force, one attributed sentence. It is second-hand: IFAW quotes a modeled maximum molar bite from Eng, Lieberman, Zink and Peters 2013, *Am. J. Phys. Anthropol.* 151:544, whose PDF could not be opened | Publisher copyright, not an open license; approved by the PM for one sentence, with low confidence and a ±50% range (PR 208) | Cite the IFAW page and name Eng et al. 2013 in the note. Set `license` to say it is not openly licensed. Replace with the paper's own wording once someone can open it |
 | **Rosenbaum, Vecellio and Stoinski 2016** (*Sci. Rep.* 6:37018) | How long one mountain gorilla group attack lasted, as a low-confidence stand-in for gorilla endurance | CC BY 4.0; approved by the PM (PR 208) | Cite the paper and link the authors' accepted manuscript on NSF's public access site |
+| **Nolan, Hainsworth and Rutty 2017** (*Int. J. Legal Med.* 132:229, doi:10.1007/s00414-017-1702-7) | Mean peak force of an unrestrained stab by a man's dominant hand (about 150 N), as a stand-in for a gladius thrust | CC BY 4.0; approved by the PM (#29) | Cite the paper and link its DOI |
 | **TreeOfLife-10M taxonomy metadata** (`imageomics/TreeOfLife-10M`, optional) | Common name to scientific name and class, for matching names. The taxonomy CSV only, never the images | CC0 for the compilation; images vary, and we do not use them | Dataset name and link |
 
 **Not allowed:**

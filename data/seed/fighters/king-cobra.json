@@ -1,0 +1,139 @@
+{
+  "fighter_id": "king-cobra",
+  "display_name": "King cobra",
+  "media_name": "king cobra",
+  "category": "reptile",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "teeth",
+    "venom"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 10.0,
+      "unit": "kg",
+      "source": {
+        "title": "King cobra",
+        "url": "https://en.wikipedia.org/w/index.php?title=King_cobra&oldid=1380854581",
+        "quote": "Males captured in Kerala measured up to 3.75 m (12.3 ft) and weighed up to 10 kg (22 lb).",
+        "retrieved_at": "2026-11-12T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 5.0,
+      "high": 10.0,
+      "note": "Upper figure: the heaviest male captured in Kerala. Low is the heaviest female in the next sentence (5 kg). The source gives maxima, not a mean."
+    },
+    "size_m": {
+      "value": 4.0,
+      "unit": "m",
+      "source": {
+        "title": "King cobra",
+        "url": "https://en.wikipedia.org/w/index.php?title=King_cobra&oldid=1380854581",
+        "quote": "Adult king cobras are 3.18 to 4 m (10.4 to 13.1 ft) long.",
+        "retrieved_at": "2026-11-12T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 3.18,
+      "high": 4.0,
+      "note": "Upper figure of the stated adult length range; the source gives no mean."
+    },
+    "top_speed_mps": {
+      "value": 4.0,
+      "unit": "m/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 2.0,
+      "high": 6.0,
+      "note": "No published top speed found for this animal; category default (estimate 1 of 4, allowed by D-54)."
+    },
+    "attack_force_n": {
+      "value": 300.0,
+      "unit": "N",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "No published bite force for any cobra or close relative found for this animal; category default (estimate 2 of 4, allowed by D-54)."
+    },
+    "attacks_per_s": {
+      "value": 1.0,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.5,
+      "high": 1.5,
+      "note": "No published strike rate found for this animal; category default (estimate 3 of 4, allowed by D-54)."
+    },
+    "reach_m": {
+      "value": 1.0,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.75,
+      "high": 1.25,
+      "note": "reach = 0.25 x size_m, from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.3,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.15,
+      "high": 0.45,
+      "note": "armor level 2: tough scaly skin, no bony plates."
+    },
+    "endurance_s": {
+      "value": 120.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 60.0,
+      "high": 180.0,
+      "note": "No published fighting endurance for snakes found for this animal; category default (estimate 4 of 4, allowed by D-54)."
+    },
+    "aggression_0_1": {
+      "value": 0.5,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.25,
+      "high": 0.75,
+      "note": "aggression level 3: hunts or defends itself, avoids risky fights."
+    },
+    "group_tactics_0_1": {
+      "value": 0.1,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.05,
+      "high": 0.15,
+      "note": "group tactics level 1: solitary, fights alone."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "8d98ab64e131be3235bce95c17841ea43eb34800aacb5958b04d4e68774743db"
+}
