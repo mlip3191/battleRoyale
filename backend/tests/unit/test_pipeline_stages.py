@@ -173,7 +173,11 @@ async def test_a_stage_past_its_budget_falls_back_and_the_battle_is_done(
         "fallback",
         FALLBACK_DETAILS[stage],
     )
-    others = [s for s in STAGES if s != stage]
+    # The announcer reads the scripts, so with no scripts there is no voice: captions only.
+    if stage == "script":
+        audio = stage_of(record, "audio")
+        assert (audio.status, audio.detail) == ("fallback", FALLBACK_DETAILS["audio"])
+    others = [s for s in STAGES if s != stage and not (stage == "script" and s == "audio")]
     assert all(ran_normally(record, s) for s in others)
 
 
@@ -208,8 +212,13 @@ async def test_a_failing_save_falls_back_that_stage_only(
         asset = Asset(asset_id="sprite-1", kind="sprite", url="/media/sprite-1", prompt_hash="0")
         return Stubbed([asset])
 
-    async def save_fails(*_: Any, **__: Any) -> None:
-        raise RuntimeError("disk full")
+    # Only the pictures' save fails; audio and music (real since A07) still save theirs.
+    real_add = store.add_assets
+
+    async def save_fails(battle_id: str, assets: list[Asset]) -> None:
+        if any(asset.kind == "sprite" for asset in assets):
+            raise RuntimeError("disk full")
+        await real_add(battle_id, assets)
 
     record_timeline(monkeypatch, ["summary", "challenger", "scripts", "audio", "music"])
     replace(monkeypatch, "images", real_images)
@@ -219,7 +228,8 @@ async def test_a_failing_save_falls_back_that_stage_only(
     images = stage_of(record, "images")
     assert (images.status, images.detail) == ("fallback", FALLBACK_DETAILS["images"])
     assert all(ran_normally(record, s) for s in STAGES if s != "images")
-    assert record.fair_fight is not None and record.assets == []
+    assert record.fair_fight is not None
+    assert not any(a.kind == "sprite" for a in record.assets)
 
 
 async def test_audio_and_music_still_run_when_the_script_falls_back(
@@ -227,10 +237,16 @@ async def test_audio_and_music_still_run_when_the_script_falls_back(
 ) -> None:
     replace(monkeypatch, "scripts", boom)
     record = await battle(store)
+    assert record.status == "done"
     script = stage_of(record, "script")
     assert (script.status, script.detail) == ("fallback", FALLBACK_DETAILS["script"])
     assert record.scripts == []
-    assert (stage_of(record, "audio").status, stage_of(record, "music").status) == ("done", "done")
+    # No scripts means nothing to read aloud: audio ends "fallback" (captions only, no files);
+    # the music doesn't need the scripts and is still made.
+    audio = stage_of(record, "audio")
+    assert (audio.status, audio.detail) == ("fallback", FALLBACK_DETAILS["audio"])
+    assert stage_of(record, "music").status == "done"
+    assert [a.kind for a in record.assets if a.kind in ("narration_audio", "music")] == ["music"]
 
 
 async def test_a_slow_script_writer_saves_template_scripts(
@@ -466,25 +482,57 @@ async def test_the_fair_fight_comes_from_the_real_search(store: BattleStore) -> 
 
 async def test_every_stub_stage_says_stub_and_saves_nothing(store: BattleStore) -> None:
     record = await battle(store)
-    for name in ("intake", "audio", "music"):
-        assert stage_of(record, name).detail == STUB, name
-    for name in ("research", "simulate", "summary", "challenger", "images"):
+    assert stage_of(record, "intake").detail == STUB  # the only stub left
+    for name in ("research", "simulate", "summary", "challenger", "audio", "music", "images"):
         assert stage_of(record, name).detail is None, name
     assert (stage_of(record, "script").status, stage_of(record, "script").detail) == MOCK_SCRIPT
-    # Stub output is a fixture about a different battle, so it never reaches the record;
-    # the only assets are the real (mock-drawn) sprites and battlefield, real since A08.
+    # Every asset is real: mock-drawn sprites and battlefield (A08), plus the mock announcer's
+    # three narration files and the mock music (A07).
     assert [s.kind for s in record.scripts] == ["intro", "play_by_play", "outro"]  # real (A06)
-    assert sorted(a.kind for a in record.assets) == ["battlefield", "sprite", "sprite"]
+    assert sorted(a.kind for a in record.assets) == [
+        "battlefield",
+        "music",
+        "narration_audio",
+        "narration_audio",
+        "narration_audio",
+        "sprite",
+        "sprite",
+    ]
     assert record.challenger is not None  # real since A05 part 3
 
 
-async def test_stub_stages_return_their_contract_fixtures() -> None:
-    found = await stages.research(matchup("grizzly bear", "gray wolf"))
-    result = await stages.simulate(matchup("grizzly bear", "gray wolf"), found)
-    written = await stages.scripts(matchup("grizzly bear", "gray wolf"), found, result)
-    outputs = [await stages.audio(written.value), await stages.music(found)]
-    assert all(out.stub for out in outputs)
+async def test_a_healthy_battle_saves_three_tagged_narration_files_and_one_music_file(
+    store: BattleStore,
+) -> None:
+    record = await battle(store)
+    assert record.status == "done"
+    assert (stage_of(record, "audio").status, stage_of(record, "music").status) == ("done", "done")
+    narration = [a for a in record.assets if a.kind == "narration_audio"]
+    assert [a.script_kind for a in narration] == ["intro", "play_by_play", "outro"]
+    music = [a for a in record.assets if a.kind == "music"]
+    assert len(music) == 1 and music[0].script_kind is None
+    # Only narration says which script it reads; every saved file is served from /media.
+    assert all(a.script_kind is None for a in record.assets if a.kind != "narration_audio")
+    assert all(a.url.startswith("/media/") and not a.fallback for a in narration + music)
+
+
+async def test_the_audio_and_music_stages_are_real_not_stubs() -> None:
+    fight = matchup("grizzly bear", "gray wolf")
+    found = await stages.research(fight)
+    result = await stages.simulate(fight, found)
+    written = await stages.scripts(fight, found, result)
+    voice = await stages.audio(written.value)
+    music = await stages.music(fight, found, result)
     assert not written.stub  # the scripts are real since A06
+    assert not voice.stub and not voice.fallback and voice.value is not None
+    assert [a.script_kind for a in voice.value] == ["intro", "play_by_play", "outro"]
+    assert not music.stub and not music.fallback and music.value is not None
+    assert [(a.kind, a.script_kind) for a in music.value] == [("music", None)]
+
+
+async def test_the_audio_stage_with_no_scripts_falls_back_with_nothing() -> None:
+    out = await stages.audio([])
+    assert (out.value, out.fallback, out.stub) == (None, True, False)
 
 
 async def test_the_script_stage_writes_three_real_scripts() -> None:
