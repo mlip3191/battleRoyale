@@ -185,15 +185,11 @@ async def ask_model(chat: ChatLLM, text: str) -> ParsedMatchup | None:
 # --- Wording ------------------------------------------------------------------------------
 
 
-# Plural of a lowercase name's last word: "gray wolf" -> "gray wolves" (shared helper, #258).
-plural = pluralize
-
-
 # "a goose", "an ant", "12 house cats".
 def describe(count: int, entity: str) -> str:
     if count == 1:
         return f"{'an' if entity[:1] in 'aeiou' else 'a'} {entity}"
-    return f"{count:,} {plural(entity)}"
+    return f"{count:,} {pluralize(entity)}"
 
 
 # Swap one side's words in the user's text for new words, ignoring case.
@@ -239,11 +235,11 @@ def too_many_sides(fighters: list[ParsedFighter]) -> IntakeResult:
 def not_whole(text: str, fighter: ParsedFighter, problem: str) -> IntakeResult:
     entity = normalize_entity(fighter.entity) or normalize_entity(fighter.raw)
     if problem == "zero":
-        joke = f"Zero {plural(entity)} means nobody shows up to the fight!"
+        joke = f"Zero {pluralize(entity)} means nobody shows up to the fight!"
     else:
         joke = f"Fighters come in whole numbers only. Part of a {entity} can't put up a fight!"
     options = [_replace_side(text, fighter.raw, describe(n, entity)) for n in (1, 2)]
-    return clarify(f"How many {plural(entity)} should fight?", options, f"{joke} How many?")
+    return clarify(f"How many {pluralize(entity)} should fight?", options, f"{joke} How many?")
 
 
 # A missing opponent or a fighter too vague to research.

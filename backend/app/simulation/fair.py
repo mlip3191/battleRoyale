@@ -22,12 +22,6 @@ class FairFightSearch:
     probes: int
 
 
-# "House cat", 37 -> "house cats"; "African elephant", 2 -> "African elephants". The shared
-# helper replaced a local copy that lower-cased every name ("african elephants", "tVs") and had
-# weaker plural rules ("bisons", "mans") (#258). Kept under this name for existing callers.
-plural = counted_name
-
-
 def _with_count(matchup: Matchup, side: int, count: int) -> Matchup:
     probe = matchup.model_copy(deep=True)
     probe.fighters[side].count = count
