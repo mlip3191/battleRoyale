@@ -16,10 +16,8 @@ from app.intake.llm_io import CALL_ERRORS, as_data, data_block
 from app.intake.llm_io import INPUT_END as INPUT_END  # re-exported for tests and golden checks
 from app.intake.llm_io import INPUT_START as INPUT_START
 from app.intake.rules import (
-    IRREGULAR_PLURALS,
     MULTIPLIERS,
     SCALES,
-    UNCHANGED,
     UNITS,
     clamp_count,
     find_size_reference,
@@ -40,6 +38,7 @@ from app.safety import (
     check_text_rules,
     classify_text,
 )
+from app.text import pluralize
 
 PROMPT_NAME = "intake_parse"
 PROMPT_PATH = Path(__file__).parents[2] / "prompts" / f"{PROMPT_NAME}.md"
@@ -72,7 +71,6 @@ TERRAIN_PHRASES = {
     Terrain.URBAN: " in the city",
     Terrain.MOUNTAIN: " on the mountain",
 }
-SINGULAR_TO_PLURAL = {singular: plural for plural, singular in IRREGULAR_PLURALS.items()}
 
 
 class ModelReplyError(ValueError):
@@ -187,20 +185,8 @@ async def ask_model(chat: ChatLLM, text: str) -> ParsedMatchup | None:
 # --- Wording ------------------------------------------------------------------------------
 
 
-# Plural of a lowercase name's last word: "gray wolf" -> "gray wolves".
-def plural(entity: str) -> str:
-    *head, last = entity.split(" ")
-    if last in SINGULAR_TO_PLURAL:
-        last = SINGULAR_TO_PLURAL[last]
-    elif last in UNCHANGED:
-        pass
-    elif last.endswith(("s", "x", "ch", "sh")):
-        last += "es"
-    elif len(last) > 1 and last.endswith("y") and last[-2] not in "aeiou":
-        last = last[:-1] + "ies"
-    else:
-        last += "s"
-    return " ".join([*head, last])
+# Plural of a lowercase name's last word: "gray wolf" -> "gray wolves" (shared helper, #258).
+plural = pluralize
 
 
 # "a goose", "an ant", "12 house cats".
