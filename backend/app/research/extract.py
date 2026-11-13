@@ -182,6 +182,9 @@ async def extract_stat(
     except CALL_ERRORS as error:
         logger.warning("No evidence for %s (%s).", stat.value, type(error).__name__)
         return None
+    except sqlite3.OperationalError:  # no knowledge base yet: ingest_seed was never run here
+        logger.warning("No knowledge base to search for %s.", stat.value)
+        return None
     if not passages:
         return None
     answer = await ask_model(chat, profile, stat, passages)

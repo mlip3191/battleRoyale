@@ -3,7 +3,7 @@
 Each function calls the owning module's public function where it exists. Where the module is
 not built yet, a stub returns the matching contract fixture and the result says `stub=True`, so
 the orchestrator marks the stage detail "stub". Stubs remaining: scripts (A06), audio and music
-(A07). Research reads the seed sheets until G04's get_stat_sheet lands.
+(A07). Research uses G04's sheet lookup: seed sheet, cached sheet, or a newly built one.
 """
 
 import asyncio
@@ -12,6 +12,8 @@ import json
 from dataclasses import dataclass, field
 
 from app.config import REPO_ROOT, get_settings
+from app.db.connection import connect
+from app.db.migrate import apply_migrations
 from app.media import images as media_images
 from app.models.matchup import Matchup
 from app.models.media import Asset
@@ -19,7 +21,8 @@ from app.models.narration import Script
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
 from app.models.stats import StatSheet
 from app.pipeline import challenger as next_challenger
-from app.research.seed_fighters import find_seed_sheet
+from app.providers.registry import get_provider
+from app.research.sheet_store import resolve_stat_sheet
 from app.simulation import engine, fair
 from app.simulation.rng import make_seed
 
@@ -82,13 +85,19 @@ class Research:
         return bool(self.missing_references)
 
 
-# Find one fighter's stat sheet; the single seam G04's get_stat_sheet will replace.
+# Find one fighter's stat sheet (G04): seed sheet, cached sheet, or one built and cached now.
 # variant and raw are tried as described in find_seed_sheet; size references have no
 # variant or raw, so they are looked up by the name alone through this same function.
 async def lookup_sheet(
     entity: str, variant: str | None = None, raw: str | None = None
 ) -> StatSheet | None:
-    return await asyncio.to_thread(find_seed_sheet, entity, variant, raw)
+    connection = connect()
+    try:
+        apply_migrations(connection)
+        providers = (get_provider("chat"), get_provider("embedder"), get_provider("reranker"))
+        return await resolve_stat_sheet(connection, providers, entity, variant, raw)
+    finally:
+        connection.close()
 
 
 # Step 2: look up both fighters and any size_reference entities, all at the same time.
