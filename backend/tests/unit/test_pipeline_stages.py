@@ -427,12 +427,14 @@ async def test_the_fair_fight_comes_from_the_real_search(store: BattleStore) -> 
 
 async def test_every_stub_stage_says_stub_and_saves_nothing(store: BattleStore) -> None:
     record = await battle(store)
-    for name in ("intake", "script", "audio", "music", "images"):
+    for name in ("intake", "script", "audio", "music"):
         assert stage_of(record, name).detail == STUB, name
-    for name in ("research", "simulate", "summary", "challenger"):
+    for name in ("research", "simulate", "summary", "challenger", "images"):
         assert stage_of(record, name).detail is None, name
-    # Stub output is a fixture about a different battle, so it never reaches the record.
-    assert record.scripts == [] and record.assets == []
+    # Stub output is a fixture about a different battle, so it never reaches the record;
+    # the only assets are the real (mock-drawn) sprites and battlefield, real since A08.
+    assert record.scripts == []
+    assert sorted(a.kind for a in record.assets) == ["battlefield", "sprite", "sprite"]
     assert record.challenger is not None  # real since A05 part 3
 
 
@@ -444,7 +446,6 @@ async def test_stub_stages_return_their_contract_fixtures() -> None:
         written,
         await stages.audio(written.value),
         await stages.music(found),
-        await stages.images(matchup("grizzly bear", "gray wolf"), found),
     ]
     assert all(out.stub for out in outputs)
     assert written.value[0].kind == "play_by_play"
