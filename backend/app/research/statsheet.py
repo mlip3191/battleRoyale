@@ -1,8 +1,8 @@
 """Build a fighter's stat sheet, taking each stat from the best evidence that exists (G04).
 
 Order per physical stat (docs/research.md): hand-verified seed sheet, a stored fact (Wikidata,
-then trait databases), a number extracted with a verified quote (part 2, not built yet), a value
-derived by code, then the category default. Behavioral stats are never extracted: they come from
+then trait databases), a number extracted with a verified quote (extract.py), a value derived
+by code, then the category default. Behavioral stats are never extracted: they come from
 the seed sheet or are rubric assumptions.
 """
 
@@ -78,8 +78,8 @@ class StoredFact:
     retrieved_at: datetime
 
 
-# Next level after stored facts: the chat-model extractor (part 2). Returns None when it finds
-# nothing it can verify; until part 2 lands nothing is extracted.
+# Next level after stored facts: the chat-model extractor (extract.py runs it before building,
+# since model calls are async). Returns None when it finds nothing it can verify.
 Extractor = Callable[[FighterProfile, StatName], StatValue | None]
 
 
