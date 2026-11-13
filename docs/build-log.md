@@ -96,18 +96,23 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
 
 ### MS-1 walking skeleton (due Sat Nov 14), started Nov 10, final on Nov 14
 
-- **What works (Nov 10, evening):**
-  - **Built:** the engine (F02–F06, F08 and the tournament bracket; F07, the benchmark runner, is still a draft, and swarm mode above 200 per side is known to be off until #106), the live-tested intake parser with its follow-up fixes (A02, #147), the first part of the A04 safety gate (#152), the knowledge base with retrieval and reranking (G02, G03), 7 hand-verified seed sheets (G05), the app shell, intake page and results page on fixtures (D02–D04), and the Phaser battle stage with replay controls (D05, #121, #123).
-  - **Still to land for MS-1:** the A05 stub path (#36, no PR yet) and the intake API that connects the UI to it (D08, draft #158; it was waiting on #147 and the first part of the safety gate, #152, and both are now merged). Both are planned for wave 3, so MS-1 on Nov 14 is at risk.
-  - **In review, not needed for MS-1:** the rest of A04, the Wikidata name check and the safety test cases (stacked drafts #156, #161, #164, #165 and #185; #185 closes #27).
+- **What works (Nov 12, night):**
+  - **MS-1 status:** both gaps from Nov 10 have landed: the A05 stub path that starts a battle and returns a verdict on mocks (#197) and the intake API with its one clarifying question (D08, #158). The walking skeleton is on `main`, to be confirmed by running it for the Nov 14 screenshot.
+  - **Built:** the engine (F02–F06, F08 and the tournament bracket; F07, the benchmark runner, is still a draft), with swarm mode now matching the one-by-one engine (#106), venom resolved after the fight (#107) and a proof that more fighters never hurt above the swarm threshold (#108). The live-tested intake parser and its follow-ups (A02, #147, #231, #236, #237, #239), the first part of the A04 safety gate (#152) and a mock safety classifier for offline demos (#241). The pipeline's stage graph with time budgets, its next-challenger stage, and battle persistence with a repeat-battle cache (A05, #199, #200, #203). Narration part 1: the number guard, the fact list and the template scripts (A06, #216, #217, #218), and `script_kind` on narration assets (#247). The knowledge base with retrieval and reranking (G02, G03), the seed ingest with Wikidata, PanTHERIA and AnimalTraits facts (#190, #196), the stat-sheet builder without model extraction (G04 part 1, #232) and 9 hand-verified seed sheets (G05). The app shell and intake page with its outage and expired-question messages (D02, D03, #207), the wired Results page (D04, #127, #128), the Phaser battle stage with replay controls (D05, #121, #123), and the broadcast Battle page with caption sync, sound controls and degraded modes (D07, #187, #188).
+  - **Approved or in review, not on `main` yet:** the announcer LLM writer (A06 part 2, #244, approved), fighter sprites and battlefield images (A08, #248, approved), number-guard and fair-fight wording fixes (#252 approved, #253), five more seed sheets (#243 approved, #254), swarm mode chosen by work (D-50 build, #193, changes requested), and the rest of A04 (stacked drafts #156, #161, #164, #165 and #185; #185 closes #27).
 - **What changed from the plan:**
   - **D-41:** the chat model extracts stats; port 9010 only answers decisions.
-  - **D-42/D-44:** venom is modeled and resolved after the fight (build in draft #107).
-  - **D-45:** swarm mode is to be fixed to match the one-by-one engine (fix in draft #106).
+  - **D-42/D-44:** venom is modeled and resolved after the fight (built in #107).
+  - **D-45:** swarm mode matches the one-by-one engine (built in #106).
   - **D-46:** plain-slug fighter IDs, two dataset licenses, derived machine values.
   - **D-47:** seed-sheet labeling rules.
   - **D-48:** the repo is public, after GitHub Actions stopped on the private repo for billing.
   - **D-49:** the PM or the backup may merge a teammate's approved PR after an @mention.
-  - **D-50:** swarm mode is to be chosen by how much work a fight is, not by head count (decision in review in #184; build in #183, after #106).
+  - **D-50:** swarm mode is chosen by how much work a fight is, not by head count (recorded in #184; build in review in #193).
+  - **D-51:** a bare lowercase word that matches a famous name stays a possible proper name unless the name is also a common word (build in #186).
+  - **D-52:** the intake budget is about 7 s typical with a 25 s limit, not 3 s.
+  - **D-53:** a published arm length counts as reach; an arm span alone doesn't.
+  - **D-54:** the king cobra may have 4 estimates and the Roman legionary 3.
+  - **D-55:** the house cat may have 3 estimates, a kill hold isn't fighting endurance, and the image-style templates may stay in code (in review in #256).
   - **The board:** the "PR linked → In review" automation was turned on (#172).
 - **Screenshot:** _(add on Nov 14: the matchup → verdict flow on mocks, saved in `docs/media/`)_
