@@ -330,3 +330,37 @@ test("a called-off fight says so", () => {
   show({ ...record, status: "failed", result: null });
   expect(screen.getByRole("alert").textContent).toContain("called off");
 });
+
+// A called-off battle whose research stage failed with the given detail.
+const failedWith = (detail: string | null): BattleRecord => ({
+  ...record,
+  status: "failed",
+  result: null,
+  stages: record.stages.map((s) =>
+    s.stage === "research" ? { ...s, status: "failed", detail } : s,
+  ),
+});
+const REASON =
+  "We don't have a stat sheet for 'king cobra' yet. For now, pick one of our ready-made fighters.";
+
+test("a called-off fight with a reason shows why under the called-off heading", () => {
+  show(failedWith(REASON));
+  const alert = screen.getByRole("alert");
+  expect(
+    within(alert).getByRole("heading", { name: "This fight was called off" }),
+  ).toBeTruthy();
+  expect(alert.textContent).toContain(REASON);
+});
+
+test.each([
+  ["no detail", null],
+  ["the stub marker", "stub"],
+  ["a code-style detail", "ValueError: research_failed"],
+])("a called-off fight with %s keeps the generic message", (_, detail) => {
+  show(failedWith(detail));
+  const alert = screen.getByRole("alert");
+  expect(alert.textContent).toContain(
+    "This fight was called off. Try another matchup.",
+  );
+  if (detail) expect(alert.textContent).not.toContain(detail);
+});

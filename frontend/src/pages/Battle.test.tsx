@@ -127,6 +127,41 @@ test("failed with an error too: shows only one alert", () => {
   expect(backHome().getAttribute("href")).toBe("/");
 });
 
+// A called-off battle whose research stage failed with the given detail.
+const failedWith = (detail: string | null) => ({
+  ...asRecord(running),
+  status: "failed",
+  stages: asRecord(running).stages.map((s) =>
+    s.stage === "research" ? { ...s, status: "failed", detail } : s,
+  ),
+});
+const REASON =
+  "We don't have a stat sheet for 'king cobra' yet. For now, pick one of our ready-made fighters.";
+
+test("failed with a reason: shows why under the called-off heading", () => {
+  show(failedWith(REASON));
+  const alert = screen.getByRole("alert");
+  expect(
+    within(alert).getByRole("heading", { name: "This fight was called off" }),
+  ).toBeTruthy();
+  expect(alert.textContent).toContain(REASON);
+  expect(backHome().getAttribute("href")).toBe("/");
+});
+
+test.each([
+  ["no detail", null],
+  ["the stub marker", "stub"],
+  ["a code-style detail", "ValueError: research_failed"],
+])("failed with %s: keeps the generic message", (_, detail) => {
+  show(failedWith(detail));
+  const alert = screen.getByRole("alert");
+  expect(alert.textContent).toContain(
+    "This fight was called off. Try another matchup.",
+  );
+  if (detail) expect(alert.textContent).not.toContain(detail);
+  expect(backHome().getAttribute("href")).toBe("/");
+});
+
 test("the ticker's status region stays mounted while the battle loads and runs", () => {
   const { rerender } = show(null);
   const region = screen.getByRole("status");
