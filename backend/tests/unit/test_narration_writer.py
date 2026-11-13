@@ -229,6 +229,20 @@ def test_a_name_is_never_read_as_a_number() -> None:
     assert unsupported_numbers("Seven sloths close in!", facts)
 
 
+# Issue #259: the writer masks the name in any case and in plural form, as the templates do.
+def test_a_name_is_masked_in_any_case_and_plural() -> None:
+    sample = SAMPLES[GRIZZLY]
+    data = sample.sheets[1].model_dump(mode="json") | {"display_name": "Nine-banded armadillo"}
+    sheets = (sample.sheets[0], type(sample.sheets[1]).model_validate(data))
+    facts = build_facts(sheets, sample.result, sample.fair, sample.counts)
+    assert not {7.0, 9.0} & facts.allowed.values  # "nine" only passes if the name is masked
+    assert unsupported_numbers("The Nine-banded armadillo closes in!", facts) == []
+    assert unsupported_numbers("Look at those nine-banded armadillos go!", facts) == []
+    assert unsupported_numbers("NINE-BANDED ARMADILLO IS HERE!", facts) == []
+    assert unsupported_numbers("Nine-banded armadillo wins 7 times.", facts)
+    assert unsupported_numbers("nine-banded armadillos win seven times.", facts)
+
+
 # --- c. A failing model gives templates, with no network -------------------------------------
 
 
