@@ -2,8 +2,8 @@
 
 Each function calls the owning module's public function where it exists. Where the module is
 not built yet, a stub returns the matching contract fixture and the result says `stub=True`, so
-the orchestrator marks the stage detail "stub". Stubs remaining: scripts (A06), audio and music
-(A07). Research reads the seed sheets until G04's get_stat_sheet lands.
+the orchestrator marks the stage detail "stub". Stubs remaining: audio and music (A07). Research
+reads the seed sheets until G04's get_stat_sheet lands.
 """
 
 import asyncio
@@ -18,6 +18,7 @@ from app.models.media import Asset
 from app.models.narration import Script
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
 from app.models.stats import StatSheet
+from app.narration import writer
 from app.pipeline import challenger as next_challenger
 from app.research.seed_fighters import find_seed_sheet
 from app.simulation import engine, fair
@@ -179,11 +180,18 @@ async def challenger(
     return Stubbed(pick, fallback=fallback)
 
 
-# Steps 4–5 (stub until A06): intro, play-by-play, and outro scripts.
+# Steps 4–5: intro, play-by-play, and outro scripts (narration/writer.py, A06). The outro's
+# fair-fight line needs `fair_fight` (None if the summary gave nothing). A script the model could
+# not write comes back as its template (fallback=True); then the stage ends "fallback".
 async def scripts(
-    found: Research, result: SimulationResult, fair_fight: FairFight | None = None
+    matchup: Matchup,
+    found: Research,
+    result: SimulationResult,
+    fair_fight: FairFight | None = None,
 ) -> Stubbed[list[Script]]:
-    return Stubbed([Script.model_validate(_fixture("script.json"))], stub=True)
+    counts = [fighter.count for fighter in matchup.fighters]
+    written = await writer.write_scripts(found.sheets, result, fair_fight, counts=counts)
+    return Stubbed(written, fallback=any(script.fallback for script in written))
 
 
 # Step 5 (stub until A07): the announcer's voice for the scripts.
