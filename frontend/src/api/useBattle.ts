@@ -46,6 +46,9 @@ export function useBattle(id: string) {
       } catch (e) {
         if (stopped) return "stop";
         if (e instanceof ApiError && e.status === 404) {
+          // A late 404 from an old request must not blank a newer record already on screen.
+          if (mine <= shown) return running ? "running" : "stop";
+          shown = mine;
           setView({ id, battle: null, error: NOT_FOUND });
           return "stop";
         }
@@ -82,11 +85,13 @@ export function useBattle(id: string) {
         else if (next === "retry") fallBack();
       });
     };
+    // Agreed stream format (backend/app/api/battles.py, A05 #199/#203): named events only.
+    // "stage" carries one StageStatus as JSON per stage change; "end" carries {"status": ...}
+    // once the battle stops. There are no unnamed messages. Each event just triggers a refetch.
     const listen = () => {
       source = new EventSource(battleEventsUrl(id));
       source.onopen = onUpdate; // catch anything that changed before the stream opened
-      source.onmessage = onUpdate; // unnamed events
-      source.addEventListener("stage", onUpdate); // named events, if A05 sends them
+      source.addEventListener("stage", onUpdate);
       source.addEventListener("end", onUpdate);
       source.onerror = fallBack;
     };
