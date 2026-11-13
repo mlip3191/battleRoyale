@@ -17,8 +17,15 @@ PHYSICAL_STATS = [name for name in StatName if name not in ASSUMABLE_STATS]
 RUBRIC_NOTE = re.compile(r"^(aggression|group tactics|armor|durability) level (\d|M): \S")
 MAX_ESTIMATES = 2
 # PM rulings: the duck and honey badger may have 3 (D-47 (2)), the king cobra 4 and the Roman
-# legionary 3 (D-54). The list is closed: no new entries without a PM ruling.
-EXCEPTIONS = {"duck": 3, "honey-badger": 3, "king-cobra": 4, "roman-legionary": 3}
+# legionary 3 (D-54), and the house cat 3 (D-55). The list is closed: no new entries without a
+# PM ruling.
+EXCEPTIONS = {
+    "duck": 3,
+    "honey-badger": 3,
+    "king-cobra": 4,
+    "roman-legionary": 3,
+    "house-cat": 3,
+}
 
 # Units a quote may use: as stored, km/h for m/s, cm for m (mm too when the quote says "mm"),
 # minutes for s, tonnes for kg, and kilograms of force for newtons.
@@ -105,8 +112,14 @@ class TestSeedSheet:
         assert len(estimates) <= allowed, f"{path.stem} estimates: {estimates}"
 
 
-def test_the_estimate_exceptions_are_exactly_the_ruled_four() -> None:
-    assert EXCEPTIONS == {"duck": 3, "honey-badger": 3, "king-cobra": 4, "roman-legionary": 3}
+def test_the_estimate_exceptions_are_exactly_the_ruled_five() -> None:
+    assert EXCEPTIONS == {
+        "duck": 3,
+        "honey-badger": 3,
+        "king-cobra": 4,
+        "roman-legionary": 3,
+        "house-cat": 3,
+    }
 
 
 def test_hand_verified_without_a_source_is_rejected() -> None:
