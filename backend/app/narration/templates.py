@@ -15,7 +15,7 @@ from app.models.simulation import EventType, FightEvent, SimulationResult
 from app.narration.facts import FACTOR_WORDS, KG_TO_LB, MPS_TO_KMH, FighterFacts, NarrationFacts
 from app.narration.number_guard import AllowedNumbers, find_unsupported_numbers
 from app.text import PROPER_FIRST_WORDS as PROPER_FIRST_WORDS  # shared since #258
-from app.text import counted_name
+from app.text import counted_name, pluralize
 
 MAX_LINE = 200
 MAX_HINT = 60
@@ -73,7 +73,7 @@ def line(
 # Hide the fighters' names from the number guard, so "Three-toed sloth" is not read as 3 (#259).
 def mask_names(text: str, names: Sequence[str]) -> str:
     """Replace each name and its plural, in any case, with NAME_MASK; other words are untouched."""
-    forms = {form for name in names if name for form in (name, plural(name))}
+    forms = {form for name in names if name for form in (name, pluralize(name))}
     for form in sorted(forms, key=len, reverse=True):  # longer forms first (plural before singular)
         pattern = rf"(?<!\w){re.escape(form)}(?!\w)"
         text = re.sub(pattern, NAME_MASK, text, flags=re.IGNORECASE)
