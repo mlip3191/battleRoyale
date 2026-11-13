@@ -273,6 +273,20 @@ describe("notes and verdict", () => {
     );
   });
 
+  test("a template script is not called unavailable (#270)", () => {
+    const fine = battle.stages.map((s) => ({ ...s, status: "done" as const }));
+    const withStatus = (fallbacks: string[]) =>
+      fine.map((s) =>
+        fallbacks.includes(s.stage) ? { ...s, status: "fallback" as const } : s,
+      );
+    expect(unavailableNote(withStatus(["script"]))).toBe(
+      "Some commentary used the template script.",
+    );
+    expect(unavailableNote(withStatus(["script", "music"]))).toBe(
+      "Some commentary used the template script. Some effects unavailable: music.",
+    );
+  });
+
   test("names: the display name for one fighter, the count for a group", () => {
     const sheets = battle.stat_sheets as StatSheet[];
     expect(sideNames(battle.matchup, sheets)).toEqual([

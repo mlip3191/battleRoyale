@@ -162,14 +162,21 @@ const STAGE_NAMES: Record<StageStatus["stage"], string> = {
   images: "pictures",
 };
 
-// "Some effects unavailable: music." when any stage used a stand-in, otherwise null.
+// Said when the script stage fell back: the show still has full commentary, from the template.
+export const TEMPLATE_SCRIPT_NOTE = "Some commentary used the template script.";
+
+// "Some effects unavailable: music." when any stage used a stand-in, otherwise null. A template
+// script is not missing, so it gets its own sentence (on mocks the play-by-play always is one).
 export function unavailableNote(stages: readonly StageStatus[]) {
-  const names = stages
-    .filter((s) => s.status === "fallback")
+  const fellBack = stages.filter((s) => s.status === "fallback");
+  const names = fellBack
+    .filter((s) => s.stage !== "script")
     .map((s) => STAGE_NAMES[s.stage]);
-  return names.length > 0
-    ? `Some effects unavailable: ${names.join(", ")}.`
-    : null;
+  const parts = [
+    fellBack.some((s) => s.stage === "script") ? TEMPLATE_SCRIPT_NOTE : "",
+    names.length > 0 ? `Some effects unavailable: ${names.join(", ")}.` : "",
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : null;
 }
 
 // Both sides' names for the title card and the verdict, e.g. ["Grizzly bear", "6 gray wolves"].
