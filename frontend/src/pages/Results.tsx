@@ -6,7 +6,9 @@ import {
   ErrorPanel,
   LoadingTicker,
   LowerThird,
+  MAIN_ID,
 } from "../components/Broadcast.tsx";
+import { usePageTitle } from "../components/page-title.ts";
 import { SourceList, StatSheetCard } from "../components/StatSheet.tsx";
 import {
   FairFightCard,
@@ -20,6 +22,9 @@ import { calledOff } from "./failure-reason.ts";
 export default function Results() {
   const { id = "" } = useParams();
   const { battle, error } = useBattle(id);
+  // The heading names the matchup once it loads; the tab title says the same.
+  const heading = battle ? `Results: ${battle.matchup.raw_text}` : "Results";
+  usePageTitle(heading);
   const result = battle?.result;
   // Sheets come one per side, in side order.
   const names =
@@ -31,9 +36,9 @@ export default function Results() {
   const winner = result ? winnerOf(result) : null;
 
   return (
-    <main>
+    <main id={MAIN_ID} tabIndex={-1}>
       <LowerThird decorative>Tale of the tape</LowerThird>
-      <h1>Results{battle && `: ${battle.matchup.raw_text}`}</h1>
+      <h1>{heading}</h1>
       {battle?.status === "failed" ? (
         <ErrorPanel {...calledOff(battle.stages)} />
       ) : (

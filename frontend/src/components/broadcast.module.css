@@ -99,6 +99,23 @@
   color: var(--danger);
 }
 
+/* Skip link: off screen until a keyboard user tabs to it, then a gold banner at the top left. */
+.skipLink {
+  position: absolute;
+  top: 0.5rem;
+  left: 1rem;
+  z-index: 10;
+  padding: 0.5rem 1rem;
+  background: var(--banner);
+  color: var(--banner-text);
+  font-weight: 700;
+  transform: translateY(-200%);
+}
+
+.skipLink:focus {
+  transform: none;
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
