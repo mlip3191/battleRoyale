@@ -99,7 +99,7 @@ async def test_repeat_battle_is_served_from_cache_without_simulating(
     assert (second.fair_fight, second.challenger) == (first.fair_fight, first.challenger)
     for name in ("simulate", "summary", "challenger"):
         assert stage(second, name) == ("done", CACHED), name
-    assert stage(second, "images") == ("done", "stub")
+    assert stage(second, "images") == ("done", None)  # sprites come from the image cache
     # The repeat battle still sends its own running -> done change for every stage.
     assert len(await store.changes(second.battle_id)) == 2 * len(STAGES)
 

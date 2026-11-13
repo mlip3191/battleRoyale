@@ -10,6 +10,7 @@ import re
 from collections.abc import Sequence
 from decimal import Decimal
 
+from app.intake.parser import plural
 from app.models.narration import Script, ScriptLine
 from app.models.simulation import EventType, FightEvent, SimulationResult
 from app.narration.facts import FACTOR_WORDS, KG_TO_LB, MPS_TO_KMH, FighterFacts, NarrationFacts
@@ -243,6 +244,30 @@ def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Scri
     return Script(kind="play_by_play", lines=lines, fallback=True)
 
 
+# First words that are proper adjectives or place names, so they keep their capital after a count:
+# "3 African elephants", not "3 african elephants" (#250).
+PROPER_FIRST_WORDS = frozenset(
+    {
+        "African", "American", "Antarctic", "Arabian", "Arctic", "Asian", "Atlantic",
+        "Australian", "Aztec", "Bengal", "Bornean", "Burmese", "Canada", "Chinese", "Egyptian",
+        "European", "Galapagos", "German", "Gila", "Greek", "Greenland", "Highland", "Himalayan",
+        "Indian", "Japanese", "Kodiak", "Komodo", "Labrador", "Maasai", "Mongol", "Nile",
+        "Norse", "Pacific", "Persian", "Roman", "Shetland", "Siberian", "Spartan", "Sumatran",
+        "Tasmanian", "Viking", "Zulu",
+    }
+)  # fmt: skip
+
+
+# A fighter's name said after a count: "Gray wolf" -> "gray wolves", or "gray wolf" for one.
+def counted_name(name: str, count: int) -> str:
+    """Lower-case the first letter of an ordinary name ("Gorilla"), keep "T. rex" or "TV" as is,
+    keep a proper first word such as "African" or "Roman" (PROPER_FIRST_WORDS) capitalized,
+    and use the intake parser's plural rules (#236) when more than one fights."""
+    proper = name.split(" ", 1)[0] in PROPER_FIRST_WORDS
+    noun = name[:1].lower() + name[1:] if name[1:2].islower() and not proper else name
+    return noun if count == 1 else plural(noun)
+
+
 # The fair-fight line: the count that makes it a coin flip, "none found", or "not run tonight".
 def fair_fight_line(facts: NarrationFacts, names: Sequence[str] = ()) -> ScriptLine:
     """Never claims "no count makes this fair" unless the fair-fight check actually ran."""
@@ -250,9 +275,11 @@ def fair_fight_line(facts: NarrationFacts, names: Sequence[str] = ()) -> ScriptL
     if facts.fair_count is not None and facts.fair_side is not None:
         if facts.fair_win_pct is None:  # a count with no probability: never say "None%"
             return safe_line("color_commentator", safe, safe, facts)
-        varied = facts.fighters[facts.fair_side].display_name
+        count = facts.fair_count
+        varied = counted_name(facts.fighters[facts.fair_side].display_name, count)
+        verb = "makes" if count == 1 else "make"
         text = (
-            f"Want a fair fight? About {facts.fair_count} of {varied} makes it a coin flip, "
+            f"Want a fair fight? About {count} {varied} {verb} it a coin flip, "
             f"winning {facts.fair_win_pct}% of the time."
         )
         return safe_line("color_commentator", text, safe, facts, names)
