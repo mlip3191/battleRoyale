@@ -1,0 +1,169 @@
+# The 12 mythical creature types for G09 (#39). Every stat they get is an `assumption` built
+# by code from two real seed fighters: the body analog's sheet, scaled to the size analog
+# (none means the body analog's own size). Analogs are seed fighters' display names, lowercase
+# except proper nouns; abilities come from the fixed `Ability` list. Each `source.quote` is
+# copied word for word from the pinned article revision and justifies the analogs and abilities.
+
+creatures:
+  # In the dragon vs main battle tank showcase battle.
+  - id: dragon
+    display_name: Dragon
+    media_name: dragon
+    lore:
+      body_analog: saltwater crocodile
+      size_analog: African elephant
+      abilities: [flight, breath_weapon]
+      source:
+        title: "European dragon"
+        url: "https://en.wikipedia.org/w/index.php?title=European_dragon&oldid=1382680884"
+        quote: "In and after the Early Middle Ages, the European dragon is typically depicted as a large, fire-breathing, scaly, horned, lizard-like creature; the creature also has leathery, bat-like wings, and a long, muscular prehensile tail."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  - id: griffin
+    display_name: Griffin
+    media_name: griffin
+    lore:
+      body_analog: African lion
+      size_analog: null
+      abilities: [flight]
+      source:
+        title: "Griffin"
+        url: "https://en.wikipedia.org/w/index.php?title=Griffin&oldid=1384641929"
+        quote: "is a legendary creature with the body, tail, and back legs of a lion, and the head and wings of an eagle with its talons on the front legs."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  # Regeneration stands in for resisting injuries.
+  - id: werewolf
+    display_name: Werewolf
+    media_name: werewolf
+    lore:
+      body_analog: gray wolf
+      size_analog: null
+      abilities: [regeneration]
+      source:
+        title: "Werewolf"
+        url: "https://en.wikipedia.org/w/index.php?title=Werewolf&oldid=1380413694"
+        quote: "Most modern fiction describes werewolves as vulnerable to silver weapons and highly resistant to other injuries."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  # G09: the horn is not a weapon yet; it fights with the horse's hooves unless code adds horns.
+  - id: unicorn
+    display_name: Unicorn
+    media_name: unicorn
+    lore:
+      body_analog: horse
+      size_analog: null
+      abilities: []
+      source:
+        title: "Unicorn"
+        url: "https://en.wikipedia.org/w/index.php?title=Unicorn&oldid=1384868036"
+        quote: "In European literature and art, the unicorn has, for the last thousand years or so, been depicted as a white horse- or goat-like animal with a long, straight horn with spiraling grooves, cloven hooves, and sometimes a goat's beard."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  - id: phoenix
+    display_name: Phoenix
+    media_name: phoenix
+    lore:
+      body_analog: bald eagle
+      size_analog: null
+      abilities: [flight, regeneration]
+      source:
+        title: "Phoenix (mythology)"
+        url: "https://en.wikipedia.org/w/index.php?title=Phoenix_(mythology)&oldid=1385310310"
+        quote: "The phoenix is a legendary immortal bird that cyclically regenerates or is otherwise born again."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  - id: yeti
+    display_name: Yeti
+    media_name: yeti
+    lore:
+      body_analog: gorilla
+      size_analog: null
+      abilities: []
+      source:
+        title: "Yeti"
+        url: "https://en.wikipedia.org/w/index.php?title=Yeti&oldid=1383688113"
+        quote: "The Yeti is often described as being a large, bipedal human or ape-like creature that is covered with brown, grey, or white hair, and it is sometimes depicted as having large, sharp teeth."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  # No cephalopod is on the seed list, so the shark stands in as the body.
+  - id: kraken
+    display_name: Kraken
+    media_name: kraken
+    lore:
+      body_analog: great white shark
+      size_analog: African elephant
+      abilities: []
+      source:
+        title: "Kraken"
+        url: "https://en.wikipedia.org/w/index.php?title=Kraken&oldid=1384183433"
+        quote: "is a legendary cryptid of enormous size, per its etymology something akin to a cephalopod, said to appear in the Norwegian Sea off the coast of Norway."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  - id: basilisk
+    display_name: Basilisk
+    media_name: basilisk
+    lore:
+      body_analog: king cobra
+      size_analog: null
+      abilities: [breath_weapon]
+      source:
+        title: "Basilisk"
+        url: "https://en.wikipedia.org/w/index.php?title=Basilisk&oldid=1383405652"
+        quote: "It has a venomous strike, and in some versions of the myth, it has the ability to breathe fire."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  # G09: the scorpion tail is not a weapon yet; it fights with the lion's teeth and claws unless code adds sting and venom.
+  - id: manticore
+    display_name: Manticore
+    media_name: manticore
+    lore:
+      body_analog: African lion
+      size_analog: null
+      abilities: []
+      source:
+        title: "Manticore"
+        url: "https://en.wikipedia.org/w/index.php?title=Manticore&oldid=1382657241"
+        quote: "It has the face of a human, the body of a lion, and the tail of a scorpion or a tail covered in venomous spines similar to porcupine quills."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  # Rarely fire-breathing, per the same article, so no breath weapon.
+  - id: wyvern
+    display_name: Wyvern
+    media_name: wyvern
+    lore:
+      body_analog: saltwater crocodile
+      size_analog: horse
+      abilities: [flight]
+      source:
+        title: "Wyvern"
+        url: "https://en.wikipedia.org/w/index.php?title=Wyvern&oldid=1378359483"
+        quote: "is a type of mythical dragon with two legs, two wings, and often a pointed tail."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  - id: roc
+    display_name: Roc
+    media_name: roc
+    lore:
+      body_analog: bald eagle
+      size_analog: African elephant
+      abilities: [flight]
+      source:
+        title: "Roc (mythology)"
+        url: "https://en.wikipedia.org/w/index.php?title=Roc_(mythology)&oldid=1368467617"
+        quote: "The roc is a legendary bird of prey which featured in popular mythology of the Middle East, consistently depicted with an enormous size, allowing it to dispatch elephants with minimal effort."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
+  - id: sea-serpent
+    display_name: Sea serpent
+    media_name: sea serpent
+    lore:
+      body_analog: saltwater crocodile
+      size_analog: African elephant
+      abilities: []
+      source:
+        title: "Sea serpent"
+        url: "https://en.wikipedia.org/w/index.php?title=Sea_serpent&oldid=1385367899"
+        quote: "Here, as reported by Poseidonius, was seen the fallen dragon, the corpse of which was about a plethrum [30 m or 100 feet] in length, and so bulky that horsemen standing by it on either side could not see one another, and its jaws were large enough to admit a man on horseback, and each flake of its horny scales exceeded an oblong shield in length."
+        retrieved_at: "2026-11-13T00:00:00Z"
+        license: CC BY-SA 4.0
