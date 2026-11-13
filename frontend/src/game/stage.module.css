@@ -51,3 +51,9 @@
 .note {
   color: var(--danger);
 }
+
+.hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}

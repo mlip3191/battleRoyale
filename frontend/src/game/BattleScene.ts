@@ -46,6 +46,9 @@ const CROWD_KEY = "crowd-icon";
 const APPROACH_PX = 120; // how far each squad walks in when it closes in
 const RETREAT_PX = 90; // how far a retreat backs a squad off (never past where it started)
 const TEXT_FONT = "Arial Black, Impact, sans-serif";
+// How long the stage waits for its images before it stops waiting and draws placeholders. A load
+// that hangs (no media server, as in fixtures mode) neither finishes nor fails on its own (#221).
+export const LOAD_TIMEOUT_MS = 4000;
 
 // One side on stage: its sprites, where they stand, and how many are still in the fight.
 interface Squad {
@@ -72,6 +75,7 @@ export function createBattleScene(P: typeof Phaser) {
     private endBanner: Phaser.GameObjects.Rectangle | null = null; // the banner that stays up
     private skipQueued = false; // Skip pressed before create() built the stage
     private skipping = false; // inside skipToEnd: show the final state only
+    private loadTimer: ReturnType<typeof setTimeout> | null = null; // see LOAD_TIMEOUT_MS
 
     constructor(opts: BattleSceneOptions) {
       super({ key: SCENE_KEY });
@@ -80,21 +84,42 @@ export function createBattleScene(P: typeof Phaser) {
       this.keys = new Set(keyFrames(opts.timeline.beats).map((b) => b.index));
     }
 
-    // Queue the battle's images; anything that fails to load falls back to a placeholder.
+    // Queue the battle's images; anything that fails to load falls back to a placeholder, and so
+    // does anything still loading after LOAD_TIMEOUT_MS.
     preload() {
       const { layouts, battlefieldUrl } = this.opts;
+      let queued = false;
       for (const side of layouts) {
-        if (side.spriteUrl) this.load.image(side.textureKey, side.spriteUrl);
+        if (side.spriteUrl) {
+          this.load.image(side.textureKey, side.spriteUrl);
+          queued = true;
+        }
       }
-      if (battlefieldUrl) this.load.image(BATTLEFIELD_KEY, battlefieldUrl);
+      if (battlefieldUrl) {
+        this.load.image(BATTLEFIELD_KEY, battlefieldUrl);
+        queued = true;
+      }
+      // A plain timer: the scene's own clock does not tick until create() has run.
+      if (queued)
+        this.loadTimer = setTimeout(() => this.stopWaiting(), LOAD_TIMEOUT_MS);
     }
 
-    // Draw the backdrop and both squads at their starting spots.
+    // Images are taking too long: end the load now, so Phaser runs create() with whatever arrived.
+    // Skipped once create() has run or the game was destroyed (the loader is no longer loading).
+    private stopWaiting() {
+      this.loadTimer = null;
+      if (this.squads || !this.load.isLoading()) return;
+      this.load.loadComplete();
+    }
+
+    // Draw the backdrop and both squads at their starting spots. (The reduced-motion note is HTML
+    // under the stage, in PhaserStage, so screen readers can read it.)
     create() {
+      if (this.loadTimer !== null) clearTimeout(this.loadTimer);
+      this.loadTimer = null;
       this.drawBackdrop();
       this.makeCrowdIcon();
       this.squads = [this.buildSquad(0), this.buildSquad(1)];
-      if (this.opts.reducedMotion) this.showKeyFrameNote();
       if (this.skipQueued) this.skipToEnd();
     }
 
@@ -447,21 +472,6 @@ export function createBattleScene(P: typeof Phaser) {
           onComplete: () => this.dispose(box, label),
         });
       }
-    }
-
-    private showKeyFrameNote() {
-      this.add
-        .text(
-          STAGE.width / 2,
-          STAGE.height - 24,
-          "Reduced motion: key moments only",
-          {
-            fontFamily: TEXT_FONT,
-            fontSize: "16px",
-            color: "#b8c1e8",
-          },
-        )
-        .setOrigin(0.5);
     }
 
     // Up to `n` standing sprites of a side: the named fighter if it has its own sprite, else the front ones.

@@ -9,10 +9,11 @@ import {
 } from "@testing-library/react";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import type { BattleRecord, SimulationResult } from "../api/client.ts";
+import type { Asset, BattleRecord, SimulationResult } from "../api/client.ts";
 import done from "../fixtures/battle-record-done.json";
 import type { BattleStage } from "./BattleScene.ts";
 import { games } from "./fake-phaser.ts";
+import type { SideLayout } from "./layout.ts";
 import PhaserStage from "./PhaserStage.tsx";
 
 vi.mock("phaser", async () => (await import("./fake-phaser.ts")).fakePhaser);
@@ -210,7 +211,185 @@ test("the controls are labeled buttons in a named group", async () => {
   await sceneOf();
   const group = screen.getByRole("group", { name: "Replay controls" });
   expect(group.querySelectorAll("button")).toHaveLength(4);
-  expect(screen.getByRole("img").getAttribute("aria-label")).toContain(
-    "grizzly bear versus gray wolf",
+  expect(screen.getByRole("img").getAttribute("aria-label")).toBe(
+    "Animated fight replay: 1 grizzly bear versus 6 gray wolves. The captions describe each moment.",
   );
+});
+
+test("autoPlay starts the replay as soon as it is ready", async () => {
+  render(<PhaserStage result={result} matchup={battle.matchup} autoPlay />);
+  const pause = await screen.findByRole("button", { name: "Pause" });
+  expect(pause).toHaveProperty("disabled", false);
+  expect((games[0].config.scene[0] as BattleStage).clock.playing).toBe(true);
+});
+
+test("onFinish fires once when the replay ends, by playing or by skipping", async () => {
+  const onFinish = vi.fn();
+  const view = render(
+    <PhaserStage
+      result={result}
+      matchup={battle.matchup}
+      onFinish={onFinish}
+    />,
+  );
+  const scene = await sceneOf();
+  fireEvent.click(screen.getByRole("button", { name: "Play" }));
+  runFrames(scene);
+  expect(onFinish).toHaveBeenCalledTimes(1);
+  view.unmount();
+  const skipped = vi.fn();
+  render(
+    <PhaserStage result={result} matchup={battle.matchup} onFinish={skipped} />,
+  );
+  await sceneOf(1);
+  fireEvent.click(screen.getByRole("button", { name: "Skip to end" }));
+  expect(skipped).toHaveBeenCalledTimes(1);
+});
+
+test("Replay appears after the fight ends and plays a fresh game from event 0", async () => {
+  const onEvent = vi.fn();
+  const onReplay = vi.fn();
+  render(
+    <PhaserStage
+      result={result}
+      matchup={battle.matchup}
+      onEvent={onEvent}
+      onReplay={onReplay}
+    />,
+  );
+  await sceneOf();
+  expect(screen.queryByRole("button", { name: "Replay" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Skip to end" }));
+  fireEvent.click(screen.getByRole("button", { name: "Replay" }));
+  expect(onReplay).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(games).toHaveLength(2));
+  expect(games[0].destroy).toHaveBeenCalledTimes(1);
+  const again = games[1].config.scene[0] as BattleStage;
+  await waitFor(() => expect(again.clock.playing).toBe(true));
+  onEvent.mockClear();
+  runFrames(again);
+  expect(onEvent.mock.calls.map(([i]) => i)).toEqual(allIndexes);
+});
+
+test("reduced motion: the key-moments note is real text under the stage", async () => {
+  render(stageEl(vi.fn(), true));
+  await sceneOf();
+  const note = screen.getByText(/key moments only/);
+  expect(note.closest('[role="img"]')).toBeNull();
+  expect(screen.queryByText(/relative hit points/)).toBeNull();
+});
+
+test("normal motion: a note explains the damage numbers' unit", async () => {
+  render(stageEl(vi.fn(), false));
+  await sceneOf();
+  expect(screen.getByText(/relative hit points/)).toBeTruthy();
+  expect(screen.queryByText(/key moments only/)).toBeNull();
+});
+
+// The options a game's scene was built with.
+const optsOf = (index: number) =>
+  (
+    games[index].config.scene[0] as unknown as {
+      opts: { battlefieldUrl: string | null; layouts: SideLayout[] };
+    }
+  ).opts;
+
+test("pictures that arrive after the stage started get a fresh stage that draws them", async () => {
+  const el = (assets: Asset[]) => (
+    <PhaserStage
+      battleId="b1"
+      result={result}
+      matchup={battle.matchup}
+      assets={assets}
+    />
+  );
+  const view = render(el([]));
+  await sceneOf(0);
+  expect(optsOf(0).battlefieldUrl).toBeNull();
+  view.rerender(el(structuredClone(battle.assets)));
+  await sceneOf(1);
+  expect(games[0].destroy).toHaveBeenCalledTimes(1);
+  expect(optsOf(1).battlefieldUrl).toBe("/media/battlefields/forest.png");
+  expect(optsOf(1).layouts.map((l) => l.spriteUrl)).toEqual([
+    "/media/sprites/grizzly-bear.png",
+    "/media/sprites/gray-wolf.png",
+  ]);
+  // New sound or the same pictures again never restart it.
+  view.rerender(
+    el([
+      ...structuredClone(battle.assets),
+      { ...battle.assets[0], asset_id: "x", kind: "music" },
+    ]),
+  );
+  await new Promise((r) => setTimeout(r, 20));
+  expect(games).toHaveLength(2);
+});
+
+test("keyboard: Skip to end moves focus to Replay instead of losing it", async () => {
+  render(stageEl());
+  await sceneOf();
+  const skip = screen.getByRole("button", { name: "Skip to end" });
+  skip.focus();
+  fireEvent.click(skip);
+  expect(document.activeElement).toBe(
+    screen.getByRole("button", { name: "Replay" }),
+  );
+});
+
+test("keyboard: the fight ending under Pause moves focus to Replay", async () => {
+  render(stageEl());
+  const scene = await sceneOf();
+  fireEvent.click(screen.getByRole("button", { name: "Play" }));
+  screen.getByRole("button", { name: "Pause" }).focus();
+  runFrames(scene);
+  expect(document.activeElement).toBe(
+    screen.getByRole("button", { name: "Replay" }),
+  );
+});
+
+test("keyboard: Replay moves focus to Pause once the fresh game is ready", async () => {
+  render(stageEl());
+  await sceneOf();
+  fireEvent.click(screen.getByRole("button", { name: "Skip to end" }));
+  const replay = screen.getByRole("button", { name: "Replay" });
+  replay.focus();
+  fireEvent.click(replay);
+  await waitFor(() =>
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Pause" }),
+    ),
+  );
+});
+
+test("keyboard: the page can hand focus to Play/Pause when the stage is ready", async () => {
+  const claimFocus = vi.fn(() => true);
+  render(
+    <PhaserStage
+      result={result}
+      matchup={battle.matchup}
+      autoPlay
+      claimFocus={claimFocus}
+    />,
+  );
+  const pause = await screen.findByRole("button", { name: "Pause" });
+  await waitFor(() => expect(document.activeElement).toBe(pause));
+  expect(claimFocus).toHaveBeenCalledTimes(1);
+});
+
+test("keyboard: focus elsewhere is left alone when the stage gets ready or ends", async () => {
+  render(
+    <>
+      <button type="button">Elsewhere</button>
+      <PhaserStage
+        result={result}
+        matchup={battle.matchup}
+        claimFocus={() => false}
+      />
+    </>,
+  );
+  const elsewhere = screen.getByRole("button", { name: "Elsewhere" });
+  elsewhere.focus();
+  await sceneOf();
+  fireEvent.click(screen.getByRole("button", { name: "Skip to end" }));
+  expect(document.activeElement).toBe(elsewhere);
 });

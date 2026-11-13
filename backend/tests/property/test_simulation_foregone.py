@@ -3,6 +3,8 @@
 import random
 import time
 
+import pytest
+
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.engine import (
@@ -17,7 +19,17 @@ from app.simulation.fair import fair_fight
 from app.simulation.rng import run_rng
 from tests.property.sim_helpers import make_dragon, make_sheet, matchup_of
 
-WEAPONS = [["teeth"], ["claws"], ["weapon_ranged"], ["ramming"], ["crushing"], ["spines"], ["none"]]
+WEAPONS = [
+    ["teeth"],
+    ["venom"],
+    ["venom", "teeth"],
+    ["claws"],
+    ["weapon_ranged"],
+    ["ramming"],
+    ["crushing"],
+    ["spines"],
+    ["none"],
+]
 
 
 def random_sheet(rng: random.Random, tag: str):
@@ -271,3 +283,26 @@ def test_a_machine_that_stops_exactly_at_the_time_limit_still_loses():
     fast = run_once(sides, m.terrain, run_rng(2, 0))
     full = run_once(sides, m.terrain, run_rng(2, 0), record_events=True)  # real simulation
     assert (fast.winner, fast.survivors) == (full.winner, full.survivors) == (1, (0, 5))
+
+
+@pytest.mark.parametrize("operating_time", [570.0, 590.0, 599.0, 600.0])
+def test_a_machine_that_stops_late_in_the_fight_stops_in_swarm_mode_too(
+    monkeypatch, operating_time
+):
+    """Swarm steps grow late in the fight; a stop at 590 s used to be skipped (a draw at 600 s)."""
+    tank = make_sheet(
+        "tank", body="machine", weapons=["ramming"], mass_kg=3, endurance_s=operating_time,
+        attack_force_n=0, top_speed_mps=0.4, spread=0.0,
+    )  # fmt: skip
+    boulder = make_sheet(
+        "boulder", body="inert", weapons=["none"], mass_kg=1_000_000, attack_force_n=0,
+        attacks_per_s=0, top_speed_mps=0, spread=0.0,
+    )  # fmt: skip
+    m = matchup_of(250, 250)
+    sides = _templates(m, [tank, boulder], run_rng(1, 0), (1.0, 1.0))
+    results = {}
+    for label, threshold in (("one by one", 10**9), ("swarm", 0)):
+        monkeypatch.setattr(c, "SWARM_THRESHOLD", threshold)
+        out = run_once(sides, m.terrain, run_rng(2, 0), record_events=True)
+        results[label] = (out.winner, out.survivors, round(out.duration_s, 1))
+    assert results["swarm"] == results["one by one"] == (1, (0, 250), operating_time)

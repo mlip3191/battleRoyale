@@ -84,6 +84,14 @@ async def _get(
     raise SourceError(f"Download failed: {problem}.")
 
 
+# Download a whole file, such as a trait dataset; a missing file is an error here.
+async def fetch_file(client: httpx.AsyncClient, url: str, sleep: Sleep = asyncio.sleep) -> bytes:
+    response = await _get(client, url, sleep=sleep)
+    if response is None:
+        raise SourceError(f"Download failed: {url} not found.")
+    return response.content
+
+
 # Fetch one Wikipedia article's HTML; None if the article does not exist.
 async def fetch_article(
     client: httpx.AsyncClient, title: str, sleep: Sleep = asyncio.sleep

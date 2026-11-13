@@ -5,7 +5,7 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-ENGINE_VERSION = 6
+ENGINE_VERSION = 8
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1
@@ -98,6 +98,9 @@ FAIR_TOLERANCE = 0.05
 # Most probes one search may use, and the largest count it will try.
 FAIR_MAX_PROBES = 20
 FAIR_MAX_COUNT = 10_000
+# The next-challenger reason says "a coin flip" within FAIR_TOLERANCE of 50%, "a slight" favorite
+# or underdog within this of 50%, and "a clear" one beyond it (wording only, never a result).
+CHALLENGER_SLIGHT_GAP = 0.15
 
 # --- Machines, objects, and mythical abilities (F08) ---
 
@@ -119,3 +122,21 @@ BREATH_RANGE_M = 15.0
 REGEN_SHARE_PER_S = 0.002
 # Heads used when a creature has extra_heads but its legend names no verified number (ARCH §9).
 DEFAULT_HEADS = 3
+
+# --- Venom (D-44; every number is an assumption) ---
+
+# Venom takes minutes to work. Each landed venomous bite adds this share of a lethal dose to the
+# target, scaled by relative body size, and a fighter that carries a full dose (1.0) dies after
+# the fight (a side wiped out leaves a poisoned survivor to die, which can make it a draw).
+VENOM_BITE_SHARE = 0.65
+# A bite is a bigger dose for a smaller victim: it scales with (attacker mass / target mass) to
+# this power (an assumption; 0.5 means a bite's effect follows body length more than mass).
+VENOM_SIZE_EXP = 0.5
+# Delay between the last blow and the venom killing a poisoned survivor ("minutes", D-44).
+VENOM_ONSET_S = 120.0
+# Resistance to venom, from 0 (none) to 1 (immune), by base fighter id; anything not listed has
+# none. Each entry carries a one-line reason; G05's real sheets will refine these.
+VENOM_RESISTANCE: dict[str, float] = {
+    # Honey badgers are famous for shrugging off cobra bites (a long recovery, not death).
+    "honey-badger": 0.85,
+}

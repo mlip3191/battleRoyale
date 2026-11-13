@@ -91,7 +91,19 @@ export class FakeScene {
   images: FakeObject[] = [];
   texts: FakeObject[] = [];
   rects: FakeObject[] = [];
-  load = { image: vi.fn() };
+  // The loader: queuing an image starts a load that only ends when loadComplete() is called,
+  // which (like Phaser's scene manager on the loader's COMPLETE event) then builds the scene.
+  loading = false;
+  load = {
+    image: vi.fn(() => {
+      this.loading = true;
+    }),
+    isLoading: () => this.loading,
+    loadComplete: vi.fn(() => {
+      this.loading = false;
+      (this as Partial<Record<"create", () => void>>).create?.();
+    }),
+  };
   tweens = {
     list: [] as FakeTween[],
     add: vi.fn((tween: FakeTween) => {
