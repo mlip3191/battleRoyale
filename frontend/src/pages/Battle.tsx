@@ -143,7 +143,7 @@ function Broadcast({ id }: { id: string }) {
       : current
         ? [current]
         : [];
-  const sound = battle ? audioPlan(battle.assets) : null;
+  const sound = battle ? audioPlan(battle.assets, show.phase) : null;
   const note = battle ? unavailableNote(battle.stages) : null;
   const reveal = result && show.revealed ? verdictReveal(result, names) : null;
 

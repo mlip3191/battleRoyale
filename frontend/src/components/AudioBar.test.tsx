@@ -88,14 +88,83 @@ test("leaving the page stops the sound, even for tracks that arrived after the b
   expect(pause).toHaveBeenCalledTimes(2);
 });
 
-test("a track changing while the sound plays puts the button back to Play sound", async () => {
+// The elements play() was called on, in order.
+const played = () => play.mock.contexts as unknown as HTMLAudioElement[];
+
+test("the announcer's track changing while the sound is on: the next track plays", async () => {
+  const { rerender } = render(
+    <AudioBar narration="/media/a.mp3" music="/media/m.mp3" />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Play sound" }));
+  await screen.findByRole("button", { name: "Pause sound" });
+  play.mockClear();
+  rerender(<AudioBar narration="/media/b.mp3" music="/media/m.mp3" />);
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
+  expect(played().map((t) => t.getAttribute("src"))).toEqual([
+    "/media/b.mp3",
+    "/media/m.mp3",
+  ]);
+  expect(screen.getByRole("button", { name: "Pause sound" })).toBeTruthy();
+});
+
+test("the announcer's track changing while the sound is off: nothing starts", async () => {
+  const { rerender } = render(
+    <AudioBar narration="/media/a.mp3" music={null} />,
+  );
+  rerender(<AudioBar narration="/media/b.mp3" music={null} />);
+  fireEvent.click(screen.getByRole("button", { name: "Play sound" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Pause sound" }));
+  play.mockClear();
+  rerender(<AudioBar narration="/media/c.mp3" music={null} />);
+  await new Promise((r) => setTimeout(r, 0)); // give a wrong start the chance to happen
+  expect(play).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "Play sound" })).toBeTruthy();
+});
+
+test("a part of the show with no announcer: the music plays on", async () => {
+  const { rerender } = render(
+    <AudioBar narration="/media/a.mp3" music="/media/m.mp3" />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Play sound" }));
+  await screen.findByRole("button", { name: "Pause sound" });
+  play.mockClear();
+  rerender(<AudioBar narration={null} music="/media/m.mp3" />);
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+  expect(played()[0].getAttribute("src")).toBe("/media/m.mp3");
+  expect(screen.getByRole("button", { name: "Pause sound" })).toBeTruthy();
+});
+
+test("a part of the show with nothing to play goes quiet; the next track picks the sound back up", async () => {
   const { rerender } = render(
     <AudioBar narration="/media/a.mp3" music={null} />,
   );
   fireEvent.click(screen.getByRole("button", { name: "Play sound" }));
   await screen.findByRole("button", { name: "Pause sound" });
+  const [voice] = tracks();
+  Object.defineProperty(voice, "paused", { value: false }); // jsdom never really plays
+  pause.mockClear();
+  rerender(<AudioBar narration={null} music={null} />);
+  expect(pause).toHaveBeenCalledTimes(1);
+  expect(screen.queryByRole("group", { name: "Sound controls" })).toBeNull();
+  play.mockClear();
+  rerender(<AudioBar narration="/media/c.mp3" music={null} />);
+  expect(
+    await screen.findByRole("button", { name: "Pause sound" }),
+  ).toBeTruthy();
+  expect(played().map((t) => t.getAttribute("src"))).toEqual(["/media/c.mp3"]);
+});
+
+test("the browser refusing the next track while there is no music: back to Play sound", async () => {
+  const { rerender } = render(
+    <AudioBar narration="/media/a.mp3" music={null} />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Play sound" }));
+  await screen.findByRole("button", { name: "Pause sound" });
+  play.mockImplementationOnce(() => Promise.reject(new Error("blocked")));
   rerender(<AudioBar narration="/media/b.mp3" music={null} />);
-  expect(screen.getByRole("button", { name: "Play sound" })).toBeTruthy();
+  expect(
+    await screen.findByRole("button", { name: "Play sound" }),
+  ).toBeTruthy();
 });
 
 test("Mute is a toggle that mutes every track", () => {

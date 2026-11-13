@@ -6,6 +6,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -387,6 +388,85 @@ test("degraded: no music means no music track; the announcer still plays", () =>
     "/media/audio/b-7f3k2q-narration.mp3",
   ]);
   expect(bar.textContent).toContain("Announcer only");
+});
+
+// The done battle with one narration file per script (A07), minus any scripts named.
+const perScript = (...missing: Asset["script_kind"][]) => {
+  const record = without("narration_audio");
+  const kinds = (["intro", "play_by_play", "outro"] as const).filter(
+    (k) => !missing.includes(k),
+  );
+  const voices = kinds.map((k): Asset => ({
+    asset_id: `narration-${k}`,
+    kind: "narration_audio",
+    url: `/media/audio/b1-${k}.mp3`,
+    prompt_hash: k,
+    fallback: false,
+    script_kind: k,
+  }));
+  return { ...record, assets: [...record.assets, ...voices] };
+};
+// The sources of the sound bar's tracks right now (none when it is hidden).
+const trackSources = () =>
+  Array.from(
+    screen
+      .queryByRole("group", { name: "Sound controls" })
+      ?.querySelectorAll("audio") ?? [],
+  ).map((t) => t.getAttribute("src"));
+const MUSIC = "/media/music/retro-broadcast.mp3";
+
+test("audio: each part of the show plays its own announcer file, under the same music", () => {
+  show(perScript());
+  expect(trackSources()).toEqual(["/media/audio/b1-intro.mp3", MUSIC]);
+  startFight();
+  expect(trackSources()).toEqual(["/media/audio/b1-play_by_play.mp3", MUSIC]);
+  act(() => stageProps().onFinish!());
+  expect(trackSources()).toEqual(["/media/audio/b1-outro.mp3", MUSIC]);
+});
+
+test("audio: a part with no announcer file is silent; the rest of the show goes on", () => {
+  show(perScript("play_by_play"));
+  expect(trackSources()).toEqual(["/media/audio/b1-intro.mp3", MUSIC]);
+  startFight();
+  expect(trackSources()).toEqual([MUSIC]);
+  expect(screen.getByText("Music only")).toBeTruthy();
+  act(() => stageProps().onFinish!());
+  expect(trackSources()).toEqual(["/media/audio/b1-outro.mp3", MUSIC]);
+  expect(captions().textContent).toContain(outro[0].text);
+});
+
+test("audio: an older record's single announcer file plays in every part", () => {
+  const old = "/media/audio/b-7f3k2q-narration.mp3";
+  show(done);
+  expect(trackSources()).toEqual([old, MUSIC]);
+  startFight();
+  expect(trackSources()).toEqual([old, MUSIC]);
+  act(() => stageProps().onFinish!());
+  expect(trackSources()).toEqual([old, MUSIC]);
+});
+
+test("audio: sound turned on in the intro carries into the fight's announcer file", async () => {
+  const play = vi
+    .spyOn(HTMLMediaElement.prototype, "play")
+    .mockResolvedValue(undefined);
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+  try {
+    show(perScript());
+    expect(play).not.toHaveBeenCalled(); // nothing plays until asked
+    fireEvent.click(button("Play sound"));
+    await screen.findByRole("button", { name: "Pause sound" });
+    play.mockClear();
+    startFight();
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
+    const started = play.mock.contexts as unknown as HTMLAudioElement[];
+    expect(started.map((t) => t.getAttribute("src"))).toEqual([
+      "/media/audio/b1-play_by_play.mp3",
+      MUSIC,
+    ]);
+    expect(button("Pause sound")).toBeTruthy();
+  } finally {
+    vi.restoreAllMocks();
+  }
 });
 
 test("degraded: no images means the stage gets no pictures and draws placeholders", () => {
