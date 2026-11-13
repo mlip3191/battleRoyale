@@ -55,6 +55,7 @@ def crowd_share(count: int, foes: int) -> float:
 def test_adding_fighters_never_lowers_win_probability_in_swarm_mode_either(base, extra, foes):
     assert base + extra > c.SWARM_THRESHOLD
     # The engine is deterministic for a given input, so the margin only guards against a future
-    # engine change; the measured gains here are about +0.09 to +0.79, far above it. This is a
-    # monotonic check, not an accuracy check: D-45's swarm-vs-one-by-one parity is tested elsewhere.
+    # engine change. Measured on main: +0.12, -0.04 (the one-fighter step across the threshold),
+    # +0.43, +0.73 and +0.75, all inside the margin. This is a monotonic check, not an accuracy
+    # check: D-45's swarm-vs-one-by-one parity is tested elsewhere.
     assert crowd_share(base + extra, foes) >= crowd_share(base, foes) - SWARM_MARGIN
