@@ -113,8 +113,39 @@ def test_plural_handles_irregular_names_and_keeps_proper_nouns():
     assert plural("House mouse", 37) == "house mice"
     assert plural("Goose", 2) == "geese"
     assert plural("Sheep", 5) == "sheep"
-    assert plural("African elephant", 1) == "african elephant"
-    assert plural("T. rex", 2) == "t. rexes"
+    # These two used to read "african elephant" and "t. rexes", pinning the old lower-casing
+    # bug; fair.py now uses the shared counted_name, so proper words and "T." keep capitals (#258).
+    assert plural("African elephant", 1) == "African elephant"
+    assert plural("T. rex", 2) == "T. rexes"
+
+
+def test_plural_keeps_proper_words_and_uses_the_shared_irregular_tables():
+    """One pluralizer for fair fights, intake and narration (#258)."""
+    assert plural("African elephant", 2) == "African elephants"
+    assert plural("Roman legionary", 3) == "Roman legionaries"
+    assert plural("House mouse", 2) == "house mice"
+    assert plural("Bison", 4) == "bison"
+    assert plural("Cattle", 4) == "cattle"
+    assert plural("Triceratops", 2) == "triceratops"
+    assert plural("T. rex", 3) == "T. rexes"
+    assert plural("TV", 5) == "TVs"
+    assert plural("Man", 2) == "men"
+    assert plural("Knife", 2) == "knives"
+
+
+def test_a_count_of_one_stays_singular():
+    assert plural("African elephant", 1) == "African elephant"
+    assert plural("House cat", 1) == "house cat"
+    assert plural("Roman legionary", 1) == "Roman legionary"
+    assert plural("TV", 1) == "TV"
+
+
+def test_the_fair_fight_message_keeps_a_proper_first_word_capitalized(monkeypatch):
+    """The Results-page message read "37 african elephants" before #258."""
+    fake_engine(monkeypatch, 1, logistic(37))
+    elephants = elephant().model_copy(update={"display_name": "African elephant"})
+    search = fair_fight_search(matchup_of(1, 1), [wolf(), elephants], main_result(1))
+    assert search.result.message == "A fair fight needs 37 African elephants against 1 gray wolf."
 
 
 def test_the_search_shrinks_the_count_when_the_first_probe_is_already_too_strong():

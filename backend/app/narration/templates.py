@@ -10,11 +10,12 @@ import re
 from collections.abc import Sequence
 from decimal import Decimal
 
-from app.intake.parser import plural
 from app.models.narration import Script, ScriptLine
 from app.models.simulation import EventType, FightEvent, SimulationResult
 from app.narration.facts import FACTOR_WORDS, KG_TO_LB, MPS_TO_KMH, FighterFacts, NarrationFacts
 from app.narration.number_guard import AllowedNumbers, find_unsupported_numbers
+from app.text import PROPER_FIRST_WORDS as PROPER_FIRST_WORDS  # shared since #258
+from app.text import counted_name, pluralize
 
 MAX_LINE = 200
 MAX_HINT = 60
@@ -72,7 +73,7 @@ def line(
 # Hide the fighters' names from the number guard, so "Three-toed sloth" is not read as 3 (#259).
 def mask_names(text: str, names: Sequence[str]) -> str:
     """Replace each name and its plural, in any case, with NAME_MASK; other words are untouched."""
-    forms = {form for name in names if name for form in (name, plural(name))}
+    forms = {form for name in names if name for form in (name, pluralize(name))}
     for form in sorted(forms, key=len, reverse=True):  # longer forms first (plural before singular)
         pattern = rf"(?<!\w){re.escape(form)}(?!\w)"
         text = re.sub(pattern, NAME_MASK, text, flags=re.IGNORECASE)
@@ -256,30 +257,6 @@ def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Scri
         standoff = ["They size each other up.", "Nobody moves.", "Still nobody moves."]
         lines = [line("announcer", standoff[i % 3]) for i in range(MIN_BEATS)]
     return Script(kind="play_by_play", lines=lines, fallback=True)
-
-
-# First words that are proper adjectives or place names, so they keep their capital after a count:
-# "3 African elephants", not "3 african elephants" (#250).
-PROPER_FIRST_WORDS = frozenset(
-    {
-        "African", "American", "Antarctic", "Arabian", "Arctic", "Asian", "Atlantic",
-        "Australian", "Aztec", "Bengal", "Bornean", "Burmese", "Canada", "Chinese", "Egyptian",
-        "European", "Galapagos", "German", "Gila", "Greek", "Greenland", "Highland", "Himalayan",
-        "Indian", "Japanese", "Kodiak", "Komodo", "Labrador", "Maasai", "Mongol", "Nile",
-        "Norse", "Pacific", "Persian", "Roman", "Shetland", "Siberian", "Spartan", "Sumatran",
-        "Tasmanian", "Viking", "Zulu",
-    }
-)  # fmt: skip
-
-
-# A fighter's name said after a count: "Gray wolf" -> "gray wolves", or "gray wolf" for one.
-def counted_name(name: str, count: int) -> str:
-    """Lower-case the first letter of an ordinary name ("Gorilla"), keep "T. rex" or "TV" as is,
-    keep a proper first word such as "African" or "Roman" (PROPER_FIRST_WORDS) capitalized,
-    and use the intake parser's plural rules (#236) when more than one fights."""
-    proper = name.split(" ", 1)[0] in PROPER_FIRST_WORDS
-    noun = name[:1].lower() + name[1:] if name[1:2].islower() and not proper else name
-    return noun if count == 1 else plural(noun)
 
 
 # The fair-fight line: the count that makes it a coin flip, "none found", or "not run tonight".
