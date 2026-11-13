@@ -262,6 +262,7 @@ class Script(BaseModel):
 class Asset(BaseModel):
     asset_id: str; kind: Literal["sprite","battlefield","narration_audio","music"]
     url: str; prompt_hash: str; fallback: bool = False
+    script_kind: Literal["intro","play_by_play","outro"] | None = None
 
 # battle.py
 class StageStatus(BaseModel):
