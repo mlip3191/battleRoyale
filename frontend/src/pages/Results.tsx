@@ -15,6 +15,7 @@ import {
   VerdictBanner,
   winnerOf,
 } from "../components/Verdict.tsx";
+import { calledOff } from "./failure-reason.ts";
 
 export default function Results() {
   const { id = "" } = useParams();
@@ -34,7 +35,7 @@ export default function Results() {
       <LowerThird decorative>Tale of the tape</LowerThird>
       <h1>Results{battle && `: ${battle.matchup.raw_text}`}</h1>
       {battle?.status === "failed" ? (
-        <ErrorPanel message="This fight was called off. Try another matchup." />
+        <ErrorPanel {...calledOff(battle.stages)} />
       ) : (
         error && (
           <ErrorPanel

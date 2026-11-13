@@ -29,6 +29,7 @@ import {
   type Show,
   type ShowAction,
 } from "./broadcast-flow.ts";
+import { calledOff } from "./failure-reason.ts";
 import type { ScriptLine } from "../api/client.ts";
 import styles from "./battle.module.css";
 
@@ -153,7 +154,7 @@ function Broadcast({ id }: { id: string }) {
       {battle && <LowerThird decorative>{battle.matchup.raw_text}</LowerThird>}
       {/* At most one alert: a called-off fight says so, otherwise show the fetch error. */}
       {failed ? (
-        <ErrorPanel message="This fight was called off. Try another matchup." />
+        <ErrorPanel {...calledOff(battle.stages)} />
       ) : (
         error && (
           <ErrorPanel
