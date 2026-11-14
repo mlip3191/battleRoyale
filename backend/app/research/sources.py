@@ -15,7 +15,8 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-USER_AGENT = "battle-royale-course-project/0.1"
+# Wikimedia refuses clients that don't say who they are, so this names the project and its repo.
+USER_AGENT = "BattleRoyaleCourseProject/0.1 (https://github.com/mlip3191/battleRoyale)"
 WIKIPEDIA_HTML = "https://en.wikipedia.org/api/rest_v1/page/html/{title}"
 WIKIPEDIA_PAGE = "https://en.wikipedia.org/wiki/{title}"
 WIKIPEDIA_REVISION = "https://en.wikipedia.org/w/index.php?title={title}&oldid={revision}"
@@ -31,6 +32,10 @@ Sleep = Callable[[float], Awaitable[None]]
 
 class SourceError(RuntimeError):
     """A download failed for a reason other than the page not existing."""
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status  # the last HTTP status code, when the server answered at all
 
 
 @dataclass(frozen=True)
@@ -60,13 +65,17 @@ async def _get(
     url: str,
     params: dict[str, str] | None = None,
     sleep: Sleep = asyncio.sleep,
+    headers: dict[str, str] | None = None,
 ) -> httpx.Response | None:
-    problem = "no response"
+    problem, status = "no response", None
     for attempt in range(RETRIES + 1):
         response: httpx.Response | None = None
         try:
             response = await client.get(
-                url, params=params, headers={"User-Agent": USER_AGENT}, follow_redirects=True
+                url,
+                params=params,
+                headers={"User-Agent": USER_AGENT, **(headers or {})},
+                follow_redirects=True,
             )
         except httpx.TransportError as error:
             problem = type(error).__name__
@@ -75,12 +84,25 @@ async def _get(
                 return None
             if response.status_code < 400:
                 return response
-            problem = f"HTTP {response.status_code}"
+            problem, status = f"HTTP {response.status_code}", response.status_code
             if response.status_code not in RETRY_STATUSES:
                 break
         if attempt < RETRIES:
             await sleep(_wait_s(response, attempt))
-    raise SourceError(f"Download failed: {problem}.")
+    raise SourceError(f"Download failed: {problem}.", status=status)
+
+
+# Download a whole file, such as a trait dataset; a missing file is an error here.
+async def fetch_file(
+    client: httpx.AsyncClient,
+    url: str,
+    sleep: Sleep = asyncio.sleep,
+    headers: dict[str, str] | None = None,
+) -> bytes:
+    response = await _get(client, url, sleep=sleep, headers=headers)
+    if response is None:
+        raise SourceError(f"Download failed: {url} not found.")
+    return response.content
 
 
 # Fetch one Wikipedia article's HTML; None if the article does not exist.

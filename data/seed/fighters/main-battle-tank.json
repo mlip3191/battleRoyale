@@ -1,0 +1,145 @@
+{
+  "fighter_id": "main-battle-tank",
+  "display_name": "Main battle tank",
+  "media_name": "main battle tank",
+  "category": "vehicle",
+  "body": "machine",
+  "habitat": "land",
+  "weapons": [
+    "ramming",
+    "crushing"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 70000.0,
+      "unit": "kg",
+      "source": {
+        "title": "Main battle tank",
+        "url": "https://en.wikipedia.org/w/index.php?title=Main_battle_tank&oldid=1384871486",
+        "quote": "The extreme weight of vehicles of this type 40–70 t (39–69 long tons; 44–77 short tons) also limits their speed.",
+        "retrieved_at": "2026-11-11T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 40000.0,
+      "high": 70000.0,
+      "note": "Upper figure of the stated 40-70 t range for main battle tanks; the source gives no mean. Low and high keep the stated range."
+    },
+    "size_m": {
+      "value": 7.93,
+      "unit": "m",
+      "source": {
+        "title": "M1 Abrams",
+        "url": "https://en.wikipedia.org/w/index.php?title=M1_Abrams&oldid=1384560905",
+        "quote": "Hull length: 26.02 ft (7.93 m)",
+        "retrieved_at": "2026-11-11T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 5.95,
+      "high": 9.91,
+      "note": "Stand-in: the hull length of one modern main battle tank (M1 Abrams, gun not counted), used for a generic tank because the Main battle tank article gives no length. Range is +/-25%."
+    },
+    "top_speed_mps": {
+      "value": 18.06,
+      "unit": "m/s",
+      "source": {
+        "title": "Main battle tank",
+        "url": "https://en.wikipedia.org/w/index.php?title=Main_battle_tank&oldid=1384871486",
+        "quote": "However, tracks are not as fast as wheels; the maximum speed of a tank is about 65 km/h (40 mph).",
+        "retrieved_at": "2026-11-11T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 16.25,
+      "high": 19.86,
+      "note": "65 km/h = 18.06 m/s. Range is the standard +/-10%."
+    },
+    "attack_force_n": {
+      "value": 126420.0,
+      "unit": "N",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 65000.0,
+      "high": 139020.0,
+      "note": "Ramming machine: attack_force_n = RAM_DAMAGE_PER_MOMENTUM x mass_kg x top_speed_mps / DAMAGE_PER_NEWTON (0.005 x 70,000 x 18.06 / 0.05). The engine works out the real hit from mass and speed. Low and high use the low and high mass and speed."
+    },
+    "attacks_per_s": {
+      "value": 0.4,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.4,
+      "high": 0.4,
+      "note": "Ramming machine: RAM_ATTACKS_PER_S, the engine's fixed ramming rate."
+    },
+    "reach_m": {
+      "value": 1.98,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 1.49,
+      "high": 2.48,
+      "note": "reach = 0.25 x size_m, from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.8,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.4,
+      "high": 1.0,
+      "note": "durability level 5: tank armor."
+    },
+    "endurance_s": {
+      "value": 27685.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 25176.0,
+      "high": 30769.0,
+      "note": "Vehicle: endurance = range / top_speed_mps = 500,000 m / 18.06 m/s. Range from Main battle tank (https://en.wikipedia.org/w/index.php?title=Main_battle_tank&oldid=1384871486): \"with an operational range near 500 km (310 mi)\". Driving time at top speed, not measured fighting time. Low and high use the high and low speed."
+    },
+    "aggression_0_1": {
+      "value": 1.0,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.5,
+      "high": 1.0,
+      "note": "aggression level M: operated to win, a machine with a driver."
+    },
+    "group_tactics_0_1": {
+      "value": 0.8,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.4,
+      "high": 1.0,
+      "note": "group tactics level 4: tank platoons coordinate by radio, like a pack hunting together. Not level 5 (acting as one), since each tank still moves and fights on its own; not level 2, since they do coordinate."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "1df6f5a5f776cb042021d727e986864bb425e4b235d97c5410faa7ac8ece7587"
+}

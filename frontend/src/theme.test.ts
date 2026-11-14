@@ -61,6 +61,22 @@ test("the pairing covers the theme's surfaces and text colours", () => {
   expect(textColours.length).toBeGreaterThan(0);
 });
 
+test("the pairs the results page uses are among the checked pairs", () => {
+  // Stat sheet: values in --neon and tags in --hot on --panel, notes in --muted, the quote
+  // tooltip on --bg, and the gold banner.
+  const used = [
+    ["neon", "panel"],
+    ["hot", "panel"],
+    ["muted", "panel"],
+    ["text", "panel"],
+    ["text", "bg"],
+    ["neon", "bg"],
+    ["banner-text", "banner"],
+  ];
+  const checked = pairs.map((p) => p.join(" on "));
+  for (const pair of used) expect(checked).toContain(pair.join(" on "));
+});
+
 test.each(pairs)("--%s on --%s meets WCAG AA (4.5:1)", (fg, bg) => {
   expect(vars[fg], `--${fg} is defined`).toBeDefined();
   expect(vars[bg], `--${bg} is defined`).toBeDefined();
