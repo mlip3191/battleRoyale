@@ -287,6 +287,14 @@ BEARS = ["Grizzly", "Polar", "American Black"]
         ("bear vs bear", "Grizzly", "Which bear?", BEARS, "bear vs bear (Grizzly)"),
         ("bear vs wolf", "the big one", "Which bear?", BEARS, "bear vs wolf (the big one)"),
         ("bear vs wolf", "grizzly bear", "Which bear?", BEARS, "grizzly bear vs wolf"),
+        # The answer's last word ("Black") is in the other fighter: still lands on the bear.
+        (
+            "a bear vs a black wolf",
+            "American Black",
+            "Which bear?",
+            BEARS,
+            "a american black bear vs a black wolf",
+        ),
     ],
 )
 def test_merge_answer_splices_an_offered_variant_before_the_asked_fighter(

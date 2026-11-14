@@ -9,6 +9,8 @@ from app.providers.base import ChatLLM
 
 ARTICLES = {"a", "an", "the"}
 # Question words that never name a fighter, so "Which type of bear would you like?" -> "bear".
+# A filler word missing here is harmless: no single fighter matches, so the answer is just
+# appended as before ("bear vs wolf (Grizzly)").
 QUESTION_FILLER = {
     *("which", "what", "kind", "type", "sort", "species", "breed", "would", "like", "you"),
     *("are", "about", "talking", "the", "and", "one", "mean", "for", "this", "that", "should"),
@@ -37,6 +39,12 @@ def merge_answer(
         return f"{original} ({answer})"  # "grizzly bear and wolf" names both sides; don't splice
     *lead, last = answer.split(" ")
     lead = lead[1:] if lead and lead[0].lower() in ARTICLES else lead
+    spot = _asked_about(question, original) if _offered(answer, options or []) else None
+    if spot and not _same_noun(last, spot.group(0)):
+        # "a bear vs a wolf" + "Grizzly", asked "Which bear?" -> "a grizzly bear vs a wolf" (#296).
+        # Runs before the last-word splice, so "American Black" never lands on a "black wolf".
+        variant = " ".join([*lead, last]).lower()
+        return f"{original[: spot.start()]}{variant} {original[spot.start() :]}"
     # "bear vs wolf" + "grizzly bear" -> "grizzly bear vs wolf" (also matches "bears").
     word = re.compile(rf"\b{re.escape(last)}(?:e?s)?\b", re.I)
     matches = list(word.finditer(original))
@@ -44,12 +52,6 @@ def merge_answer(
         lead = _drop_repeated_words(lead, original[: matches[0].start()].split())
         if lead:
             return word.sub(lambda match: " ".join([*lead, match.group(0)]), original, count=1)
-    if not matches and _offered(answer, options or []):
-        # "a bear vs a wolf" + "Grizzly", asked "Which bear?" -> "a grizzly bear vs a wolf" (#296).
-        spot = _asked_about(question, original)
-        if spot:
-            variant = " ".join([*lead, last]).lower()
-            return f"{original[: spot.start()]}{variant} {original[spot.start() :]}"
     return f"{original} ({answer})"
 
 
@@ -61,6 +63,11 @@ def _offered(answer: str, options: list[str]) -> bool:
         return " ".join(words[1:] if words and words[0] in ARTICLES else words)
 
     return bare(answer) in {bare(option) for option in options}
+
+
+# True if two words name the same noun, singular or plural: "bear"/"bears", "wolf"/"wolves".
+def _same_noun(a: str, b: str) -> bool:
+    return bool(_noun_pattern(a).fullmatch(b) or _noun_pattern(b).fullmatch(a))
 
 
 # A word and its plurals: "bear" or "bears", "goose", "wolf" or "wolves".
