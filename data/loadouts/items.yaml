@@ -1,0 +1,102 @@
+# Loadout items by kind of fighter (#283, prework; not wired into battles).
+#
+# What a fighter can carry depends on what it is: a warrior carries iron, an animal grows claws and
+# hide, a machine bolts on plating. Each archetype below has the same four loadouts (attack,
+# defense, speed, balanced) and five items per loadout, one per tier. A fighter carries a "kit":
+# each round it adds a loadout (tier 1) or upgrades one by a tier, so tier N of a loadout needs
+# tier N-1 of the same loadout first (see docs/loadouts-design.md).
+#
+# The EFFECT of an item is not stored here: it comes from `LOADOUTS`, `LOADOUT_TIER_SCALE` and
+# `LOADOUT_ARCHETYPES` in backend/app/simulation/constants.py, which are assumptions, not sourced
+# figures. Only the names differ by archetype, plus how heavy the gear is (the `load` table).
+#
+# Rules this file follows (a test checks them):
+# - `covers` lists the sheet categories that use the archetype; together they cover every category
+#   except plants and objects, which have no loadouts (hoofed is the one exception: it is chosen
+#   by weapon, from the mammals);
+# - every item is pre-modern or natural: no firearms, explosives or modern vehicles (D-07, D-38);
+# - names use only letters, digits, spaces and hyphens, so they are safe to show and to narrate;
+# - `research` says what a teammate must source (a URL and an exact quote, like a stat sheet)
+#   before any real-world number is shown next to an item; until then an item is only a name.
+
+warrior:
+  covers: [human_archetype]
+  research: typical mass and material of each weapon, shield and armor (museum or reference pages)
+  items:
+    attack: [wooden club, iron war hammer, steel battle axe, two-handed greatsword, steel halberd]
+    defense: [wooden shield, iron rimmed shield, tower shield and mail shirt, brigandine and heater shield, full plate harness]
+    speed: [leather wraps, light leather armor and boots, skirmisher kit, runner kit with sling, scout gear and light bow]
+    balanced: [short sword and cloak, arming sword and buckler, longsword and mail shirt, sword and half plate, knights kit]
+
+mammal:
+  covers: [mammal, other]
+  research: typical claw, tooth and bone sizes and hide thickness for the species, from zoology pages
+  items:
+    attack: [sharper claws, hardened claws, razor claws, crushing jaws, killer instinct]
+    defense: [thicker hide, scarred hide, bony plates, layered hide, armored hide]
+    speed: [lean muscle, sprint conditioning, light frame, long stride, burst speed]
+    balanced: [hunting practice, trained instincts, seasoned fighter, veteran of many fights, apex predator]
+
+hoofed:
+  covers: []  # chosen by weapon: a mammal whose weapons include hooves, horns or tusks
+  covers_weapons: [hooves, horns, tusks]
+  research: typical hoof, horn and tusk sizes and hide thickness for the species, from zoology pages
+  items:
+    attack: [stronger kicks, hardened hooves, crushing blows, battering charge, trampling charge]
+    defense: [thick hide, toughened hide, muscle armor, heavy bulk, armored bulk]
+    speed: [stronger legs, long stride, light gait, full gallop, charge speed]
+    balanced: [herd instincts, steady nerves, seasoned veteran, old leader, herd leader]
+
+reptile:
+  covers: [reptile, amphibian, dinosaur]
+  research: typical fang, claw and scale sizes for the species, from zoology pages
+  items:
+    attack: [sharper fangs, hardened claws, tail lash, crushing bite, death roll]
+    defense: [thicker scales, ridged scales, bony scutes, armored back, plated hide]
+    speed: [warmed muscles, quick strike, light body, burst sprint, coiled spring]
+    balanced: [ambush practice, patient hunter, seasoned fighter, old survivor, apex hunter]
+
+bird:
+  covers: [bird]
+  research: typical talon, beak and feather sizes for the species, from ornithology pages
+  items:
+    attack: [sharper talons, hardened beak, razor talons, striking dive, crushing grip]
+    defense: [thicker feathers, dense plumage, tough skin, armored breast, hardened plumage]
+    speed: [stronger wings, steeper dive, lean flight muscle, tail steering, stooping speed]
+    balanced: [hunting practice, sharp eyes, seasoned hunter, veteran flier, master of the air]
+
+aquatic:
+  covers: [fish, mollusk]
+  research: typical tooth, jaw and scale sizes for the species, from marine biology pages
+  items:
+    attack: [sharper teeth, stronger jaws, serrated bite, crushing bite, thrashing strike]
+    defense: [thicker scales, tough skin, hardened shell, ridged plates, armored scales]
+    speed: [stronger fins, streamlined body, strong tail, burst swim, torpedo speed]
+    balanced: [hunting practice, sharp senses, seasoned hunter, old survivor, apex hunter]
+
+insect:
+  covers: [insect, arachnid]
+  research: typical mandible, stinger and exoskeleton sizes for the species, from entomology pages
+  items:
+    attack: [sharper mandibles, hardened mandibles, longer stinger, crushing pincers, strong venom sac]
+    defense: [thicker chitin, hardened shell, ridged plates, layered chitin, armored shell]
+    speed: [stronger legs, lighter body, quick wings, burst sprint, darting speed]
+    balanced: [swarm instinct, trained reflexes, seasoned fighter, old survivor, queen of the colony]
+
+machine:
+  covers: [vehicle, machine]
+  research: typical mass and thickness of each plate, ram and engine part (manufacturer or museum pages)
+  items:
+    attack: [reinforced ram plate, hardened ram, spiked ram, heavy ram, siege ram]
+    defense: [bolted armor plates, layered plating, sloped plating, heavy plating, reinforced hull]
+    speed: [tuned engine, lighter wheels, stripped body, better gearing, racing tune]
+    balanced: [service upgrade, field repairs, reinforced frame, veteran crew, full overhaul]
+
+mythical:
+  covers: [mythical]
+  research: none yet; legend numbers are assumptions, so these stay names until the PM decides
+  items:
+    attack: [sharpened claws, tempered fangs, fire-touched claws, fangs of legend, claws of legend]
+    defense: [thicker hide, charmed hide, scales of bronze, scales of iron, scales of legend]
+    speed: [stronger wings, swifter wings, wind-touched wings, storm wings, wings of legend]
+    balanced: [old magic, ancient cunning, seasoned legend, hardened legend, legend of legends]

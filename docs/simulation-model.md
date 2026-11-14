@@ -147,6 +147,24 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 
 **Calibration warning.** With these assumed constants a dragon built from the fixture sheet (6 t) cannot dent a 60 t tank with 80% armor in ten minutes. Showcase battle #5 (dragon vs main battle tank) will need its constants revisited once G09's real dragon sheet and the F07 benchmark exist.
 
+## Loadouts (proposal, #283; not wired into battles)
+
+A loadout is one choice per fighter that leans a way and costs something elsewhere, applied to a sheet by code before the engine runs (`simulation/loadouts.py`); the engine knows nothing about it, so a result is still a pure function of the sheets. There are four, each changing only attack force, attack rate, top speed and armor (the multipliers are `LOADOUTS` in `constants.py`, **assumptions**, not sourced figures):
+
+| Loadout | Attack force | Attack rate | Top speed | Armor |
+|---|---|---|---|---|
+| Attack | x1.5 | x0.8 | x0.95 | x1.0 |
+| Defense | x1.0 | x0.9 | x0.9 | x1.5 |
+| Speed | x0.9 | x1.0 | x1.25 | x0.8 |
+| Balanced | x1.08 | x1.0 | x0.96 | x1.1 |
+
+All four are multipliers on the fighter's own stat (armor from a floor of 0.05), so starting stats matter: a cheetah's speed loadout adds far more speed than a wolf's, and a rhino's armor loadout far more armor than a rabbit's. A fighter's **primary attribute** is what it is best at (attack force times rate against 1,500 N per second, armor against 0.4, speed against 20 m/s, `PRIMARY_REFERENCE`, an assumption), if it leads the next by 20%; otherwise it is a generalist and the balanced loadout is its match. The matching loadout's gains (not its costs) grow by 60% (`PRIMARY_SYNERGY`), and every loadout beyond the first shrinks all the gains by 20% (`SPLIT_FOCUS_PENALTY`, floored), so spreading points thin is not free. `backend/scripts/loadout_balance.py` compares kits with the same number of points and flags a dominant strategy; `loadout_preview.py` shows the odds change of each choice before a round, so enhancing a primary attribute pays extra.
+
+- **Number rule:** a changed sourced stat becomes `derived` (the note gives the base value, the multiplier and says the multiplier is an assumption); a changed estimate stays the estimate it was; armor becomes an `assumption`, kept within 0 to 1. The sheet hash changes with the loadout, so a cache key built from the sheet changes too. Names shown to users read "Gray wolf with an attack loadout"; image prompts never see it.
+- **No free upgrade:** every loadout lowers at least one stat, and no loadout is at least as good as another in all four, at every tier (a test checks it).
+- **Tiers and kits:** each loadout has five tiers (changes scaled by 1.0, 1.4, 1.8, 2.2, 2.6) and a fighter carries a kit: each round it adds a loadout or upgrades one by a tier. Gear has weight, so a heavy kit has negative traits (encumbrance slows it and its swing above a free load; attack above tier 3 is reckless; speed above tier 3 is fragile), all assumptions in `constants.py`. What the gear is, and how heavy it is, depends on the kind of fighter (a warrior's iron, a wolf's claws and hide, a horse's hooves, a bird's talons, a tank's plating: nine kinds, `LOADOUT_ARCHETYPES`), so a heavy kit slows a warrior far more than an animal. The items and how a fighter improves through the tournament are in [loadouts-design.md](loadouts-design.md).
+- **Not included:** critical hits (the engine has none; adding them is a new mechanic and an `ENGINE_VERSION` bump), firearms, explosives and modern vehicles (D-07, D-38), earned experience or money, and any request or API field. Inert objects have no loadout.
+
 ## Why probabilities are shown as "range"
 
 The 95% interval is a Wilson score interval on the share of runs won. Because every run draws different stats, the shares already blend in input uncertainty: when the stat ranges are narrow the fight's outcome is more predictable, so the win share moves toward 0 or 1 and the interval narrows (tested in `tests/property/test_simulation_engine.py`). The interval does *not* separately model uncertainty in the constants above.
