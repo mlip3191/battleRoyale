@@ -105,6 +105,25 @@ article or count ("Napoleon"), or when a word after "a", "the" or a number is ca
 Napoleon"). Otherwise it is a common noun ("a napoleon", "3 wolverines"). `real_person` counts
 only for proper names: "a Napoleon" is blocked; "a napoleon" (the pastry) is not.
 
+**Bare lowercase names (D-51, #186).** A bare name typed with no capital letters ("moose",
+"shredder") is judged by the kind item, like a common noun, when the top pick is a person, a
+fictional character or a creative work and a kind item also matched:
+
+- Against a **person**, only when the kind item's *label* is the typed word. "a million ants vs
+  moose" is allowed (the animal is labelled "moose"); "napoleon vs a goose" is still blocked
+  (the pastry is labelled "mille-feuille" and has "napoleon" only as an alias).
+- Against a **character or creative work**, an alias match is enough: "stapler vs shredder" is
+  allowed ("paper shredder" has the alias "shredder").
+- **Capitals mean a proper name**: "Moose vs a wolf" and "Shredder vs a stapler" still block, and
+  so does a request that types the same name both ways ("moose" and "Moose"). A name only the
+  model wrote ("napoleon" from "the short emperor") keeps the proper-name reading too.
+- Deities, bands and other picks are unchanged: "thor" still blocks as a deity.
+- Accepted on purpose: lowercase "hulk" passes this layer (a ship type is labelled "hulk"), so
+  only the classifier blocks "hulk vs a goose" (case bn-04).
+
+The label-or-alias test is made when the name is checked, from the cached kind item's label, so
+the cache needed no new column.
+
 **The band rule** (D-38: groups of people). A band item blocks only when the typed name names it,
 with capitals matching the label:
 
@@ -136,8 +155,8 @@ another version are ignored, so a class-map change takes effect at once.
 
 ## 6. Running the eval
 
-The cases live in `backend/tests/fixtures/safety_cases.yaml` (79 cases: 41 blocked covering every
-reason, 38 allowed, 12 of them objects, machines or mythical creatures, and 7 prompt-injection
+The cases live in `backend/tests/fixtures/safety_cases.yaml` (84 cases: 44 blocked covering every
+reason, 40 allowed, 12 of them objects, machines or mythical creatures, and 7 prompt-injection
 pairs). Each case says what it expects, which layer should decide on mocks, and how the stand-in
 models answer.
 
@@ -172,11 +191,9 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   item for common nouns from the top 10), so the right item can be missing. Some picks are odd
   but harmless, such as "a bulldozer" picking a record label (an organization, which isn't
   blocked).
-- **Bare lowercase names read as proper names.** "moose vs a wolf" (no article) looks up "moose"
-  as a name, and live Wikidata's top pick is a person called Moose, so it can be blocked as
-  `real_person`. Likewise "stapler vs shredder" picks Shredder, the cartoon character. "a moose"
-  and "a shredder" work. The classifier's lowercase rule doesn't help here, because any block
-  wins.
+- **Bare lowercase character names can pass the Wikidata check** when some kind item shares the
+  name (D-51): "hulk" is let through because of the ship type, so only the classifier blocks it.
+  A bare capitalized name ("Moose") still reads as a proper name.
 - **The attack-planning rule is a word list.** It catches clear phrasings only; the classifier
   covers the rest.
 - **Lowercase full names after an article pass the Wikidata check.** "a barack obama" or "the

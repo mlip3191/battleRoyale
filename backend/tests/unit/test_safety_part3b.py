@@ -161,9 +161,7 @@ def test_an_entity_the_user_typed_keeps_the_users_casing(raw: str, entity: str, 
 
 
 async def test_injected_text_does_not_turn_a_moose_into_a_person(cache: WikidataCache) -> None:
-    # Live "moose": a person named Moose (Q7272283) ranks before the animal (Q35517). Kept out of
-    # the shared mock fixture, where other tests type a bare "moose" (see docs/safety.md, known
-    # limits: bare lowercase names read as proper names).
+    # Live "moose": a person named Moose (Q7272283) ranks before the animal (Q35517).
     lookup = Ranked(("Q7272283", EntityClasses((HUMAN,))), ("Q35517", EntityClasses((TAXON,))))
     fighters = [
         FighterRequest(raw="a wolf", entity="wolf"),
@@ -172,8 +170,9 @@ async def test_injected_text_does_not_turn_a_moose_into_a_person(cache: Wikidata
     names = wikidata_names(fighters)
     assert "a moose" in names and "moose" not in names
     assert (await check_names(names, lookup=lookup, cache=cache)).allowed
-    # Before part 3b the bare entity was looked up: a proper name, so the person.
-    assert (await check_names(["moose"], lookup=lookup, cache=cache)).reason == "real_person"
+    # A bare capitalized name is a proper name, so the person. (Before part 3b the bare entity
+    # was looked up; since D-51, #186, bare lowercase "moose" is the animal too.)
+    assert (await check_names(["Moose"], lookup=lookup, cache=cache)).reason == "real_person"
 
 
 # --- Issue 2: "a vending machine" ------------------------------------------------------------

@@ -109,8 +109,12 @@ class Recorder:
 
 # Route the gate's Wikidata check to one live lookup and the temp cache (whatever the mode).
 def use_live_wikidata(lookup: wikidata.LiveWikidataLookup, cache: wikidata.WikidataCache) -> None:
-    async def check_names(names: Sequence[str], **_: object) -> SafetyVerdict:
-        return await wikidata.check_names(names, lookup=lookup, cache=cache)
+    async def check_names(
+        names: Sequence[str], *, model_written: Sequence[str] = (), **_: object
+    ) -> SafetyVerdict:
+        return await wikidata.check_names(
+            names, lookup=lookup, cache=cache, model_written=model_written
+        )
 
     gate.check_names = check_names  # type: ignore[assignment]
 

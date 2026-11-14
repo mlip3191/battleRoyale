@@ -21,7 +21,9 @@
 # Version 6 (A04 part 3b): geographic location is individuals_only (live "vending machine" is a
 # subclass of shop -> workplace -> geographic location), and the cache also stores the first
 # kind item for common nouns ("a wolverine": the animal, not the comic-book character).
-classes_version: 6
+# Version 7 (#186, D-51): a bare name typed in lowercase ("moose", "shredder") is judged by its
+# kind item when the top pick is a person or a character, which changes how cached rows block.
+classes_version: 7
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed

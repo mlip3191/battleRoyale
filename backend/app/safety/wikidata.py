@@ -6,9 +6,11 @@ kind item matched too, and creative works while another exact match is left), re
 wikidata_classes.yaml. A band blocks only when typed as "the" + its label, or as its bare label
 when that is not a common word ("Beatles" blocks, "Eagles" does not: "eagle" is an animal).
 A common noun ("a wolverine": an article or count, no capitals) is judged by its first kind item
-when one matched (the animal, not the comic-book character ranked above it).
-Results are cached in SQLite. This layer fails open: if Wikidata is slow or down, it gives no
-verdict and the rules and classifier still decide. gate.py runs it alongside the classifier.
+when one matched (the animal, not the comic-book character ranked above it). So is a bare name
+typed all in lowercase ("moose", "shredder") whose top pick is a person or a character, under the
+D-51 rule (#186; see kind_beats_name). Results are cached in SQLite. This layer fails open: if
+Wikidata is slow or down, it gives no verdict and the rules and classifier still decide.
+gate.py runs it alongside the classifier.
 """
 
 import asyncio
@@ -18,7 +20,7 @@ import logging
 import re
 import sqlite3
 import threading
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Collection, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -87,7 +89,10 @@ class NameCheck:
     when the picked item is a band (its block then depends on how the name was typed, see
     names_band); common is True when that band's name is also a common word ("Eagles").
     kind_qid, kind_label and kind_reason describe the first kind item among the exact matches
-    when the top pick is not itself a kind; a name typed as a common noun is judged by it."""
+    when the top pick is not itself a kind; a name typed as a common noun is judged by it, and so
+    is a bare lowercase name when kind_beats_name says so (D-51, #186). Whether the kind item
+    matched by label or only by alias is read from kind_label at check time, so cached rows need
+    no extra field."""
 
     qid: str | None
     label: str | None
@@ -219,6 +224,19 @@ def lookup_query(name: str) -> tuple[str, bool]:
         if typed and singular_word(typed[-1]) == query[-1]:
             query[-1] = typed[-1]  # undo the singular: "beatle" -> "beatles"
     return " ".join(query), proper
+
+
+# True when a name was typed bare (no article or count) and with no capital letters: "moose",
+# "stapler"; not "Moose", "a moose" or "3 moose". lookup_query lowercases its query (the cache
+# key), so check_names reads the typed casing here (D-51, #186).
+def bare_lowercase(name: str) -> bool:
+    text = name.strip()
+    return read_count(text.lower()).count is None and not _has_capital(text)
+
+
+# True when any letter in the text is a capital.
+def _has_capital(text: str) -> bool:
+    return any(ch.isupper() for ch in text)
 
 
 # Lowercase text with punctuation (other than ' and -) turned to spaces and spaces collapsed.
@@ -593,27 +611,49 @@ async def _check_one(
     return check
 
 
+# D-51 (#186): True when a bare name typed in lowercase is judged by its kind item instead of its
+# top pick. The pick must be a person (then the kind item's label must be the typed word, so
+# "moose" the animal wins but the pastry "mille-feuille", which only has "napoleon" as an alias,
+# does not), or a fictional character or creative work (an alias match is enough: "shredder"
+# matches "paper shredder"). A creative work has no blocked reason of its own, so "no reason"
+# counts as one. Bands keep the band rule; deities and other blocked picks keep their reading.
+def kind_beats_name(query: str, check: NameCheck) -> bool:
+    if check.kind_qid is None or check.band:
+        return False
+    if check.reason == "real_person":
+        return check.kind_label is not None and _plain(check.kind_label.casefold()) == query
+    return check.reason in (None, "copyrighted_character")
+
+
 # Check fighter names (each side's entity and raw text) against Wikidata. Returns a block from
 # the "wikidata" layer, or ALLOWED, which here means "no objection": no match, nothing blocked,
 # or Wikidata unavailable. A name typed as a common noun (not proper, see lookup_query) is judged
-# by the first kind item when one matched: "a wolverine" is the animal. real_person only counts
-# for names that read as proper names: "a Napoleon" counts, "a napoleon" does not. A band also
-# needs one of the typed names to name it (names_band): "the Eagles" and "Beatles" count;
-# "Eagles" and "eagles" do not.
+# by the first kind item when one matched: "a wolverine" is the animal. So is a bare name typed
+# all in lowercase when kind_beats_name says so (D-51, #186): "moose" and "shredder" are allowed,
+# "napoleon" is not. Capitals mean a proper name, so a query typed with capitals anywhere in the
+# request ("moose" and "Moose"), or named only by the model (model_written: an entity with words
+# the user never typed, whose lowercase says nothing), keeps the proper-name reading.
+# real_person only counts for names that read as proper names: "a Napoleon" counts, "a napoleon"
+# does not. A band also needs one of the typed names to name it (names_band): "the Eagles" and
+# "Beatles" count; "Eagles" and "eagles" do not.
 async def check_names(
     names: Sequence[str],
     *,
     lookup: WikidataLookup | None = None,
     cache: WikidataCache | None = None,
     class_map: ClassMap | None = None,
+    model_written: Collection[str] = (),
 ) -> SafetyVerdict:
     proper_by_query: dict[str, bool] = {}
     typed_by_query: dict[str, list[str]] = {}
+    lowercase_by_query: dict[str, bool] = {}
     for name in names:
         query, proper = lookup_query(name)
         if query:
             proper_by_query[query] = proper_by_query.get(query, False) or proper
             typed_by_query.setdefault(query, []).append(name)
+            lowercase = not _has_capital(name) and name not in model_written
+            lowercase_by_query[query] = lowercase_by_query.get(query, True) and lowercase
     if not proper_by_query:
         return ALLOWED
     lookup = lookup or get_lookup()
@@ -625,7 +665,11 @@ async def check_names(
     for (query, proper), check in zip(proper_by_query.items(), checks, strict=True):
         if check is None:
             continue
-        if not proper and check.kind_qid is not None:
+        typed = typed_by_query[query]
+        lowercase_name = lowercase_by_query[query] and any(bare_lowercase(t) for t in typed)
+        if check.kind_qid is not None and (
+            not proper or (lowercase_name and kind_beats_name(query, check))
+        ):
             if check.kind_reason is not None:
                 return blocked(check.kind_reason, "wikidata")
             continue
@@ -633,7 +677,6 @@ async def check_names(
             continue
         if check.reason == "real_person" and not proper:
             continue
-        typed = typed_by_query[query]
         if check.band and not any(names_band(t, check.label, check.common) for t in typed):
             continue
         return blocked(check.reason, "wikidata")
