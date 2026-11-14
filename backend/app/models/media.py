@@ -18,3 +18,5 @@ class Asset(Contract):
     """Hash of the prompt that made it, used for caching."""
     fallback: bool = False
     """True when a stock file was used because generation failed."""
+    script_kind: Literal["intro", "play_by_play", "outro"] | None = None
+    """For narration_audio: which Script it reads. None for every other kind."""

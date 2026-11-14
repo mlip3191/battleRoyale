@@ -222,3 +222,45 @@ def test_summary_has_no_favorite_for_a_draw_or_no_contest():
     s = summary(contest, ("E", "S"))
     assert s.outcome == "no_contest" and s.favorite is None
     assert s.deciding_factor == "habitat"
+
+
+# --- #120: the numbers and terrain explainers say who they helped ---------------------------------
+
+
+def _explained(key, helped, matchup, sheets):
+    from app.simulation.decide import _explain
+
+    return _explain(key, matchup, sheets, 0, helped)
+
+
+def test_numbers_explainer_has_a_variant_for_when_the_crowd_did_not_help_the_favorite():
+    cats, wolf = make_sheet("cats"), make_sheet("wolf")
+    matchup = matchup_of(1, 30)  # the favorite (side 0) is the one outnumbered
+    helped = _explained("numbers", True, matchup, [cats, wolf])
+    against = _explained("numbers", False, matchup, [cats, wolf])
+    assert "Numbers decided it" in helped and "in spite of" not in helped
+    assert "in spite of the head count" in against and "decided it" not in against
+    for text in (helped, against):  # same numbers, both inputs
+        assert sorted(numbers_in(text, [cats, wolf])) == [1.0, 30.0]
+
+
+def test_terrain_explainer_has_a_variant_for_when_the_ground_did_not_help_the_favorite():
+    shark, cat = make_sheet("shark", habitat="water"), make_sheet("cat")
+    matchup = matchup_of(1, 1, terrain=Terrain.WATER)
+    helped = _explained("terrain", True, matchup, [shark, cat])
+    against = _explained("terrain", False, matchup, [shark, cat])
+    assert "The ground decided it" in helped and "suits the Shark" in helped
+    assert "in spite of the ground" in against and "suits the Cat" in against
+    assert "decided it" not in against
+    for text in (helped, against):
+        assert numbers_in(text, [shark, cat]) == []
+
+
+def test_a_favorite_that_wins_against_the_ground_is_not_said_to_be_helped_by_it():
+    from app.simulation.decide import _explain
+
+    shark, cat = make_sheet("shark", habitat="water"), make_sheet("cat")
+    matchup = matchup_of(1, 1, terrain=Terrain.WATER)
+    # the cat is side 0 here, so the water favors side 1 (the shark) and not the favorite
+    text = _explain("terrain", matchup, [cat, shark], 0, False)
+    assert text.startswith("Cat came out ahead in spite of the ground")

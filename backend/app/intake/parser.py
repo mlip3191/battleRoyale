@@ -16,10 +16,8 @@ from app.intake.llm_io import CALL_ERRORS, as_data, data_block
 from app.intake.llm_io import INPUT_END as INPUT_END  # re-exported for tests and golden checks
 from app.intake.llm_io import INPUT_START as INPUT_START
 from app.intake.rules import (
-    IRREGULAR_PLURALS,
     MULTIPLIERS,
     SCALES,
-    UNCHANGED,
     UNITS,
     clamp_count,
     find_size_reference,
@@ -31,7 +29,7 @@ from app.intake.schema import Clarification, ParsedFighter, ParsedMatchup
 from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.models.terrain import Terrain
 from app.providers.base import ChatLLM, ChatMessage
-from app.providers.registry import get_provider
+from app.providers.registry import get_intake_chat
 from app.safety import (
     SafetyUnavailable,
     SafetyVerdict,
@@ -40,6 +38,7 @@ from app.safety import (
     check_text_rules,
     classify_text,
 )
+from app.text import pluralize
 
 PROMPT_NAME = "intake_parse"
 PROMPT_PATH = Path(__file__).parents[2] / "prompts" / f"{PROMPT_NAME}.md"
@@ -58,6 +57,7 @@ NUMBER_WORDS = (
 )  # "hundreds", "thousands" count too
 
 REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it another way?"
+COMMON_KIND_NOTE = "Still not sure which kind you meant, so we'll use the most common one."
 EXAMPLE_OPTIONS = [
     "a grizzly bear vs 6 gray wolves",
     "a dozen house cats vs a golden retriever",
@@ -71,7 +71,6 @@ TERRAIN_PHRASES = {
     Terrain.URBAN: " in the city",
     Terrain.MOUNTAIN: " on the mountain",
 }
-SINGULAR_TO_PLURAL = {singular: plural for plural, singular in IRREGULAR_PLURALS.items()}
 
 
 class ModelReplyError(ValueError):
@@ -186,27 +185,11 @@ async def ask_model(chat: ChatLLM, text: str) -> ParsedMatchup | None:
 # --- Wording ------------------------------------------------------------------------------
 
 
-# Plural of a lowercase name's last word: "gray wolf" -> "gray wolves".
-def plural(entity: str) -> str:
-    *head, last = entity.split(" ")
-    if last in SINGULAR_TO_PLURAL:
-        last = SINGULAR_TO_PLURAL[last]
-    elif last in UNCHANGED:
-        pass
-    elif last.endswith(("s", "x", "ch", "sh")):
-        last += "es"
-    elif len(last) > 1 and last.endswith("y") and last[-2] not in "aeiou":
-        last = last[:-1] + "ies"
-    else:
-        last += "s"
-    return " ".join([*head, last])
-
-
 # "a goose", "an ant", "12 house cats".
 def describe(count: int, entity: str) -> str:
     if count == 1:
         return f"{'an' if entity[:1] in 'aeiou' else 'a'} {entity}"
-    return f"{count:,} {plural(entity)}"
+    return f"{count:,} {pluralize(entity)}"
 
 
 # Swap one side's words in the user's text for new words, ignoring case.
@@ -252,11 +235,11 @@ def too_many_sides(fighters: list[ParsedFighter]) -> IntakeResult:
 def not_whole(text: str, fighter: ParsedFighter, problem: str) -> IntakeResult:
     entity = normalize_entity(fighter.entity) or normalize_entity(fighter.raw)
     if problem == "zero":
-        joke = f"Zero {plural(entity)} means nobody shows up to the fight!"
+        joke = f"Zero {pluralize(entity)} means nobody shows up to the fight!"
     else:
         joke = f"Fighters come in whole numbers only. Part of a {entity} can't put up a fight!"
     options = [_replace_side(text, fighter.raw, describe(n, entity)) for n in (1, 2)]
-    return clarify(f"How many {plural(entity)} should fight?", options, f"{joke} How many?")
+    return clarify(f"How many {pluralize(entity)} should fight?", options, f"{joke} How many?")
 
 
 # A missing opponent or a fighter too vague to research.
@@ -329,9 +312,14 @@ async def parse_and_classify(
 # input; raises IntakeUnavailable when the chat provider or the safety classifier is down (an
 # outage, not the user's wording; safety fails closed). Safety (A04): code rules run on the text
 # before any model call, the classifier runs alongside the parse call, and an ok reading is
-# checked again side by side. safety_chat defaults to the chat provider.
+# checked again side by side. safety_chat defaults to the intake chat (short timeout, #169).
+# ask=False is for the answer to a question (D08): a still-vague fighter is accepted with a note.
 async def parse_matchup(
-    text: str, *, chat: ChatLLM | None = None, safety_chat: ChatLLM | None = None
+    text: str,
+    *,
+    chat: ChatLLM | None = None,
+    safety_chat: ChatLLM | None = None,
+    ask: bool = True,
 ) -> IntakeResult:
     text = text.strip()
     if not text:
@@ -341,12 +329,12 @@ async def parse_matchup(
     rules = check_text_rules(text)
     if not rules.allowed:
         return blocked_result(rules)
-    safety_chat = safety_chat or get_provider("chat")
+    safety_chat = safety_chat or get_intake_chat()
     try:
-        parsed, verdict = await parse_and_classify(text, chat or get_provider("chat"), safety_chat)
+        parsed, verdict = await parse_and_classify(text, chat or get_intake_chat(), safety_chat)
         if not verdict.allowed:
             return blocked_result(verdict)
-        result = read_matchup(text, parsed)
+        result = read_matchup(text, parsed, ask=ask)
         if result.matchup is not None:
             sides = await check_parsed_sides(result.matchup.fighters, text, chat=safety_chat)
             if not sides.allowed:
@@ -357,7 +345,8 @@ async def parse_matchup(
 
 
 # The model's reading -> IntakeResult (ok or clarify), with every number decided by code.
-def read_matchup(text: str, parsed: ParsedMatchup | None) -> IntakeResult:
+# ask=False accepts a still-vague fighter with a note instead of asking again.
+def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -> IntakeResult:
     if parsed is None:
         return clarify(REPHRASE_QUESTION, EXAMPLE_OPTIONS)
     if len(parsed.fighters) > 2:
@@ -366,7 +355,7 @@ def read_matchup(text: str, parsed: ParsedMatchup | None) -> IntakeResult:
         problem = read_count(fighter.raw).problem
         if problem:
             return not_whole(text, fighter, problem)
-    if parsed.needs_clarification or len(parsed.fighters) < 2:
+    if len(parsed.fighters) < 2 or (ask and parsed.needs_clarification):
         return vague(parsed)
     max_count = get_settings().sim_max_count
     built = [build_fighter(f, max_count) for f in parsed.fighters]
@@ -374,6 +363,8 @@ def read_matchup(text: str, parsed: ParsedMatchup | None) -> IntakeResult:
     notes = _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
     if terrain_note:
         notes.append(terrain_note)
+    if parsed.needs_clarification:
+        notes.append(COMMON_KIND_NOTE)
     fighters = [request for request, _ in built]
     matchup = Matchup(
         fighters=fighters, terrain=terrain, raw_text=text, assumptions=list(dict.fromkeys(notes))

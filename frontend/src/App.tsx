@@ -1,14 +1,15 @@
 import { Route, Routes } from "react-router-dom";
-import { Header } from "./components/Broadcast.tsx";
+import { Header, SkipLink } from "./components/Broadcast.tsx";
 import Battle from "./pages/Battle.tsx";
 import Home from "./pages/Home.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Results from "./pages/Results.tsx";
 
-// The broadcast frame and every top-level route.
+// The broadcast frame and every top-level route. The skip link comes first, before the header.
 export default function App() {
   return (
     <>
+      <SkipLink />
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />

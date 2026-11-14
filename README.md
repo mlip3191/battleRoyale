@@ -31,12 +31,15 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 - [Product spec](docs/PRODUCT_SPEC.md) — what we build and how it's judged
 - [Architecture](docs/ARCHITECTURE.md) — modules, contracts, API, providers, edge cases
 - [Team process](docs/TEAM_PROCESS.md) — branches, PRs, reviews, QA bot, secrets, CI
+- [Filing issues](docs/issues.md) — how to use /new-issue, labels, and the board
 - [Decisions](docs/DECISIONS.md) — what's decided and what's still open
 - [Lanes and tasks](docs/plan/LANES.md) — who does what, with a ready-to-paste prompt for every task
 
 ## For the instructor
 
 Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 26 and uv; run `npm run env:setup` in a terminal and enter the course host and API key (or copy `.env.example` to `.env` and fill it in by hand; `npm run env:check` confirms either way); `npm run setup`; `npm run ingest` (builds the knowledge base, once); `npm start`; open http://localhost:8000. Five showcase battles load automatically. A full first-time guide is in `docs/user-guide.md`. With `PROVIDER_MODE=mock` the app runs without any endpoints.
+
+If `npm run setup` stops on Windows with "failed to hardlink file" (os error 396), run it again with copying turned on: `$env:UV_LINK_MODE="copy"; npm run setup` in PowerShell (or `set "UV_LINK_MODE=copy" && npm run setup` in Command Prompt).
 
 ## Stack
 
