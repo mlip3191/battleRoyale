@@ -392,6 +392,9 @@ def render_run(report: RunReport) -> str:
         ]
         for j in rows:
             favorite = {None: "none"}.get(j.favorite, f"side {j.favorite}")
+            wins = f"{j.win_pct[0]} / {j.win_pct[1]}"
+            if j.skipped:  # nothing was simulated, so there is no favorite or win share to show
+                favorite = wins = "—"
             expected = (
                 f"side {j.entry.expected_winner}" if j.entry.expected_winner != "draw" else "draw"
             )
@@ -401,7 +404,7 @@ def render_run(report: RunReport) -> str:
             ) + f" — {j.reason}"
             lines.append(
                 f"| {j.entry.id} | {j.entry.group} | {expected} | {favorite} "
-                f"| {j.win_pct[0]} / {j.win_pct[1]} | {fair} | {verdict} |"
+                f"| {wins} | {fair} | {verdict} |"
             )
     return "\n".join(lines) + "\n"
 

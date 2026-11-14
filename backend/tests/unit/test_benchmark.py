@@ -240,6 +240,9 @@ def test_a_matchup_with_a_missing_sheet_is_skipped_and_the_rest_are_scored():
     text = bm.render_run(report)
     assert "Skipped (1)" in text and "ghost" in text
     assert "| Tuning | 2/2 (100%), 1 skipped |" in text  # scored matchups only, skips counted
+    # A skipped row shows dashes, not a favorite of "none" and a made-up 0.0 / 0.0 win share.
+    row = next(line for line in text.splitlines() if line.startswith("| ghost "))
+    assert "| — | — | — | skipped" in row and "0.0 / 0.0" not in row
 
 
 # --- Count cases: the right favorite, and the right side varied --------------------------------

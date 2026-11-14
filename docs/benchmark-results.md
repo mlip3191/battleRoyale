@@ -37,16 +37,16 @@ _Traceability (G06) is not wired in yet; it shows n/a until research/trace.py la
 | doc-01 | documented | side 0 | side 0 | 99.7 / 0.3 | — | pass — favorite matches |
 | doc-02 | documented | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
 | doc-03 | documented | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| doc-06 | documented | side 0 | none | 0.0 / 0.0 | — | skipped — no stat sheet for 'golden-retriever' |
+| doc-06 | documented | side 0 | — | — | — | skipped — no stat sheet for 'golden-retriever' |
 | doc-07 | documented | side 0 | side 0 | 99.7 / 0.3 | — | pass — favorite matches |
-| doc-08 | documented | side 1 | none | 0.0 / 0.0 | — | skipped — no stat sheet for 'goose' |
+| doc-08 | documented | side 1 | — | — | — | skipped — no stat sheet for 'goose' |
 | doc-09 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
 | obv-02 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
 | obv-03 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-04 | obvious | side 1 | none | 0.0 / 0.0 | — | skipped — no stat sheet for 'toaster' |
+| obv-04 | obvious | side 1 | — | — | — | skipped — no stat sheet for 'toaster' |
 | obv-06 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
 | obv-07 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-08 | obvious | side 1 | none | 0.0 / 0.0 | — | skipped — no stat sheet for 'house-mouse' |
+| obv-08 | obvious | side 1 | — | — | — | skipped — no stat sheet for 'house-mouse' |
 | obv-11 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
 | obv-12 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
 | obv-14 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
@@ -60,7 +60,7 @@ _Traceability (G06) is not wired in yet; it shows n/a until research/trace.py la
 | cnt-04 | count | side 1 | side 1 | 0.0 / 100.0 | 320 | FAIL — fair count 320 outside expected 20-300 |
 | doc-04 | documented | side 0 | side 0 | 95.0 / 5.0 | — | pass — favorite matches |
 | doc-05 | documented | side 0 | side 1 | 1.3 / 98.7 | — | FAIL — expected side 0, got side 1 |
-| doc-10 | documented | side 0 | none | 0.0 / 0.0 | — | skipped — no stat sheet for 'hippopotamus' |
+| doc-10 | documented | side 0 | — | — | — | skipped — no stat sheet for 'hippopotamus' |
 | obv-01 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
 | obv-05 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
 | obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
