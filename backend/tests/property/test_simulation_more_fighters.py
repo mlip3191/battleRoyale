@@ -45,8 +45,9 @@ def crowd_share(count: int, foes: int) -> float:
 @pytest.mark.parametrize(
     ("base", "extra", "foes"),
     [
-        (190, 20, 40),  # crosses the threshold: one-by-one before, swarm after
-        (200, 1, 40),  # the smallest step across it
+        (150, 60, 40),  # crosses the threshold: 150 v 40 is one by one, 210 v 40 is swarm
+        (190, 20, 40),  # swarm on both sides since D-50 (the work rule), so no mode switch here
+        (200, 1, 40),  # the one-fighter step across the head-count threshold, swarm both sides
         (201, 49, 45),
         (250, 150, 60),
         (400, 200, 90),

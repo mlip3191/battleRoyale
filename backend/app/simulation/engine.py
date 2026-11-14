@@ -151,6 +151,8 @@ def expected_work(sides: list[Template]) -> float:
         rates.append(rate)
         times.append(hits_needed / hits_per_s if hits_per_s > 0 else math.inf)
     stops = [side.endurance_s for side in sides if side.body == Body.MACHINE]
+    # `inf` in `times` marks a side that cannot attack, so the other side's time, 600 s or a
+    # machine's operating time decides how long the fight lasts.
     duration = min(*times, c.MAX_FIGHT_S, *stops)
     return sum(rates) * duration
 
@@ -162,9 +164,7 @@ def use_swarm(sides: list[Template]) -> bool:
     )
 
 
-def _foregone(
-    sides: list[Template], starts: list[float], swarm: bool | None = None
-) -> tuple[int, float] | None:
+def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] | None:
     """(winner, end time) when the fight's result is certain without simulating it, else None.
 
     The certainty is an exact upper bound, not an estimate: every fighter attacks at most once
@@ -175,7 +175,7 @@ def _foregone(
     Objects whose spines really hurt their attackers can end a fight by other means, so they are
     simulated.
     """
-    if max(side.count for side in sides) > c.SWARM_THRESHOLD if swarm is None else swarm:
+    if max(side.count for side in sides) > c.SWARM_THRESHOLD:
         return None  # swarm mode acts in coarse time steps, so the per-interval bound does not hold
     if any(side.spiky and side.damage > 0 for side in sides):
         return None  # spines that hurt can end a fight in ways the bound ignores
@@ -250,7 +250,7 @@ def run_once(
         alive = [sides[0].count, sides[1].count]
         return _outcome(alive, c.MAX_FIGHT_S, events, record_events)
 
-    sure = None if record_events else _foregone(sides, starts, swarm)
+    sure = None if record_events else _foregone(sides, starts)
     if sure is not None:
         # A certain result: skip the (possibly enormous) simulation. The replay of a
         # representative fight is still simulated in full, so the log shows real events.

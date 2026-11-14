@@ -29,7 +29,7 @@ Full tables are printed by the script. Speed is the point of swarm mode, but tim
 
 ## Larger fights (above the swarm threshold)
 
-Every scenario above is 125 per side or fewer, but swarm mode only runs above 200 per side. These larger fights can be reproduced with `uv run --directory backend python scripts/validate_swarm.py --scenario large --runs 300` (opt-in because it is the slowest group, about 8 s at 300 runs). A teammate first ran them at 150-300 runs each (one-by-one vs swarm, win share of the first side):
+Every scenario above is 125 per side or fewer, but swarm mode only runs above 200 per side, or for fights with too much expected work (D-50, below). These larger fights can be reproduced with `uv run --directory backend python scripts/validate_swarm.py --scenario large --runs 300` (opt-in because it is the slowest group, about 8 s at 300 runs). A teammate first ran them at 150-300 runs each (one-by-one vs swarm, win share of the first side):
 
 | Fight | Runs | One-by-one | Swarm | Gap | Noise (95%) |
 |---|---|---|---|---|---|
@@ -55,7 +55,7 @@ Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 
 
 - **Win probabilities from swarm mode are trustworthy** to about ±0.03 for every kind of fight in the validation script, including a crowd of weak fighters against a few strong ones.
 - **Duration and survivor counts from swarm mode are now close** to the one-by-one engine's (durations 0.88 to 1.04x, survivors within a few percent), so a fight at 201 per side reads like the same fight at 199.
-- **Fair-fight search:** probes above 200 per side use swarm mode, and their answers are now as reliable as those below.
+- **Fair-fight search:** probes above 200 per side, or with too much expected work, use swarm mode, and their answers are now as reliable as those below.
 - **F07 benchmark:** "count" cases above 200 per side are fine to include; still flag any swarm-mode matchup in the report.
 - **Swarm mode is cheaper than a long one-by-one fight, not free.** A 201 v 201 fight costs about 0.5 to 0.9 s per 1,000 runs instead of 0.14 s, but 150 cats v 1 elephant costs about 32 s one by one, so D-50 (#183) chooses swarm mode by expected work, not head count. Every fight that newly switches must agree with the one-by-one engine within ±0.03.
 
@@ -70,9 +70,10 @@ Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 
 | 50 cats v 1 elephant | +0.003 | 0.97x | 3.9 s | 0.38 s |
 | 100 cats v 1 elephant | +0.023 | 0.96x | 8.6 s | 0.41 s |
 | 150 cats v 1 elephant | +0.022 | 0.97x | 9.2 s | 0.54 s |
-| 100 archers v 50 wolves | +0.003 | 0.93x | 0.7 s | 0.13 s |
-| 150 archers v 75 wolves | +0.005 | 0.97x | 1.1 s | 0.15 s |
+| 200 archers v 150 wolves | +0.013 | 0.98x | 1.5 s | 0.16 s |
 
 (Times are for 600 runs without the analysis, on the author's laptop.) With the deciding-factor analysis, 150 cats v 1 elephant takes about 2.8 s in swarm mode, against about 32 s one by one.
+
+**A known limit on very large fights.** The work estimate counts the cost of simulating one by one, so it says nothing about how slow swarm mode itself gets for enormous crowds: 10,000 v 10,000 wolves take about 9.6 s per 1,000 runs (2.8 s at 300 runs) on the author's laptop, well over the 3 s Simulate budget. This is documented rather than fixed: it needs counts of that size on both sides, the pipeline answers a simulate timeout with a plain "too big to simulate quickly" message, and a run-count reduction would change every result's noise. If it matters later, the options are fewer runs for such fights (shown in the UI) or a cap on counts at intake (#91).
 
 **A time-step cap was needed for these.** Swarm steps used to grow to 10% of the elapsed time, so a 500 s fight took steps of 50 s, and 150 cats v 1 elephant overrated the crowd by +0.13 (100 v 1: +0.08). `SWARM_STEP_MAX_S` caps the step at 3 s: the gaps above are with the cap (+0.022 and +0.023 at 600 runs, noise about 0.055), and fights shorter than about 30 s are unaffected. The cap applies only to fights with at most 200 on each side, the ones the work rule sends to swarm mode; the larger crowds above were validated without it, and with it 10,000 ants v 1 lion would cost 2.9 s instead of 0.9 s. Steps of 2 s, 4 s and 5 s gave +0.010, +0.015 and +0.030 for 150 v 1 and 3.6, 2.3 and 1.9 s with the analysis; 3 s was the best balance.

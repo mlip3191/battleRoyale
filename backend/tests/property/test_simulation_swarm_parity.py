@@ -272,3 +272,28 @@ def test_a_fight_that_hits_the_time_limit_gets_no_extra_combat_in_swarm_mode(mon
     one, swarm = both(monkeypatch, [ant(), lion()], 1500, 1, runs=20)
     assert one.draw_prob == swarm.draw_prob == 1.0
     assert swarm.mean_survivors[0] >= 0.93 * one.mean_survivors[0]  # 0.96 now, 0.89 without the fix
+
+
+# The fights the work rule newly sends to swarm mode (D-50). 200 runs each keeps them cheap; the
+# 600-run table in docs/swarm-validation.md is the real +/-0.03 evidence, this pins a gross break.
+@pytest.mark.parametrize(
+    ("label", "attacker", "defender", "na", "nb"),
+    [
+        ("150 v 150 wolves", "wolf", "wolf", 150, 150),
+        ("200 v 200 wolves", "wolf", "wolf", 200, 200),
+        ("50 cats v 1 elephant", "cat", "elephant", 50, 1),
+        ("100 cats v 1 elephant", "cat", "elephant", 100, 1),
+    ],
+)
+def test_other_fights_sent_to_swarm_mode_by_their_work_agree_too(
+    monkeypatch, label, attacker, defender, na, nb
+):
+    sheets = {
+        "wolf": wolf(),
+        "cat": small_cat(),
+        "elephant": elephant(),
+    }
+    pair = [sheets[attacker], sheets[defender]]
+    assert _fight(pair, na, nb), label  # they really are sent to swarm mode
+    one, swarm = both(monkeypatch, pair, na, nb, runs=200)
+    assert abs(swarm.win_prob[0] - one.win_prob[0]) <= 0.08, label  # 200 runs: noise about 0.07

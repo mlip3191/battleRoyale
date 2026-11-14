@@ -68,7 +68,7 @@ def scenarios() -> dict[str, list[tuple[str, StatSheet, int, StatSheet, int]]]:
     # even fights, a crowd against one huge target, and a ranged crowd. `--scenario work`.
     work = fights(wolf, wolf, [(150, 150), (200, 200)], "wolves")
     work += fights(cat, elephant, [(50, 1), (100, 1), (150, 1)], "(cats v elephant)")
-    work += fights(archer, wolf, [(100, 50), (150, 75)], "(archers v wolves)")
+    work += fights(archer, wolf, [(200, 150)], "(archers v wolves)")
     return {
         "mirror": fights(wolf, wolf, even, "wolves"),
         "uneven": fights(wolf, wolf, uneven, "wolves"),

@@ -7,6 +7,7 @@ import pytest
 
 from app.models.terrain import Terrain
 from app.simulation import constants as c
+from app.simulation import engine
 from app.simulation.engine import (
     DRAW,
     _foregone,
@@ -152,6 +153,36 @@ def test_a_hopeless_stalemate_is_cheap_even_with_many_fast_attackers():
         time.perf_counter() - start < 10.0
     )  # about 0.5 s with the shortcut, minutes without; slack for slow CI
     assert result.outcome == "draw" and result.mean_duration_s == c.MAX_FIGHT_S
+
+
+def test_a_stalemate_crowd_below_the_threshold_never_runs_the_swarm_loop(monkeypatch):
+    """The work rule sends 100 v 100 to swarm mode, but a hopeless stalemate is still shortcut."""
+    ant = make_sheet("ant", mass_kg=0.001, attack_force_n=1.0, attacks_per_s=10.0, spread=0.0)
+    boulder = make_sheet(
+        "boulder",
+        body="inert",
+        weapons=["none"],
+        mass_kg=5e9,
+        size_m=500,
+        attack_force_n=0,
+        attacks_per_s=0,
+        top_speed_mps=0,
+        spread=0.0,
+    )
+
+    calls = []
+    real = engine._run_swarm
+
+    def counting(*args, **kwargs):
+        calls.append(1)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(engine, "_run_swarm", counting)
+    result = run(matchup_of(100, 100), [ant, boulder], runs=50, explain=False)
+    assert result.outcome == "draw" and result.mean_duration_s == c.MAX_FIGHT_S
+    # Only the one representative replay is simulated in full (it records real events); the 50
+    # counted runs are all shortcut. Without the shortcut this is 51 swarm fights.
+    assert len(calls) <= 1
 
 
 def test_the_fair_fight_search_stays_cheap_when_attackers_just_run_out_of_time():

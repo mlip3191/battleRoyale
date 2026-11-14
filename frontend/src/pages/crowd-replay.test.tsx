@@ -56,7 +56,7 @@ test("fixtures mode: /battle/thousand-vs-one plays 1,000 ducks vs 1 lion with th
 test("fixtures mode: /battle/two-hundred-vs-five plays a swarm log with 200 on a side", async () => {
   vi.stubEnv("VITE_USE_FIXTURES", "true");
   const log = CROWD_BATTLES.get("two-hundred-vs-five")!.representative_log;
-  // Since D-50 (engine version 8) this fight runs in swarm mode although neither side is over
+  // Since D-50 (engine version 9) this fight runs in swarm mode although neither side is over
   // 200: a long log of group events (no single actor), not individual hits and misses.
   expect(log.length).toBeGreaterThan(50);
   expect(log.length).toBeLessThanOrEqual(300); // the engine's MAX_LOG_EVENTS
