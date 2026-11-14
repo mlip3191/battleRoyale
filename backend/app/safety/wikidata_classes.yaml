@@ -1,0 +1,47 @@
+# Wikidata classes that block a fighter (A04 part 2, DECISIONS D-38). Read by safety/wikidata.py.
+#
+# A name is blocked when its top exact Wikidata match is an instance (P31) or subclass (P279) of
+# one of these classes, directly or up to two P279 levels higher. instance_only classes match
+# only the entity's own P31 (so the class "Roman legionary" is never a real person).
+#
+# Bump classes_version whenever this list changes: cached lookups from an older version are
+# ignored, so the change takes effect at once.
+#
+# Each Q-ID was verified live 2026-11-10 against wbgetentities; label is the live English label.
+#
+# Not listed yet: weapons of mass destruction and religious figures. The rules and classifier
+# layers already cover them; Wikidata classes for them can be added in A04 part 3.
+classes_version: 1
+
+classes:
+  - qid: Q5
+    label: human
+    reason: real_person
+    instance_only: true
+  - qid: Q95074
+    label: character # alias "fictional character"
+    reason: copyrighted_character
+  - qid: Q178885
+    label: deity
+    reason: deity
+  - qid: Q12796
+    label: firearm
+    reason: weapon
+  - qid: Q12870
+    label: explosive chemicals
+    reason: weapon
+  - qid: Q911807
+    label: explosive
+    reason: weapon
+  - qid: Q6999
+    label: astronomical object
+    reason: out_of_scope
+  - qid: Q2221906
+    label: geographic location
+    reason: out_of_scope
+  - qid: Q271669
+    label: landform
+    reason: out_of_scope
+  - qid: Q7184903
+    label: abstract entity
+    reason: out_of_scope

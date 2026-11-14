@@ -1,0 +1,56 @@
+{
+  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
+  "search": {
+    "default": [],
+    "napoleon": [{ "id": "Q900001", "label": "Napoleon" }],
+    "emperor": [{ "id": "Q900002", "label": "Emperor Testius", "match": "Emperor" }],
+    "robo-tron": [{ "id": "Q900010", "label": "Robo-Tron" }],
+    "zeus": [{ "id": "Q900020", "label": "Zeus" }],
+    "assault rifle": [{ "id": "Q900030", "label": "assault rifle" }],
+    "moon": [{ "id": "Q900040", "label": "Moon" }],
+    "mercury": [
+      { "id": "Q900050", "label": "Mercury" },
+      { "id": "Q900051", "label": "Mercury" }
+    ],
+    "dragon": [{ "id": "Q900060", "label": "dragon" }],
+    "toaster": [{ "id": "Q900070", "label": "toaster" }],
+    "bulldozer": [{ "id": "Q900071", "label": "bulldozer" }],
+    "roman legionary": [{ "id": "Q900080", "label": "Roman legionary" }],
+    "boxer": [
+      { "id": "Q900090", "label": "Boxer" },
+      { "id": "Q900091", "label": "boxer" }
+    ],
+    "tesla": [{ "id": "Q900100", "label": "Testa Tesla", "match": "Tesla" }],
+    "testor blipworth": [{ "id": "Q900110", "label": "Testor Blipworth" }]
+  },
+  "entities": {
+    "Q900001": { "P31": ["Q5"] },
+    "Q900002": { "P31": ["Q5"] },
+    "Q900010": { "P31": ["Q900011"] },
+    "Q900011": { "P279": ["Q95074"] },
+    "Q900020": { "P31": ["Q900021"] },
+    "Q900021": { "P279": ["Q178885"] },
+    "Q900030": { "P279": ["Q900031"] },
+    "Q900031": { "P279": ["Q12796"] },
+    "Q900040": { "P31": ["Q900041"] },
+    "Q900041": { "P279": ["Q900042"] },
+    "Q900042": { "P279": ["Q6999"] },
+    "Q900050": { "P31": ["Q900041"] },
+    "Q900051": { "P31": ["Q900021"] },
+    "Q900060": { "P279": ["Q900061"] },
+    "Q900061": { "P279": [] },
+    "Q900070": { "P279": ["Q900072"] },
+    "Q900071": { "P279": ["Q900073"] },
+    "Q900072": { "P279": [] },
+    "Q900073": { "P279": [] },
+    "Q900080": { "P279": ["Q900081"] },
+    "Q900081": { "P279": ["Q900082"] },
+    "Q900082": { "P279": [] },
+    "Q900090": { "P31": ["Q900092"] },
+    "Q900091": { "P279": ["Q900093"] },
+    "Q900092": { "P279": [] },
+    "Q900093": { "P279": [] },
+    "Q900100": { "P31": ["Q5"] },
+    "Q900110": { "P31": ["Q5"] }
+  }
+}
