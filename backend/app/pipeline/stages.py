@@ -1,30 +1,36 @@
 """One async function per pipeline stage (ARCHITECTURE §4), plus each stage's time budget.
 
-Each function calls the owning module's public function where it exists. Where the module is
-not built yet, a stub returns the matching contract fixture and the result says `stub=True`, so
-the orchestrator marks the stage detail "stub". Stubs remaining: scripts (A06), audio and music
-(A07). Research uses G04's sheet lookup: seed sheet, cached sheet, or a newly built one.
+Each function calls the owning module's public function. A stage that reports `stub=True`
+gets the stage detail "stub" and its output is not saved. No stage in this file is a stub any
+more (intake's "stub" detail comes from the orchestrator). Research uses G04's sheet lookup:
+seed sheet, cached sheet, or a newly built one.
 """
 
 import asyncio
 import hashlib
-import json
+import logging
 from dataclasses import dataclass, field
 
-from app.config import REPO_ROOT, get_settings
+from app.config import get_settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
+from app.media import audio as media_audio
 from app.media import images as media_images
 from app.models.matchup import Matchup
 from app.models.media import Asset
 from app.models.narration import Script
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
 from app.models.stats import StatSheet
+from app.narration import writer
+from app.narration.facts import build_facts
+from app.narration.templates import template_scripts
 from app.pipeline import challenger as next_challenger
 from app.providers.registry import get_provider
 from app.research.sheet_store import resolve_stat_sheet
 from app.simulation import engine, fair
 from app.simulation.rng import make_seed
+
+logger = logging.getLogger(__name__)
 
 # Time limit per stage in seconds, from the ARCHITECTURE §4 stage budget table (research uses
 # the new-fighter budget). The orchestrator reads it on every call, so tests can shrink it.
@@ -38,8 +44,14 @@ STAGE_BUDGETS_S: dict[str, float] = {
     "music": 60.0,
     "images": 60.0,
 }
+# Share of the script budget the model writer gets; the rest leaves time to swap in the
+# templates and save them before the orchestrator's cut-off.
+SCRIPT_WRITER_SHARE = 0.8
+# Share of the audio and music budgets the providers get; the rest leaves time to save.
+MEDIA_PROVIDER_SHARE = 0.8
+# The scripts that each get a narration file, in broadcast order.
+NARRATED_SCRIPTS = ("intro", "play_by_play", "outro")
 
-CONTRACT_FIXTURES = REPO_ROOT / "backend" / "tests" / "fixtures" / "contracts"
 NOT_FOUND = (
     "We don't have a stat sheet for {name!r} yet. For now, pick one of our ready-made fighters."
 )
@@ -188,21 +200,55 @@ async def challenger(
     return Stubbed(pick, fallback=fallback)
 
 
-# Steps 4–5 (stub until A06): intro, play-by-play, and outro scripts.
+# Steps 4–5: intro, play-by-play, and outro scripts (narration/writer.py, A06). The outro's
+# fair-fight line needs `fair_fight` (None if the summary gave nothing). A script the model could
+# not write comes back as its template (fallback=True); then the stage ends "fallback".
+# A slow model must not leave the battle silent: if the writer runs past its share of the
+# stage budget, all three template scripts are used instead (also fallback=True).
 async def scripts(
-    found: Research, result: SimulationResult, fair_fight: FairFight | None = None
+    matchup: Matchup,
+    found: Research,
+    result: SimulationResult,
+    fair_fight: FairFight | None = None,
 ) -> Stubbed[list[Script]]:
-    return Stubbed([Script.model_validate(_fixture("script.json"))], stub=True)
+    counts = [fighter.count for fighter in matchup.fighters]
+    deadline = STAGE_BUDGETS_S["script"] * SCRIPT_WRITER_SHARE
+    try:
+        written = await asyncio.wait_for(
+            writer.write_scripts(found.sheets, result, fair_fight, counts=counts), deadline
+        )
+    except TimeoutError:
+        logger.warning("script writer ran past %.1fs; using the template scripts", deadline)
+        facts = build_facts(found.sheets, result, fair_fight, counts)
+        written = template_scripts(facts, result)
+    return Stubbed(written, fallback=any(script.fallback for script in written))
 
 
-# Step 5 (stub until A07): the announcer's voice for the scripts.
-async def audio(written: list[Script]) -> Stubbed[list[Asset]]:
-    return Stubbed([_asset_fixture()], stub=True)
+# Step 5: the announcer's voice, one file per script (media/audio.py, A07). The provider gets
+# a share of the stage budget, so a slow one is cut off here and the stage still ends in time.
+# Fewer than three files is a fallback: with none the battle is captions only (value None);
+# with some, the saved files are kept and the missing parts are silent.
+async def audio(written: list[Script]) -> Stubbed[list[Asset] | None]:
+    if not written:
+        return Stubbed(None, fallback=True)
+    deadline = STAGE_BUDGETS_S["audio"] * MEDIA_PROVIDER_SHARE
+    assets = await media_audio.make_audio(written, timeout_s=deadline)
+    if not assets:
+        return Stubbed(None, fallback=True)
+    missing = len(assets) < len(NARRATED_SCRIPTS) or len(assets) < len(written)
+    return Stubbed(assets, fallback=missing or any(asset.fallback for asset in assets))
 
 
-# Step 5 (stub until A07): the soundtrack.
-async def music(found: Research) -> Stubbed[list[Asset]]:
-    return Stubbed([_asset_fixture()], stub=True)
+# Step 5: the soundtrack (media/audio.py, A07), with the same share of its budget. No track
+# means the stage ends "fallback" with nothing saved.
+async def music(
+    matchup: Matchup, found: Research, result: SimulationResult
+) -> Stubbed[list[Asset] | None]:
+    deadline = STAGE_BUDGETS_S["music"] * MEDIA_PROVIDER_SHARE
+    track = await media_audio.make_music(matchup, result, found.sheets, timeout_s=deadline)
+    if track is None:
+        return Stubbed(None, fallback=True)
+    return Stubbed([track], fallback=track.fallback)
 
 
 # Step 6: fighter sprites and the battlefield (media/images.py, A08). Pictures that could not be
@@ -210,12 +256,3 @@ async def music(found: Research) -> Stubbed[list[Asset]]:
 async def images(matchup: Matchup, found: Research) -> Stubbed[list[Asset]]:
     assets = await media_images.make_images(matchup, found.sheets)
     return Stubbed(assets, fallback=any(asset.fallback for asset in assets))
-
-
-def _asset_fixture() -> Asset:
-    return Asset.model_validate(_fixture("asset.json"))
-
-
-# Read one contract fixture (the stand-in output of a stage that isn't built yet).
-def _fixture(name: str) -> object:
-    return json.loads((CONTRACT_FIXTURES / name).read_text(encoding="utf-8"))

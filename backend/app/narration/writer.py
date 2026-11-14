@@ -31,6 +31,7 @@ from app.narration.templates import (
     _hint,
     fair_fight_line,
     intro_script,
+    mask_names,
     outro_script,
     play_by_play_script,
 )
@@ -58,8 +59,6 @@ SPEAKERS = ("announcer", "color_commentator")
 PLACEHOLDER = re.compile(r"\{([A-Za-z_]+)\}")
 # "55%%" or "55% percent" after a percentage placeholder: keep one percent sign.
 _EXTRA_PERCENT = re.compile(r"(\d%)\s*(?:%|per ?cent\b)", re.I)
-# Stands in for a fighter's name while the number guard reads a line ("Three-toed sloth").
-_NAME_MASK = "Fighter"
 MAX_REASON_CHARS = 300
 
 # What each outro placeholder means, as told to the model (values are filled in by code).
@@ -145,9 +144,8 @@ def fill_placeholders(text: str, values: dict[str, str]) -> str:
 # The numbers in a line the inputs do not back, reading the fighters' names as plain words.
 def unsupported_numbers(text: str, facts: NarrationFacts) -> list[FoundNumber]:
     """Like find_unsupported_numbers, but a name such as "Three-toed sloth" is never a number."""
-    for name in sorted((f.display_name for f in facts.fighters), key=len, reverse=True):
-        text = text.replace(name, _NAME_MASK)
-    return find_unsupported_numbers(text, facts.allowed)
+    names = [f.display_name for f in facts.fighters]
+    return find_unsupported_numbers(mask_names(text, names), facts.allowed)
 
 
 def check_script(script: Script, facts: NarrationFacts, log_len: int) -> list[str]:

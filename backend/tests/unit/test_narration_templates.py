@@ -26,6 +26,7 @@ from app.narration.templates import (
     outro_script,
     pick_events,
     play_by_play_script,
+    safe_line,
     template_scripts,
 )
 
@@ -450,6 +451,43 @@ def test_fair_fight_line_pins_casing_and_irregular_plurals(
     text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
     assert text == f"Want a fair fight? {said}, winning 49% of the time."
     assert find_unsupported_numbers(text, facts.allowed) == []
+
+
+# Issue #259: a number word inside a fighter's name ("Three-toed sloth") is not a number.
+@pytest.mark.parametrize(
+    ("name", "said"),
+    [
+        ("Three-toed sloth", "About 1 three-toed sloth makes it a coin flip"),
+        ("Nine-banded armadillo", "About 1 nine-banded armadillo makes it a coin flip"),
+    ],
+)
+def test_fair_fight_line_keeps_a_name_with_a_number_word(name: str, said: str) -> None:
+    sheet = _sheet("gorilla.json").model_copy(update={"display_name": name})
+    facts = _fair_facts(sheet, 1)
+    assert not {3.0, 9.0} & facts.allowed.values  # the number words in the names are not backed
+    text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
+    assert text == f"Want a fair fight? {said}, winning 49% of the time."
+    assert fair_fight_line(facts).text == text  # names come from the facts, not the caller
+
+
+# Issue #259: the name is masked in any case and in plural form; other numbers are still read.
+def test_guard_masks_names_in_any_case_and_plural() -> None:
+    sheet = _sheet("gorilla.json").model_copy(update={"display_name": "Three-toed sloth"})
+    facts = _fair_facts(sheet, 1)
+    names = [f.display_name for f in facts.fighters]
+    assert 7.0 not in facts.allowed.values
+    safe = "SAFE"
+    for text in (
+        "The Three-toed sloth closes in!",
+        "Look at those three-toed sloths go!",
+        "THREE-TOED SLOTH IS HERE!",
+        "Three-Toed Sloths, assemble!",
+    ):
+        assert guarded(text, safe, facts.allowed, names) == text
+        assert safe_line("announcer", text, safe, facts).text == text
+    for bad in ("Three-toed sloth wins 7 times.", "three-toed sloths win seven times."):
+        assert guarded(bad, safe, facts.allowed, names) == safe
+        assert safe_line("announcer", bad, safe, facts).text == safe
 
 
 # The line is still number-guarded: a count that is not in the facts falls back.

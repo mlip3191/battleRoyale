@@ -10,7 +10,8 @@ from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation import fair
 from app.simulation.engine import run
-from app.simulation.fair import _how_even, fair_fight, fair_fight_search, plural, test_challengers
+from app.simulation.fair import _how_even, fair_fight, fair_fight_search, test_challengers
+from app.text import counted_name
 from tests.property.sim_helpers import ant, lion, load_sheet, make_sheet, matchup_of
 
 
@@ -100,21 +101,52 @@ def test_search_starts_from_the_losing_sides_current_count():
     assert found.count is None or found.count >= 3
 
 
-def test_plural_rules():
-    assert plural("House cat", 1) == "house cat"
-    assert plural("House cat", 37) == "house cats"
-    assert plural("Gray wolf", 2) == "gray wolves"
-    assert plural("Red fox", 2) == "red foxes"
-    assert plural("Fly", 2) == "flies"
-    assert plural("Monkey", 2) == "monkeys"
+def test_counted_name_rules():
+    assert counted_name("House cat", 1) == "house cat"
+    assert counted_name("House cat", 37) == "house cats"
+    assert counted_name("Gray wolf", 2) == "gray wolves"
+    assert counted_name("Red fox", 2) == "red foxes"
+    assert counted_name("Fly", 2) == "flies"
+    assert counted_name("Monkey", 2) == "monkeys"
 
 
-def test_plural_handles_irregular_names_and_keeps_proper_nouns():
-    assert plural("House mouse", 37) == "house mice"
-    assert plural("Goose", 2) == "geese"
-    assert plural("Sheep", 5) == "sheep"
-    assert plural("African elephant", 1) == "african elephant"
-    assert plural("T. rex", 2) == "t. rexes"
+def test_counted_name_handles_irregular_names_and_keeps_proper_nouns():
+    assert counted_name("House mouse", 37) == "house mice"
+    assert counted_name("Goose", 2) == "geese"
+    assert counted_name("Sheep", 5) == "sheep"
+    # These two used to read "african elephant" and "t. rexes", pinning the old lower-casing
+    # bug; fair.py now uses the shared counted_name, so proper words and "T." keep capitals (#258).
+    assert counted_name("African elephant", 1) == "African elephant"
+    assert counted_name("T. rex", 2) == "T. rexes"
+
+
+def test_counted_name_keeps_proper_words_and_uses_the_shared_irregular_tables():
+    """One pluralizer for fair fights, intake and narration (#258)."""
+    assert counted_name("African elephant", 2) == "African elephants"
+    assert counted_name("Roman legionary", 3) == "Roman legionaries"
+    assert counted_name("House mouse", 2) == "house mice"
+    assert counted_name("Bison", 4) == "bison"
+    assert counted_name("Cattle", 4) == "cattle"
+    assert counted_name("Triceratops", 2) == "triceratops"
+    assert counted_name("T. rex", 3) == "T. rexes"
+    assert counted_name("TV", 5) == "TVs"
+    assert counted_name("Man", 2) == "men"
+    assert counted_name("Knife", 2) == "knives"
+
+
+def test_a_count_of_one_stays_singular():
+    assert counted_name("African elephant", 1) == "African elephant"
+    assert counted_name("House cat", 1) == "house cat"
+    assert counted_name("Roman legionary", 1) == "Roman legionary"
+    assert counted_name("TV", 1) == "TV"
+
+
+def test_the_fair_fight_message_keeps_a_proper_first_word_capitalized(monkeypatch):
+    """The Results-page message read "37 african elephants" before #258."""
+    fake_engine(monkeypatch, 1, logistic(37))
+    elephants = elephant().model_copy(update={"display_name": "African elephant"})
+    search = fair_fight_search(matchup_of(1, 1), [wolf(), elephants], main_result(1))
+    assert search.result.message == "A fair fight needs 37 African elephants against 1 gray wolf."
 
 
 def test_the_search_shrinks_the_count_when_the_first_probe_is_already_too_strong():
