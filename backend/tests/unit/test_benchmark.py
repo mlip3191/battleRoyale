@@ -245,6 +245,15 @@ def test_a_matchup_with_a_missing_sheet_is_skipped_and_the_rest_are_scored():
     assert "| — | — | — | skipped" in row and "0.0 / 0.0" not in row
 
 
+def test_the_known_limits_note_stays_above_the_runs_when_the_file_is_rewritten(tmp_path):
+    out = tmp_path / "results.md"
+    for _ in range(2):
+        main(["--mock", "--output", str(out)])
+    text = out.read_text(encoding="utf-8")
+    assert text.index("## Known limits (D-58)") < text.index("## Run ")
+    assert text.count("## Known limits (D-58)") == 1 and text.count("## Run ") == 2
+
+
 # --- Count cases: the right favorite, and the right side varied --------------------------------
 
 
