@@ -1,6 +1,7 @@
 // Typed calls to our own backend (ARCHITECTURE §6). Types come only from the generated schema.
 // With VITE_USE_FIXTURES=true every call is answered from src/fixtures/ instead (see fixtures.ts).
 import type { components } from "./schema";
+import { ApiError } from "./api-error.ts";
 import * as fake from "./fixtures.ts";
 
 export type BattleRecord = components["schemas"]["BattleRecord"];
@@ -11,13 +12,38 @@ export type StatSheet = components["schemas"]["StatSheet"];
 export type BattleCreated = components["schemas"]["BattleCreated"];
 export type ShowcaseBattle = components["schemas"]["ShowcaseBattle"];
 export type FighterMatch = components["schemas"]["FighterMatch"];
+export type StatValue = components["schemas"]["StatValue"];
+export type Source = components["schemas"]["Source"];
+export type LoreProfile = components["schemas"]["LoreProfile"];
+export type SimulationResult = components["schemas"]["SimulationResult"];
+export type FairFight = components["schemas"]["FairFight"];
+export type ChallengerSuggestion =
+  components["schemas"]["ChallengerSuggestion"];
+export type FightEvent = components["schemas"]["FightEvent"];
+export type Asset = components["schemas"]["Asset"];
+export type Script = components["schemas"]["Script"];
+export type ScriptLine = components["schemas"]["ScriptLine"];
+export type FighterRequest = components["schemas"]["FighterRequest"];
 
-// An HTTP error from our backend; `status` lets callers tell "not found" from a passing hiccup.
-export class ApiError extends Error {
-  status: number;
-  constructor(status: number) {
-    super(`HTTP ${status}`);
-    this.status = status;
+// The HTTP error class, shared with fixtures mode; existing imports from client.ts keep working.
+export { ApiError };
+
+// Longest server message we keep; anything longer isn't one of our short plain-language lines.
+const MAX_DETAIL = 300;
+
+// The text `detail` of an error reply (FastAPI's {"detail": "..."}), or null if it has none.
+async function errorDetail(response: Response): Promise<string | null> {
+  try {
+    const body: unknown = await response.json();
+    const detail =
+      body && typeof body === "object" && "detail" in body ? body.detail : null;
+    return typeof detail === "string" &&
+      detail.trim() &&
+      detail.length <= MAX_DETAIL
+      ? detail
+      : null;
+  } catch {
+    return null; // not JSON (a proxy page, an empty body): no message to show
   }
 }
 
@@ -39,7 +65,8 @@ async function call<T>(
       body: JSON.stringify(init.body),
     },
   );
-  if (!response.ok) throw new ApiError(response.status);
+  if (!response.ok)
+    throw new ApiError(response.status, await errorDetail(response));
   return (await response.json()) as T;
 }
 

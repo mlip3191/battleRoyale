@@ -33,6 +33,24 @@
       "description": "True when a stock file was used because generation failed.",
       "title": "Fallback",
       "type": "boolean"
+    },
+    "script_kind": {
+      "anyOf": [
+        {
+          "enum": [
+            "intro",
+            "play_by_play",
+            "outro"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "For narration_audio: which Script it reads. None for every other kind.",
+      "title": "Script Kind"
     }
   },
   "required": [

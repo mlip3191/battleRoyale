@@ -97,13 +97,17 @@ class DocParser(Protocol):
 
 @runtime_checkable
 class ImageGen(Protocol):
-    """Image generation and editing (course port 9006)."""
+    """Image generation and editing (course port 9006).
 
-    async def generate(self, prompt: str) -> bytes:
+    size is (width, height) in pixels. The live adapter also sends the fixed seed and negative
+    prompt from app/media/style.py on every call (the style lock).
+    """
+
+    async def generate(self, prompt: str, *, size: tuple[int, int] = (512, 512)) -> bytes:
         """Return PNG bytes for prompt."""
         ...
 
-    async def edit(self, image: bytes, prompt: str) -> bytes:
+    async def edit(self, image: bytes, prompt: str, *, size: tuple[int, int] = (512, 512)) -> bytes:
         """Return PNG bytes of image changed as prompt describes."""
         ...
 

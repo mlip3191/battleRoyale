@@ -1,0 +1,139 @@
+{
+  "fighter_id": "honey-badger",
+  "display_name": "Honey badger",
+  "media_name": "honey badger",
+  "category": "mammal",
+  "body": "living",
+  "habitat": "land",
+  "weapons": [
+    "teeth",
+    "claws"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 9.0,
+      "unit": "kg",
+      "source": {
+        "title": "Honey badger",
+        "url": "https://en.wikipedia.org/w/index.php?title=Honey_badger&oldid=1381719656",
+        "quote": "The mean weight of adult honey badgers from different areas has been reported at anywhere between 6.4 to 12 kg (14 to 26 lb), with a median of roughly 9 kg (20 lb), per various studies.",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 6.4,
+      "high": 12.0,
+      "note": "Adult honey badgers of both sexes, from different areas. Value is the median the source states; low and high are the range of reported means. Males in Africa are heavier (9 to 16 kg)."
+    },
+    "size_m": {
+      "value": 0.77,
+      "unit": "m",
+      "source": {
+        "title": "Honey badger",
+        "url": "https://en.wikipedia.org/w/index.php?title=Honey_badger&oldid=1381719656",
+        "quote": "55–77 cm (22–30 in) in body length",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 0.55,
+      "high": 0.77,
+      "note": "Body length without the tail; the source does not split by sex. Upper end of the stated range; the source gives no mean."
+    },
+    "top_speed_mps": {
+      "value": 12.0,
+      "unit": "m/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 6.0,
+      "high": 18.0,
+      "note": "No citable measured top speed found in the approved sources. Category default; one of the honey badger's 3 allowed estimates (D-47)."
+    },
+    "attack_force_n": {
+      "value": 192.0,
+      "unit": "N",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 96.0,
+      "high": 288.0,
+      "note": "force = 50.57 x mass_kg^0.6072, the average carnivore canine bite for this mass, computed in code by app.research.bite_force from the 31 living species in Wroe et al. 2005 Table 1 (https://pmc.ncbi.nlm.nih.gov/articles/PMC1564077/). Range is +/-50%."
+    },
+    "attacks_per_s": {
+      "value": 1.5,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.75,
+      "high": 2.25,
+      "note": "No published attack rate found for this animal; category default."
+    },
+    "reach_m": {
+      "value": 0.19,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.14,
+      "high": 0.24,
+      "note": "reach = 0.25 x size_m (lunging bite), from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.3,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.15,
+      "high": 0.45,
+      "note": "armor level 2: loose tough skin."
+    },
+    "endurance_s": {
+      "value": 300.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "No published figure for how long it can keep fighting; category default."
+    },
+    "aggression_0_1": {
+      "value": 0.9,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.45,
+      "high": 1.0,
+      "note": "aggression level 5: attacks animals larger than itself."
+    },
+    "group_tactics_0_1": {
+      "value": 0.1,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.05,
+      "high": 0.15,
+      "note": "group tactics level 1: solitary, fights alone."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "1d220fd35e43f5002b97cdd9d97a59bd1729c842147d81993e952abdd0a6119c"
+}

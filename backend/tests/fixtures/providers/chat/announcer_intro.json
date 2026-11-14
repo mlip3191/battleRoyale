@@ -1,0 +1,11 @@
+{
+  "default": {
+    "lines": [
+      {"speaker": "announcer", "text": "Good evening, fight fans, and welcome to the mock-mode main event!"},
+      {"speaker": "color_commentator", "text": "According to legend, nobody leaves this arena without a story."},
+      {"speaker": "announcer", "text": "In the red corner: a fighter with something to prove!"},
+      {"speaker": "announcer", "text": "And in the blue corner: a fighter who has heard that before!"},
+      {"speaker": "color_commentator", "text": "The science is in. The snacks are out. Let's fight!"}
+    ]
+  }
+}
