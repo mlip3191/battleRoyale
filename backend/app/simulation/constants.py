@@ -140,3 +140,27 @@ VENOM_RESISTANCE: dict[str, float] = {
     # Honey badgers are famous for shrugging off cobra bites (a long recovery, not death).
     "honey-badger": 0.85,
 }
+
+# Loadouts (#283, a proposal pending the PM's decision): each is one choice that leans one way and
+# costs something elsewhere, so none is best everywhere. Every number here is an ASSUMPTION, not a
+# sourced figure; each loadout changes only attack force, attack rate, top speed and armor, and is
+# applied to a sheet by code (simulation/loadouts.py), never by the engine. "armor_add" adds to the
+# 0-1 armor value (kept within 0 to 1); the others multiply the sheet's value.
+LOADOUTS: dict[str, dict[str, float | str]] = {
+    "attack": {
+        "label": "an attack loadout",
+        "force_mul": 1.5, "rate_mul": 0.8, "speed_mul": 0.95, "armor_add": 0.0,
+    },  # a heavier weapon hits harder and slower, and weighs the fighter down a little
+    "defense": {
+        "label": "a defense loadout",
+        "force_mul": 1.0, "rate_mul": 0.9, "speed_mul": 0.9, "armor_add": 0.2,
+    },  # armor or a shield blocks more, at the cost of speed and a slower swing
+    "speed": {
+        "label": "a speed loadout",
+        "force_mul": 0.9, "rate_mul": 1.0, "speed_mul": 1.25, "armor_add": -0.1,
+    },  # light gear moves faster but protects less and hits a little softer
+    "balanced": {
+        "label": "a balanced loadout",
+        "force_mul": 1.15, "rate_mul": 1.0, "speed_mul": 0.97, "armor_add": 0.08,
+    },  # small gains in force and armor for a small loss of speed
+}  # fmt: skip

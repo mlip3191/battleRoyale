@@ -147,6 +147,21 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 
 **Calibration warning.** With these assumed constants a dragon built from the fixture sheet (6 t) cannot dent a 60 t tank with 80% armor in ten minutes. Showcase battle #5 (dragon vs main battle tank) will need its constants revisited once G09's real dragon sheet and the F07 benchmark exist.
 
+## Loadouts (proposal, #283; not wired into battles)
+
+A loadout is one choice per fighter that leans a way and costs something elsewhere, applied to a sheet by code before the engine runs (`simulation/loadouts.py`); the engine knows nothing about it, so a result is still a pure function of the sheets. There are four, each changing only attack force, attack rate, top speed and armor (the multipliers are `LOADOUTS` in `constants.py`, **assumptions**, not sourced figures):
+
+| Loadout | Attack force | Attack rate | Top speed | Armor |
+|---|---|---|---|---|
+| Attack | x1.5 | x0.8 | x0.95 | +0 |
+| Defense | x1.0 | x0.9 | x0.9 | +0.2 |
+| Speed | x0.9 | x1.0 | x1.25 | -0.1 |
+| Balanced | x1.15 | x1.0 | x0.97 | +0.08 |
+
+- **Number rule:** a changed sourced stat becomes `derived` (the note gives the base value, the multiplier and says the multiplier is an assumption); a changed estimate stays the estimate it was; armor becomes an `assumption`, kept within 0 to 1. The sheet hash changes with the loadout, so a cache key built from the sheet changes too. Names shown to users read "Gray wolf with an attack loadout"; image prompts never see it.
+- **No free upgrade:** every loadout lowers at least one stat, and no loadout is at least as good as another in all four (a test checks it for five seed fighters).
+- **Not included:** critical hits (the engine has none; adding them is a new mechanic and an `ENGINE_VERSION` bump), firearms, explosives and modern vehicles (D-07, D-38), earned experience or money, and any request or API field. Inert objects have no loadout.
+
 ## Why probabilities are shown as "range"
 
 The 95% interval is a Wilson score interval on the share of runs won. Because every run draws different stats, the shares already blend in input uncertainty: when the stat ranges are narrow the fight's outcome is more predictable, so the win share moves toward 0 or 1 and the interval narrows (tested in `tests/property/test_simulation_engine.py`). The interval does *not* separately model uncertainty in the constants above.
