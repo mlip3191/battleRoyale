@@ -13,6 +13,7 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 | **Mike** | Give [INIT.md](INIT.md) to Claude Code — it initializes the whole project |
 | **A teammate** | Follow the quick start below, then your lane file in [docs/plan/](docs/plan/LANES.md) |
 | **Anyone** | [docs/PROJECT_GUIDE.md](docs/PROJECT_GUIDE.md) explains everything in order |
+| **Trying the app for the first time** | Follow the [user guide](docs/user-guide.md): install, run, and play a fight, with screenshots |
 
 ## Teammate quick start
 
@@ -28,6 +29,7 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 ## Documents
 
 - [Project guide](docs/PROJECT_GUIDE.md) — start here
+- [User guide](docs/user-guide.md) — run and use the app, for a first-time user
 - [Product spec](docs/PRODUCT_SPEC.md) — what we build and how it's judged
 - [Architecture](docs/ARCHITECTURE.md) — modules, contracts, API, providers, edge cases
 - [Team process](docs/TEAM_PROCESS.md) — branches, PRs, reviews, QA bot, secrets, CI
@@ -37,7 +39,7 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 
 ## For the instructor
 
-Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 26 and uv; run `npm run env:setup` in a terminal and enter the course host and API key (or copy `.env.example` to `.env` and fill it in by hand; `npm run env:check` confirms either way); `npm run setup`; `npm run ingest` (builds the knowledge base, once); `npm start`; open http://localhost:8000. Five showcase battles load automatically. A full first-time guide is in `docs/user-guide.md`. With `PROVIDER_MODE=mock` the app runs without any endpoints.
+Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 26 and uv; run `npm run env:setup` in a terminal and enter the course host and API key (or copy `.env.example` to `.env` and fill it in by hand; `npm run env:check` confirms either way); `npm run setup`; `npm run ingest` (builds the knowledge base, once); `npm start`; open http://localhost:8000. Five showcase battles load automatically. A full first-time guide is in [docs/user-guide.md](docs/user-guide.md). With `PROVIDER_MODE=mock` the app runs without any endpoints.
 
 ## Stack
 
