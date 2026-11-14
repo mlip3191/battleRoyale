@@ -164,3 +164,8 @@ LOADOUTS: dict[str, dict[str, float | str]] = {
         "force_mul": 1.15, "rate_mul": 1.0, "speed_mul": 0.97, "armor_add": 0.08,
     },  # small gains in force and armor for a small loss of speed
 }  # fmt: skip
+
+# Loadout tiers (#283): a tier-up deepens a loadout's trade-off instead of just adding strength.
+# Tier 1 is the table above; tier t scales every change (the multipliers' distance from 1, and the
+# armor addition) by this factor, so the gains grow and so do the costs (ASSUMPTION).
+LOADOUT_TIER_SCALE: dict[int, float] = {1: 1.0, 2: 1.4, 3: 1.8}

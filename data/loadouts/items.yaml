@@ -1,0 +1,46 @@
+# Loadout items (#283, prework; not wired into battles).
+#
+# Each loadout (attack, defense, speed, balanced) has three items, one per tier. A fighter starts
+# the tournament with the tier 1 item of its chosen loadout; winning a round unlocks the next tier
+# (see docs/loadouts-design.md). The effect of an item is NOT stored here: it comes from
+# `LOADOUTS` and `LOADOUT_TIER_SCALE` in backend/app/simulation/constants.py, which are
+# assumptions, not sourced figures.
+#
+# Rules this file follows (a test checks them):
+# - every item is pre-modern (prehistoric, ancient or medieval): no firearms, explosives or modern
+#   vehicles (D-07, D-38);
+# - names use only letters, digits, spaces and hyphens, so they are safe to show and to narrate;
+# - `research` lists what a teammate must source (with a URL and an exact quote, like a stat sheet)
+#   before any real-world number is shown next to the item; until then it is only a name.
+
+attack:
+  - {tier: 1, id: club, name: wooden club, kind: weapon, era: prehistoric, unlocks_after_round: 0,
+     research: [typical mass of a war club, wood and length]}
+  - {tier: 2, id: war-hammer, name: iron war hammer, kind: weapon, era: medieval, unlocks_after_round: 1,
+     research: [typical mass of a war hammer, head and haft materials]}
+  - {tier: 3, id: battle-axe, name: steel battle axe, kind: weapon, era: medieval, unlocks_after_round: 2,
+     research: [typical mass of a battle axe, blade and haft materials]}
+
+defense:
+  - {tier: 1, id: wooden-shield, name: wooden shield, kind: armor, era: ancient, unlocks_after_round: 0,
+     research: [typical mass and thickness of a wooden round shield]}
+  - {tier: 2, id: rimmed-shield, name: iron rimmed shield, kind: armor, era: ancient, unlocks_after_round: 1,
+     research: [typical mass of a shield with an iron rim and boss]}
+  - {tier: 3, id: tower-shield-and-mail, name: tower shield and mail shirt, kind: armor, era: medieval, unlocks_after_round: 2,
+     research: [typical mass of a large shield, typical mass of a mail shirt]}
+
+speed:
+  - {tier: 1, id: leather-wraps, name: leather wraps, kind: gear, era: ancient, unlocks_after_round: 0,
+     research: [typical mass of light leather clothing]}
+  - {tier: 2, id: light-leather, name: light leather armor and boots, kind: gear, era: ancient, unlocks_after_round: 1,
+     research: [typical mass of a leather jerkin and boots]}
+  - {tier: 3, id: skirmisher-kit, name: skirmisher kit, kind: gear, era: medieval, unlocks_after_round: 2,
+     research: [typical mass of a light skirmisher outfit with javelins]}
+
+balanced:
+  - {tier: 1, id: short-sword, name: short sword and cloak, kind: weapon, era: ancient, unlocks_after_round: 0,
+     research: [typical mass of a short sword, typical mass of a cloak]}
+  - {tier: 2, id: arming-sword, name: arming sword and buckler, kind: weapon, era: medieval, unlocks_after_round: 1,
+     research: [typical mass of an arming sword, typical mass of a buckler]}
+  - {tier: 3, id: longsword-and-mail, name: longsword and mail shirt, kind: weapon, era: medieval, unlocks_after_round: 2,
+     research: [typical mass of a longsword, typical mass of a mail shirt]}

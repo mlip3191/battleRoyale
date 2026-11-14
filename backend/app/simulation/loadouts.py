@@ -91,7 +91,27 @@ def _armor_with(stat: StatValue, add: float, why: str) -> StatValue:
     return StatValue.model_validate(data)
 
 
-def apply_loadout(sheet: StatSheet, chosen: Loadout) -> StatSheet:
+def at_tier(chosen: Loadout, tier: int) -> Loadout:
+    """The loadout at tier 1, 2 or 3: every change scaled by `LOADOUT_TIER_SCALE[tier]`.
+
+    A higher tier deepens the trade-off: the gains grow and so do the costs, so a higher tier is
+    a bigger commitment, not a strictly better set of stats.
+    """
+    if tier not in c.LOADOUT_TIER_SCALE:
+        raise ValueError(f"tier must be one of {sorted(c.LOADOUT_TIER_SCALE)}, got {tier}")
+    scale = c.LOADOUT_TIER_SCALE[tier]
+    return Loadout(
+        id=chosen.id,
+        lean=chosen.lean,
+        label=chosen.label if tier == 1 else f"{chosen.label} tier {tier}",
+        force_mul=1.0 + (chosen.force_mul - 1.0) * scale,
+        rate_mul=1.0 + (chosen.rate_mul - 1.0) * scale,
+        speed_mul=1.0 + (chosen.speed_mul - 1.0) * scale,
+        armor_add=chosen.armor_add * scale,
+    )
+
+
+def apply_loadout(sheet: StatSheet, chosen: Loadout, tier: int = 1) -> StatSheet:
     """A copy of `sheet` with the loadout's changes applied and every changed stat labeled.
 
     Only attack force, attack rate, top speed and armor change; mass, size, reach, endurance and
@@ -100,6 +120,7 @@ def apply_loadout(sheet: StatSheet, chosen: Loadout) -> StatSheet:
     """
     if sheet.body == "inert":
         return sheet
+    chosen = at_tier(chosen, tier)
     why = f"{chosen.label}"
     stats = dict(sheet.stats)
     stats[StatName.ATTACK_FORCE] = _scaled(stats[StatName.ATTACK_FORCE], chosen.force_mul, why)

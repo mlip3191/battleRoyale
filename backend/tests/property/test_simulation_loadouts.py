@@ -1,16 +1,17 @@
 """Loadouts (#283): each is one choice that leans a way and costs something, and stays honest."""
 
 import json
-from itertools import permutations
+from itertools import permutations, product
 from pathlib import Path
 
 import pytest
+import yaml
 
-from app.models.stats import StatName, StatSheet
+from app.models.stats import SAFE_NAME, StatName, StatSheet
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.engine import run
-from app.simulation.loadouts import all_loadouts, apply_loadout, loadout
+from app.simulation.loadouts import all_loadouts, apply_loadout, at_tier, loadout
 from tests.property.sim_helpers import make_sheet, matchup_of
 
 SEED = Path(__file__).resolve().parents[3] / "data" / "seed" / "fighters"
@@ -125,3 +126,90 @@ def test_the_numbers_are_assumptions_listed_in_the_constants_file():
     assert set(c.LOADOUTS) == {"attack", "defense", "speed", "balanced"}
     for data in c.LOADOUTS.values():
         assert set(data) == {"label", "force_mul", "rate_mul", "speed_mul", "armor_add"}
+
+
+# --- tiers: a tier-up deepens the trade-off (#283 prework) ---------------------------------------
+
+ITEMS = Path(__file__).resolve().parents[3] / "data" / "loadouts" / "items.yaml"
+TIERS = (1, 2, 3)
+
+
+def stats_of(item):
+    return (item.force_mul, item.rate_mul, item.speed_mul, 1.0 + item.armor_add)
+
+
+def test_a_higher_tier_is_a_bigger_commitment_not_a_strictly_better_set():
+    for item in all_loadouts():
+        for low, high in permutations(TIERS, 2):
+            if high < low:
+                continue
+            a, b = stats_of(at_tier(item, low)), stats_of(at_tier(item, high))
+            if low == high:
+                continue
+            assert any(x > y for x, y in zip(b, a, strict=True)), (
+                item.id,
+                "gains nothing",
+                low,
+                high,
+            )
+            assert any(x < y for x, y in zip(b, a, strict=True)), (
+                item.id,
+                "costs nothing more",
+                low,
+                high,
+            )
+
+
+def test_no_loadout_at_any_tier_is_at_least_as_good_as_another_in_every_stat():
+    every = [
+        (item.id, tier, stats_of(at_tier(item, tier))) for item in all_loadouts() for tier in TIERS
+    ]
+    for (a_id, a_tier, a), (b_id, b_tier, b) in permutations(every, 2):
+        if a_id == b_id:
+            continue  # the same loadout at two tiers is covered by the test above
+        dominated = all(x >= y for x, y in zip(a, b, strict=True)) and any(
+            x > y for x, y in zip(a, b, strict=True)
+        )
+        assert not dominated, (a_id, a_tier, "dominates", b_id, b_tier)
+
+
+def test_tier_one_is_the_base_table_and_an_unknown_tier_is_refused():
+    for item in all_loadouts():
+        assert at_tier(item, 1).force_mul == item.force_mul
+    with pytest.raises(ValueError, match="tier"):
+        at_tier(loadout("attack"), 4)
+
+
+def test_a_tiered_sheet_says_its_tier_and_changes_the_hash():
+    wolf = seed("gray-wolf")
+    base = apply_loadout(wolf, loadout("attack"))
+    tiered = apply_loadout(wolf, loadout("attack"), tier=3)
+    assert tiered.sheet_hash != base.sheet_hash
+    assert "tier 3" in (tiered.stats[StatName.ATTACK_FORCE].note or "")
+    assert value(tiered, StatName.ATTACK_FORCE) > value(base, StatName.ATTACK_FORCE)
+    assert value(tiered, StatName.ATTACK_RATE) < value(base, StatName.ATTACK_RATE)
+
+
+def test_armor_still_stays_between_zero_and_one_at_every_tier():
+    for item, tier, armor in product(all_loadouts(), TIERS, (0.0, 0.05, 0.9, 1.0)):
+        sheet = make_sheet("x", armor_0_1=armor)
+        got = apply_loadout(sheet, item, tier=tier).stats[StatName.ARMOR]
+        assert 0.0 <= got.value <= 1.0
+
+
+def test_the_item_list_has_three_pre_modern_items_per_loadout_and_no_sourced_numbers_yet():
+    data = yaml.safe_load(ITEMS.read_text("utf-8"))
+    assert set(data) == set(c.LOADOUTS)
+    banned = ("gun", "rifle", "pistol", "musket", "cannon", "bomb", "grenade", "explosive", "tnt")
+    for lean, items in data.items():
+        assert [item["tier"] for item in items] == [1, 2, 3], lean
+        assert [item["unlocks_after_round"] for item in items] == [0, 1, 2], lean
+        for item in items:
+            assert SAFE_NAME.fullmatch(item["name"]), item["name"]
+            assert item["era"] in {"prehistoric", "ancient", "medieval"}, item["id"]
+            assert item["kind"] in {"weapon", "armor", "gear"}
+            assert item["research"], item["id"]  # what a teammate must source first
+            assert not any(word in item["name"].lower() for word in banned), item["name"]
+            assert not any(key in item for key in ("mass_kg", "force_n", "damage")), item["id"]
+    ids = [item["id"] for items in data.values() for item in items]
+    assert len(ids) == len(set(ids)) == 12
