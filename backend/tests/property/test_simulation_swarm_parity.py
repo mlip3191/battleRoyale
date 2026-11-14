@@ -241,7 +241,7 @@ def test_a_fight_sent_to_swarm_mode_by_its_work_agrees_with_one_by_one(monkeypat
 
 
 def test_swarm_steps_never_get_longer_than_the_cap_however_long_the_fight(monkeypatch):
-    """Without the cap a 500 s fight takes 50 s steps and overrates the crowd by +0.13 (#183)."""
+    """Without the cap a 500 s fight takes 50 s steps and overrates the crowd (+0.02, #183)."""
     from app.simulation.engine import _templates, run_once
     from app.simulation.rng import run_rng
 
@@ -257,7 +257,7 @@ def test_swarm_steps_never_get_longer_than_the_cap_however_long_the_fight(monkey
 
     monkeypatch.setattr(engine, "_spread_tracked", counting)
     out = run_once(sides, matchup.terrain, run_rng(2, 0), swarm=True)
-    assert c.SWARM_STEP_MAX_S <= 5.0  # 5 s already overrated 150 v 1 by +0.03 (docs)
+    assert c.SWARM_STEP_MAX_S <= 5.0  # the docs measured 2 s to 5 s within noise
     assert out.duration_s > 200  # a long fight, where the old steps were longest
     # The first 30 s use finer steps; after that no step is longer than the cap.
     assert len(steps) >= (out.duration_s - 40) / c.SWARM_STEP_MAX_S

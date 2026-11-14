@@ -5,8 +5,10 @@ From the repo root:
   uv run --directory backend python scripts/validate_swarm.py --scenario cats --runs 300
 
 Each matchup is simulated twice with the same sheets: once forced through the one-by-one engine
-and once forced through swarm mode (by moving `SWARM_THRESHOLD`). The one-by-one engine is the
-reference. The report is a markdown table of win share, mean duration, and survivors for both.
+and once forced through swarm mode (by setting `SWARM_WORK_BUDGET` to 0, which leaves the real
+`SWARM_THRESHOLD`, so the real 3 s step cap applies to fights of 200 or fewer a side). The
+one-by-one engine is the reference. The report is a markdown table of win share, mean duration,
+and survivors for both.
 Fighters are the contract wolf and bear plus stand-ins (cat, archer) from the test helpers.
 Nothing here uses the network.
 """
@@ -28,7 +30,7 @@ from app.simulation.engine import run  # noqa: E402
 from tests.property.sim_helpers import FIXTURES, make_sheet, matchup_of  # noqa: E402
 
 ALWAYS_INDIVIDUAL = 10**9  # a threshold no fight reaches
-ALWAYS_SWARM = 0
+ALWAYS_SWARM_BUDGET = 0.0  # any work is over budget: every fight swarms, with the real cap
 NO_WORK_BUDGET = float("inf")  # with the head-count threshold, keeps a fight one by one (D-50)
 
 
@@ -95,7 +97,10 @@ def compare(label: str, a: StatSheet, na: int, b: StatSheet, nb: int, runs: int)
     # Changes a module-level constant and restores it in `finally`; not safe to run in threads.
     saved = (c.SWARM_THRESHOLD, c.SWARM_WORK_BUDGET)
     try:
-        for threshold, budget in ((ALWAYS_INDIVIDUAL, NO_WORK_BUDGET), (ALWAYS_SWARM, saved[1])):
+        for threshold, budget in (
+            (ALWAYS_INDIVIDUAL, NO_WORK_BUDGET),
+            (saved[0], ALWAYS_SWARM_BUDGET),
+        ):
             c.SWARM_THRESHOLD, c.SWARM_WORK_BUDGET = threshold, budget
             start = time.perf_counter()
             results.append(run(matchup, [a, b], runs=runs, explain=False))

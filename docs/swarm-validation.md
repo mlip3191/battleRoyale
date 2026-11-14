@@ -61,19 +61,28 @@ Every gap is within the noise of a 300-run comparison, down from +0.16 to +0.20 
 
 ## Fights that switch to swarm mode because of their work (D-50, #183)
 
-`--scenario work --runs 600`, engine version 9: fights under 200 per side whose estimated work is above `SWARM_WORK_BUDGET`, swarm minus one-by-one (win share of the first side):
+`--scenario work --runs 600`, engine version 9: fights under 200 per side whose estimated work is above `SWARM_WORK_BUDGET`, swarm minus one-by-one (win share of the first side). Swarm mode is forced here by setting `SWARM_WORK_BUDGET` to 0, which keeps the real `SWARM_THRESHOLD` and so the real 3 s step cap (Mike's review of #193 caught that forcing it with `SWARM_THRESHOLD = 0` turns the cap off):
 
 | Fight | Win-share gap | Duration | One-by-one time | Swarm time |
 |---|---|---|---|---|
-| 150 v 150 wolves | +0.000 | 1.03x | 2.4 s | 0.32 s |
-| 200 v 200 wolves | +0.012 | 1.03x | 2.9 s | 0.37 s |
-| 50 cats v 1 elephant | +0.003 | 0.97x | 3.9 s | 0.38 s |
-| 100 cats v 1 elephant | +0.023 | 0.96x | 8.6 s | 0.41 s |
-| 150 cats v 1 elephant | +0.022 | 0.97x | 9.2 s | 0.54 s |
-| 200 archers v 150 wolves | +0.013 | 0.98x | 1.5 s | 0.16 s |
+| 150 v 150 wolves | +0.000 | 1.03x | 2.1 s | 0.30 s |
+| 200 v 200 wolves | +0.012 | 1.03x | 2.9 s | 0.43 s |
+| 50 cats v 1 elephant | +0.000 | 1.01x | 4.4 s | 0.52 s |
+| 100 cats v 1 elephant | +0.003 | 1.00x | 8.5 s | 0.84 s |
+| 150 cats v 1 elephant | -0.005 | 1.00x | 9.6 s | 0.97 s |
+| 200 archers v 150 wolves | +0.013 | 0.98x | 2.4 s | 0.26 s |
 
 (Times are for 600 runs without the analysis, on the author's laptop.) With the deciding-factor analysis, 150 cats v 1 elephant takes about 2.8 s in swarm mode, against about 32 s one by one.
 
 **A known limit on very large fights.** The work estimate counts the cost of simulating one by one, so it says nothing about how slow swarm mode itself gets for enormous crowds: 10,000 v 10,000 wolves take about 9.6 s per 1,000 runs (2.8 s at 300 runs) on the author's laptop, well over the 3 s Simulate budget. This is documented rather than fixed: it needs counts of that size on both sides, the pipeline answers a simulate timeout with a plain "too big to simulate quickly" message, and a run-count reduction would change every result's noise. If it matters later, the options are fewer runs for such fights (shown in the UI) or a cap on counts at intake (#91).
 
-**A time-step cap was needed for these.** Swarm steps used to grow to 10% of the elapsed time, so a 500 s fight took steps of 50 s, and 150 cats v 1 elephant overrated the crowd by +0.13 (100 v 1: +0.08). `SWARM_STEP_MAX_S` caps the step at 3 s. The gaps above were measured **without the cap**: the validation script and the parity tests force swarm mode by setting `SWARM_THRESHOLD = 0`, and the cap only applies when the head count is at or below the threshold, so it is off there (+0.022 and +0.023 at 600 runs, noise about 0.055). With the real configuration, 100 and 150 cats v 1 elephant at 1,500 runs gave 0.548 and 0.695 against 0.545 and 0.697 one by one, within 0.003. The 2 s, 4 s and 5 s figures and the +0.13 above were measured the same way (with the cap off or in a different harness setting), so read them as indicative. Fights shorter than about 30 s are unaffected. The cap applies only to fights with at most 200 on each side, the ones the work rule sends to swarm mode; the larger crowds above were validated without it, and with it 10,000 ants v 1 lion would cost 2.9 s instead of 0.9 s. Steps of 2 s, 4 s and 5 s gave +0.010, +0.015 and +0.030 for 150 v 1 and 3.6, 2.3 and 1.9 s with the analysis; 3 s was the best balance.
+**A time-step cap was needed for these.** Swarm steps grow with the elapsed time (10% of it), so a 500 s fight takes steps of 50 s. `SWARM_STEP_MAX_S` caps the step at 3 s, but only in fights with at most 200 on each side, the ones the work rule sends to swarm mode; the larger crowds above were validated without it, and with it 10,000 ants v 1 lion would cost 2.9 s instead of 0.9 s. Measured for 100 and 150 cats v 1 elephant at 600 runs, swarm minus one-by-one, with the real configuration (the validation script now forces swarm through `SWARM_WORK_BUDGET`, so the cap is in place):
+
+| Step cap | 100 v 1 gap | 150 v 1 gap | Swarm time (600 runs) |
+|---|---|---|---|
+| 2 s | +0.007 | -0.007 | 1.1 to 1.2 s |
+| **3 s (chosen)** | +0.003 | -0.005 | 0.9 s |
+| 5 s | +0.002 | -0.003 | 0.6 s |
+| no cap | **+0.023** | **+0.022** | 0.4 to 0.9 s |
+
+Without the cap the crowd is overrated by about +0.02 here (earlier #183 notes of +0.13 and +0.03 at 5 s came from a different harness setting and were not reproduced when this was redone); every cap from 2 s to 5 s is within the noise (about 0.055), so 3 s is a balance of accuracy and time, not a sharp threshold. An earlier version of this page reported the no-cap row as the result, because the validation script forced swarm with `SWARM_THRESHOLD = 0`, which turns the cap off.

@@ -66,8 +66,8 @@ SWARM_STEP_S = 0.5
 SWARM_STEP_GROWTH = 0.1
 # ...but never longer than this (assumption), in fights with at most SWARM_THRESHOLD on each side
 # (the ones the work rule sends here). Without a cap a long, slow fight (150 cats against
-# one elephant) takes steps of 30 s or more and the crowd is overrated by 0.13; see
-# docs/swarm-validation.md.
+# one elephant) takes steps of 30 s or more and the crowd is overrated by about 0.02 (600 runs;
+# caps of 2 s to 5 s are within noise); see docs/swarm-validation.md.
 SWARM_STEP_MAX_S = 3.0
 
 # Square-cube scaling when a fighter is resized by factor k = reference mass / own mass.
