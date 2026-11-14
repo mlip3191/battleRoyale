@@ -53,6 +53,11 @@ async def sheet_for(fighter_id: str) -> tuple[StatSheet, str]:
 
 
 async def main(fighter_ids: list[str]) -> int:
+    known = {f.id for f in load_seed_fighters()}
+    unknown = [i for i in fighter_ids if i not in known]
+    if unknown:
+        print(f"Unknown fighter id(s): {', '.join(unknown)}. Use ids from data/seed/fighters.yaml.")
+        return 1
     for fighter_id in fighter_ids:
         sheet, how = await sheet_for(fighter_id)
         counts = {label: 0 for label in dict.fromkeys(LABELS.values())}
