@@ -33,6 +33,11 @@ Sleep = Callable[[float], Awaitable[None]]
 class SourceError(RuntimeError):
     """A download failed for a reason other than the page not existing."""
 
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
+        """The last HTTP status code, when the server answered at all."""
+
 
 @dataclass(frozen=True)
 class SourceDocument:
@@ -63,7 +68,7 @@ async def _get(
     sleep: Sleep = asyncio.sleep,
     headers: dict[str, str] | None = None,
 ) -> httpx.Response | None:
-    problem = "no response"
+    problem, status = "no response", None
     for attempt in range(RETRIES + 1):
         response: httpx.Response | None = None
         try:
@@ -80,12 +85,12 @@ async def _get(
                 return None
             if response.status_code < 400:
                 return response
-            problem = f"HTTP {response.status_code}"
+            problem, status = f"HTTP {response.status_code}", response.status_code
             if response.status_code not in RETRY_STATUSES:
                 break
         if attempt < RETRIES:
             await sleep(_wait_s(response, attempt))
-    raise SourceError(f"Download failed: {problem}.")
+    raise SourceError(f"Download failed: {problem}.", status=status)
 
 
 # Download a whole file, such as a trait dataset; a missing file is an error here.
