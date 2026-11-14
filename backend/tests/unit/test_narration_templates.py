@@ -18,6 +18,7 @@ from app.narration.templates import (
     MAX_LINE,
     MIN_BEATS,
     _hint,
+    fair_fight_line,
     fit,
     fmt,
     guarded,
@@ -25,6 +26,7 @@ from app.narration.templates import (
     outro_script,
     pick_events,
     play_by_play_script,
+    safe_line,
     template_scripts,
 )
 
@@ -165,7 +167,7 @@ def test_outro_fills_numbers_from_the_result() -> None:
     text = " ".join(line.text for line in outro.lines)
     assert "Gray wolf, 6 of them" in text
     assert "55% of 1,000 simulated fights" in text
-    assert "About 4 of Gray wolf" in text and "49%" in text
+    assert "About 4 gray wolves make it a coin flip" in text and "49%" in text
     assert "numbers" in text
 
 
@@ -289,11 +291,24 @@ def test_draw_outro_says_draw_and_its_percentage() -> None:
     _assert_guarded(facts, *template_scripts(facts, result))
 
 
-def test_draw_share_the_guard_rejects_gets_a_number_free_line() -> None:
+def test_small_draw_share_is_said_as_a_whole_percent() -> None:
+    # A whole-number percentage is allowed at any size, so a 5% draw is said, not hidden.
     result = RESULT.model_copy(
         update={"outcome": "draw", "win_prob": (0.474, 0.473), "draw_prob": 0.053}
     )
     facts = _facts("bear-vs-wolves", result)
+    outro = outro_script(facts)
+    _assert_guarded(facts, outro)
+    assert any("5% of simulated fights ended even." == ln.text for ln in outro.lines)
+
+
+def test_draw_share_the_guard_rejects_gets_a_number_free_line() -> None:
+    result = RESULT.model_copy(
+        update={"outcome": "draw", "win_prob": (0.474, 0.473), "draw_prob": 0.053}
+    )
+    # A draw percentage no probability backs (forced here) is swapped for the number-free line.
+    facts = dataclasses.replace(_facts("bear-vs-wolves", result), draw_pct=42)
+    assert find_unsupported_numbers("42%", facts.allowed)
     outro = outro_script(facts)
     _assert_guarded(facts, outro)
     assert any("Plenty of simulated fights ended even." == ln.text for ln in outro.lines)
@@ -372,6 +387,118 @@ def test_large_count_uses_a_thousands_separator() -> None:
     text = " ".join(ln.text for s in scripts for ln in s.lines)
     assert "1,000 of them" in text
     _assert_guarded(facts, *scripts)
+
+
+# Facts where the fair-fight search varied the blue side (`sheet`) to `count` fighters.
+def _fair_facts(sheet: StatSheet, count: int) -> NarrationFacts:
+    fair = FAIR.model_copy(update={"varied_side": 1, "count": count})
+    return build_facts([_sheet("stat-sheet.json"), sheet], RESULT, fair)
+
+
+# Issue #250: "About 3 of Gorilla makes it a coin flip" was broken English.
+@pytest.mark.parametrize(
+    ("seed", "count", "said"),
+    [
+        ("gorilla.json", 3, "About 3 gorillas make it a coin flip"),
+        ("gray-wolf.json", 14, "About 14 gray wolves make it a coin flip"),
+        ("horse.json", 2, "About 2 horses make it a coin flip"),
+        ("gorilla.json", 1, "About 1 gorilla makes it a coin flip"),
+    ],
+)
+def test_fair_fight_line_names_the_fighters_in_plain_english(
+    seed: str, count: int, said: str
+) -> None:
+    facts = _fair_facts(_sheet(seed), count)
+    text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
+    assert text == f"Want a fair fight? {said}, winning 49% of the time."
+    assert find_unsupported_numbers(text, facts.allowed) == []
+
+
+# Issue #250 review: a proper first word keeps its capital ("African elephants", not "african").
+@pytest.mark.parametrize(
+    ("seed", "count", "said"),
+    [
+        ("african-elephant.json", 3, "About 3 African elephants make it a coin flip"),
+        ("roman-legionary.json", 2, "About 2 Roman legionaries make it a coin flip"),
+        ("african-lion.json", 2, "About 2 African lions make it a coin flip"),
+    ],
+)
+def test_fair_fight_line_keeps_proper_adjectives_capitalized(
+    seed: str, count: int, said: str
+) -> None:
+    facts = _fair_facts(_sheet(seed), count)
+    text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
+    assert text == f"Want a fair fight? {said}, winning 49% of the time."
+    assert find_unsupported_numbers(text, facts.allowed) == []
+
+
+# Casing and irregular plurals for names with no seed sheet, renamed from the gorilla sheet.
+@pytest.mark.parametrize(
+    ("name", "count", "said"),
+    [
+        ("House mouse", 3, "About 3 house mice make it a coin flip"),
+        ("Triceratops", 2, "About 2 triceratops make it a coin flip"),
+        ("Siberian tiger", 2, "About 2 Siberian tigers make it a coin flip"),
+        ("Komodo dragon", 2, "About 2 Komodo dragons make it a coin flip"),
+        ("Nile crocodile", 4, "About 4 Nile crocodiles make it a coin flip"),
+    ],
+)
+def test_fair_fight_line_pins_casing_and_irregular_plurals(
+    name: str, count: int, said: str
+) -> None:
+    sheet = _sheet("gorilla.json").model_copy(update={"display_name": name})
+    facts = _fair_facts(sheet, count)
+    text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
+    assert text == f"Want a fair fight? {said}, winning 49% of the time."
+    assert find_unsupported_numbers(text, facts.allowed) == []
+
+
+# Issue #259: a number word inside a fighter's name ("Three-toed sloth") is not a number.
+@pytest.mark.parametrize(
+    ("name", "said"),
+    [
+        ("Three-toed sloth", "About 1 three-toed sloth makes it a coin flip"),
+        ("Nine-banded armadillo", "About 1 nine-banded armadillo makes it a coin flip"),
+    ],
+)
+def test_fair_fight_line_keeps_a_name_with_a_number_word(name: str, said: str) -> None:
+    sheet = _sheet("gorilla.json").model_copy(update={"display_name": name})
+    facts = _fair_facts(sheet, 1)
+    assert not {3.0, 9.0} & facts.allowed.values  # the number words in the names are not backed
+    text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
+    assert text == f"Want a fair fight? {said}, winning 49% of the time."
+    assert fair_fight_line(facts).text == text  # names come from the facts, not the caller
+
+
+# Issue #259: the name is masked in any case and in plural form; other numbers are still read.
+def test_guard_masks_names_in_any_case_and_plural() -> None:
+    sheet = _sheet("gorilla.json").model_copy(update={"display_name": "Three-toed sloth"})
+    facts = _fair_facts(sheet, 1)
+    names = [f.display_name for f in facts.fighters]
+    assert 7.0 not in facts.allowed.values
+    safe = "SAFE"
+    for text in (
+        "The Three-toed sloth closes in!",
+        "Look at those three-toed sloths go!",
+        "THREE-TOED SLOTH IS HERE!",
+        "Three-Toed Sloths, assemble!",
+    ):
+        assert guarded(text, safe, facts.allowed, names) == text
+        assert safe_line("announcer", text, safe, facts).text == text
+    for bad in ("Three-toed sloth wins 7 times.", "three-toed sloths win seven times."):
+        assert guarded(bad, safe, facts.allowed, names) == safe
+        assert safe_line("announcer", bad, safe, facts).text == safe
+
+
+# The line is still number-guarded: a count that is not in the facts falls back.
+def test_fair_fight_line_with_an_unsupported_count_still_falls_back() -> None:
+    facts = _fair_facts(_sheet("gorilla.json"), 3)
+    narrowed = dataclasses.replace(
+        facts,
+        allowed=dataclasses.replace(facts.allowed, values=facts.allowed.values - {3.0}),
+    )
+    text = fair_fight_line(narrowed).text
+    assert text == "Want a fair fight? We have a count that makes it a coin flip."
 
 
 def test_fmt_tiny_values_never_use_scientific_notation() -> None:

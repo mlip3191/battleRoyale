@@ -14,11 +14,15 @@ from app.models.narration import Script, ScriptLine
 from app.models.simulation import EventType, FightEvent, SimulationResult
 from app.narration.facts import FACTOR_WORDS, KG_TO_LB, MPS_TO_KMH, FighterFacts, NarrationFacts
 from app.narration.number_guard import AllowedNumbers, find_unsupported_numbers
+from app.text import PROPER_FIRST_WORDS as PROPER_FIRST_WORDS  # shared since #258
+from app.text import counted_name, pluralize
 
 MAX_LINE = 200
 MAX_HINT = 60
 MIN_BEATS = 8
 MAX_BEATS = 20
+# Stands in for a fighter's name while the number guard reads a line ("Three-toed sloth").
+NAME_MASK = "Fighter"
 
 # Events worth keeping when a long log is cut down to the beat limit.
 KEY_EVENTS = {EventType.KO, EventType.FLEE, EventType.RETREAT, EventType.STALEMATE, EventType.END}
@@ -66,18 +70,30 @@ def line(
     return ScriptLine.model_validate({"speaker": speaker, "text": text, "at_event": at_event})
 
 
-# The text if every number in it is allowed; otherwise the safe stand-in.
-def guarded(text: str, safe: str, allowed: AllowedNumbers) -> str:
+# Hide the fighters' names from the number guard, so "Three-toed sloth" is not read as 3 (#259).
+def mask_names(text: str, names: Sequence[str]) -> str:
+    """Replace each name and its plural, in any case, with NAME_MASK; other words are untouched."""
+    forms = {form for name in names if name for form in (name, pluralize(name))}
+    for form in sorted(forms, key=len, reverse=True):  # longer forms first (plural before singular)
+        pattern = rf"(?<!\w){re.escape(form)}(?!\w)"
+        text = re.sub(pattern, NAME_MASK, text, flags=re.IGNORECASE)
+    return text
+
+
+# The text if every number in it is allowed (fighters' names aside); otherwise the safe stand-in.
+def guarded(text: str, safe: str, allowed: AllowedNumbers, names: Sequence[str] = ()) -> str:
     """Run a built line through the number guard; fall back to `safe` if it fails."""
-    return safe if find_unsupported_numbers(text, allowed) else text
+    return safe if find_unsupported_numbers(mask_names(text, names), allowed) else text
 
 
 # A guarded, length-checked line: the text if its numbers pass, otherwise the number-free stand-in.
 def safe_line(
     speaker: str, text: str, safe: str, facts: NarrationFacts, names: Sequence[str] = ()
 ) -> ScriptLine:
-    """A ScriptLine whose numbers all pass the guard (`safe` must contain no numbers)."""
-    return line(speaker, guarded(text, safe, facts.allowed), names=names)
+    """A ScriptLine whose numbers all pass the guard (`safe` must contain no numbers).
+    The fighters' names in `facts` are always masked for the guard, plus any extra `names`."""
+    masked = [*(f.display_name for f in facts.fighters), *names]
+    return line(speaker, guarded(text, safe, facts.allowed, masked), names=names)
 
 
 # How a side is named in the broadcast, with its count when more than one fights.
@@ -235,7 +251,7 @@ def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Scri
         seen.add(idx)
         speaker = "announcer" if n % 3 != 2 else "color_commentator"
         safe = beat_text(log[idx], facts, use_hint=False)
-        text = guarded(beat_text(log[idx], facts), safe, facts.allowed)
+        text = guarded(beat_text(log[idx], facts), safe, facts.allowed, names)
         lines.append(line(speaker, text, idx, names))
     if not lines:  # no events at all: the sides never engaged, so nothing to sync to
         standoff = ["They size each other up.", "Nobody moves.", "Still nobody moves."]
@@ -250,9 +266,11 @@ def fair_fight_line(facts: NarrationFacts, names: Sequence[str] = ()) -> ScriptL
     if facts.fair_count is not None and facts.fair_side is not None:
         if facts.fair_win_pct is None:  # a count with no probability: never say "None%"
             return safe_line("color_commentator", safe, safe, facts)
-        varied = facts.fighters[facts.fair_side].display_name
+        count = facts.fair_count
+        varied = counted_name(facts.fighters[facts.fair_side].display_name, count)
+        verb = "makes" if count == 1 else "make"
         text = (
-            f"Want a fair fight? About {facts.fair_count} of {varied} makes it a coin flip, "
+            f"Want a fair fight? About {count} {varied} {verb} it a coin flip, "
             f"winning {facts.fair_win_pct}% of the time."
         )
         return safe_line("color_commentator", text, safe, facts, names)

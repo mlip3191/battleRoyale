@@ -9,6 +9,7 @@ from app.models.stats import StatSheet
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.engine import run
+from app.text import counted_name
 
 logger = logging.getLogger(__name__)
 
@@ -19,29 +20,6 @@ class FairFightSearch:
 
     result: FairFight
     probes: int
-
-
-_IRREGULAR_PLURALS = {
-    "mouse": "mice", "goose": "geese", "ox": "oxen", "sheep": "sheep", "deer": "deer",
-    "fish": "fish", "moose": "moose",
-}  # fmt: skip
-
-
-def plural(name: str, count: int) -> str:
-    """ "House cat" -> "house cats" (simple English rules; only the first letter is lower-cased)."""
-    name = name[:1].lower() + name[1:]
-    if count == 1:
-        return name
-    head, _, last = name.rpartition(" ")
-    if last in _IRREGULAR_PLURALS:
-        return (head + " " if head else "") + _IRREGULAR_PLURALS[last]
-    if name.endswith(("s", "x", "sh", "ch")):
-        return name + "es"
-    if name.endswith("y") and name[-2:-1] not in "aeiou":
-        return name[:-1] + "ies"
-    if name.endswith("f"):
-        return name[:-1] + "ves"
-    return name + "s"
 
 
 def _with_count(matchup: Matchup, side: int, count: int) -> Matchup:
@@ -79,7 +57,7 @@ def fair_fight_search(
     other = 1 - side
     name = stat_sheets[side].display_name
     other_count = matchup.fighters[other].count
-    fixed_text = f"{other_count} {plural(stat_sheets[other].display_name, other_count)}"
+    fixed_text = f"{other_count} {counted_name(stat_sheets[other].display_name, other_count)}"
     probes: list[tuple[int, float]] = []
 
     def probe(count: int) -> float:
@@ -98,7 +76,7 @@ def fair_fight_search(
 
     def done(count: int, p: float, rough: bool = False) -> FairFightSearch:
         lead = "A fair fight needs about" if rough else "A fair fight needs"
-        message = f"{lead} {count} {plural(name, count)} against {fixed_text}."
+        message = f"{lead} {count} {counted_name(name, count)} against {fixed_text}."
         return FairFightSearch(
             FairFight(varied_side=side, count=count, win_prob_at_count=p, message=message),
             len(probes),
@@ -119,9 +97,8 @@ def fair_fight_search(
         lo = count
         while len(probes) < c.FAIR_MAX_PROBES:
             if count >= c.FAIR_MAX_COUNT:
-                message = (
-                    f"No fair fight within {c.FAIR_MAX_COUNT:,} {plural(name, c.FAIR_MAX_COUNT)}."
-                )
+                most = c.FAIR_MAX_COUNT
+                message = f"No fair fight within {most:,} {counted_name(name, most)}."
                 return FairFightSearch(
                     FairFight(
                         varied_side=side, count=None, win_prob_at_count=None, message=message
@@ -186,7 +163,7 @@ def _winner_text(winner_sheet: StatSheet, request: FighterRequest | None, scaled
         return winner_sheet.display_name
     text = winner_sheet.display_name
     if request.count > 1:
-        text = f"{request.count:,} {plural(winner_sheet.display_name, request.count)}"
+        text = f"{request.count:,} {counted_name(winner_sheet.display_name, request.count)}"
     if scaled and request.size_reference:
         text += f" ({request.size_reference}-sized)"
     return text

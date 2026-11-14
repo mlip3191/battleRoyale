@@ -205,11 +205,13 @@ def _allowed(
         # Only sourced values: no code-made sampling bounds, and rubric stats never as percents.
         for stat in sheet.stats.values():
             values |= _stat_numbers(stat.value, stat.unit)
-    # Percentages come only from real probabilities.
+    # Percentages come only from real probabilities. The whole-number percentage (pct) is allowed
+    # at any size, even under 10, because code fills it into the outro ("5%", "0%"); only as a
+    # percent, never as a plain number.
     probs = [*result.win_prob, result.draw_prob, *(b for ci in result.win_prob_ci95 for b in ci)]
     for p in probs:
         values |= _roundings(p)
-        percents |= _roundings(p * 100)
+        percents |= _roundings(p * 100) | {float(pct(p))}
     values |= _stat_numbers(result.mean_duration_s, "s")
     values |= {float(result.runs)} | {float(c) for c in facts_counts}
     values |= {float(e.group_size) for e in result.representative_log}
@@ -221,7 +223,7 @@ def _allowed(
         values.add(float(fair.count))
     if fair is not None and fair.count is not None and fair.win_prob_at_count is not None:
         values |= _roundings(fair.win_prob_at_count)
-        percents |= _roundings(fair.win_prob_at_count * 100)
+        percents |= _roundings(fair.win_prob_at_count * 100) | {float(pct(fair.win_prob_at_count))}
         odds |= _odds([fair.win_prob_at_count])
     return AllowedNumbers(frozenset(values), frozenset(percents), frozenset(odds))
 

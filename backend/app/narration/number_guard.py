@@ -2,15 +2,19 @@
 
 It reads digits ("1,200", "3,5", "1/2", "½", "3½", "1e3", "2 point 5", "3rd"),
 number words ("four hundred and twelve", "forty-two", "two point five", "a dozen", "a score",
-"three quarters", "two-thirds", "three-fifths", "a trillion"), quantity words ("half", "twice",
-"thrice", "double", "triple", "tens", "dozens", "hundreds", "thousands", "millions", "trillions",
-and any number word plus "fold": "twofold", "twentyfold", "thousandfold"), ordinals ("third" to
-"twentieth"), percentages ("40%", "forty per cent"), and ratios
-("8:1", "eight to one", "8-to-1"). ARCHITECTURE "The number rule": a plain number must match an
-allowed value (within rounding), a percentage an allowed percentage, and a ratio either two allowed
-values or a win-odds ratio. "one", "two", "first", "second", "1st", "2nd" on their own are always
-allowed, so "one punch" or "these two" never trips it; digits ("2"), percentages, ratios, decimals
-("one point five") and "twice" get no such pass. Known limit: "a third" reads as the ordinal 3.
+"three quarters", "two-thirds", "three-fifths", "one hundredth", "a trillion"), quantity words
+("half", "twice", "thrice", "double", "triple", "quadruple", "trio", "tens", "dozens", "hundreds",
+"thousands", "millions", "trillions", and any number word plus "fold": "twofold", "twentyfold",
+"thousandfold"; after "a" or a number: "a couple", "a pair", "a decade", "a century", "a gross",
+"a myriad"), ordinals ("third" to "hundredth", including "twenty-first" and "thirty third"),
+all-caps Roman numerals of two or more letters ("XIV", "MMXXVI"; not "I", "MIX", or "CIVIL"),
+circled digits ("①" to "⑳", "⓪", and similar enclosed digits), percentages ("40%",
+"forty per cent"), and ratios ("8:1", "eight to one", "8-to-1"). ARCHITECTURE "The number rule": a
+plain number must match an allowed value (within rounding), a percentage an allowed percentage, and
+a ratio either two allowed values or a win-odds ratio. "one", "two", "first", "second", "1st",
+"2nd" on their own are always allowed, so "one punch" or "these two" never trips it; digits ("2"),
+percentages, ratios, decimals ("one point five"), "twice", "a couple", and "a pair" get no such
+pass. Known limit: "a third" reads as the ordinal 3.
 Pure standard-library code, no I/O, safe to call on every line.
 """
 
@@ -39,15 +43,32 @@ _TENS = _numbered("twenty thirty forty fifty sixty seventy eighty ninety", 20, 1
 _ORDINALS = _numbered(
     "third fourth fifth sixth seventh eighth ninth tenth eleventh twelfth thirteenth fourteenth "
     "fifteenth sixteenth seventeenth eighteenth nineteenth twentieth", 3
-)  # fmt: skip
+) | _numbered("thirtieth fortieth fiftieth sixtieth seventieth eightieth ninetieth", 30, 10) | {
+    "hundredth": 100
+}  # fmt: skip
+# Ordinals that finish a compound ordinal after a tens word: "twenty-first" through "ninety-ninth".
+_UNIT_ORDINALS = {"first": 1, "second": 2} | {w: v for w, v in _ORDINALS.items() if v <= 9}
 _SCALES = {
     "thousand": 1e3, "million": 1e6, "billion": 1e9, "trillion": 1e12, "dozen": 12.0,
-    "score": 20.0, "quarter": 0.25, "quarters": 0.25,
+    "score": 20.0, "quarter": 0.25, "quarters": 0.25, "couple": 2.0, "pair": 2.0, "decade": 10.0,
+    "century": 100.0, "gross": 144.0, "myriad": 1e4,
 }  # fmt: skip
-# Scale words that only count after "a" or a number ("a score", "three quarters", not "the score").
-_COUNTED = {"score", "quarter", "quarters"}
+# Scale words that only count after "a" or a number ("a score", "three quarters", not "the score",
+# "that is gross", or "myriad fans").
+_COUNTED = {
+    "score",
+    "quarter",
+    "quarters",
+    "couple",
+    "pair",
+    "decade",
+    "century",
+    "gross",
+    "myriad",
+}
 _STANDALONE = {
-    "half": 0.5, "twice": 2.0, "double": 2.0, "thrice": 3.0, "triple": 3.0, "tens": 10.0,
+    "half": 0.5, "twice": 2.0, "double": 2.0, "thrice": 3.0, "triple": 3.0, "trio": 3.0,
+    "quadruple": 4.0, "tens": 10.0,
     "dozens": 12.0, "hundreds": 100.0, "thousands": 1e3, "millions": 1e6, "billions": 1e9,
     "trillions": 1e12,
 }  # fmt: skip
@@ -66,13 +87,14 @@ _VULGAR = {
     "⅑": 1 / 9, "⅒": 1 / 10,
 }  # fmt: skip
 
-# Fraction words and their bottoms, singular and plural: "half"/"halves" through "tenth"/"tenths".
-_FRACTION_WORDS = {"half": 2, "halves": 2, "quarter": 4, "quarters": 4} | {
+# Fraction words and their bottoms, singular and plural: "half"/"halves" through "tenth"/"tenths",
+# and "hundredth"/"hundredths".
+_FRACTION_WORDS = {
     word + plural: bottom
     for word, bottom in _ORDINALS.items()
-    if bottom <= 10
+    if bottom <= 10 or bottom == 100
     for plural in ("", "s")
-}
+} | {"half": 2, "halves": 2, "quarter": 4, "quarters": 4}
 # "one" and "two" alone always pass, so "two-fifths" must be read as one number (2/5):
 # "one" to "nine" over any fraction word.
 _UNIT_FRACTIONS = {
@@ -81,6 +103,31 @@ _UNIT_FRACTIONS = {
     if top != "zero"
     for word, bottom in _FRACTION_WORDS.items()
 }
+
+
+# Enclosed digits as (first code point, how many, value of the first): circled 1-20 and 0,
+# parenthesized 1-20, negative circled 11-20, double circled 1-10, negative circled 0, dingbat
+# circled 1-10 (three styles), and circled 21-35 and 36-50.
+_ENCLOSED_RANGES = [
+    (0x2460, 20, 1), (0x24EA, 1, 0), (0x2474, 20, 1), (0x24EB, 10, 11), (0x24F5, 10, 1),
+    (0x24FF, 1, 0), (0x2776, 10, 1), (0x2780, 10, 1), (0x278A, 10, 1), (0x3251, 15, 21),
+    (0x32B1, 15, 36),
+]  # fmt: skip
+_ENCLOSED = {chr(cp + i): float(first + i) for cp, n, first in _ENCLOSED_RANGES for i in range(n)}
+
+# A canonical Roman numeral (1 to 3999), strictly written: "XIV" but not "IIII" or "DID".
+_ROMAN = re.compile(r"M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})")
+_ROMAN_VALUES = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100, "D": 500, "M": 1000}
+# All-caps words and abbreviations that happen to be canonical Roman numerals ("MIX", "CD", "MC").
+_ROMAN_WORDS = {"MIX", "DIX", "MC", "MD", "CD", "DC", "CV", "MM", "CC", "MI", "DI", "LI", "MMM"}
+
+
+# The value of an all-caps Roman numeral of two or more letters ("XIV" -> 14), else None.
+def _roman_value(raw: str) -> float | None:
+    if len(raw) < 2 or raw in _ROMAN_WORDS or not _ROMAN.fullmatch(raw):
+        return None
+    vals = [_ROMAN_VALUES[c] for c in raw]
+    return float(sum(-v if v < nxt else v for v, nxt in zip(vals, [*vals[1:], 0], strict=True)))
 
 
 _TOKEN = re.compile(
@@ -198,13 +245,21 @@ _FOLLOWS = {
 
 
 # Split text into number, word, and symbol tokens (lowercased; offsets match the original text).
+# Enclosed digits ("③") and all-caps Roman numerals ("XIV", checked in the original casing) become
+# digit tokens.
 def _tokenize(text: str) -> list[_Tok]:
     tokens = []
     for m in _TOKEN.finditer(text.lower()):
+        roman = _roman_value(text[m.start() : m.end()]) if m.group("word") else None
+        enclosed = _ENCLOSED.get(m.group("sym") or "")
         if m.group("num"):
             kind = "ord" if m.group("ord") else "num"
             value, parts = _digits_value(m["num"]), _fraction_parts(m["num"])
             tokens.append(_Tok(kind, m.group(0), m.start(), m.end(), value, parts=parts))
+        elif roman is not None:
+            tokens.append(_Tok("num", m.group(0), m.start(), m.end(), roman))
+        elif enclosed is not None:
+            tokens.append(_Tok("num", m.group(0), m.start(), m.end(), enclosed))
         else:
             kind = "word" if m.group("word") else "sym"
             tokens.append(_Tok(kind, m.group(kind), m.start(), m.end()))
@@ -298,6 +353,20 @@ def _read_unit_fraction(tokens: list[_Tok], i: int) -> tuple[_Tok, int] | None:
     return _num(value, a.start, tokens[j].end), j + 1
 
 
+# "twenty-first" / "thirty third": a tens word, an optional hyphen, and a unit ordinal.
+def _read_compound_ordinal(tokens: list[_Tok], i: int) -> tuple[_Tok, int] | None:
+    a = tokens[i]
+    if a.kind != "word" or a.text not in _TENS:
+        return None
+    j = i + 1
+    if j < len(tokens) and tokens[j].kind == "sym" and tokens[j].text == "-":
+        j += 1
+    if j >= len(tokens) or tokens[j].kind != "word" or tokens[j].text not in _UNIT_ORDINALS:
+        return None
+    value = _TENS[a.text] + _UNIT_ORDINALS[tokens[j].text]
+    return _num(float(value), a.start, tokens[j].end), j + 1
+
+
 # Turn tokens into a list where each number is one item and other tokens stay as they are.
 def _numbers_and_tokens(tokens: list[_Tok]) -> list[_Tok]:
     items: list[_Tok] = []
@@ -305,7 +374,7 @@ def _numbers_and_tokens(tokens: list[_Tok]) -> list[_Tok]:
     while i < len(tokens):
         tok, nums, nxt = tokens[i], [], i + 1
         single = _ORDINALS.get(tok.text) or _STANDALONE.get(tok.text) or _fold_value(tok.text)
-        frac = _read_unit_fraction(tokens, i)
+        frac = _read_unit_fraction(tokens, i) or _read_compound_ordinal(tokens, i)
         if frac is not None:
             nums, nxt = [frac[0]], frac[1]
         elif tok.kind == "num" and tok.parts is not None:
