@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.battles import router as battles_router
+from app.api.fighters import router as fighters_router
 from app.api.intake import router as intake_router
 from app.config import REPO_ROOT, Settings, get_settings
 from app.models import contract_schemas
@@ -45,6 +46,7 @@ def create_app(settings: Settings | None = None, frontend_dist: Path = FRONTEND_
 
     app.include_router(intake_router)
     app.include_router(battles_router)
+    app.include_router(fighters_router)
     # Generated sprites and battlefields (A08), e.g. /media/sprites/gray-wolf-v1.png.
     media_dir = settings.data_dir / "media"
     media_dir.mkdir(parents=True, exist_ok=True)

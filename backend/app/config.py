@@ -71,6 +71,8 @@ class Settings(BaseSettings):
 
     # Storage
     data_dir: Path = Path("data")
+    # Optional Hugging Face token for the team trait dataset (G02); the dataset is public.
+    hf_token: SecretStr | None = None
 
     # Resolve relative paths against the repo root, not the current folder.
     @field_validator("data_dir", "announcer_voice_consent_file", mode="after")

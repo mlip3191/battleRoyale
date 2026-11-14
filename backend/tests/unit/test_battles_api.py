@@ -112,7 +112,7 @@ def test_every_stub_stage_says_stub(client: TestClient) -> None:
     record = wait_until_finished(client, start(client, matchup_body("horse", "duck")))
     for name in STAGES:
         detail = final_stage(record, name).detail
-        if name in ("research", "simulate", "summary", "challenger", "script", "images"):
+        if name != "intake":  # intake is the only stub left
             assert detail != STUB, name
         else:
             assert detail == STUB, name
