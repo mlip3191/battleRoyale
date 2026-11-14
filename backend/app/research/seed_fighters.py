@@ -93,30 +93,48 @@ def _sheet_at(slug: str, sheets_dir: Path) -> StatSheet | None:
 # finds gray-wolf; the aliases map "wolves" to "wolf". A vague phrase
 # like "a bear" matches no unique sheet (the prefix is not in the phrase).
 def _sheet_from_raw(entity: str, raw: str | None, sheets_dir: Path) -> StatSheet | None:
+    try:
+        entries = list(sheets_dir.iterdir())
+    except OSError:
+        return None
+    slugs = [p.stem for p in entries if p.suffix == ".json" and p.is_file()]
+    slug = _unique_raw_match(entity, raw, slugs)
+    return None if slug is None else _sheet_at(slug, sheets_dir)
+
+
+# The one slug whose last word is the entity and whose other words all appear in raw, or None.
+def _unique_raw_match(entity: str, raw: str | None, slugs: list[str]) -> str | None:
     if not raw or not raw.strip():
         return None
     entity_slug = _canonical_slug(entity)
     if not entity_slug:
         return None
     raw_tokens = {part for part in _canonical_slug(raw).split("-") if part and not part.isdigit()}
-    matches: list[Path] = []
-    try:
-        entries = sheets_dir.iterdir()
-    except OSError:
-        return None
-    for path in entries:
-        if path.suffix != ".json" or not path.is_file():
-            continue
-        slug = path.stem
+    matches: list[str] = []
+    for slug in slugs:
         if not slug or re.search(r"[^a-z0-9-]", slug):
             continue
         parts = slug.split("-")
         if len(parts) < 2 or parts[-1] != entity_slug:
             continue
         if all(part in raw_tokens for part in parts[:-1]):
-            matches.append(path)
+            matches.append(slug)
             if len(matches) > 1:
                 return None
-    if len(matches) != 1:
-        return None
-    return _sheet_at(matches[0].stem, sheets_dir)
+    return matches[0] if len(matches) == 1 else None
+
+
+# The seed-list fighter a request names, tried like find_seed_sheet: "variant entity", then
+# entity, then a unique match in raw. None for names not on the seed list.
+def find_seed_fighter(
+    entity: str, variant: str | None = None, raw: str | None = None
+) -> SeedFighter | None:
+    fighters = {f.id: f for f in load_seed_fighters()}
+    by_name = {**{_canonical_slug(f.display_name): f for f in fighters.values()}, **fighters}
+    kind = (variant or "").strip()
+    for name in ([f"{kind} {entity}"] if kind else []) + [entity]:
+        found = by_name.get(_canonical_slug(name))
+        if found is not None:
+            return found
+    slug = _unique_raw_match(entity, raw, list(fighters))
+    return None if slug is None else fighters[slug]

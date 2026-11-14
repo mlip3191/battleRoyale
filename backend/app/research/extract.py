@@ -12,6 +12,7 @@ import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
@@ -40,6 +41,11 @@ ATTEMPTS = 2
 MAX_QUOTE_CHARS = 300
 # At most this many stats are extracted at once, so one sheet can't flood the providers.
 PARALLEL_STATS = 3
+# Hosts of the approved text sources in docs/research.md (Wikipedia, Wikidata, and the
+# Hugging Face datasets); a passage from anywhere else is never quoted.
+APPROVED_HOSTS = frozenset({"en.wikipedia.org", "www.wikidata.org", "huggingface.co"})
+# Mega and giga symbols ("Mm", "Mg", "Gm") would be read as milli by the lowercase unit table.
+LARGE_PREFIXES = ("M", "G")
 # Stats a ramming machine always gets from the ram formula, so they are never extracted.
 RAM_DERIVED = (StatName.ATTACK_FORCE, StatName.ATTACK_RATE)
 
@@ -127,6 +133,12 @@ def verified_value(
         logger.warning("Rejected %s: the quote is over %s characters.", stat.value, MAX_QUOTE_CHARS)
         return None
     passage = passages[answer.passage - 1]
+    if urlparse(passage.url).hostname not in APPROVED_HOSTS:
+        logger.warning("Rejected %s: its page isn't from an approved source.", stat.value)
+        return None
+    if len(answer.unit) <= 3 and answer.unit.startswith(LARGE_PREFIXES) and len(answer.unit) > 1:
+        logger.warning("Rejected %s: unit %r has a mega or giga prefix.", stat.value, answer.unit)
+        return None
     if passage.url not in retrieved:
         logger.warning("Rejected %s: no fetch date stored for its page.", stat.value)
         return None
