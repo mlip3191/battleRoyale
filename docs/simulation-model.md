@@ -159,7 +159,8 @@ A loadout is one choice per fighter that leans a way and costs something elsewhe
 | Balanced | x1.15 | x1.0 | x0.97 | +0.08 |
 
 - **Number rule:** a changed sourced stat becomes `derived` (the note gives the base value, the multiplier and says the multiplier is an assumption); a changed estimate stays the estimate it was; armor becomes an `assumption`, kept within 0 to 1. The sheet hash changes with the loadout, so a cache key built from the sheet changes too. Names shown to users read "Gray wolf with an attack loadout"; image prompts never see it.
-- **No free upgrade:** every loadout lowers at least one stat, and no loadout is at least as good as another in all four (a test checks it for five seed fighters).
+- **No free upgrade:** every loadout lowers at least one stat, and no loadout is at least as good as another in all four, at every tier (a test checks it).
+- **Tiers and kits:** each loadout has five tiers (changes scaled by 1.0, 1.4, 1.8, 2.2, 2.6) and a fighter carries a kit: each round it adds a loadout or upgrades one by a tier. Gear has weight, so a heavy kit has negative traits (encumbrance slows it and its swing above a free load; attack above tier 3 is reckless; speed above tier 3 is fragile), all assumptions in `constants.py`. What the gear is, and how heavy it is, depends on the kind of fighter (a warrior's iron, a wolf's claws and hide, a horse's hooves, a bird's talons, a tank's plating: nine kinds, `LOADOUT_ARCHETYPES`), so a heavy kit slows a warrior far more than an animal. The items and how a fighter improves through the tournament are in [loadouts-design.md](loadouts-design.md).
 - **Not included:** critical hits (the engine has none; adding them is a new mechanic and an `ENGINE_VERSION` bump), firearms, explosives and modern vehicles (D-07, D-38), earned experience or money, and any request or API field. Inert objects have no loadout.
 
 ## Why probabilities are shown as "range"

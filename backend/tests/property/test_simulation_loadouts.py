@@ -3,6 +3,7 @@
 import json
 from itertools import permutations, product
 from pathlib import Path
+from typing import get_args
 
 import pytest
 import yaml
@@ -11,7 +12,20 @@ from app.models.stats import SAFE_NAME, StatName, StatSheet
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.engine import run
-from app.simulation.loadouts import all_loadouts, apply_loadout, at_tier, loadout
+from app.simulation.loadouts import (
+    add_or_upgrade,
+    all_loadouts,
+    apply_kit,
+    apply_loadout,
+    archetype_of,
+    at_tier,
+    available_choices,
+    item_name,
+    kit_effect,
+    kit_load,
+    kit_points,
+    loadout,
+)
 from tests.property.sim_helpers import make_sheet, matchup_of
 
 SEED = Path(__file__).resolve().parents[3] / "data" / "seed" / "fighters"
@@ -78,7 +92,7 @@ def test_only_the_four_stats_change_and_every_change_is_labeled_not_sourced():
             elif stat != StatName.ARMOR:
                 assert new.method == "derived" and not new.is_estimate
         assert changed.stats[StatName.ARMOR].method == "assumption"
-        assert changed.display_name == f"{wolf.display_name} with {item.label}"
+        assert changed.display_name == f"{wolf.display_name} with {item_name('mammal', item.id, 1)}"
         assert changed.media_name == wolf.media_name  # prompts never see the loadout
 
 
@@ -131,7 +145,7 @@ def test_the_numbers_are_assumptions_listed_in_the_constants_file():
 # --- tiers: a tier-up deepens the trade-off (#283 prework) ---------------------------------------
 
 ITEMS = Path(__file__).resolve().parents[3] / "data" / "loadouts" / "items.yaml"
-TIERS = (1, 2, 3)
+TIERS = (1, 2, 3, 4, 5)
 
 
 def stats_of(item):
@@ -143,26 +157,18 @@ def test_a_higher_tier_is_a_bigger_commitment_not_a_strictly_better_set():
         for low, high in permutations(TIERS, 2):
             if high < low:
                 continue
-            a, b = stats_of(at_tier(item, low)), stats_of(at_tier(item, high))
-            if low == high:
-                continue
-            assert any(x > y for x, y in zip(b, a, strict=True)), (
-                item.id,
-                "gains nothing",
-                low,
-                high,
-            )
-            assert any(x < y for x, y in zip(b, a, strict=True)), (
-                item.id,
-                "costs nothing more",
-                low,
-                high,
-            )
+            a = stats_of(kit_effect({item.id: low}))
+            b = stats_of(kit_effect({item.id: high}))
+            gains = any(x > y for x, y in zip(b, a, strict=True))
+            costs = any(x < y for x, y in zip(b, a, strict=True))
+            assert gains and costs, (item.id, low, high)
 
 
 def test_no_loadout_at_any_tier_is_at_least_as_good_as_another_in_every_stat():
     every = [
-        (item.id, tier, stats_of(at_tier(item, tier))) for item in all_loadouts() for tier in TIERS
+        (item.id, tier, stats_of(kit_effect({item.id: tier})))
+        for item in all_loadouts()
+        for tier in TIERS
     ]
     for (a_id, a_tier, a), (b_id, b_tier, b) in permutations(every, 2):
         if a_id == b_id:
@@ -177,7 +183,7 @@ def test_tier_one_is_the_base_table_and_an_unknown_tier_is_refused():
     for item in all_loadouts():
         assert at_tier(item, 1).force_mul == item.force_mul
     with pytest.raises(ValueError, match="tier"):
-        at_tier(loadout("attack"), 4)
+        at_tier(loadout("attack"), 6)
 
 
 def test_a_tiered_sheet_says_its_tier_and_changes_the_hash():
@@ -197,19 +203,203 @@ def test_armor_still_stays_between_zero_and_one_at_every_tier():
         assert 0.0 <= got.value <= 1.0
 
 
-def test_the_item_list_has_three_pre_modern_items_per_loadout_and_no_sourced_numbers_yet():
+def test_every_kind_of_fighter_has_five_safe_natural_or_pre_modern_items_per_loadout():
     data = yaml.safe_load(ITEMS.read_text("utf-8"))
-    assert set(data) == set(c.LOADOUTS)
+    assert set(data) == set(c.LOADOUT_ARCHETYPES)
     banned = ("gun", "rifle", "pistol", "musket", "cannon", "bomb", "grenade", "explosive", "tnt")
-    for lean, items in data.items():
-        assert [item["tier"] for item in items] == [1, 2, 3], lean
-        assert [item["unlocks_after_round"] for item in items] == [0, 1, 2], lean
-        for item in items:
-            assert SAFE_NAME.fullmatch(item["name"]), item["name"]
-            assert item["era"] in {"prehistoric", "ancient", "medieval"}, item["id"]
-            assert item["kind"] in {"weapon", "armor", "gear"}
-            assert item["research"], item["id"]  # what a teammate must source first
-            assert not any(word in item["name"].lower() for word in banned), item["name"]
-            assert not any(key in item for key in ("mass_kg", "force_n", "damage")), item["id"]
-    ids = [item["id"] for items in data.values() for item in items]
-    assert len(ids) == len(set(ids)) == 12
+    names = []
+    for archetype, entry in data.items():
+        assert set(entry["items"]) == set(c.LOADOUTS), archetype
+        assert entry["research"], archetype
+        assert entry["covers"] or entry.get("covers_weapons"), archetype
+        for lean, items in entry["items"].items():
+            assert len(items) == 5 and len(set(items)) == 5, (archetype, lean)
+            for name in items:
+                assert SAFE_NAME.fullmatch(name), name
+                assert not any(word in name.lower() for word in banned), name
+                names.append(name)
+    assert len(names) == 9 * 4 * 5
+
+
+def test_the_archetypes_cover_every_sheet_category_that_can_fight():
+    data = yaml.safe_load(ITEMS.read_text("utf-8"))
+    covered = [category for entry in data.values() for category in entry["covers"]]
+    assert len(covered) == len(set(covered))  # each category belongs to one archetype
+    every = set(get_args(StatSheet.model_fields["category"].annotation))
+    assert every - set(covered) == {"plant", "object"}  # no loadouts for things that cannot fight
+
+
+def test_the_archetype_comes_from_the_sheet_and_decides_the_items():
+    assert archetype_of(seed("gray-wolf")) == "mammal"
+    assert archetype_of(seed("horse")) == "hoofed"
+    assert archetype_of(seed("african-elephant")) == "hoofed"
+    assert archetype_of(seed("roman-legionary")) == "warrior"
+    assert archetype_of(seed("main-battle-tank")) == "machine"
+    assert archetype_of(seed("saltwater-crocodile")) == "reptile"
+    assert archetype_of(make_sheet("eagle", category="bird")) == "bird"
+    assert archetype_of(make_sheet("ant", category="insect")) == "insect"
+    assert archetype_of(make_sheet("shark", category="fish")) == "aquatic"
+    assert item_name("mammal", "attack", 3) == "razor claws"
+    assert item_name("hoofed", "attack", 2) == "hardened hooves"
+    assert item_name("warrior", "attack", 3) == "steel battle axe"
+    assert item_name("machine", "defense", 1) == "bolted armor plates"
+    with pytest.raises(KeyError, match="archetype"):
+        item_name("robot", "attack", 1)
+    kit = {"attack": 2}
+    assert apply_kit(seed("gray-wolf"), kit).display_name.endswith("with hardened claws")
+    assert apply_kit(seed("roman-legionary"), kit).display_name.endswith("with iron war hammer")
+    assert apply_kit(seed("main-battle-tank"), kit).display_name.endswith("with hardened ram")
+
+
+def test_gear_weighs_what_the_kind_of_fighter_would_carry():
+    heavy = {"defense": 3, "attack": 2}
+    loads = {name: kit_load(heavy, name) for name in c.LOADOUT_ARCHETYPES}
+    assert loads["warrior"] > loads["mammal"] > loads["insect"]  # iron is heavier than hide
+    # A bird in plates slows sooner (smaller free load, heavier defense); a machine carries more.
+    assert c.LOADOUT_ARCHETYPES["bird"]["free"] < c.LOADOUT_ARCHETYPES["machine"]["free"]
+    plates = {"defense": 4}
+    assert kit_effect(plates, "bird").speed_mul < kit_effect(plates, "machine").speed_mul
+    assert kit_effect(plates, "warrior").speed_mul < kit_effect(plates, "mammal").speed_mul
+
+
+def test_at_the_same_tier_no_loadout_dominates_another_for_any_kind_of_fighter():
+    """Equal investment, different lean: nothing is simply better (a tier 5 beating a tier 1 is
+    just progression, so only the same tier is compared)."""
+    for archetype in c.LOADOUT_ARCHETYPES:
+        for tier in TIERS:
+            every = [
+                (item.id, stats_of(kit_effect({item.id: tier}, archetype)))
+                for item in all_loadouts()
+            ]
+            for (a_id, a), (b_id, b) in permutations(every, 2):
+                dominated = all(x >= y for x, y in zip(a, b, strict=True)) and any(
+                    x > y for x, y in zip(a, b, strict=True)
+                )
+                assert not dominated, (archetype, tier, a_id, "dominates", b_id)
+        for item in all_loadouts():  # a higher tier is a bigger commitment, for each of them
+            for low, high in permutations(TIERS, 2):
+                if high > low:
+                    a = stats_of(kit_effect({item.id: low}, archetype))
+                    b = stats_of(kit_effect({item.id: high}, archetype))
+                    assert any(x < y for x, y in zip(b, a, strict=True)), (archetype, item.id)
+                    assert any(x > y for x, y in zip(b, a, strict=True)), (archetype, item.id)
+
+
+def test_every_choice_costs_something_for_every_kind_of_fighter_too():
+    for archetype in c.LOADOUT_ARCHETYPES:
+        kits = [{}]
+        while kits:
+            kit = kits.pop()
+            if kit_points(kit) >= 5:
+                continue
+            before = stats_of(kit_effect(kit, archetype)) if kit else (1.0, 1.0, 1.0, 1.0)
+            for lean in available_choices(kit):
+                grown = add_or_upgrade(kit, lean)
+                after = stats_of(kit_effect(grown, archetype))
+                free = all(x >= y for x, y in zip(after, before, strict=True)) and any(
+                    x > y for x, y in zip(after, before, strict=True)
+                )
+                assert not free, (archetype, kit, "then", lean)
+                kits.append(grown)
+
+
+# --- kits: add a loadout or upgrade one each round, and the negative traits of weight ------------
+
+
+def test_each_choice_adds_a_loadout_or_upgrades_one_by_a_tier():
+    kit = {}
+    kit = add_or_upgrade(kit, "attack")
+    assert kit == {"attack": 1}
+    kit = add_or_upgrade(kit, "defense")
+    assert kit == {"attack": 1, "defense": 1}
+    kit = add_or_upgrade(kit, "attack")
+    assert kit == {"attack": 2, "defense": 1} and kit_points(kit) == 3
+    assert add_or_upgrade({}, "speed") == {"speed": 1}  # the original kit is never changed in place
+    with pytest.raises(KeyError):
+        add_or_upgrade({}, "bazooka")
+
+
+def test_a_loadout_at_the_top_tier_cannot_be_upgraded_again():
+    kit = {"attack": 5, "defense": 2}
+    with pytest.raises(ValueError, match="tier 5"):
+        add_or_upgrade(kit, "attack")
+    assert "attack" not in available_choices(kit)
+    assert set(available_choices(kit)) == {"defense", "speed", "balanced"}
+
+
+def test_every_choice_costs_something_so_a_kit_is_never_strictly_better_than_the_one_before():
+    """Over every kit up to 6 points: one more point gains in one stat and loses in another."""
+    kits = [{}]
+    seen = 0
+    while kits:
+        kit = kits.pop()
+        if kit_points(kit) >= 6:
+            continue
+        before = stats_of(kit_effect(kit)) if kit else (1.0, 1.0, 1.0, 1.0)
+        for lean in available_choices(kit):
+            after_kit = add_or_upgrade(kit, lean)
+            after = stats_of(kit_effect(after_kit))
+            better = all(x >= y for x, y in zip(after, before, strict=True))
+            strictly = any(x > y for x, y in zip(after, before, strict=True))
+            assert not (better and strictly), (kit, "then", lean, "is free")
+            seen += 1
+            kits.append(after_kit)
+    assert seen > 100
+
+
+def test_too_much_defense_reduces_speed_and_a_heavy_swing_is_slower():
+    light = kit_effect({"defense": 1})
+    heavy = kit_effect({"defense": 5})
+    free = c.LOADOUT_ARCHETYPES["warrior"]["free"]
+    assert kit_load({"defense": 1}) < free < kit_load({"defense": 5})
+    # Below the free load nothing extra applies; above it speed falls faster than the loadout's own
+    # cost (tier 5 defense alone would be 0.9 -> 0.668 before the encumbrance penalty).
+    assert light.speed_mul == pytest.approx(at_tier(loadout("defense"), 1).speed_mul)
+    assert heavy.speed_mul < at_tier(loadout("defense"), 5).speed_mul
+    assert heavy.speed_mul >= at_tier(loadout("defense"), 5).speed_mul * c.ENCUMBRANCE_SPEED_FLOOR
+    assert heavy.rate_mul < at_tier(loadout("defense"), 5).rate_mul  # heavy gear swings slower
+
+
+def test_stacking_two_heavy_loadouts_is_slower_than_either_alone():
+    both = kit_effect({"attack": 2, "defense": 2})
+    assert both.speed_mul < kit_effect({"attack": 2}).speed_mul
+    assert both.speed_mul < kit_effect({"defense": 2}).speed_mul
+
+
+def test_attack_above_tier_three_is_reckless_and_speed_above_tier_three_is_fragile():
+    assert kit_effect({"attack": 3}).armor_add == pytest.approx(0.0)
+    assert kit_effect({"attack": 5}).armor_add == pytest.approx(-2 * c.RECKLESS_ARMOR_PER_TIER)
+    plain = at_tier(loadout("speed"), 5).force_mul
+    assert kit_effect({"speed": 5}).force_mul < plain
+    three = at_tier(loadout("speed"), 3).force_mul
+    assert kit_effect({"speed": 3}).force_mul == pytest.approx(three)
+
+
+def test_light_gear_carries_almost_no_load_so_a_speed_loadout_stays_fast():
+    assert kit_load({"speed": 5}) < c.LOADOUT_ARCHETYPES["warrior"]["free"]
+    five = at_tier(loadout("speed"), 5).speed_mul
+    assert kit_effect({"speed": 5}).speed_mul == pytest.approx(five)
+
+
+def test_a_kit_sheet_names_its_parts_and_stays_labeled_not_sourced():
+    wolf = seed("gray-wolf")
+    kit = {"attack": 2, "defense": 1}
+    sheet = apply_kit(wolf, kit)
+    assert sheet.display_name == f"{wolf.display_name} with hardened claws and thicker hide"
+    assert apply_kit(wolf, {}) is wolf  # no choices yet, no change
+    assert sheet.sheet_hash != apply_kit(wolf, {"attack": 2}).sheet_hash
+    for stat in CHANGED:
+        assert sheet.stats[stat].source is None
+        assert "assumption" in (sheet.stats[stat].note or "")
+    assert 0.0 <= sheet.stats[StatName.ARMOR].value <= 1.0
+
+
+def test_a_champion_can_reach_four_points_and_a_kit_can_use_all_of_them():
+    # Entry points, then one for each of the two rounds a champion wins before the final.
+    points = c.TOURNAMENT_ENTRY_POINTS + 2 * c.TOURNAMENT_POINTS_PER_WIN
+    assert points == 4
+    kit = {}
+    for lean in ("attack", "attack", "defense", "balanced"):
+        kit = add_or_upgrade(kit, lean)
+    assert kit_points(kit) == points
+    apply_kit(seed("gray-wolf"), kit)  # a full kit makes a valid sheet

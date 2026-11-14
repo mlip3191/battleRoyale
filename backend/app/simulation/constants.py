@@ -168,4 +168,55 @@ LOADOUTS: dict[str, dict[str, float | str]] = {
 # Loadout tiers (#283): a tier-up deepens a loadout's trade-off instead of just adding strength.
 # Tier 1 is the table above; tier t scales every change (the multipliers' distance from 1, and the
 # armor addition) by this factor, so the gains grow and so do the costs (ASSUMPTION).
-LOADOUT_TIER_SCALE: dict[int, float] = {1: 1.0, 2: 1.4, 3: 1.8}
+LOADOUT_TIER_SCALE: dict[int, float] = {1: 1.0, 2: 1.4, 3: 1.8, 4: 2.2, 5: 2.6}
+
+# A fighter can carry several loadouts at once (a "kit": each loadout at its own tier). Each round
+# won, the user adds a loadout (tier 1) or upgrades one by a tier. Gear has weight, so a heavy kit
+# has negative traits (all ASSUMPTIONS). What the gear is, and so how much it weighs, depends on
+# the kind of fighter (its archetype): a warrior carries iron, an animal grows claws and hide, a
+# machine bolts on plating. `load` is the weight each tier adds; `free` is what it carries with no
+# penalty (a bird flying with plates is hurt sooner, a machine carries more, an insect's chitin is
+# light). Sheet categories map to an archetype in simulation/loadouts.py.
+LOADOUT_ARCHETYPES: dict[str, dict] = {
+    "warrior": {
+        "free": 2.0,
+        "load": {"attack": 1.0, "defense": 1.5, "speed": 0.3, "balanced": 0.8},
+    },
+    "mammal": {"free": 2.0, "load": {"attack": 0.5, "defense": 1.0, "speed": 0.1, "balanced": 0.4}},
+    "hoofed": {
+        "free": 2.0,
+        "load": {"attack": 0.5, "defense": 1.2, "speed": 0.1, "balanced": 0.4},
+    },
+    "reptile": {
+        "free": 2.0,
+        "load": {"attack": 0.5, "defense": 0.8, "speed": 0.1, "balanced": 0.4},
+    },
+    "bird": {"free": 1.5, "load": {"attack": 0.4, "defense": 1.2, "speed": 0.1, "balanced": 0.4}},
+    "aquatic": {
+        "free": 2.0,
+        "load": {"attack": 0.5, "defense": 0.8, "speed": 0.1, "balanced": 0.4},
+    },
+    "insect": {"free": 2.5, "load": {"attack": 0.4, "defense": 0.6, "speed": 0.1, "balanced": 0.3}},
+    "machine": {
+        "free": 3.0,
+        "load": {"attack": 0.8, "defense": 1.2, "speed": 0.2, "balanced": 0.6},
+    },
+    "mythical": {
+        "free": 2.5,
+        "load": {"attack": 0.6, "defense": 1.0, "speed": 0.2, "balanced": 0.5},
+    },
+}
+# Per unit of load above the archetype's free load, top speed and attack rate shrink by this
+# much (floored below), so "too much defense reduces speed" and heavy gear swings slower.
+ENCUMBRANCE_SPEED_PER_LOAD = 0.06
+ENCUMBRANCE_RATE_PER_LOAD = 0.03
+ENCUMBRANCE_SPEED_FLOOR = 0.5
+ENCUMBRANCE_RATE_FLOOR = 0.6
+# Reckless: each attack tier above 3 lowers armor by this much (a fighter who only hits).
+RECKLESS_ARMOR_PER_TIER = 0.05
+# Fragile: each speed tier above 3 cuts attack force by this share (gear too light to hit hard).
+FRAGILE_FORCE_PER_TIER = 0.04
+FRAGILE_FORCE_FLOOR = 0.5
+# Points to spend: at entry, and after each round won (a tournament of three rounds).
+TOURNAMENT_ENTRY_POINTS = 2
+TOURNAMENT_POINTS_PER_WIN = 1
