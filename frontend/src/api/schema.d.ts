@@ -62,7 +62,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Battles */
+        get: operations["list_battles_api_battles_get"];
         put?: never;
         /** Create Battle */
         post: operations["create_battle_api_battles_post"];
@@ -559,6 +560,22 @@ export interface components {
             at_event: number | null;
         };
         /**
+         * ShowcaseBattle
+         * @description One row of GET /api/battles?showcase=true: a saved showcase battle.
+         */
+        ShowcaseBattle: {
+            /**
+             * Battle Id
+             * @description Id of the saved battle.
+             */
+            battle_id: string;
+            /**
+             * Title
+             * @description Matchup title shown on the home page, e.g. "Grizzly bear vs Gray wolf".
+             */
+            title: string;
+        };
+        /**
          * SimulationResult
          * @description The Monte Carlo verdict: who wins how often, and one representative fight.
          */
@@ -853,22 +870,6 @@ export interface components {
              */
             cached: boolean;
         };
-        /**
-         * ShowcaseBattle
-         * @description One row of GET /api/battles?showcase=true: a saved showcase battle.
-         */
-        ShowcaseBattle: {
-            /**
-             * Battle Id
-             * @description Id of the saved battle.
-             */
-            battle_id: string;
-            /**
-             * Title
-             * @description Matchup title shown on the home page, e.g. "Grizzly bear vs Gray wolf".
-             */
-            title: string;
-        };
     };
     responses: never;
     parameters: never;
@@ -955,6 +956,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IntakeResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_battles_api_battles_get: {
+        parameters: {
+            query?: {
+                showcase?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShowcaseBattle"][];
                 };
             };
             /** @description Validation Error */

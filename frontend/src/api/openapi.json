@@ -126,14 +126,14 @@
         "summary": "Create Battle",
         "operationId": "create_battle_api_battles_post",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Matchup"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -142,6 +142,51 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BattleCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "battles"
+        ],
+        "summary": "List Battles",
+        "operationId": "list_battles_api_battles_get",
+        "parameters": [
+          {
+            "name": "showcase",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Showcase"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShowcaseBattle"
+                  },
+                  "title": "Response List Battles Api Battles Get"
                 }
               }
             }
@@ -1036,6 +1081,28 @@
         "title": "ScriptLine",
         "type": "object"
       },
+      "ShowcaseBattle": {
+        "additionalProperties": false,
+        "description": "One row of GET /api/battles?showcase=true: a saved showcase battle.",
+        "properties": {
+          "battle_id": {
+            "description": "Id of the saved battle.",
+            "title": "Battle Id",
+            "type": "string"
+          },
+          "title": {
+            "description": "Matchup title shown on the home page, e.g. \"Grizzly bear vs Gray wolf\".",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "battle_id",
+          "title"
+        ],
+        "title": "ShowcaseBattle",
+        "type": "object"
+      },
       "SimulationResult": {
         "additionalProperties": false,
         "description": "The Monte Carlo verdict: who wins how often, and one representative fight.",
@@ -1601,28 +1668,6 @@
           "cached"
         ],
         "title": "FighterMatch",
-        "type": "object"
-      },
-      "ShowcaseBattle": {
-        "additionalProperties": false,
-        "description": "One row of GET /api/battles?showcase=true: a saved showcase battle.",
-        "properties": {
-          "battle_id": {
-            "description": "Id of the saved battle.",
-            "title": "Battle Id",
-            "type": "string"
-          },
-          "title": {
-            "description": "Matchup title shown on the home page, e.g. \"Grizzly bear vs Gray wolf\".",
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "battle_id",
-          "title"
-        ],
-        "title": "ShowcaseBattle",
         "type": "object"
       }
     }

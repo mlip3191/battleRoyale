@@ -27,7 +27,8 @@
     "fixtures:sync": "node scripts/sync-fixtures.mjs",
     "env:check": "node scripts/check-env.mjs",
     "env:setup": "node scripts/setup-env.mjs",
-    "doctor": "node scripts/setup-check.mjs"
+    "doctor": "node scripts/setup-check.mjs",
+    "ingest": "uv run --directory backend python -m scripts.ingest_seed"
   },
   "devDependencies": {
     "concurrently": "^10.0.7"
