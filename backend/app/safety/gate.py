@@ -87,15 +87,20 @@ def check_side_rules(fighters: Sequence[Side]) -> SafetyVerdict:
 
 
 # Names for the Wikidata check: each side's raw text, plus its entity when that names something
-# else. The model writes entities in lowercase, so when the entity is just what the user typed,
-# the user's own casing decides ("a napoleon" stays a common noun). The variant is never looked
-# up: in "a dog named Napoleon" the fighter is the dog.
+# else. The model writes entities in lowercase, so when the entity uses only words the user
+# typed, the user's own casing decides ("a tiny napoleon" -> "a napoleon", a common noun); an
+# entity with new words ("the short emperor" -> "napoleon") is looked up as a name. The variant
+# is never looked up: in "a dog named Napoleon" the fighter is the dog.
 def wikidata_names(fighters: Sequence[Side]) -> list[str]:
     names: list[str] = []
     for fighter in fighters:
         names.append(fighter.raw)
-        if fighter.entity and lookup_query(fighter.entity)[0] != lookup_query(fighter.raw)[0]:
-            names.append(fighter.entity)
+        raw_query, raw_proper = lookup_query(fighter.raw)
+        if fighter.entity and lookup_query(fighter.entity)[0] != raw_query:
+            # An entity built only from words the user typed in lowercase stays a common noun.
+            only_typed = _words(fighter.entity) <= _words(fighter.raw)
+            common = only_typed and not raw_proper
+            names.append(f"a {fighter.entity}" if common else fighter.entity)
     return names
 
 
