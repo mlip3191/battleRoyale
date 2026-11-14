@@ -186,7 +186,8 @@ async def load_team_dataset(
         except SourceError as error:
             if not (token and error.status in REJECTED_TOKEN):
                 raise
-            # The dataset is public, so a rejected token shouldn't stop it loading.
+            # The dataset is public, so a rejected token shouldn't stop it loading. If this
+            # retry fails too, its error falls to the outer except and the originals are used.
             logger.warning("Hugging Face rejected HF_TOKEN; downloading without it.")
             body = await fetch_file(client, HF_TRAITS_URL, sleep=sleep)
     except (SourceError, httpx.HTTPError) as error:

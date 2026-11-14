@@ -35,8 +35,7 @@ class SourceError(RuntimeError):
 
     def __init__(self, message: str, status: int | None = None) -> None:
         super().__init__(message)
-        self.status = status
-        """The last HTTP status code, when the server answered at all."""
+        self.status = status  # the last HTTP status code, when the server answered at all
 
 
 @dataclass(frozen=True)
