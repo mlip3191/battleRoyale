@@ -38,10 +38,12 @@ def _color_for(prompt: str) -> tuple[int, int, int]:
 
 
 class MockImageGen:
-    """Silhouette PNGs colored by the prompt."""
+    """Silhouette PNGs colored by the prompt (always MOCK_IMAGE_SIZE square; size is ignored)."""
 
-    async def generate(self, prompt: str) -> bytes:
+    async def generate(self, prompt: str, *, size: tuple[int, int] = (512, 512)) -> bytes:
         return silhouette_png(_color_for(prompt))
 
-    async def edit(self, image: bytes, prompt: str) -> bytes:
-        return silhouette_png(_color_for(f"edit:{prompt}"))
+    # The color depends on the original image too, so each fighter keeps its own color.
+    async def edit(self, image: bytes, prompt: str, *, size: tuple[int, int] = (512, 512)) -> bytes:
+        digest = hashlib.sha256(image).hexdigest()
+        return silhouette_png(_color_for(f"edit:{digest}:{prompt}"))

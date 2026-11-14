@@ -1,0 +1,49 @@
+# Brand, franchise, and character words that must never reach an image or music prompt
+# (ARCHITECTURE §11). Read by backend/app/safety/media_names.py.
+#
+# This is a short backstop, not the main guard: intake's classifier blocks named characters, and
+# a stat sheet's media_name is meant to be generic already ("electric pickup truck"). A media_name
+# containing any of these words (or two-word phrases) gets placeholder art instead of a prompt.
+# Words that are also ordinary animals or things ("jaguar", "mustang", "caterpillar", "ram",
+# "beetle", "puma") are left out on purpose. Lowercase only.
+
+words:
+  # vehicle makers and models
+  - tesla
+  - cybertruck
+  - ford
+  - chevrolet
+  - chevy
+  - toyota
+  - honda
+  - jeep
+  - ferrari
+  - lamborghini
+  - porsche
+  - bmw
+  - audi
+  - mercedes
+  - volkswagen
+  - hummer
+  - komatsu
+  # toy, game, and film franchises
+  - lego
+  - barbie
+  - nintendo
+  - pokemon
+  - pikachu
+  - godzilla
+  - transformers
+  - autobot
+  - decepticon
+  - disney
+  - pixar
+  - marvel
+  - batman
+  - batmobile
+  - roomba
+phrases:
+  - hello kitty
+  - star wars
+  - john deere
+  - optimus prime

@@ -11,18 +11,26 @@ import {
   type Matchup,
   type ShowcaseBattle,
 } from "../api/client.ts";
-import { ErrorPanel } from "../components/Broadcast.tsx";
+import { ErrorPanel, MAIN_ID } from "../components/Broadcast.tsx";
+import { usePageTitle } from "../components/page-title.ts";
 import styles from "./home.module.css";
 
 type Terrain = Matchup["terrain"];
 
+// For now every example uses only fighters with a ready-made (seed) stat sheet in
+// data/seed/fighters/, at their real size. Until research for other fighters and size swaps
+// lands (later A05 work), any other matchup ends in "This fight was called off", which would
+// make the suggestions look broken (#205). Bring the showcase-style examples back then.
+// Gorilla vs grizzly bear is left out on purpose until calibration (#47) has looked at it.
+// When the seed list changes, re-check all six chips from intake to a verdict, and update
+// SEED_FIGHTERS in Home.test.tsx to match.
 export const EXAMPLES = [
-  "100 duck-sized horses vs 1 horse-sized duck",
   "a grizzly bear vs 6 gray wolves in a forest",
-  "a toaster vs a goose",
-  "a honey badger vs a king cobra",
-  "a Roman legionary vs a gorilla",
-  "a dragon vs a main battle tank",
+  "a honey badger vs a saltwater crocodile",
+  "an african elephant vs 12 gray wolves",
+  "a horse vs a gorilla",
+  "50 ducks vs a honey badger",
+  "a saltwater crocodile vs a horse in the water",
 ];
 
 export const TERRAINS = {
@@ -80,6 +88,7 @@ export default function Home() {
   const [slow, setSlow] = useState(false);
   const slowTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
   const box = useRef<HTMLTextAreaElement>(null);
+  usePageTitle();
 
   useEffect(() => {
     listShowcase()
@@ -155,7 +164,7 @@ export default function Home() {
 
   const result = step.kind === "result" ? step.result : null;
   return (
-    <main>
+    <main id={MAIN_ID} tabIndex={-1}>
       <form className={styles.intake} onSubmit={submit}>
         <h1 className={styles.prompt}>
           <label htmlFor="matchup">Who would win?</label>

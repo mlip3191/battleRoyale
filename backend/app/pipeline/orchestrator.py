@@ -1,21 +1,22 @@
 """The battle orchestrator (A05): runs the stages in ARCHITECTURE §4 order and records progress.
 
 Flow: research (both fighters and any size_reference entities, in parallel) -> simulate ->
-then in parallel: summary + fair fight, challenger, images, and the broadcast (scripts, then
-audio and music in parallel). Images start right after simulate (ARCHITECTURE §4), not
-after the scripts. The verdict is saved before any of those start, so it never
+then in parallel: summary + fair fight, challenger, images, and the broadcast (scripts once the
+summary ends, then audio and music in parallel). Scripts wait for the summary because the fair
+fight is an input to write_scripts (the outro's fair-fight line); they get None if the summary
+fell back. Images and challenger start right after simulate (ARCHITECTURE §4), not after the
+scripts. The verdict is saved before any of those start, so it never
 waits for media. Every stage has a time limit (`stages.STAGE_BUDGETS_S`). Research or
 simulate failing fails the battle; any later stage failing ends "fallback" and the battle
 goes on. The battle is "done" if and only if simulate succeeded, and it never stays "running".
+Repeat battles: after research, a finished battle with the same cache key (`stages.cache_key`)
+lends its verdict, plus its fair fight and challenger when it has them; each copied stage ends
+"done" with detail "cached", and one it lacks runs fresh.
 
 TODO, remaining A05 pieces (issue #36):
-- part 3: the real challenger stage (StructuredLLM over seed and cached fighters only, then
-  simulation.test_challengers), replacing the stub in stages.py.
-- part 4: save the BattleRecord to the `battles` table after every change (store.py is memory
-  only), and reuse the stored result for the same matchup and sheet hashes (cache).
 - when the owning modules land, swap the stubs in stages.py for real calls: research
-  (G04 get_stat_sheet, with the all-estimate fallback sheet and banner), scripts (A06),
-  audio and music (A07), images (A08). Stub output is not saved to the record today.
+  (G04 get_stat_sheet, with the all-estimate fallback sheet and banner), audio and music
+  (A07). Stub output is not saved to the record today.
 - seed-sheet lookup ignores `variant`; match variants once variant sheets exist.
 """
 
@@ -24,8 +25,9 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
+from app.models.battle import BattleRecord
 from app.models.matchup import Matchup
-from app.models.simulation import FairFight, SimulationResult
+from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
 from app.pipeline import stages
 from app.pipeline.stages import Research, StageFailed, Stubbed
 from app.pipeline.store import BattleStore
@@ -33,6 +35,7 @@ from app.pipeline.store import BattleStore
 logger = logging.getLogger(__name__)
 
 STUB = "stub"
+CACHED = "cached"  # detail for a stage copied from an earlier, identical battle
 SIMULATE_FAILED = "The simulation hit a snag, so there's no verdict this time. Please try again."
 RESEARCH_FAILED = "We couldn't look up these fighters this time. Please try again."
 RESEARCH_TOO_SLOW = "Looking up the fighters took too long. Please try again."
@@ -51,6 +54,14 @@ FALLBACK_DETAILS = {
     "music": "No music this time.",
     "images": "Placeholder shapes instead of pictures this time.",
 }
+# Notes for a stage whose fallback path still produced something worth saving.
+FALLBACK_WITH_VALUE = {
+    "challenger": "Next challenger picked by quick tests of seed fighters this time.",
+    "script": "Some of the commentary used the template script this time.",
+    "images": "Placeholder shapes for some of the pictures this time.",
+}
+# For a stage with a saved stand-in value but no note of its own above.
+FALLBACK_WITH_VALUE_GENERIC = "A quick stand-in was used for this step this time."
 
 # Running battles; holding a reference keeps a task from being garbage-collected mid-fight.
 _tasks: set[asyncio.Task[None]] = set()
@@ -85,15 +96,26 @@ async def run_battle(battle_id: str, store: BattleStore) -> None:
         await store.update(battle_id, stat_sheets=found.sheets)
         await store.set_stage(battle_id, stage, "done", STUB if found.stub else None)
 
+        # Same matchup, same sheets, same engine: reuse a finished battle's verdict.
+        key = stages.cache_key(matchup, found)
+        await store.set_cache_key(battle_id, key)
+        cached = await store.find_cached(key)
+
         stage = "simulate"
         await store.set_stage(battle_id, stage, "running")
-        result = await _required(stage, lambda: stages.simulate(matchup, found), SIMULATE_FAILED)
+        if cached is not None and cached.result is not None:
+            result = cached.result
+        else:
+            cached = None
+            result = await _required(
+                stage, lambda: stages.simulate(matchup, found), SIMULATE_FAILED
+            )
         # The verdict goes on the record before any later stage starts.
         await store.update(battle_id, result=result)
-        await store.set_stage(battle_id, stage, "done")
+        await store.set_stage(battle_id, stage, "done", CACHED if cached else None)
         simulated = True
 
-        await _after_simulate(battle_id, store, matchup, found, result)
+        await _after_simulate(battle_id, store, matchup, found, result, cached)
     except StageFailed as error:
         reason = str(error)
     except asyncio.CancelledError:
@@ -107,35 +129,65 @@ async def run_battle(battle_id: str, store: BattleStore) -> None:
 
 
 # Everything that needs the verdict, all at once; each of these may only end "fallback".
+# With a cached battle, a saved fair fight or challenger is copied instead of worked out
+# again; one the cached battle lacks (None) is worked out fresh. A copied value can come
+# from a stage that ended "fallback"; it is still marked "cached", which is fine for a
+# repeat battle.
 async def _after_simulate(
-    battle_id: str, store: BattleStore, matchup: Matchup, found: Research, result: SimulationResult
+    battle_id: str,
+    store: BattleStore,
+    matchup: Matchup,
+    found: Research,
+    result: SimulationResult,
+    cached: BattleRecord | None = None,
 ) -> None:
-    async def fair_fight() -> Stubbed[FairFight]:
+    saved_fair = cached.fair_fight if cached is not None else None
+    saved_next = cached.challenger if cached is not None else None
+
+    async def fair_fight() -> Stubbed[FairFight | None]:
+        if saved_fair is not None:
+            return Stubbed(saved_fair)
         return Stubbed(await stages.summary(matchup, found, result))
 
+    async def challenger() -> Stubbed[ChallengerSuggestion | None]:
+        if saved_next is not None:
+            return Stubbed(saved_next)
+        return await stages.challenger(matchup, found, result)
+
+    fair_done = CACHED if saved_fair is not None else None
+    next_done = CACHED if saved_next is not None else None
     async with asyncio.TaskGroup() as group:
-        group.create_task(_optional(battle_id, store, "summary", fair_fight, "fair_fight"))
-        group.create_task(
-            _optional(
-                battle_id,
-                store,
-                "challenger",
-                lambda: stages.challenger(found, result),
-                "challenger",
-            )
+        summary = group.create_task(
+            _optional(battle_id, store, "summary", fair_fight, "fair_fight", fair_done)
         )
-        group.create_task(_broadcast(battle_id, store, found, result))
+        group.create_task(
+            _optional(battle_id, store, "challenger", challenger, "challenger", next_done)
+        )
+        group.create_task(_broadcast(battle_id, store, matchup, found, result, summary))
         group.create_task(
             _optional(battle_id, store, "images", lambda: stages.images(matchup, found), "assets")
         )
 
 
-# Scripts first; once they exist, the announcer's voice and the music in parallel.
+# Scripts once the summary ends (the outro needs the fair fight); then the announcer's voice
+# and the music in parallel. The summary is awaited before the script stage starts its own
+# budget, so a slow fair fight never eats the script's time.
 async def _broadcast(
-    battle_id: str, store: BattleStore, found: Research, result: SimulationResult
+    battle_id: str,
+    store: BattleStore,
+    matchup: Matchup,
+    found: Research,
+    result: SimulationResult,
+    summary: Awaitable[Stubbed[FairFight | None] | None],
 ) -> None:
+    summarized = await summary
+    fair = summarized.value if summarized is not None and not summarized.stub else None
     written = await _optional(
-        battle_id, store, "script", lambda: stages.scripts(found, result), "scripts"
+        battle_id,
+        store,
+        "script",
+        lambda: stages.scripts(matchup, found, result, fair),
+        "scripts",
     )
     lines = written.value if written is not None else []
     async with asyncio.TaskGroup() as group:
@@ -164,20 +216,30 @@ async def _required[T](stage: str, work: Callable[[], Awaitable[T]], failed: str
 # Run a stage the battle can do without, within its budget. Real output is saved under
 # `field`; stub output is not (the fixtures describe a different battle). On error, timeout,
 # or a failed save the stage ends "fallback" with a plain note and None comes back, so one
-# stage's trouble never cancels its siblings.
+# stage's trouble never cancels its siblings. A stage that reports its own fallback also ends
+# "fallback", keeping any value it still found. `done_detail` is the note for a real "done".
 async def _optional[T](
     battle_id: str,
     store: BattleStore,
     stage: str,
     work: Callable[[], Awaitable[Stubbed[T]]],
     field: str,
+    done_detail: str | None = None,
 ) -> Stubbed[T] | None:
     await store.set_stage(battle_id, stage, "running")
     try:
         out = await asyncio.wait_for(work(), stages.STAGE_BUDGETS_S[stage])
-        if not out.stub:
+        if not out.stub and out.value is not None:
             await _save(battle_id, store, field, out.value)
-        await store.set_stage(battle_id, stage, "done", STUB if out.stub else None)
+        if out.fallback:
+            note = (
+                FALLBACK_DETAILS[stage]
+                if out.value is None
+                else FALLBACK_WITH_VALUE.get(stage, FALLBACK_WITH_VALUE_GENERIC)
+            )
+            await store.set_stage(battle_id, stage, "fallback", note)
+        else:
+            await store.set_stage(battle_id, stage, "done", STUB if out.stub else done_detail)
         return out
     except Exception:
         logger.warning("battle %s: stage %s fell back", battle_id, stage, exc_info=True)

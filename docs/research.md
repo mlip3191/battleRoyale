@@ -104,14 +104,14 @@ Every value gets a `low` and `high`: the source's range if it gives one, otherwi
 - A number taken from another page as a stand-in, such as the elephant's trunk lift used as blow force, is `hand_verified`, with its quote in `source`.
 - A chase or pursuit figure isn't fighting endurance. Use the category default and keep the quote in the `note`.
 
-**G05's estimate limit.** No seed sheet may have more than 2 of its 7 physical stats as estimates. Every `category_default` counts, and `derived` values don't. The one exception, by PM decision on PR 139, is the duck and the honey badger, which may have 3 estimates, each labeled in its `note`.
+**G05's estimate limit.** No seed sheet may have more than 2 of its 7 physical stats as estimates. Every `category_default` counts, and `derived` values don't. There are five exceptions, by PM decision, each estimate labeled in its `note`: the duck and the honey badger may have 3 (PR 139), the king cobra 4 and the Roman legionary 3 (D-54, #29), and the house cat 3 (D-55, #29). The list is closed; every other sheet stays at 2 or fewer.
 
 **Machines that ram or crush.** The engine computes their damage from mass and speed and uses a fixed attack rate (task F08), but the stat sheet still requires `attack_force_n` and `attacks_per_s`, and neither may be an `assumption` on a non-mythical fighter. Mark both `derived` and store:
 
 - `attack_force_n`: the force that gives the engine's ramming damage, `RAM_DAMAGE_PER_MOMENTUM × mass × speed ÷ DAMAGE_PER_NEWTON`, using the sheet's own mass and speed. For a fighter with `crushing`, use a speed of at least `CRUSH_MIN_SPEED_MPS`.
 - `attacks_per_s`: the value of `RAM_ATTACKS_PER_S`.
 
-The `note` names the formula or constant and says the engine works out the real hit from them. `RAM_DAMAGE_PER_MOMENTUM`, `RAM_ATTACKS_PER_S`, and `CRUSH_MIN_SPEED_MPS` are defined in PR #71 and are not on `main` yet. Derived ram/crush values do not count toward G05's limit of 2 estimates.
+The `note` names the formula or constant and says the engine works out the real hit from them. `RAM_DAMAGE_PER_MOMENTUM`, `RAM_ATTACKS_PER_S`, and `CRUSH_MIN_SPEED_MPS` are in `backend/app/simulation/constants.py`. Derived ram/crush values do not count toward G05's limit of 2 estimates.
 
 ## Category defaults
 
@@ -228,6 +228,8 @@ The sources approved in DECISIONS D-20. Licenses were checked against each sourc
 | **von Wachenfelt, Nilsson and Ventorp 2011** (SLU report 2011:20, *Säkra häststall*) | Horse kick force, one attributed sentence from the English conclusions | No license stated; approved by the PM for one short, attributed sentence (PR 148) | Cite the report and link its permanent page, https://res.slu.se/id/publ/34072 |
 | **IFAW, "9 mammals, sharks, and reptiles with the strongest bite"** (ifaw.org) | Gorilla bite force, one attributed sentence. It is second-hand: IFAW quotes a modeled maximum molar bite from Eng, Lieberman, Zink and Peters 2013, *Am. J. Phys. Anthropol.* 151:544, whose PDF could not be opened | Publisher copyright, not an open license; approved by the PM for one sentence, with low confidence and a ±50% range (PR 208) | Cite the IFAW page and name Eng et al. 2013 in the note. Set `license` to say it is not openly licensed. Replace with the paper's own wording once someone can open it |
 | **Rosenbaum, Vecellio and Stoinski 2016** (*Sci. Rep.* 6:37018) | How long one mountain gorilla group attack lasted, as a low-confidence stand-in for gorilla endurance | CC BY 4.0; approved by the PM (PR 208) | Cite the paper and link the authors' accepted manuscript on NSF's public access site |
+| **Nolan, Hainsworth and Rutty 2017** (*Int. J. Legal Med.* 132:229, doi:10.1007/s00414-017-1702-7) | Mean peak force of an unrestrained stab by a man's dominant hand (about 150 N), as a stand-in for a gladius thrust | CC BY 4.0; approved by the PM (#29) | Cite the paper and link its DOI |
+| **Różycka, Skibniewska, Rajkowski, Skibniewski and Youlatos 2024** (*Animals* 14(9):1367, doi:10.3390/ani14091367) | Domestic-cat canine bite force (219 N, the upper figure of "around 219–126 N on canines"), one attributed value for the house cat | CC BY 4.0, confirmed on the publisher's page; approved by the PM (D-55) | Cite the paper and link its DOI |
 | **TreeOfLife-10M taxonomy metadata** (`imageomics/TreeOfLife-10M`, optional) | Common name to scientific name and class, for matching names. The taxonomy CSV only, never the images | CC0 for the compilation; images vary, and we do not use them | Dataset name and link |
 
 **Not allowed:**
