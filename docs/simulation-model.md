@@ -147,6 +147,15 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 
 **Calibration warning.** With these assumed constants a dragon built from the fixture sheet (6 t) cannot dent a 60 t tank with 80% armor in ten minutes. Showcase battle #5 (dragon vs main battle tank) will need its constants revisited once G09's real dragon sheet and the F07 benchmark exist.
 
+## The benchmark runner (F07)
+
+`backend/scripts/run_benchmark.py` (logic in `app/simulation/benchmark.py`) scores the simulator against expert answers. The matchup set is built in G07 (`data/benchmark/matchups.yaml` is the tuning set; the sealed `heldout.yaml` is reported separately and **never used to change constants**).
+
+- **Pass rules (from G07):** the favorite must match `expected_winner` (0, 1, or draw); for high-confidence cases the favorite's win probability must also be at least 0.7; for "count" cases the fair-fight count must fall in the expected range. Two checks go beyond the G07 text: a count case also fails if the fair-fight search varied the wrong side (the expected range is for the weaker side), and each pass rate is followed by how many matchups were skipped because a stat sheet is missing, so "6/6" can never hide 14 skipped.
+- **Modes:** `--mock` is CI-safe (three matchups from `backend/tests/fixtures/benchmark/` and the contract fixture sheets; writes nothing unless `--output` is given). `--live --sheets seed` uses hand-verified seed sheets from `data/seed/` (G05); `--live --sheets research` will use the research pipeline (G04). Both live modes write `docs/benchmark-results.md`.
+- **Report:** pass rate for the tuning and held-out sets separately and by group (never blended into one overall number) (obvious, documented, count); a table per matchup (expected, our favorite, win %, fair count, pass/fail); runtime; commit hash; traceability (n/a until G06 lands). The heading carries the date; new runs go on top and the last five are kept.
+- **Input format** (checked against G07's real `matchups.yaml`: it loads, and matchups whose sheets are not written yet are skipped and reported, not scored): a list, or a mapping with a `matchups` list, of entries with `id`, `fighters` (`entity`, `count`, `variant`), `terrain`, `expected_winner`, `confidence`, optional `expected_fair_count` (`[lo, hi]`, `{min, max}`, or `"lo-hi"`), and `source`. The group is read from `group` if present, else inferred (a fair-count range means "count"; a source starting "obvious" means "obvious"; otherwise "documented"). Seed sheets are found by fighter id, base name, display name, or media name.
+
 ## Why probabilities are shown as "range"
 
 The 95% interval is a Wilson score interval on the share of runs won. Because every run draws different stats, the shares already blend in input uncertainty: when the stat ranges are narrow the fight's outcome is more predictable, so the win share moves toward 0 or 1 and the interval narrows (tested in `tests/property/test_simulation_engine.py`). The interval does *not* separately model uncertainty in the constants above.
