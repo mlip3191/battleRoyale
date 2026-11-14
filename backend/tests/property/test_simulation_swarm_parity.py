@@ -296,3 +296,20 @@ def test_other_fights_sent_to_swarm_mode_by_their_work_agree_too(
     assert _fight(pair, na, nb), label  # they really are sent to swarm mode
     one, swarm = both(monkeypatch, pair, na, nb, runs=200)
     assert abs(swarm.win_prob[0] - one.win_prob[0]) <= 0.08, label  # 200 runs: noise about 0.07
+
+
+def test_a_venomous_side_is_kept_out_of_the_work_rule():
+    """Swarm mode drops venom (D-44), so the work rule keeps a venomous fight out (#229)."""
+    plain = make_sheet(
+        "cat", mass_kg=4.5, size_m=0.46, top_speed_mps=13, attack_force_n=80,
+        attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=1.0,
+    )  # fmt: skip
+    snake = make_sheet(
+        "snake", mass_kg=4.5, size_m=0.46, top_speed_mps=13, attack_force_n=80,
+        attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=1.0, weapons=["venom"],
+    )  # fmt: skip
+    assert _fight([plain, elephant()], 150, 1)  # too much work: swarm mode
+    assert not _fight([snake, elephant()], 150, 1)  # the same fight with venom stays one by one
+    assert not _fight([elephant(), snake], 1, 150)  # on either side
+    # The head-count ceiling is unchanged: above 200 it is swarm mode, venom or not.
+    assert _fight([snake, elephant()], c.SWARM_THRESHOLD + 1, 1)
