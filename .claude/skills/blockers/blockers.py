@@ -33,6 +33,15 @@ MILESTONES = [
 ]
 ADVISORY_CHECKS = {"AI QA Review (advisory)"}
 CRITICAL_CHECK = "Critical files approval"
+# `gh pr list` returns only a PR's first 100 commits; past that, ask for the newest ones (#307).
+COMMIT_LIST_CAP = 100
+NEWEST_COMMITS_QUERY = """query($owner: String!, $repo: String!, $n: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $n) {
+      commits(last: 100) { nodes { commit { messageHeadline committedDate } } }
+    }
+  }
+}"""
 TIERS = {
     0: "🔴 P0: blocking other people's work",
     1: "🟠 P1: blocking a merge or a decision",
@@ -53,6 +62,28 @@ def gh(*args: str):
             sys.exit("You're not logged in to GitHub CLI. Run `gh auth login`, then try again.")
         sys.exit(f"gh {' '.join(args[:3])} failed: {res.stderr.strip()}")
     return json.loads(res.stdout) if res.stdout.strip() else None
+
+
+def last_push(pr: dict) -> str:
+    """When the author last pushed real work: the newest commit that isn't just a merge."""
+    commits = pr["commits"]
+    if len(commits) >= COMMIT_LIST_CAP:  # the list may stop before the newest commits (#307)
+        reply = gh(
+            "api",
+            "graphql",
+            "-f",
+            f"query={NEWEST_COMMITS_QUERY}",
+            "-F",  # -F, not -f: gh fills in {owner} and {repo} only in -F fields
+            "owner={owner}",
+            "-F",
+            "repo={repo}",
+            "-F",
+            f"n={pr['number']}",
+        )
+        nodes = reply["data"]["repository"]["pullRequest"]["commits"]["nodes"]
+        commits = [node["commit"] for node in nodes]
+    real = [c for c in commits if not c["messageHeadline"].startswith("Merge ")]
+    return max((c["committedDate"] for c in real), default="")
 
 
 def load_team() -> tuple[dict[str, str], str | None]:
@@ -250,12 +281,12 @@ def main() -> None:
         for r in p["reviews"]:
             if r["state"] in ("APPROVED", "CHANGES_REQUESTED", "DISMISSED"):
                 latest[r["author"]["login"]] = r
-        real_commits = [c for c in p["commits"] if not c["messageHeadline"].startswith("Merge ")]
-        last_push = max((c["committedDate"] for c in real_commits), default="")
+        asked = any(r["state"] == "CHANGES_REQUESTED" for r in latest.values())
+        pushed = last_push(p) if asked else ""  # one extra call at most, only when needed
         for reviewer, r in latest.items():
             if r["state"] != "CHANGES_REQUESTED":
                 continue
-            if last_push > r["submittedAt"]:
+            if pushed > r["submittedAt"]:
                 add(
                     tier_for(1, downstream),
                     reviewer,
