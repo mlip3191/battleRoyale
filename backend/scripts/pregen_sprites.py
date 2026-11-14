@@ -6,9 +6,10 @@ From the backend folder:
   uv run python -m scripts.pregen_sprites --thumbs thumbs  # also write thumbnails + contact sheet
 
 Pictures are cached in data/media/ per fighter_id (or terrain) and style version, so a second
-run draws nothing new. Every sprite must be a PNG whose four corner pixels are transparent; the
-script prints a PASS/FAIL table (ids, timings, and sizes only, never a URL, host, or key), lists
-any failures, and exits 1 if there are any. The logic lives in app/media/pregen.py.
+run draws nothing new; in mock mode they go in data/media/mock/ and are never reused live.
+Every sprite must be a PNG whose four corner pixels are transparent; the script prints a
+PASS/FAIL table (ids, timings, and sizes only, never a URL, host, or key), lists any failures,
+and exits 1 if there are any. The logic lives in app/media/pregen.py.
 """
 
 import sys

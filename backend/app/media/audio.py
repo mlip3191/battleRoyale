@@ -13,7 +13,9 @@ refused and the stock voice (ANNOUNCER_VOICE_ID) is used. There is no clone call
 stock voice is used either way for now.
 
 Files are cached under <data_dir>/media/audio/ by a hash of the full request, so a repeat makes
-no provider call. A failed item gives no asset at all (no silent stand-in file) and nothing is
+no provider call (a cache hit needs a non-empty file). In mock mode they go under
+<data_dir>/media/mock/audio/ instead, so mock audio is never reused live (app/media/files.py).
+A failed item gives no asset at all (no silent stand-in file) and nothing is
 cached; the public make_* functions never raise. Provider audio must be WAV for now: that is what
 the mocks return, and the lines can only be joined if they are.
 """
@@ -26,19 +28,19 @@ import json
 import logging
 import wave
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
 
 from app.config import Settings, get_settings
-from app.media import images
+from app.media import files
 from app.models.matchup import Matchup
 from app.models.media import Asset
 from app.models.narration import Script
 from app.models.simulation import SimulationResult
 from app.models.stats import StatSheet
-from app.providers.base import TTS, MusicGen
-from app.providers.registry import get_provider
+from app.providers.base import TTS, MusicGen, ProviderName
+from app.providers.registry import ProviderMode, get_provider, provider_mode
 from app.safety.media_names import safe_media_name
 
 logger = logging.getLogger(__name__)
@@ -52,6 +54,8 @@ MUSIC_TAIL = "instrumental, no vocals"
 HASH_PREFIX = 16  # hex characters of the request hash used in file names
 
 ScriptKind = Literal["intro", "play_by_play", "outro"]
+AudioKind = Literal["narration_audio", "music"]
+PROVIDER_FOR: dict[AudioKind, ProviderName] = {"narration_audio": "tts", "music": "music"}
 
 
 class AudioError(ValueError):
@@ -62,10 +66,11 @@ class AudioError(ValueError):
 class AudioRequest:
     """Everything that decides one audio file: where it is cached and the full request."""
 
-    kind: Literal["narration_audio", "music"]
+    kind: AudioKind
     request: dict[str, object]
     """The full request (text or prompt, voice, and every fixed parameter); its hash names it."""
     script_kind: ScriptKind | None = None
+    mode: ProviderMode = "live"
 
     # sha256 of the full request.
     @property
@@ -81,17 +86,22 @@ class AudioRequest:
             return f"music-{short}"
         return f"narration-{self.script_kind}-{short}"
 
-    # File path under the media folder, e.g. audio/narration-intro-0123abcd.wav.
+    # File name under the media folder in live mode, e.g. audio/narration-intro-0123abcd.wav.
     @property
     def path(self) -> Path:
         return Path("audio") / f"{self.asset_id}.wav"
+
+    # Where the file really is under the media folder: mock audio lives in mock/.
+    @property
+    def cached_path(self) -> Path:
+        return files.cache_path(self.path, self.mode)
 
     # The asset for the saved file (only ever built for a file that exists).
     def asset(self) -> Asset:
         return Asset(
             asset_id=self.asset_id,
             kind=self.kind,
-            url=f"/media/{self.path.as_posix()}",
+            url=f"/media/{self.cached_path.as_posix()}",
             prompt_hash=self.prompt_hash,
             script_kind=self.script_kind,
         )
@@ -237,8 +247,8 @@ async def _speak(tts: TTS, script: Script, voice_id: str) -> bytes:
     return await asyncio.to_thread(join_wavs, clips, LINE_PAUSE_S)
 
 
-# The cached file if there is one, else make it within the time limit and save it. Anything
-# going wrong gives None and caches nothing.
+# The cached file if there is one (in this provider mode's folder), else make it within the time
+# limit and save it. Anything going wrong gives None and caches nothing.
 async def _bounded[P](
     request: AudioRequest,
     make: Callable[[P], Awaitable[bytes]],
@@ -246,14 +256,15 @@ async def _bounded[P](
     media_dir: Path | None,
     timeout_s: float,
 ) -> Asset | None:
-    file = (media_dir or images.media_root()) / request.path
     try:
-        if file.is_file():
+        request = replace(request, mode=provider_mode(PROVIDER_FOR[request.kind]))
+        file = (media_dir or files.media_root()) / request.cached_path
+        if files.is_cached(file):
             return request.asset()
         if provider is None:
             raise RuntimeError("no provider")
         data = await asyncio.wait_for(make(provider), timeout_s)
-        await asyncio.to_thread(images._save, file, data)
+        await asyncio.to_thread(files.save, file, data)
     except Exception as error:
         logger.warning("audio %s not made (%s)", request.asset_id, type(error).__name__)
         return None

@@ -2,8 +2,9 @@
 is the command-line wrapper.
 
 Pictures are cached per fighter_id (or terrain) and style version, so a second run draws nothing
-new. Each sprite must be a PNG whose four corner pixels are transparent. Reports show only ids,
-timings, sizes, and PASS/FAIL: never a URL, host, or key.
+new (in mock mode they are kept apart under media/mock/; see app/media/files.py). Each sprite
+must be a PNG whose four corner pixels are transparent. Reports show only ids, timings, sizes,
+and PASS/FAIL: never a URL, host, or key.
 """
 
 import argparse
@@ -16,7 +17,7 @@ from pathlib import Path
 import numpy as np
 
 from app.config import get_settings
-from app.media import images, png, style
+from app.media import files, images, png, style
 from app.models.media import Asset
 from app.models.stats import StatSheet
 from app.models.terrain import Terrain
@@ -107,7 +108,7 @@ async def pregen(
     force: bool = False,
     fighters: list[SeedFighter] | None = None,
 ) -> list[Row]:
-    folder = media_dir or images.media_root()
+    folder = media_dir or files.media_root()
     rows: list[Row] = []
     for fighter in load_seed_fighters() if fighters is None else fighters:
         try:

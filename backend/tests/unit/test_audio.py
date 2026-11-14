@@ -101,7 +101,7 @@ async def test_one_tagged_narration_file_per_script_in_broadcast_order(tmp_path:
     assert [(a.kind, a.script_kind) for a in assets] == [("narration_audio", k) for k in KINDS]
     assert not any(a.fallback for a in assets)
     for asset in assets:
-        assert asset.url.startswith("/media/audio/narration-") and asset.url.endswith(".wav")
+        assert asset.url.startswith("/media/mock/audio/narration-") and asset.url.endswith(".wav")
         assert asset.asset_id == f"narration-{asset.script_kind}-{asset.prompt_hash[:16]}"
         assert (tmp_path / asset.url.removeprefix("/media/")).is_file()
     assert len(tts.calls) == 6 and {voice for _, voice in tts.calls} == {STOCK_VOICE}
@@ -120,7 +120,7 @@ async def test_music_is_one_untagged_music_file(tmp_path: Path) -> None:
     track = await audio.make_music(matchup(), None, sheets(), provider=music, media_dir=tmp_path)
     assert track is not None and not track.fallback
     assert (track.kind, track.script_kind) == ("music", None)
-    assert track.url.startswith("/media/audio/music-") and track.url.endswith(".wav")
+    assert track.url.startswith("/media/mock/audio/music-") and track.url.endswith(".wav")
     assert (tmp_path / track.url.removeprefix("/media/")).is_file()
     assert music.calls == [(audio.music_prompt(sheets()), audio.MUSIC_SECONDS)]
 
