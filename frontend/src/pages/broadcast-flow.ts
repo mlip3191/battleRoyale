@@ -116,21 +116,36 @@ export const SPEAKERS: Record<ScriptLine["speaker"], string> = {
   color_commentator: "Color commentator",
 };
 
-// What the audio bar can play. Only files under /media are used (the front end calls nothing else).
-// Music is unambiguous: the battle's music file. Narration plays only when there is exactly one
-// narration file: the Asset contract does not say which script a file belongs to, so with several
-// (one per script) the show falls back to captions only rather than guess.
+// What the audio bar can play in each part of the show. Only files under /media are used (the
+// front end calls nothing else). Music is unambiguous: the battle's music file, all show long.
+// Narration files say which script they read (script_kind): the intro plays the intro's file, the
+// fight the play-by-play's, the verdict the outro's, and a part with no file of its own is silent.
+// Older records have one narration file with no script_kind: it plays in every part, as before.
+// Several untagged files can't be told apart, so the show falls back to captions only.
 export interface AudioPlan {
   music: string | null;
   narration: string | null;
 }
 
-export function audioPlan(assets: readonly Asset[]): AudioPlan {
+// The script each part of the show reads aloud (nothing while the ticker runs).
+const SCRIPT_OF: Record<Phase, Script["kind"] | null> = {
+  waiting: null,
+  intro: "intro",
+  fight: "play_by_play",
+  verdict: "outro",
+};
+
+export function audioPlan(assets: readonly Asset[], phase: Phase): AudioPlan {
   const ours = assets.filter((a) => a.url.startsWith("/media/"));
   const narration = ours.filter((a) => a.kind === "narration_audio");
+  const tagged = narration.filter((a) => a.script_kind); // older records leave it out
+  const untagged = narration.length === 1 ? narration[0].url : null;
   return {
     music: ours.find((a) => a.kind === "music")?.url ?? null,
-    narration: narration.length === 1 ? narration[0].url : null,
+    narration:
+      tagged.length > 0
+        ? (tagged.find((a) => a.script_kind === SCRIPT_OF[phase])?.url ?? null)
+        : untagged,
   };
 }
 
@@ -147,14 +162,21 @@ const STAGE_NAMES: Record<StageStatus["stage"], string> = {
   images: "pictures",
 };
 
-// "Some effects unavailable: music." when any stage used a stand-in, otherwise null.
+// Said when the script stage fell back: the show still has full commentary, from the template.
+export const TEMPLATE_SCRIPT_NOTE = "Some commentary used the template script.";
+
+// "Some effects unavailable: music." when any stage used a stand-in, otherwise null. A template
+// script is not missing, so it gets its own sentence (on mocks the play-by-play always is one).
 export function unavailableNote(stages: readonly StageStatus[]) {
-  const names = stages
-    .filter((s) => s.status === "fallback")
+  const fellBack = stages.filter((s) => s.status === "fallback");
+  const names = fellBack
+    .filter((s) => s.stage !== "script")
     .map((s) => STAGE_NAMES[s.stage]);
-  return names.length > 0
-    ? `Some effects unavailable: ${names.join(", ")}.`
-    : null;
+  const parts = [
+    fellBack.some((s) => s.stage === "script") ? TEMPLATE_SCRIPT_NOTE : "",
+    names.length > 0 ? `Some effects unavailable: ${names.join(", ")}.` : "",
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" ") : null;
 }
 
 // Both sides' names for the title card and the verdict, e.g. ["Grizzly bear", "6 gray wolves"].

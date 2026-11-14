@@ -7,6 +7,26 @@ import styles from "./broadcast.module.css";
 // Class for text only screen readers see (e.g. a page heading the design doesn't show).
 export const srOnly = styles.srOnly;
 
+// Every page's <main> carries this id (and tabIndex={-1}) so the skip link can focus it.
+export const MAIN_ID = "main-content";
+
+// The first stop for keyboard users: hidden until tabbed to, then jumps past the header to the
+// page's main content. Focus moves in code, so the address bar keeps its clean URL.
+export function SkipLink() {
+  return (
+    <a
+      href={`#${MAIN_ID}`}
+      className={styles.skipLink}
+      onClick={(e) => {
+        e.preventDefault();
+        document.getElementById(MAIN_ID)?.focus();
+      }}
+    >
+      Skip to main content
+    </a>
+  );
+}
+
 // Top bar with the show's name; the logo links home. "LIVE" shows only during a broadcast.
 export function Header() {
   const onAir = /^\/battle\/[^/]+\/?$/.test(useLocation().pathname);

@@ -11,7 +11,8 @@ import {
   type Matchup,
   type ShowcaseBattle,
 } from "../api/client.ts";
-import { ErrorPanel } from "../components/Broadcast.tsx";
+import { ErrorPanel, MAIN_ID } from "../components/Broadcast.tsx";
+import { usePageTitle } from "../components/page-title.ts";
 import styles from "./home.module.css";
 
 type Terrain = Matchup["terrain"];
@@ -87,6 +88,7 @@ export default function Home() {
   const [slow, setSlow] = useState(false);
   const slowTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
   const box = useRef<HTMLTextAreaElement>(null);
+  usePageTitle();
 
   useEffect(() => {
     listShowcase()
@@ -162,7 +164,7 @@ export default function Home() {
 
   const result = step.kind === "result" ? step.result : null;
   return (
-    <main>
+    <main id={MAIN_ID} tabIndex={-1}>
       <form className={styles.intake} onSubmit={submit}>
         <h1 className={styles.prompt}>
           <label htmlFor="matchup">Who would win?</label>

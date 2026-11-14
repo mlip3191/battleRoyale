@@ -9,9 +9,11 @@ import {
   ErrorPanel,
   LoadingTicker,
   LowerThird,
+  MAIN_ID,
   srOnly,
 } from "../components/Broadcast.tsx";
 import { useFocusRescue } from "../components/focus-rescue.ts";
+import { usePageTitle } from "../components/page-title.ts";
 import PhaserStage from "../game/PhaserStage.tsx";
 import {
   SPEAKERS,
@@ -29,6 +31,7 @@ import {
   type Show,
   type ShowAction,
 } from "./broadcast-flow.ts";
+import { calledOff } from "./failure-reason.ts";
 import type { ScriptLine } from "../api/client.ts";
 import styles from "./battle.module.css";
 
@@ -68,6 +71,9 @@ export default function Battle() {
 
 function Broadcast({ id }: { id: string }) {
   const { battle, error } = useBattle(id);
+  // The heading names the matchup once it loads; the tab title says the same.
+  const heading = battle ? battle.matchup.raw_text : "Battle";
+  usePageTitle(heading);
   const [stored, setShow] = useState(START);
   const [eventIndex, setEventIndex] = useState(-1); // last replay event reached
   const [line, setLine] = useState({ phase: START.phase, index: 0 }); // intro/outro line on screen
@@ -143,17 +149,17 @@ function Broadcast({ id }: { id: string }) {
       : current
         ? [current]
         : [];
-  const sound = battle ? audioPlan(battle.assets) : null;
+  const sound = battle ? audioPlan(battle.assets, show.phase) : null;
   const note = battle ? unavailableNote(battle.stages) : null;
   const reveal = result && show.revealed ? verdictReveal(result, names) : null;
 
   return (
-    <main>
-      <h1 className={srOnly}>{battle ? battle.matchup.raw_text : "Battle"}</h1>
+    <main id={MAIN_ID} tabIndex={-1}>
+      <h1 className={srOnly}>{heading}</h1>
       {battle && <LowerThird decorative>{battle.matchup.raw_text}</LowerThird>}
       {/* At most one alert: a called-off fight says so, otherwise show the fetch error. */}
       {failed ? (
-        <ErrorPanel message="This fight was called off. Try another matchup." />
+        <ErrorPanel {...calledOff(battle.stages)} />
       ) : (
         error && (
           <ErrorPanel

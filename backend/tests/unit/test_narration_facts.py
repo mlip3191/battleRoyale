@@ -255,6 +255,56 @@ def test_fact_lines_name_the_fair_fight_side(facts: NarrationFacts) -> None:
     assert "side 0" not in text and "side 1" not in text
 
 
+# Lopsided results: win probabilities, draw probability, CI bounds, and the percents the outro
+# fills in for them (red, blue, draw), one case per row.
+LOPSIDED = [
+    ((0.94, 0.054), 0.006, ((0.925, 0.955), (0.041, 0.067)), ("94%", "5%", "1%")),
+    ((0.93, 0.067), 0.003, ((0.914, 0.946), (0.052, 0.082)), ("93%", "7%", "0%")),
+]
+
+
+# The fixture result made lopsided: side 0 wins almost every time.
+def lopsided(
+    result: SimulationResult,
+    win: tuple[float, float],
+    draw: float,
+    ci: tuple[tuple[float, float], tuple[float, float]],
+) -> SimulationResult:
+    update = {"win_prob": win, "draw_prob": draw, "win_prob_ci95": ci, "outcome": "win_0"}
+    return result.model_copy(update=update)
+
+
+@pytest.mark.parametrize(("win", "draw", "ci", "said"), LOPSIDED)
+def test_lopsided_whole_percents_are_allowed(
+    win: tuple[float, float],
+    draw: float,
+    ci: tuple[tuple[float, float], tuple[float, float]],
+    said: tuple[str, str, str],
+) -> None:
+    sheets, result = _inputs()
+    facts = build_facts(sheets, lopsided(result, win, draw, ci))
+    assert (f"{facts.win_pct[0]}%", f"{facts.win_pct[1]}%", f"{facts.draw_pct}%") == said
+    for text in said:
+        assert find_unsupported_numbers(f"That happened {text} of the time.", facts.allowed) == []
+
+
+@pytest.mark.parametrize(("win", "draw", "ci", "said"), LOPSIDED)
+def test_lopsided_does_not_loosen_the_guard(
+    win: tuple[float, float],
+    draw: float,
+    ci: tuple[tuple[float, float], tuple[float, float]],
+    said: tuple[str, str, str],
+) -> None:
+    sheets, result = _inputs()
+    facts = build_facts(sheets, lopsided(result, win, draw, ci))
+    # The small percents are allowed only as percents, never as plain numbers.
+    small = said[1].rstrip("%")
+    assert float(small) not in facts.allowed.values
+    assert find_unsupported_numbers(f"The bear lands {small} punches!", facts.allowed)
+    # A percent no probability backs is still rejected.
+    assert find_unsupported_numbers("The bear wins 42% of the time.", facts.allowed)
+
+
 def test_fact_lines_fair_count_without_probability() -> None:
     sheets, result = _inputs()
     fair = FairFight(varied_side=1, count=4, win_prob_at_count=None, message="Fair at 4.")

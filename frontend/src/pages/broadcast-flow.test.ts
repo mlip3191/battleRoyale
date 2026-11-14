@@ -162,34 +162,125 @@ describe("caption sync", () => {
 });
 
 describe("audio", () => {
-  test("fixture: the music file and the single narration file", () => {
-    expect(audioPlan(battle.assets)).toEqual({
-      music: "/media/music/retro-broadcast.mp3",
-      narration: "/media/audio/b-7f3k2q-narration.mp3",
+  const phases: Show["phase"][] = ["waiting", "intro", "fight", "verdict"];
+  const voice = (url: string, script_kind: Asset["script_kind"]): Asset => ({
+    ...asset("narration_audio", url),
+    script_kind,
+  });
+  const music = asset("music", "/media/m.mp3");
+  const perScript = [
+    voice("/media/intro.mp3", "intro"),
+    voice("/media/pbp.mp3", "play_by_play"),
+    voice("/media/outro.mp3", "outro"),
+    music,
+  ];
+
+  test("fixture: the music file and the single narration file, in every part of the show", () => {
+    for (const phase of phases)
+      expect(audioPlan(battle.assets, phase)).toEqual({
+        music: "/media/music/retro-broadcast.mp3",
+        narration: "/media/audio/b-7f3k2q-narration.mp3",
+      });
+  });
+
+  test("one narration file per script: each part of the show plays its own", () => {
+    const narration = (phase: Show["phase"]) =>
+      audioPlan(perScript, phase).narration;
+    expect(narration("intro")).toBe("/media/intro.mp3");
+    expect(narration("fight")).toBe("/media/pbp.mp3");
+    expect(narration("verdict")).toBe("/media/outro.mp3");
+    expect(audioPlan(perScript, "fight").music).toBe("/media/m.mp3");
+  });
+
+  test("the files the backend makes (media/audio.py) map to their parts of the show", () => {
+    // What make_audio and make_music save: tagged WAVs under /media/audio.
+    const made: Asset[] = [
+      asset("sprite", "/media/sprites/gray-wolf-v1.png"),
+      voice("/media/audio/narration-intro-0123456789abcdef.wav", "intro"),
+      voice(
+        "/media/audio/narration-play_by_play-fedcba9876543210.wav",
+        "play_by_play",
+      ),
+      voice("/media/audio/narration-outro-00112233aabbccdd.wav", "outro"),
+      asset("music", "/media/audio/music-44556677eeff0011.wav"),
+    ];
+    expect(phases.map((p) => audioPlan(made, p))).toEqual([
+      { music: "/media/audio/music-44556677eeff0011.wav", narration: null },
+      {
+        music: "/media/audio/music-44556677eeff0011.wav",
+        narration: "/media/audio/narration-intro-0123456789abcdef.wav",
+      },
+      {
+        music: "/media/audio/music-44556677eeff0011.wav",
+        narration: "/media/audio/narration-play_by_play-fedcba9876543210.wav",
+      },
+      {
+        music: "/media/audio/music-44556677eeff0011.wav",
+        narration: "/media/audio/narration-outro-00112233aabbccdd.wav",
+      },
+    ]);
+  });
+
+  test("the order of the files doesn't matter", () => {
+    const shuffled = [...perScript].reverse();
+    expect(audioPlan(shuffled, "intro").narration).toBe("/media/intro.mp3");
+    expect(audioPlan(shuffled, "verdict").narration).toBe("/media/outro.mp3");
+  });
+
+  test("a script with no narration file: that part is silent, the others still play", () => {
+    const noPbp = perScript.filter((a) => a.script_kind !== "play_by_play");
+    expect(audioPlan(noPbp, "fight")).toEqual({
+      music: "/media/m.mp3",
+      narration: null,
     });
+    expect(audioPlan(noPbp, "intro").narration).toBe("/media/intro.mp3");
+    expect(audioPlan(noPbp, "verdict").narration).toBe("/media/outro.mp3");
+  });
+
+  test("one tagged file only: it plays in its own part and nowhere else", () => {
+    const outroOnly = [voice("/media/outro.mp3", "outro")];
+    expect(phases.map((p) => audioPlan(outroOnly, p).narration)).toEqual([
+      null,
+      null,
+      null,
+      "/media/outro.mp3",
+    ]);
+  });
+
+  test("an older record's single file with script_kind null plays in every part", () => {
+    const old = [voice("/media/old.mp3", null), music];
+    for (const phase of phases)
+      expect(audioPlan(old, phase).narration).toBe("/media/old.mp3");
   });
 
   test("no audio assets: captions only, silent", () => {
-    expect(audioPlan([asset("sprite", "/media/s.png")])).toEqual({
+    expect(audioPlan([asset("sprite", "/media/s.png")], "intro")).toEqual({
       music: null,
       narration: null,
     });
   });
 
-  test("several narration files can't be told apart, so none plays", () => {
-    const plan = audioPlan([
-      asset("narration_audio", "/media/a.mp3"),
-      asset("narration_audio", "/media/b.mp3"),
-      asset("music", "/media/m.mp3"),
-    ]);
+  test("several narration files without a script can't be told apart, so none plays", () => {
+    const plan = audioPlan(
+      [
+        asset("narration_audio", "/media/a.mp3"),
+        asset("narration_audio", "/media/b.mp3"),
+        asset("music", "/media/m.mp3"),
+      ],
+      "intro",
+    );
     expect(plan).toEqual({ music: "/media/m.mp3", narration: null });
   });
 
   test("only files under /media are ever played", () => {
-    const plan = audioPlan([
-      asset("narration_audio", "https://elsewhere.example/a.mp3"),
-      asset("music", "/api/m.mp3"),
-    ]);
+    const plan = audioPlan(
+      [
+        asset("narration_audio", "https://elsewhere.example/a.mp3"),
+        voice("https://elsewhere.example/intro.mp3", "intro"),
+        asset("music", "/api/m.mp3"),
+      ],
+      "intro",
+    );
     expect(plan).toEqual({ music: null, narration: null });
   });
 });
@@ -208,6 +299,20 @@ describe("notes and verdict", () => {
     );
     expect(unavailableNote(two)).toBe(
       "Some effects unavailable: announcer voice, pictures.",
+    );
+  });
+
+  test("a template script is not called unavailable (#270)", () => {
+    const fine = battle.stages.map((s) => ({ ...s, status: "done" as const }));
+    const withStatus = (fallbacks: string[]) =>
+      fine.map((s) =>
+        fallbacks.includes(s.stage) ? { ...s, status: "fallback" as const } : s,
+      );
+    expect(unavailableNote(withStatus(["script"]))).toBe(
+      "Some commentary used the template script.",
+    );
+    expect(unavailableNote(withStatus(["script", "music"]))).toBe(
+      "Some commentary used the template script. Some effects unavailable: music.",
     );
   });
 

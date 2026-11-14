@@ -30,5 +30,7 @@ def test_main_prints_every_battle(capsys):
     assert dry.main(["--runs", "30"]) == 0
     out = capsys.readouterr().out
     assert out.count("### ") == 5
-    # A pasted report must never pass for real results.
-    assert out.startswith("STAND-IN SHEETS") and "not demo results" in out.split("###")[0]
+    # A pasted report must never pass for demo results, and must say the dragon is a stand-in.
+    header = out.split("###")[0]
+    assert out.startswith("ENGINE CHECK ONLY") and "Not demo results" in header
+    assert "dragon" in header and "stand-in" in header

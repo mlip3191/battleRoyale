@@ -1,0 +1,11 @@
+{
+  "default": {
+    "lines": [
+      {"speaker": "announcer", "text": "It's all over! Your winner: {winner}!"},
+      {"speaker": "color_commentator", "text": "{winner} won {win_pct} of {runs} simulated fights."},
+      {"speaker": "announcer", "text": "The deciding factor: {deciding_factor}."},
+      {"speaker": "color_commentator", "text": "{fair_fight}"},
+      {"speaker": "announcer", "text": "That's all from the arena. Good night, everybody!"}
+    ]
+  }
+}
