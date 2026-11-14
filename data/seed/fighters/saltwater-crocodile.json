@@ -1,0 +1,150 @@
+{
+  "fighter_id": "saltwater-crocodile",
+  "display_name": "Saltwater crocodile",
+  "media_name": "saltwater crocodile",
+  "category": "reptile",
+  "body": "living",
+  "habitat": "amphibious",
+  "weapons": [
+    "teeth"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 770.0,
+      "unit": "kg",
+      "source": {
+        "title": "Saltwater crocodile",
+        "url": "https://en.wikipedia.org/w/index.php?title=Saltwater_crocodile&oldid=1382108552",
+        "quote": "On average, adult males range 4.0 to 4.5 m (13 ft 1 in – 14 ft 9 in) in length and weigh 408 to 770 kg (899 to 1,698 lb).",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 408.0,
+      "high": 770.0,
+      "note": "Average adult males. Upper end of the stated range; the source gives no mean."
+    },
+    "size_m": {
+      "value": 4.5,
+      "unit": "m",
+      "source": {
+        "title": "Saltwater crocodile",
+        "url": "https://en.wikipedia.org/w/index.php?title=Saltwater_crocodile&oldid=1382108552",
+        "quote": "On average, adult males range 4.0 to 4.5 m (13 ft 1 in – 14 ft 9 in) in length and weigh 408 to 770 kg (899 to 1,698 lb).",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 4.0,
+      "high": 4.5,
+      "note": "Average adult males. Upper end of the stated range; the source gives no mean."
+    },
+    "top_speed_mps": {
+      "value": 3.89,
+      "unit": "m/s",
+      "source": {
+        "title": "Crocodilia",
+        "url": "https://en.wikipedia.org/w/index.php?title=Crocodilia&oldid=1380955981",
+        "quote": "some can run at 12 to 14 km/h (7.5 to 8.7 mph) for short distances",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 3.33,
+      "high": 3.89,
+      "note": "Converted from 14 km/h, low from 12 km/h. For crocodilians generally and on land; no citable swimming speed was found."
+    },
+    "attack_force_n": {
+      "value": 16414.0,
+      "unit": "N",
+      "source": {
+        "title": "Saltwater crocodile",
+        "url": "https://en.wikipedia.org/w/index.php?title=Saltwater_crocodile&oldid=1382108552",
+        "quote": "with a value of 16,414 N (3,690 lbf)",
+        "retrieved_at": "2026-11-10T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 14773.0,
+      "high": 18055.0,
+      "note": "Measured in a laboratory on a 4.59 m, 531 kg crocodile; range is the standard +/-10%."
+    },
+    "attacks_per_s": {
+      "value": 1.0,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.5,
+      "high": 1.5,
+      "note": "No published attack rate found for this animal; category default."
+    },
+    "reach_m": {
+      "value": 1.13,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.84,
+      "high": 1.41,
+      "note": "reach = 0.25 x size_m (lunging bite), from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.6,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.3,
+      "high": 0.9,
+      "note": "armor level 4: bony plates in the skin."
+    },
+    "endurance_s": {
+      "value": 120.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 60.0,
+      "high": 180.0,
+      "note": "The source gives only diving times, not how long it can keep fighting; category default."
+    },
+    "aggression_0_1": {
+      "value": 0.7,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.35,
+      "high": 1.0,
+      "note": "aggression level 4: territorial, confident against most animals."
+    },
+    "group_tactics_0_1": {
+      "value": 0.1,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.05,
+      "high": 0.15,
+      "note": "group tactics level 1: solitary, fights alone."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "06fa513fe408c910d52f8b9987c778b711855f3423313aec3035b34b17f6e413"
+}
