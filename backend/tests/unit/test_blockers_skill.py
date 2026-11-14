@@ -197,11 +197,26 @@ def commit(headline: str, at: str) -> dict[str, Any]:
 
 
 # Run the script with --json on one critical-files PR; return each person's actions on it.
+# `newest` is the reply to the newest-commits query, if the test expects one (#307).
 def actions_for(
-    blockers: ModuleType, monkeypatch: pytest.MonkeyPatch, capsys: Any, pr: dict[str, Any]
+    blockers: ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: Any,
+    pr: dict[str, Any],
+    newest: dict[str, Any] | None = None,
+    calls: list[tuple[str, ...]] | None = None,
 ) -> dict[str, list[str]]:
+    def fake(*args: str) -> Any:
+        if calls is not None:
+            calls.append(args)
+        if args[:2] == ("pr", "list"):
+            return [pr]
+        if args[:2] == ("api", "graphql"):
+            return newest
+        return []
+
     monkeypatch.setattr(sys, "argv", ["blockers.py", "--json", "--as", "jnunez"])
-    monkeypatch.setattr(blockers, "gh", lambda *args: [pr] if args[:2] == ("pr", "list") else [])
+    monkeypatch.setattr(blockers, "gh", fake)
     blockers.main()
     out: dict[str, list[str]] = {}
     for item in json.loads(capsys.readouterr().out)["items"]:
@@ -256,3 +271,61 @@ def test_a_push_after_the_pm_approved_asks_for_a_re_approval(
     assert actions["jnunez"] == [
         "re-approve on the latest commit, then re-run the critical-files check"
     ]
+
+
+# The newest-commits query's reply, holding these commits (#307).
+def newest_reply(*commits: dict[str, Any]) -> dict[str, Any]:
+    nodes = [{"commit": c} for c in commits]
+    return {"data": {"repository": {"pullRequest": {"commits": {"nodes": nodes}}}}}
+
+
+def test_a_fix_after_the_first_hundred_commits_gives_the_pm_a_re_review(
+    blockers: ModuleType, team_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    # gh pr list stops at a PR's first 100 commits, so the fix is only in the newest ones (#307).
+    first_hundred = [FIRST] * 100
+    pr = critical_pr([review("CHANGES_REQUESTED", "2026-11-10T12:00:00Z")], first_hundred)
+    newest = newest_reply(
+        commit("Fix the review", "2026-11-11T09:00:00Z"),
+        commit("Merge remote-tracking branch 'origin/main'", "2026-11-11T10:00:00Z"),
+    )
+    calls: list[tuple[str, ...]] = []
+    actions = actions_for(blockers, monkeypatch, capsys, pr, newest, calls)
+    assert "afondale" not in actions
+    assert actions["jnunez"][0].startswith("re-review (fixes pushed after your changes request")
+    # gh fills in {owner} and {repo} only in -F fields, never in -f ones.
+    query = next(c for c in calls if c[:2] == ("api", "graphql"))
+    pairs = list(zip(query, query[1:], strict=False))
+    assert ("-F", "owner={owner}") in pairs
+    assert ("-F", "repo={repo}") in pairs
+
+
+def test_a_merge_only_push_past_the_first_hundred_still_leaves_the_pm_out(
+    blockers: ModuleType, team_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    pr = critical_pr([review("CHANGES_REQUESTED", "2026-11-10T12:00:00Z")], [FIRST] * 100)
+    newest = newest_reply(
+        FIRST, commit("Merge remote-tracking branch 'origin/main'", "2026-11-11T10:00:00Z")
+    )
+    actions = actions_for(blockers, monkeypatch, capsys, pr, newest)
+    assert "jnunez" not in actions
+    assert actions["afondale"] == ["address José's changes request"]
+
+
+def test_a_pr_under_a_hundred_commits_makes_no_extra_call(
+    blockers: ModuleType, team_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    fix = commit("Fix the review", "2026-11-11T09:00:00Z")
+    pr = critical_pr([review("CHANGES_REQUESTED", "2026-11-10T12:00:00Z")], [FIRST, fix])
+    calls: list[tuple[str, ...]] = []
+    actions_for(blockers, monkeypatch, capsys, pr, calls=calls)
+    assert not [c for c in calls if c[:2] == ("api", "graphql")]
+
+
+def test_a_long_pr_with_no_changes_request_makes_no_extra_call(
+    blockers: ModuleType, team_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: Any
+) -> None:
+    pr = critical_pr([review("APPROVED", "2026-11-10T12:00:00Z")], [FIRST] * 100)
+    calls: list[tuple[str, ...]] = []
+    actions_for(blockers, monkeypatch, capsys, pr, calls=calls)
+    assert not [c for c in calls if c[:2] == ("api", "graphql")]

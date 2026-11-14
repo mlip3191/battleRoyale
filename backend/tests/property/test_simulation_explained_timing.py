@@ -12,6 +12,7 @@ from app.simulation import engine
 from app.simulation.engine import _templates, run, run_once
 from app.simulation.rng import run_rng
 from tests.property.sim_helpers import duck, horse, matchup_of
+from tests.property.test_simulation_swarm_parity import elephant, small_cat
 
 
 def showcase_one():
@@ -78,3 +79,11 @@ def test_recording_does_not_change_a_swarm_sized_fight_either():
             recorded.survivors,
             recorded.duration_s,
         )
+
+
+def test_150_cats_v_1_elephant_with_the_analysis_is_not_grossly_slow():
+    # Swarm mode by work (D-50, #183): about 2 s with the analysis on a laptop, against about 32 s
+    # one by one. 10 s is the loose guard that catches the fight falling back to one by one.
+    start = time.perf_counter()
+    run(matchup_of(150, 1), [small_cat(), elephant()])
+    assert time.perf_counter() - start < 10.0
