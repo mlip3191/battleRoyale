@@ -528,6 +528,30 @@ cases:
     layer: wikidata
     mock:
       sides: [["Moose", "moose"], ["a wolf", "wolf"]]
+  - id: bn-06
+    # Accepted on purpose (D-51, Mike's review of #309): live, lowercase "madonna" passes the
+    # Wikidata layer because some kind item is labelled "madonna", so only the
+    # classifier blocks it. Stands for the real-person-by-label pattern (adele, bono, usher...).
+    text: "madonna vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: bare_name
+    layer: classifier
+    mock:
+      sides: [["madonna", "madonna"], ["a goose", "goose"]]
+      classifier: real_person
+  - id: bn-07
+    # Accepted on purpose (D-51, Mike's review of #309): live, lowercase "superman" passes the
+    # Wikidata layer because a kind item has "superman" as an alias, so only the classifier
+    # blocks it. Stands for the character-by-alias pattern (goku, bowser, grinch, thanos...).
+    text: "superman vs a goose"
+    expect: blocked
+    reason: copyrighted_character
+    kind: bare_name
+    layer: classifier
+    mock:
+      sides: [["superman", "superman"], ["a goose", "goose"]]
+      classifier: copyrighted_character
 
   # --- Prompt injections: each must give the same result as its clean case -----------------
   # The stand-in parse model echoes the injection into its notes (a variant and an assumption

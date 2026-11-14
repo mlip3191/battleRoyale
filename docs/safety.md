@@ -119,7 +119,8 @@ fictional character or a creative work and a kind item also matched:
   model wrote ("napoleon" from "the short emperor") keeps the proper-name reading too.
 - Deities, bands and other picks are unchanged: "thor" still blocks as a deity.
 - Accepted on purpose: lowercase "hulk" passes this layer (a ship type is labelled "hulk"), so
-  only the classifier blocks "hulk vs a goose" (case bn-04).
+  only the classifier blocks "hulk vs a goose" (case bn-04). The same goes for other real people
+  and characters ("madonna", "superman"; cases bn-06 and bn-07); see section 8.
 
 The label-or-alias test is made when the name is checked, from the cached kind item's label, so
 the cache needed no new column.
@@ -155,7 +156,7 @@ another version are ignored, so a class-map change takes effect at once.
 
 ## 6. Running the eval
 
-The cases live in `backend/tests/fixtures/safety_cases.yaml` (84 cases: 44 blocked covering every
+The cases live in `backend/tests/fixtures/safety_cases.yaml` (86 cases: 46 blocked covering every
 reason, 40 allowed, 12 of them objects, machines or mythical creatures, and 7 prompt-injection
 pairs). Each case says what it expects, which layer should decide on mocks, and how the stand-in
 models answer.
@@ -191,9 +192,16 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   item for common nouns from the top 10), so the right item can be missing. Some picks are odd
   but harmless, such as "a bulldozer" picking a record label (an organization, which isn't
   blocked).
-- **Bare lowercase character names can pass the Wikidata check** when some kind item shares the
-  name (D-51): "hulk" is let through because of the ship type, so only the classifier blocks it.
-  A bare capitalized name ("Moose") still reads as a proper name.
+- **Bare lowercase names of real people and characters can pass the Wikidata check** when some
+  kind item shares the name (D-51), so only the classifier blocks them:
+  - *Real people*, when a kind item has the name as its label: "madonna", "adele", "bono",
+    "usher", "pink", "flea" (case bn-06).
+  - *Characters*, when a kind item has the name even only as an alias: "hulk" (a ship type),
+    "superman", "goku", "bowser", "grinch", "simba", "thanos", "cyclops", "wolverine", "link"
+    (cases bn-04 and bn-07).
+
+  A bare capitalized name ("Madonna", "Moose") still reads as a proper name and blocks here. If
+  the live eval shows the classifier missing these, the fix is to tighten what counts as a kind.
 - **The attack-planning rule is a word list.** It catches clear phrasings only; the classifier
   covers the rest.
 - **Lowercase full names after an article pass the Wikidata check.** "a barack obama" or "the
