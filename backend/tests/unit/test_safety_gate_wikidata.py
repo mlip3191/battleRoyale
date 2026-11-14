@@ -120,6 +120,10 @@ EXAMPLES = [
     (("Napoleon", "napoleon"), "real_person"),
     (("a Napoleon", "napoleon"), "real_person"),
     (("a napoleon", "napoleon"), None),
+    (("a tiny napoleon", "napoleon"), None),
+    (("a pack of napoleons", "napoleon"), None),
+    (("a tiny Napoleon", "napoleon"), "real_person"),
+    (("a dog named Napoleon", "dog"), None),
     (("the emperor", "emperor"), None),
     (("Robo-Tron", "robo-tron"), "copyrighted_character"),
     (("Zeus", "zeus"), "deity"),
@@ -164,6 +168,9 @@ def test_names_are_raw_plus_a_different_entity_never_the_variant() -> None:
         FighterRequest(raw="a napoleon", entity="napoleon"),
         FighterRequest(raw="the short emperor", entity="napoleon"),
         FighterRequest(raw="a dog named Napoleon", entity="dog", variant="named Napoleon"),
+        FighterRequest(raw="a tiny napoleon", entity="napoleon"),
+        FighterRequest(raw="a pack of napoleons", entity="napoleon"),
+        FighterRequest(raw="a tiny Napoleon", entity="napoleon"),
     ]
     assert wikidata_names(fighters) == [
         "a napoleon",
@@ -171,6 +178,12 @@ def test_names_are_raw_plus_a_different_entity_never_the_variant() -> None:
         "napoleon",
         "a dog named Napoleon",
         "dog",
+        "a tiny napoleon",
+        "a napoleon",
+        "a pack of napoleons",
+        "a napoleon",
+        "a tiny Napoleon",
+        "napoleon",
     ]
 
 
