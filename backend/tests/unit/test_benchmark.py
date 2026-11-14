@@ -171,8 +171,11 @@ def test_live_modes_say_what_they_are_waiting_for(tmp_path, capsys):
     assert "G07" in capsys.readouterr().err
     mock_files = ["--matchups", str(bm.MOCK_DIR / "matchups.yaml")]
     mock_files += ["--heldout", str(bm.MOCK_DIR / "heldout.yaml")]
-    assert main(["--live", "--sheets", "research", *mock_files]) == 2
+    # An output path in tmp_path: a live run must never write to the real docs/ in a test.
+    out = ["--output", str(tmp_path / "results.md")]
+    assert main(["--live", "--sheets", "research", *mock_files, *out]) == 2
     assert "knowledge base is empty" in capsys.readouterr().err
+    assert not (tmp_path / "results.md").exists()
 
 
 def test_unknown_fighter_is_a_clear_error():
