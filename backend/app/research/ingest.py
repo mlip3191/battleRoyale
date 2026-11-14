@@ -11,6 +11,7 @@ from typing import Any
 
 import httpx
 
+from app.config import get_settings
 from app.providers.base import DocParser, Embedder
 from app.providers.live.http import ProviderError
 from app.research.facts import store_facts, wikidata_facts
@@ -43,6 +44,8 @@ class IngestSummary:
     failures: list[str] = field(default_factory=list)
     unmatched: list[str] = field(default_factory=list)
     """Fighters with no PanTHERIA or AnimalTraits row for their scientific name."""
+    trait_origin: str = ""
+    """Where the trait rows were loaded from (the Hugging Face team dataset, or the originals)."""
 
 
 # True when this exact revision is already stored, so it needn't be parsed again.
@@ -152,8 +155,12 @@ async def ingest_all(
 ) -> IngestSummary:
     await ensure_vector_table(connection, embedder)
     summary = IngestSummary(fighters=len(fighters))
-    traits, trait_failures = await load_trait_tables(client, kb_dir)
+    token = get_settings().hf_token
+    traits, trait_failures = await load_trait_tables(
+        client, kb_dir, hf_token=token.get_secret_value() if token else None
+    )
     summary.failures.extend(trait_failures)
+    summary.trait_origin = traits.origin
     limit = asyncio.Semaphore(CONCURRENT_FIGHTERS)
 
     async def one(fighter: SeedFighter) -> None:
