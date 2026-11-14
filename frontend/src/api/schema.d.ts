@@ -106,6 +106,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/fighters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find Fighters */
+        get: operations["find_fighters_api_fighters_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fighters/{fighter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Fighter */
+        get: operations["read_fighter_api_fighters__fighter_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -342,6 +376,27 @@ export interface components {
              * @description Short neutral description for narration, e.g. "bite lands".
              */
             text_hint: string;
+        };
+        /**
+         * FighterMatch
+         * @description One row of GET /api/fighters?q=: a fighter whose name matches the search text.
+         */
+        FighterMatch: {
+            /**
+             * Fighter Id
+             * @description Stable fighter id, e.g. "grizzly-bear".
+             */
+            fighter_id: string;
+            /**
+             * Display Name
+             * @description Name shown to the user.
+             */
+            display_name: string;
+            /**
+             * Cached
+             * @description True when a stat sheet is already saved, so the battle can skip research.
+             */
+            cached: boolean;
         };
         /**
          * FighterRequest
@@ -833,27 +888,6 @@ export interface components {
             ctx?: Record<string, never>;
         };
         /**
-         * FighterMatch
-         * @description One row of GET /api/fighters?q=: a fighter whose name matches the search text.
-         */
-        FighterMatch: {
-            /**
-             * Fighter Id
-             * @description Stable fighter id, e.g. "grizzly-bear".
-             */
-            fighter_id: string;
-            /**
-             * Display Name
-             * @description Name shown to the user.
-             */
-            display_name: string;
-            /**
-             * Cached
-             * @description True when a stat sheet is already saved, so the battle can skip research.
-             */
-            cached: boolean;
-        };
-        /**
          * ShowcaseBattle
          * @description One row of GET /api/battles?showcase=true: a saved showcase battle.
          */
@@ -1050,6 +1084,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    find_fighters_api_fighters_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FighterMatch"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_fighter_api_fighters__fighter_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fighter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatSheet"];
                 };
             };
             /** @description Validation Error */
