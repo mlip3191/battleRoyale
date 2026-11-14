@@ -88,7 +88,7 @@ describe("normal motion", () => {
     expect(onFinish).toHaveBeenCalledTimes(1);
     expect(scene.tweens.add).toHaveBeenCalled();
     expect(scene.cameras.main.shake).toHaveBeenCalled();
-    expect(scene.texts.some((t) => t.text === "GRAY WOLF WINS!")).toBe(true);
+    expect(scene.texts.some((t) => t.text === "6 GRAY WOLVES WIN!")).toBe(true);
   });
 
   test("skip to end reports the rest once, stops tweens, and shows the result", () => {
@@ -101,7 +101,7 @@ describe("normal motion", () => {
     );
     expect(scene.tweens.killAll).toHaveBeenCalled();
     expect(onFinish).toHaveBeenCalledTimes(1);
-    expect(scene.texts.some((t) => t.text === "GRAY WOLF WINS!")).toBe(true);
+    expect(scene.texts.some((t) => t.text === "6 GRAY WOLVES WIN!")).toBe(true);
   });
 });
 
@@ -283,7 +283,7 @@ describe("reduced motion", () => {
     expect(scene.tweens.add).not.toHaveBeenCalled();
     expect(scene.cameras.main.shake).not.toHaveBeenCalled();
     expect(onEvent).toHaveBeenCalledTimes(result.representative_log.length);
-    expect(scene.texts.some((t) => t.text === "GRAY WOLF WINS!")).toBe(true);
+    expect(scene.texts.some((t) => t.text === "6 GRAY WOLVES WIN!")).toBe(true);
   });
 
   test("the picture changes only at key frames (start, walk-ins, each KO, end)", () => {
