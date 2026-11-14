@@ -10,7 +10,7 @@ is reported and left out; nothing is exported until you run that command.
 """
 
 import argparse
-import shlex
+import subprocess
 import sys
 import time
 from typing import Any
@@ -88,7 +88,9 @@ def run_battle(client: httpx.Client, matchup: dict[str, Any]) -> tuple[str, str]
     battle_id = reply.json()["battle_id"]
     deadline = time.monotonic() + TIMEOUT_S
     while time.monotonic() < deadline:
-        status = client.get(f"/api/battles/{battle_id}").json()["status"]
+        poll = client.get(f"/api/battles/{battle_id}")
+        poll.raise_for_status()  # a 404 or 500 says so, instead of a confusing KeyError
+        status = poll.json()["status"]
         if status != "running":
             return battle_id, status
         time.sleep(POLL_S)
@@ -112,7 +114,9 @@ def main(argv: list[str]) -> int:
                 done.append((battle_id, title))
     if len(done) < len(SHOWCASE):
         print(f"\n{len(SHOWCASE) - len(done)} battle(s) didn't finish; they are left out below.")
-    args = " ".join(shlex.quote(f"{battle_id}={title}") for battle_id, title in done)
+    # Double quotes (list2cmdline) work in Command Prompt and PowerShell; shlex's single quotes
+    # break in Command Prompt for titles with spaces.
+    args = subprocess.list2cmdline([f"{battle_id}={title}" for battle_id, title in done])
     print("\nTo export them, from the backend folder:")
     print(f"  uv run python -m scripts.export_showcase {args}")
     return 0 if len(done) == len(SHOWCASE) else 1

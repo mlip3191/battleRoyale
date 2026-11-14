@@ -25,6 +25,7 @@ from app.research.seed_fighters import (
 )
 from app.research.sheet_hash import compute_sheet_hash
 from app.research.units import STAT_UNITS, UnitError, to_stat_unit
+from app.safety.media_names import safe_media_name
 from app.simulation import constants as c
 
 logger = logging.getLogger(__name__)
@@ -103,12 +104,18 @@ def profile_from_seed(fighter: SeedFighter) -> FighterProfile:
     return FighterProfile(
         fighter_id=fighter.id,
         display_name=fighter.display_name,
-        media_name=fighter.display_name.lower(),
+        media_name=media_name_for(fighter.display_name, fighter.category),
         category=fighter.category,
         body=fighter.body,
         habitat=fighter.habitat,
         weapons=weapons,
     )
+
+
+# A name safe for image and music prompts: the fighter's own name when it passes the brand and
+# franchise check (ARCHITECTURE section 11), else its category's generic word ("vehicle").
+def media_name_for(display_name: str, category: str) -> str:
+    return safe_media_name(display_name) or category.replace("_", " ")
 
 
 # Every fact stored for a fighter.

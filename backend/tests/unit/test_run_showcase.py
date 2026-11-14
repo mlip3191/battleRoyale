@@ -53,3 +53,36 @@ def test_main_prints_the_export_command_and_leaves_out_failures(
     out = capsys.readouterr().out
     assert "scripts.export_showcase" in out and "b-0=" in out
     assert "b-2=" not in out and "1 battle(s) didn't finish" in out
+
+
+def test_a_battle_the_app_cannot_find_raises_a_clear_http_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(run_showcase, "POLL_S", 0)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(202, json={"battle_id": "b-0"})
+        return httpx.Response(404, json={"detail": "We couldn't find that battle."})
+
+    with httpx.Client(transport=httpx.MockTransport(handler), base_url="http://x") as client:
+        with pytest.raises(httpx.HTTPStatusError, match="404"):
+            run_battle(client, SHOWCASE[0][1])
+
+
+def test_the_export_command_uses_double_quotes_for_titles_with_spaces(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(run_showcase, "POLL_S", 0)
+    handler = fake_app({})
+    real_client = httpx.Client
+    monkeypatch.setattr(
+        run_showcase.httpx,
+        "Client",
+        lambda **kwargs: real_client(transport=httpx.MockTransport(handler), base_url="http://x"),
+    )
+    assert run_showcase.main([]) == 0
+    out = capsys.readouterr().out
+    assert (
+        '"b-1=Grizzly bear vs 6 gray wolves"' in out and "'" not in out.split("export_showcase")[1]
+    )
