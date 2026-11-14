@@ -8,8 +8,14 @@ from pathlib import Path
 import httpx
 import pytest
 
+from app.config import get_settings, use_settings
+from app.db.connection import connect
+from app.db.migrate import apply_migrations
+from app.providers.mock.text import MockDocParser, MockEmbedder
 from app.research.facts import Fact
+from app.research.ingest import ingest_all
 from app.research.traits import (
+    HF_TRAITS_REVISION,
     HF_TRAITS_URL,
     TraitTables,
     load_trait_tables,
@@ -17,6 +23,7 @@ from app.research.traits import (
     team_rows,
     team_tables,
 )
+from tests.conftest import mock_settings
 
 PANTHERIA_TEXT = (
     "MSW05_Binomial\t5-1_AdultBodyMass_g\t13-1_AdultHeadBodyLen_mm\nCanis lupus\t31000\t-999\n"
@@ -76,6 +83,9 @@ def handler_for(hf: str, seen: list[httpx.Request]):
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append(request)
         if request.url.host == "huggingface.co":
+            if hf == "rejects token":  # a bad or expired token on a public dataset
+                rejected = "Authorization" in request.headers
+                return httpx.Response(401) if rejected else httpx.Response(200, content=team)
             return {"ok": httpx.Response(200, content=team), "missing": httpx.Response(404)}.get(
                 hf, httpx.Response(200, content=b"<html>not a csv</html>")
             )
@@ -126,3 +136,52 @@ def test_the_token_goes_only_in_the_header_and_never_in_logs(
 def test_no_token_sends_no_authorization_header(tmp_path: Path) -> None:
     _, _, seen = load("ok", tmp_path)
     assert all("Authorization" not in r.headers for r in seen)
+
+
+def test_a_row_with_no_reference_is_skipped() -> None:
+    text = (
+        "scientific_name,source,field,value,unit,reference\n"
+        "Canis lupus,animaltraits,body mass,20,kg,\n"
+        'Canis lupus,animaltraits,body mass,22,kg,"a#row-2 (Crile, 1940)"\n'
+    )
+    facts = team_tables(text).by_source["animaltraits"]["Canis lupus"]
+    assert [f.value for f in facts] == [22.0]
+
+
+def test_the_dataset_file_is_pinned_to_one_version() -> None:
+    assert f"/resolve/{HF_TRAITS_REVISION}/seed-traits.csv" in HF_TRAITS_URL
+    assert "/resolve/main/" not in HF_TRAITS_URL
+
+
+def test_a_rejected_token_is_retried_without_it(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    with caplog.at_level(logging.WARNING):
+        tables, failures, seen = load("rejects token", tmp_path, token=TOKEN)
+    assert failures == [] and "Hugging Face" in tables.origin
+    hf = [r for r in seen if r.url.host == "huggingface.co"]
+    assert ["Authorization" in r.headers for r in hf] == [True, False]
+    assert "rejected HF_TOKEN" in caplog.text and TOKEN not in caplog.text
+
+
+def test_ingest_reads_the_token_from_settings_and_never_shows_it(tmp_path: Path) -> None:
+    use_settings(mock_settings(hf_token=TOKEN))
+    assert TOKEN not in repr(get_settings()) and TOKEN not in str(get_settings())
+    seen: list[httpx.Request] = []
+    connection = connect(tmp_path / "app.db")
+    apply_migrations(connection)
+
+    async def run():
+        transport = httpx.MockTransport(handler_for("ok", seen))
+        async with httpx.AsyncClient(transport=transport) as client:
+            return await ingest_all(
+                connection, client, MockDocParser(), MockEmbedder(), [], tmp_path
+            )
+
+    try:
+        summary = asyncio.run(run())
+    finally:
+        connection.close()
+    hf = [r for r in seen if r.url.host == "huggingface.co"]
+    assert hf and hf[0].headers["Authorization"] == f"Bearer {TOKEN}"
+    assert "Hugging Face" in summary.trait_origin
