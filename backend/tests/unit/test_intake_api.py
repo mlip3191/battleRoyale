@@ -57,6 +57,14 @@ REPLIES: dict[str, Any] = {
     },
     "bear vs wolf (the big one)": VAGUE,
     "bear vs wolf (gibberish)": "not json",
+    # Live models often offer bare variants (#296).
+    "bear vs goose": {
+        "fighters": [side("bear", "bear"), side("goose", "goose")],
+        "needs_clarification": {"question": "Which type of bear?", "options": ["Grizzly", "Polar"]},
+    },
+    "grizzly bear vs goose": {
+        "fighters": [side("grizzly bear", "grizzly bear"), side("goose", "goose")]
+    },
 }
 
 
@@ -247,6 +255,52 @@ def test_both_routes_are_in_openapi(client: TestClient) -> None:
 )
 def test_merge_answer(original: str, answer: str, merged: str) -> None:
     assert merge_answer(original, answer) == merged
+
+
+# Live options are often just the variant ("Grizzly"): splice an offered one in front of the
+# fighter the question names, so research gets "grizzly bear", not "bear" (#296).
+BEARS = ["Grizzly", "Polar", "American Black"]
+
+
+@pytest.mark.parametrize(
+    ("original", "answer", "question", "options", "merged"),
+    [
+        (
+            "a bear vs 6 wolves in a forest",
+            "Grizzly",
+            "Which type of bear would you like?",
+            BEARS,
+            "a grizzly bear vs 6 wolves in a forest",
+        ),
+        ("3 bears vs a wolf", "Polar", "Which kind of bear?", BEARS, "3 polar bears vs a wolf"),
+        ("bear vs wolf", "American Black", "Which bear?", BEARS, "american black bear vs wolf"),
+        ("a bear vs 6 wolves", "a grizzly", "Which bear?", BEARS, "a grizzly bear vs 6 wolves"),
+        (
+            "a bear vs a wolf",
+            "Timber",
+            "Which kind of wolf?",
+            ["Timber"],
+            "a bear vs a timber wolf",
+        ),
+        ("a bear vs 6 wolves", "Arctic", "Which wolf?", ["Arctic"], "a bear vs 6 arctic wolves"),
+        ("a bear vs a wolf", "Grizzly", "Which one?", BEARS, "a bear vs a wolf (Grizzly)"),
+        ("bear vs bear", "Grizzly", "Which bear?", BEARS, "bear vs bear (Grizzly)"),
+        ("bear vs wolf", "the big one", "Which bear?", BEARS, "bear vs wolf (the big one)"),
+        ("bear vs wolf", "grizzly bear", "Which bear?", BEARS, "grizzly bear vs wolf"),
+    ],
+)
+def test_merge_answer_splices_an_offered_variant_before_the_asked_fighter(
+    original: str, answer: str, question: str, options: list[str], merged: str
+) -> None:
+    assert merge_answer(original, answer, question, options) == merged
+
+
+def test_a_one_word_option_answer_names_the_fighter(client: TestClient, chat: ScriptedChat) -> None:
+    pending_id = client.post("/api/intake", json={"text": "bear vs goose"}).json()["pending_id"]
+    body = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "Grizzly"}).json()
+    assert chat.texts == ["bear vs goose", "grizzly bear vs goose"]
+    assert body["status"] == "ok"
+    assert body["matchup"]["fighters"][0]["entity"] == "grizzly bear"
 
 
 # --- Safety (A04 runs inside parse_matchup), outages, and the 25 s deadline ---------------------
