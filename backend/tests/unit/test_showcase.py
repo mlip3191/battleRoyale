@@ -180,3 +180,20 @@ def test_a_manifest_id_that_points_outside_the_folder_is_refused(source, tmp_pat
             import_showcase(fresh, tmp_path / "m", out)
     finally:
         fresh.close()
+
+
+def test_a_broken_battle_file_leaves_the_database_empty_not_half_loaded(
+    source, tmp_path: Path
+) -> None:
+    connection, media = source
+    out = tmp_path / "showcase"
+    export_showcase(connection, [("b-7f3k2q", None)], media, out)
+    manifest = [{"battle_id": "b-7f3k2q", "title": "One"}, {"battle_id": "b-gone", "title": "Two"}]
+    (out / "manifest.json").write_text(json.dumps(manifest))
+    fresh = database(tmp_path / "fresh.db")
+    try:
+        with pytest.raises(ValueError, match="b-gone.json is missing"):
+            import_showcase(fresh, tmp_path / "m", out)
+        assert fresh.execute("SELECT COUNT(*) FROM battles").fetchone()[0] == 0
+    finally:
+        fresh.close()

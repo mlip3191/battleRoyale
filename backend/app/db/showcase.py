@@ -131,15 +131,19 @@ def import_showcase(
     rows = load_manifest(showcase_dir)
     if not rows or connection.execute("SELECT 1 FROM battles LIMIT 1").fetchone():
         return 0
-    for row in rows:
-        # Ids are plain words, so a manifest entry can't point outside battles/.
-        if not BATTLE_ID.fullmatch(row.battle_id):
-            raise ValueError(f"showcase battle id {row.battle_id!r} isn't a plain id")
-        text = (showcase_dir / "battles" / f"{row.battle_id}.json").read_text("utf-8")
-        record = BattleRecord.model_validate_json(text)
-        if record.battle_id != row.battle_id:
-            raise ValueError(f"showcase file for {row.battle_id} holds {record.battle_id}")
-        saved.save(connection, record, cache_key=None)
+    # Read and check every battle before saving any, so a missing or broken file leaves the
+    # database empty (and the next start tries again) instead of half loaded.
+    records = [_read_battle(row.battle_id, showcase_dir) for row in rows]
+    try:
+        for record in records:
+            saved.save(connection, record, cache_key=None)
+    except sqlite3.Error:
+        connection.executemany(
+            "DELETE FROM battles WHERE battle_id = ?", [(r.battle_id,) for r in records]
+        )
+        connection.commit()
+        raise
+    for record in records:
         for asset in record.assets:
             # Both ends are checked to stay inside their media folders.
             source = media_path(asset.url, showcase_dir / "media")
@@ -149,6 +153,19 @@ def import_showcase(
                 shutil.copyfile(source, target)
     logger.info("Loaded %d showcase battles.", len(rows))
     return len(rows)
+
+
+# One showcase battle file, checked: a plain id, a valid record, and the id it claims to be.
+def _read_battle(battle_id: str, showcase_dir: Path) -> BattleRecord:
+    if not BATTLE_ID.fullmatch(battle_id):  # so a manifest entry can't point outside battles/
+        raise ValueError(f"showcase battle id {battle_id!r} isn't a plain id")
+    path = showcase_dir / "battles" / f"{battle_id}.json"
+    if not path.is_file():
+        raise ValueError(f"showcase battle file {path.name} is missing")
+    record = BattleRecord.model_validate_json(path.read_text("utf-8"))
+    if record.battle_id != battle_id:
+        raise ValueError(f"showcase file for {battle_id} holds {record.battle_id}")
+    return record
 
 
 # The showcase rows whose battles are in the database, in manifest order.

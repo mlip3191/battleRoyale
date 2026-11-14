@@ -42,6 +42,7 @@ def main(args: list[str]) -> int:
     print(
         f"Exported {result.battles} battles ({result.total_bytes / 1e6:.1f} MB) to {SHOWCASE_DIR}."
     )
+    print("The showcase folder was replaced, so it now holds only these battles.")
     if result.dropped:
         print(f"Left out to stay under 20 MB: {', '.join(result.dropped)}.")
     return 0

@@ -92,7 +92,7 @@ def _startup(settings: Settings, showcase_dir: Path | None) -> None:
         finally:
             connection.close()
     except (sqlite3.Error, OSError, ValueError) as error:
-        logger.warning("Startup checks skipped (%s).", type(error).__name__)
+        logger.warning("Startup checks skipped (%s: %s).", type(error).__name__, error)
 
 
 # True when the knowledge base has at least one stored passage.
