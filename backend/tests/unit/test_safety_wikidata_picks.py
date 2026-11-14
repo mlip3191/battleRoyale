@@ -1,12 +1,16 @@
 """A04 part 3a (#27): which exact Wikidata match is picked (creative works and bands demoted),
-bands blocked as real people for proper names only, the weapons-of-mass-destruction class, and
-the classes_version bump. Mock Wikidata and a temp cache only; no network."""
+bands blocked as real people for proper names only (ALL CAPS included, and bands that lost the
+pick to a kind item), the weapons-of-mass-destruction class, the classes_version bump and
+migration 004. Mock Wikidata and a temp cache only; no network."""
 
+import shutil
+import sqlite3
 from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
 
+from app.db.migrate import MIGRATIONS_DIR, apply_migrations
 from app.safety.wikidata import (
     Candidate,
     EntityClasses,
@@ -23,7 +27,7 @@ from app.safety.wikidata import (
 MAGAZINE, FILM, ALBUM = "Q41298", "Q11424", "Q482994"
 MUSICAL_GROUP, ROCK_BAND = "Q215380", "Q5741069"
 GIRL_GROUP, BOY_BAND, METAL_BAND, DUO = "Q641066", "Q216337", "Q56816954", "Q9212979"
-TAXON, FAMILY_NAME = "Q16521", "Q101352"
+TAXON, FAMILY_NAME, COMMON_NAME = "Q16521", "Q101352", "Q55983715"
 MALE_NAME, FEMALE_NAME, UNISEX_NAME = "Q12308941", "Q11879590", "Q3409032"
 ASTEROID = "Q3863"
 WMD, NUCLEAR_WEAPON = "Q49394", "Q12802"
@@ -60,13 +64,14 @@ class ExactMatches:
 
 def test_the_class_map_demotes_creative_works_and_bands_and_lists_wmd() -> None:
     class_map = load_class_map()
-    assert class_map.version >= 5
+    assert class_map.version >= 6
     bands = {MUSICAL_GROUP, ROCK_BAND, GIRL_GROUP, BOY_BAND, METAL_BAND, DUO}
     assert bands <= class_map.bands
     assert {MAGAZINE, FILM, ALBUM} | bands <= class_map.demoted
     assert {class_map.reasons[band] for band in bands} == {"real_person"}
     assert {MALE_NAME, FEMALE_NAME, UNISEX_NAME} <= class_map.name_items
-    assert TAXON in class_map.kinds
+    assert {TAXON, COMMON_NAME} <= class_map.kinds
+    assert class_map.common_kinds == {COMMON_NAME}  # a bare taxon is not a common word
     assert class_map.reasons[WMD] == class_map.reasons[NUCLEAR_WEAPON] == "weapon"
 
 
@@ -163,6 +168,24 @@ async def test_demotion_rules(
         (["eagles"], None),
         (["the eagles"], None),
         (["EAGLES"], None),
+        # ALL CAPS reads as the band's name, the same as matching capitals.
+        (["THE BEATLES"], "real_person"),
+        (["BEATLES"], "real_person"),
+        (["The BEATLES"], "real_person"),
+        (["THE EAGLES"], "real_person"),
+        # A band that lost the pick to a kind item still blocks a name that names it.
+        (["the Police"], "real_person"),  # the item "police" (with a P279) wins the pick
+        (["The Police"], "real_person"),
+        (["THE POLICE"], "real_person"),
+        (["Police"], None),  # bare: the common word "police"
+        (["the police"], None),
+        (["a police"], None),
+        (["the Doors"], "real_person"),  # "doorway" matches through its alias "doors"
+        (["Doors"], None),
+        (["Metallica"], "real_person"),  # its rival is a bare moth genus, not a common word
+        (["the Metallica"], "real_person"),
+        (["metallica"], None),
+        (["the Grizzly Bear"], None),  # the band's label has no "The" of its own: the animal
         (["Wolves"], None),  # the band only matched an alias; a sports team is picked
         (["Sharks"], None),  # the only exact match is a band matching through an alias
         (["eagles", "the Eagles"], "real_person"),  # one typed name names the band: blocked
@@ -228,10 +251,89 @@ async def test_the_band_label_check_also_applies_to_cached_picks(cache: Wikidata
         ("a Eagles", "Eagles", False, False),
         ("the  Rolling   Stones", "The Rolling Stones", True, True),  # spaces collapsed
         ("Eagles", None, False, False),
+        # ALL CAPS is compared ignoring case; mixed capitals still must match.
+        ("THE BEATLES", "The Beatles", False, True),
+        ("BEATLES", "The Beatles", False, True),
+        ("The BEATLES", "The Beatles", True, True),
+        ("THE EAGLES", "Eagles", True, True),
+        ("EAGLES", "Eagles", True, False),  # a common word without "the"
+        ("EAGLES", "Eagles", False, True),
+        ("BeAtLeS", "The Beatles", False, False),
     ],
 )
 def test_names_band(typed: str, label: str | None, common: bool, expected: bool) -> None:
     assert names_band(typed, label, common) is expected
+
+
+@pytest.mark.parametrize(
+    ("typed", "label", "common", "expected"),
+    [
+        # A common-word kind took the pick: only the full label, with its own "The", names it.
+        ("the Police", "The Police", True, True),
+        ("THE POLICE", "The Police", True, True),
+        ("Police", "The Police", True, False),
+        ("the police", "The Police", True, False),
+        ("the Grizzly Bear", "Grizzly Bear", True, False),
+        ("Grizzly Bear", "Grizzly Bear", True, False),
+        # The rival kind is not a common word (a bare taxon): as for a band that won the pick.
+        ("Metallica", "Metallica", False, True),
+        ("the Metallica", "Metallica", False, True),
+        ("METALLICA", "Metallica", False, True),
+        ("metallica", "Metallica", False, False),
+    ],
+)
+def test_names_band_for_a_band_that_lost_the_pick(
+    typed: str, label: str, common: bool, expected: bool
+) -> None:
+    assert names_band(typed, label, common, lost=True) is expected
+
+
+@pytest.mark.parametrize(
+    ("query", "lost", "common"),
+    [
+        ("police", "The Police", True),
+        ("doors", "The Doors", True),
+        ("metallica", "Metallica", False),
+        ("grizzly bear", "Grizzly Bear", True),
+        ("bulldozer", "Bulldozer", True),
+        ("dragon", None, False),  # a magazine, not a band
+        ("beatles", None, False),  # the band won the pick
+        ("wolves", None, False),  # a band matching only through an alias is never recorded
+    ],
+)
+async def test_a_band_that_lost_the_pick_is_recorded(
+    query: str, lost: str | None, common: bool
+) -> None:
+    check = await resolve(query, MockWikidataLookup(), load_class_map())
+    assert (check.lost_band, check.common if lost else False) == (lost, common)
+    assert not (check.band and lost)
+
+
+@pytest.mark.parametrize(
+    ("rival", "blocks"),
+    [
+        (EntityClasses((TAXON,)), True),  # a bare taxon is not a common word
+        (EntityClasses((COMMON_NAME,)), False),  # organisms known by a common name
+        (EntityClasses((TAXON,), ("Q1",)), False),  # anything with a P279
+    ],
+)
+async def test_a_lost_bands_bare_name_blocks_unless_a_common_word_shares_it(
+    cache: WikidataCache, rival: EntityClasses, blocks: bool
+) -> None:
+    lookup = ExactMatches(("B", EntityClasses((MUSICAL_GROUP,))), ("K", rival), label="Gizmo")
+    check = await resolve("gizmo", lookup, load_class_map())
+    assert (check.qid, check.lost_band, check.common) == ("K", "Gizmo", not blocks)
+    verdict = await check_names(["Gizmo"], lookup=lookup, cache=cache)
+    assert verdict.reason == ("real_person" if blocks else None)
+
+
+async def test_a_lost_band_is_cached(cache: WikidataCache) -> None:
+    lookup = MockWikidataLookup()
+    assert (await check_names(["the Police"], lookup=lookup, cache=cache)).reason == "real_person"
+    cached = await cache.get("police", load_class_map().version)
+    assert cached == NameCheck("Q900201", "police", None, common=True, lost_band="The Police")
+    assert (await check_names(["Police"], lookup=lookup, cache=cache)).allowed  # a cache hit
+    assert (await check_names(["THE POLICE"], lookup=lookup, cache=cache)).reason == "real_person"
 
 
 class SingularLookup(ExactMatches):
@@ -347,3 +449,31 @@ async def test_the_version_bump_ignores_rows_cached_before_it(cache: WikidataCac
     assert await cache.get("beatles", version) == NameCheck(
         "Q900130", "The Beatles", "real_person", band=True
     )
+
+
+# --- Migration 004 -----------------------------------------------------------------------------
+
+
+def test_migration_004_adds_the_group_columns_to_an_existing_cache(tmp_path: Path) -> None:
+    # Apply 003 alone, store a row, then apply 004: the old row gets the defaults, once.
+    migrations = tmp_path / "migrations"
+    migrations.mkdir()
+    shutil.copy(MIGRATIONS_DIR / "003-wikidata-safety-cache.sql", migrations)
+    connection = sqlite3.connect(tmp_path / "app.db")
+    connection.row_factory = sqlite3.Row
+    try:
+        assert apply_migrations(connection, migrations) == ["003-wikidata-safety-cache.sql"]
+        with connection:
+            connection.execute(
+                "INSERT INTO wikidata_safety_cache VALUES ('moon', 'Q405', 'Moon', 'out_of_scope', "
+                "5, '2026-11-10T00:00:00+00:00')"
+            )
+        shutil.copy(MIGRATIONS_DIR / "004-wikidata-cache-band.sql", migrations)
+        assert apply_migrations(connection, migrations) == ["004-wikidata-cache-band.sql"]
+        row = connection.execute(
+            "SELECT qid, grouped, grouped_common, grouped_lost_label FROM wikidata_safety_cache"
+        ).fetchone()
+        assert tuple(row) == ("Q405", 0, 0, None)
+        assert apply_migrations(connection, migrations) == []
+    finally:
+        connection.close()

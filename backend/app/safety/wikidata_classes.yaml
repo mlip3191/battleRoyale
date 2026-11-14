@@ -17,7 +17,10 @@
 # only to a kind item, and the cache stores whether the pick was a band.
 # Version 5 (A04 part 3a fix round 2): the cache also stores whether a band's name is a common
 # word, which changes how cached band picks block.
-classes_version: 5
+# Version 6 (A04 part 3a fix round 3): a band that lost the pick to a kind item is cached too
+# ("the Police", "Metallica" block), and only common_word kinds or items with a P279 make a bare
+# band name a common word.
+classes_version: 6
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed
@@ -44,13 +47,17 @@ skip_matches:
 # Kind items: an exact match is a kind (a type of thing, not one individual) when it has a P279
 # (subclass of) value or its P31 includes one of these classes. A band is passed over only when a
 # kind item is among the exact matches ("Grizzly Bear" the band for the grizzly bear), never for
-# another individual ("the Beatles" the band beats the asteroid "8749 Beatles"). Verified live
-# 2026-11-10 against wbgetentities (labels as returned).
+# another individual ("the Beatles" the band beats the asteroid "8749 Beatles"). A band that lost
+# the pick this way still blocks a name that names it (see the band classes below). common_word:
+# true marks kinds that are everyday words; with any item that has a P279, they make a band's bare
+# name a common word ("Grizzly Bear" is the animal). A bare taxon does not: "Metallica" is the band,
+# not the moth genus. Verified live 2026-11-10 against wbgetentities (labels as returned).
 kind_matches:
   - qid: Q16521
     label: taxon
   - qid: Q55983715
     label: organisms known by a particular common name # the live "raven"
+    common_word: true
 
 # Creative works that share a name with a fighter. When picking the top exact match, an item whose
 # P31 is only these classes (or band classes, see "band: true" below) is passed over if another
@@ -101,13 +108,16 @@ classes:
     label: human
     reason: real_person
     instance_only: true
-  # A band is a group of real people (D-38). Band classes (band: true) count only on the item's own
-  # P31, are demoted like creative works but yield only to a kind item (see kind_matches), and
-  # block only when typed as "the" + the band's label ("the Eagles"), or as the bare label when
-  # its singular is not a kind item ("Beatles" blocks; "Eagles", "eagles" and "a grizzly bear"
-  # do not). Capitals must match the label. Other
-  # organizations, companies, sports teams and brands stay allowed. Subtypes are listed because
-  # only the item's own P31 counts. Verified live 2026-11-10 against wbgetentities.
+  # A band is a group of real people (D-38); band classes must have reason real_person. Band
+  # classes (band: true) count only on the item's own P31, are demoted like creative works but
+  # yield only to a kind item (see kind_matches), and block only when typed as "the" + the band's
+  # label ("the Eagles"), or as the bare label when its singular is not a kind item ("Beatles"
+  # blocks; "Eagles", "eagles" and "a grizzly bear" do not). Capitals must match the label, or
+  # the name must be ALL CAPS ("THE BEATLES"). A band that lost the pick to a common-word kind
+  # item blocks only as its full label with its own "The" ("the Police"; not "the Grizzly Bear").
+  # Sports teams will block like bands (D-59, follow-up issue); other organizations, companies
+  # and brands stay allowed. Subtypes are listed because only the item's own P31 counts.
+  # Verified live 2026-11-10 against wbgetentities.
   - qid: Q215380
     label: musical group
     reason: real_person
