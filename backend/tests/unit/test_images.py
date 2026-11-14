@@ -14,7 +14,7 @@ import pytest
 from pydantic import SecretStr
 
 from app.config import Settings, use_settings
-from app.media import images, png, style
+from app.media import files, images, png, style
 from app.models.battle import BattleRecord
 from app.models.matchup import Matchup
 from app.models.stats import StatSheet
@@ -129,9 +129,9 @@ async def test_a_second_sprite_request_is_served_from_the_cache(tmp_path: Path) 
     first = await images.make_sprite(wolf, provider=fake, media_dir=tmp_path)
     assert [call[0] for call in fake.calls] == ["generate", "edit"]
     assert first.asset_id == f"sprite-gray-wolf-{style.STYLE_VERSION}"
-    assert first.url == f"/media/sprites/gray-wolf-{style.STYLE_VERSION}.png"
+    assert first.url == f"/media/mock/sprites/gray-wolf-{style.STYLE_VERSION}.png"  # mock mode
     assert first.kind == "sprite" and not first.fallback and len(first.prompt_hash) == 64
-    cached = tmp_path / "sprites" / f"gray-wolf-{style.STYLE_VERSION}.png"
+    cached = tmp_path / "mock" / "sprites" / f"gray-wolf-{style.STYLE_VERSION}.png"
     assert png.corners_transparent(png.decode(cached.read_bytes()))
 
     second = await images.make_sprite(wolf, provider=fake, media_dir=tmp_path)
@@ -149,7 +149,7 @@ async def test_the_cache_key_includes_the_style_version(
     assert len(fake.calls) == 4  # drawn again in the new style
     assert new.asset_id == "sprite-gray-wolf-v999" and new.url.endswith("gray-wolf-v999.png")
     assert new.prompt_hash != old.prompt_hash
-    assert (tmp_path / "sprites" / "gray-wolf-v999.png").is_file()
+    assert (tmp_path / "mock" / "sprites" / "gray-wolf-v999.png").is_file()
 
 
 async def test_force_redraws_a_cached_sprite(tmp_path: Path) -> None:
@@ -169,7 +169,7 @@ async def test_battlefields_are_cached_per_terrain(tmp_path: Path) -> None:
     assert all(size == style.BATTLEFIELD_SIZE for _, _, size in fake.calls)
     assert forest.asset_id == f"battlefield-forest-{style.STYLE_VERSION}"
     assert forest.kind == "battlefield"
-    assert (tmp_path / "battlefields" / f"forest-{style.STYLE_VERSION}.png").is_file()
+    assert (tmp_path / "mock" / "battlefields" / f"forest-{style.STYLE_VERSION}.png").is_file()
 
 
 # --- fallbacks ------------------------------------------------------------------------------
@@ -180,7 +180,7 @@ async def test_a_failing_provider_gives_a_placeholder_and_caches_nothing(tmp_pat
     asset = await images.make_sprite(wolf, provider=FakeImages(fail=True), media_dir=tmp_path)
     assert asset.fallback and asset.url == ""
     assert asset.asset_id == f"sprite-gray-wolf-{style.STYLE_VERSION}"
-    assert not (tmp_path / "sprites").exists() or not any((tmp_path / "sprites").iterdir())
+    assert not list(tmp_path.rglob("*.png"))
     working = FakeImages()
     redo = await images.make_sprite(wolf, provider=working, media_dir=tmp_path)
     assert not redo.fallback and len(working.calls) == 2  # the failure was not cached
@@ -211,7 +211,7 @@ def test_a_failed_write_leaves_no_temp_file_and_no_picture(
     monkeypatch.setattr(Path, "write_bytes", write_then_fail)
     file = tmp_path / "sprites" / "gray-wolf-v1.png"
     with pytest.raises(OSError, match="disk full"):
-        images._save(file, b"picture")
+        files.save(file, b"picture")
     assert not list(tmp_path.rglob("*.tmp"))
     assert not file.exists()
 
@@ -309,7 +309,8 @@ async def test_the_images_stage_uses_the_real_module_in_mock_mode(tmp_path: Path
         f"sprite-gray-wolf-{style.STYLE_VERSION}",
         f"battlefield-arena-{style.STYLE_VERSION}",
     ]
-    assert (tmp_path / "media" / "sprites" / f"grizzly-bear-{style.STYLE_VERSION}.png").is_file()
+    mock_sprites = tmp_path / "media" / "mock" / "sprites"
+    assert (mock_sprites / f"grizzly-bear-{style.STYLE_VERSION}.png").is_file()
 
 
 # --- the live adapter and the style lock ----------------------------------------------------

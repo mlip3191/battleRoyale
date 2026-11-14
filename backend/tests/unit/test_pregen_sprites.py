@@ -22,7 +22,7 @@ async def test_pregen_draws_and_passes_every_seed_fighter_and_terrain_in_mock_mo
     assert len(sprites) == SEED_COUNT
     assert [r.item_id for r in rows if r.kind == "battlefield"] == [t.value for t in Terrain]
     assert all(r.problem is None for r in rows), pregen.report(rows)
-    assert (tmp_path / "sprites" / f"pickup-truck-{style.STYLE_VERSION}.png").is_file()
+    assert (tmp_path / "mock" / "sprites" / f"pickup-truck-{style.STYLE_VERSION}.png").is_file()
 
     # Everything is cached now: a second run makes no provider call.
     fake = FakeImages()
@@ -54,7 +54,7 @@ def test_main_lists_failures_and_exits_1(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     # A cached, opaque wolf sprite: the run reuses it and the check must catch it.
-    bad = tmp_path / "sprites" / f"gray-wolf-{style.STYLE_VERSION}.png"
+    bad = tmp_path / "mock" / "sprites" / f"gray-wolf-{style.STYLE_VERSION}.png"
     bad.parent.mkdir(parents=True)
     bad.write_bytes(png.encode(png.Image(np.full((8, 8, 4), 255, dtype=np.uint8))))
     assert pregen.main([], media_dir=tmp_path) == 1
