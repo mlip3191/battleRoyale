@@ -153,10 +153,12 @@ A loadout is one choice per fighter that leans a way and costs something elsewhe
 
 | Loadout | Attack force | Attack rate | Top speed | Armor |
 |---|---|---|---|---|
-| Attack | x1.5 | x0.8 | x0.95 | +0 |
-| Defense | x1.0 | x0.9 | x0.9 | +0.2 |
-| Speed | x0.9 | x1.0 | x1.25 | -0.1 |
-| Balanced | x1.15 | x1.0 | x0.97 | +0.08 |
+| Attack | x1.5 | x0.8 | x0.95 | x1.0 |
+| Defense | x1.0 | x0.9 | x0.9 | x1.5 |
+| Speed | x0.9 | x1.0 | x1.25 | x0.8 |
+| Balanced | x1.15 | x1.0 | x0.97 | x1.2 |
+
+All four are multipliers on the fighter's own stat (armor from a floor of 0.05), so starting stats matter: a cheetah's speed loadout adds far more speed than a wolf's, and a rhino's armor loadout far more armor than a rabbit's. A fighter's **primary attribute** is what it is best at (attack force times rate against 1,500 N per second, armor against 0.4, speed against 20 m/s, `PRIMARY_REFERENCE`, an assumption), if it leads the next by 20%; otherwise it is a generalist and the balanced loadout is its match. The matching loadout's gains (not its costs) grow by 30% (`PRIMARY_SYNERGY`), so enhancing a primary attribute pays extra.
 
 - **Number rule:** a changed sourced stat becomes `derived` (the note gives the base value, the multiplier and says the multiplier is an assumption); a changed estimate stays the estimate it was; armor becomes an `assumption`, kept within 0 to 1. The sheet hash changes with the loadout, so a cache key built from the sheet changes too. Names shown to users read "Gray wolf with an attack loadout"; image prompts never see it.
 - **No free upgrade:** every loadout lowers at least one stat, and no loadout is at least as good as another in all four, at every tier (a test checks it).

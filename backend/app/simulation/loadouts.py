@@ -1,8 +1,13 @@
-"""Loadouts: one choice per fighter that leans a direction and costs something elsewhere (#283).
+"""Loadouts: choices that lean a direction and cost something elsewhere (#283).
 
-A loadout is plain data (see `LOADOUTS` in constants.py). `apply_loadout` returns a copy of a stat
+A loadout is plain data (see `LOADOUTS` in constants.py). `apply_kit` returns a copy of a stat
 sheet with its attack force, attack rate, top speed and armor changed by code, before the engine
 runs; the engine itself knows nothing about loadouts, so results stay a pure function of the sheets.
+
+Every change is a multiplier on the fighter's OWN stat, so starting stats matter: a cheetah's speed
+loadout adds far more speed than a wolf's, and a rhino's armor loadout far more armor than a
+rabbit's. A fighter also has a **primary attribute** (what it is best at, on a fixed scale); a
+loadout that enhances it gets an extra bonus on its gains.
 
 The number rule: the multipliers are assumptions, not sourced facts, and every changed stat says
 so. Attack force, attack rate and speed become `derived` (computed by code from the sheet's own
@@ -32,7 +37,7 @@ class Loadout:
     force_mul: float
     rate_mul: float
     speed_mul: float
-    armor_add: float
+    armor_mul: float
 
 
 def loadout(loadout_id: str) -> Loadout:
@@ -47,7 +52,7 @@ def loadout(loadout_id: str) -> Loadout:
         force_mul=float(data["force_mul"]),
         rate_mul=float(data["rate_mul"]),
         speed_mul=float(data["speed_mul"]),
-        armor_add=float(data["armor_add"]),
+        armor_mul=float(data["armor_mul"]),
     )
 
 
@@ -78,19 +83,25 @@ def _scaled(stat: StatValue, factor: float, why: str) -> StatValue:
     return StatValue.model_validate(data)
 
 
-def _armor_with(stat: StatValue, add: float, why: str) -> StatValue:
-    """An armor value moved by `add` and kept within 0 to 1, labeled an assumption."""
-    clip = lambda x: min(max(x, 0.0), 1.0)  # noqa: E731
+def _armor_scaled(stat: StatValue, factor: float, why: str) -> StatValue:
+    """An armor value multiplied by `factor`, kept within 0 to 1, labeled an assumption.
+
+    Armor is multiplied from at least `ARMOR_FLOOR`, so a fighter with almost none can still gain.
+    """
+
+    def grow(x: float) -> float:
+        return min(max(max(x, c.ARMOR_FLOOR) * factor, 0.0), 1.0)
+
     data = stat.model_dump()
-    data["value"] = clip(stat.value + add)
-    data["low"] = None if stat.low is None else clip(stat.low + add)
-    data["high"] = None if stat.high is None else clip(stat.high + add)
+    data["value"] = grow(stat.value)
+    data["low"] = None if stat.low is None else min(grow(stat.low), data["value"])
+    data["high"] = None if stat.high is None else max(grow(stat.high), data["value"])
     data.update(
         method="assumption",
         is_estimate=True,
         source=None,
         confidence="low",
-        note=f"{why}: base {stat.value:g} plus {add:g}, an assumption, not a sourced figure",
+        note=f"{why}: base {stat.value:g} times {factor:g}, an assumption, not a sourced figure",
     )
     return StatValue.model_validate(data)
 
@@ -111,7 +122,7 @@ def at_tier(chosen: Loadout, tier: int) -> Loadout:
         force_mul=1.0 + (chosen.force_mul - 1.0) * scale,
         rate_mul=1.0 + (chosen.rate_mul - 1.0) * scale,
         speed_mul=1.0 + (chosen.speed_mul - 1.0) * scale,
-        armor_add=chosen.armor_add * scale,
+        armor_mul=1.0 + (chosen.armor_mul - 1.0) * scale,
     )
 
 
@@ -135,6 +146,31 @@ def archetype_of(sheet: StatSheet) -> str:
         if sheet.category in data["covers"]:
             return name
     return DEFAULT_ARCHETYPE
+
+
+def primary_scores(sheet: StatSheet) -> dict[str, float]:
+    """How strong the fighter is in each attribute, as a ratio to the reference scale."""
+    force = sheet.stats[StatName.ATTACK_FORCE].value * sheet.stats[StatName.ATTACK_RATE].value
+    raw = {
+        "attack": force,
+        "defense": sheet.stats[StatName.ARMOR].value,
+        "speed": sheet.stats[StatName.SPEED].value,
+    }
+    return {lean: raw[lean] / c.PRIMARY_REFERENCE[lean] for lean in raw}
+
+
+def primary_of(sheet: StatSheet) -> str:
+    """The loadout a fighter's strength points to: what it is best at, or "balanced".
+
+    The best of attack, defense and speed (each against its reference scale) is the primary
+    attribute if it leads the next by `PRIMARY_CLEAR_MARGIN`; a fighter with no clear strength is
+    a generalist, and the balanced loadout is its match. A cheetah's is speed, a rhino's defense.
+    """
+    ranked = sorted(primary_scores(sheet).items(), key=lambda item: item[1], reverse=True)
+    (best, top), (_, second) = ranked[0], ranked[1]
+    if top > 0 and top >= second * c.PRIMARY_CLEAR_MARGIN:
+        return best
+    return "balanced"
 
 
 def item_name(archetype: str, lean: str, tier: int) -> str:
@@ -187,30 +223,52 @@ def available_choices(kit: Kit) -> list[str]:
     return [lean for lean in c.LOADOUTS if kit.get(lean, 0) < MAX_TIER]
 
 
-def kit_effect(kit: Kit, archetype: str = DEFAULT_ARCHETYPE) -> Loadout:
+def _with_synergy(one: Loadout) -> Loadout:
+    """The loadout with its gains (not its costs) grown by `PRIMARY_SYNERGY`."""
+
+    def grow(multiplier: float) -> float:
+        return (
+            1.0 + (multiplier - 1.0) * (1.0 + c.PRIMARY_SYNERGY) if multiplier > 1.0 else multiplier
+        )
+
+    return Loadout(
+        one.id,
+        one.lean,
+        one.label,
+        grow(one.force_mul),
+        grow(one.rate_mul),
+        grow(one.speed_mul),
+        grow(one.armor_mul),
+    )
+
+
+def kit_effect(kit: Kit, archetype: str = DEFAULT_ARCHETYPE, primary: str | None = None) -> Loadout:
     """The combined effect of a kit, including the negative traits of carrying a lot.
 
-    Each loadout at its tier multiplies force, rate and speed and adds armor; then:
+    Each loadout at its tier multiplies force, rate, speed and armor, and the loadout that matches
+    the fighter's `primary` attribute has its gains grown by `PRIMARY_SYNERGY`; then:
     - **encumbrance:** load above the archetype's free load slows the fighter and its swing (so
       too much defense, or too much of anything heavy, reduces speed);
-    - **reckless:** attack above tier 3 lowers armor;
+    - **reckless:** attack above tier 3 cuts armor;
     - **fragile:** speed above tier 3 lowers attack force.
     """
     _check_kit(kit)
-    force = rate = speed = 1.0
-    armor = 0.0
+    force = rate = speed = armor = 1.0
     for lean, tier in kit.items():
         one = at_tier(loadout(lean), tier)
+        if lean == primary:
+            one = _with_synergy(one)
         force, rate, speed, armor = (
             force * one.force_mul,
             rate * one.rate_mul,
             speed * one.speed_mul,
-            armor + one.armor_add,
+            armor * one.armor_mul,
         )
     over = max(0.0, kit_load(kit, archetype) - c.LOADOUT_ARCHETYPES[archetype]["free"])
     speed *= max(c.ENCUMBRANCE_SPEED_FLOOR, 1.0 - c.ENCUMBRANCE_SPEED_PER_LOAD * over)
     rate *= max(c.ENCUMBRANCE_RATE_FLOOR, 1.0 - c.ENCUMBRANCE_RATE_PER_LOAD * over)
-    armor -= c.RECKLESS_ARMOR_PER_TIER * max(0, kit.get("attack", 0) - 3)
+    reckless = max(0, kit.get("attack", 0) - 3)
+    armor *= max(0.5, 1.0 - c.RECKLESS_ARMOR_SHARE_PER_TIER * reckless)
     fragile = max(0, kit.get("speed", 0) - 3)
     force *= max(c.FRAGILE_FORCE_FLOOR, 1.0 - c.FRAGILE_FORCE_PER_TIER * fragile)
     if len(kit) == 1:
@@ -228,20 +286,23 @@ def apply_kit(sheet: StatSheet, kit: Kit) -> StatSheet:
     """A copy of `sheet` with the kit's combined changes applied and every changed stat labeled.
 
     Only attack force, attack rate, top speed and armor change; mass, size, reach, endurance and
-    the behavioral stats keep the sheet's own values. Inert objects have no use for a loadout and
-    are returned unchanged, and so is a sheet with an empty kit.
+    the behavioral stats keep the sheet's own values. The changes are multipliers on the sheet's own
+    values, and a loadout matching the fighter's primary attribute gets the synergy bonus. Inert
+    objects have no use for a loadout and are returned unchanged, and so is a sheet with an empty
+    kit.
     """
     if sheet.body == "inert" or not kit:
         return sheet
     archetype = archetype_of(sheet)
-    chosen = kit_effect(kit, archetype)
-    why = chosen.label
+    primary = primary_of(sheet)
+    chosen = kit_effect(kit, archetype, primary)
+    why = chosen.label + (f" (primary attribute: {primary})" if primary in kit else "")
     items = [item_name(archetype, lean, kit[lean]) for lean in c.LOADOUTS if lean in kit]
     stats = dict(sheet.stats)
     stats[StatName.ATTACK_FORCE] = _scaled(stats[StatName.ATTACK_FORCE], chosen.force_mul, why)
     stats[StatName.ATTACK_RATE] = _scaled(stats[StatName.ATTACK_RATE], chosen.rate_mul, why)
     stats[StatName.SPEED] = _scaled(stats[StatName.SPEED], chosen.speed_mul, why)
-    stats[StatName.ARMOR] = _armor_with(stats[StatName.ARMOR], chosen.armor_add, why)
+    stats[StatName.ARMOR] = _armor_scaled(stats[StatName.ARMOR], chosen.armor_mul, why)
     data = sheet.model_dump()
     data["stats"] = {name: stat.model_dump() for name, stat in stats.items()}
     data["display_name"] = f"{sheet.display_name} with {' and '.join(items)}"

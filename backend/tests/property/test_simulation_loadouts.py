@@ -25,6 +25,8 @@ from app.simulation.loadouts import (
     kit_load,
     kit_points,
     loadout,
+    primary_of,
+    primary_scores,
 )
 from tests.property.sim_helpers import make_sheet, matchup_of
 
@@ -139,7 +141,7 @@ def test_the_choice_changes_the_fight_in_the_expected_direction():
 def test_the_numbers_are_assumptions_listed_in_the_constants_file():
     assert set(c.LOADOUTS) == {"attack", "defense", "speed", "balanced"}
     for data in c.LOADOUTS.values():
-        assert set(data) == {"label", "force_mul", "rate_mul", "speed_mul", "armor_add"}
+        assert set(data) == {"label", "force_mul", "rate_mul", "speed_mul", "armor_mul"}
 
 
 # --- tiers: a tier-up deepens the trade-off (#283 prework) ---------------------------------------
@@ -149,7 +151,7 @@ TIERS = (1, 2, 3, 4, 5)
 
 
 def stats_of(item):
-    return (item.force_mul, item.rate_mul, item.speed_mul, 1.0 + item.armor_add)
+    return (item.force_mul, item.rate_mul, item.speed_mul, item.armor_mul)
 
 
 def test_a_higher_tier_is_a_bigger_commitment_not_a_strictly_better_set():
@@ -367,8 +369,9 @@ def test_stacking_two_heavy_loadouts_is_slower_than_either_alone():
 
 
 def test_attack_above_tier_three_is_reckless_and_speed_above_tier_three_is_fragile():
-    assert kit_effect({"attack": 3}).armor_add == pytest.approx(0.0)
-    assert kit_effect({"attack": 5}).armor_add == pytest.approx(-2 * c.RECKLESS_ARMOR_PER_TIER)
+    assert kit_effect({"attack": 3}).armor_mul == pytest.approx(1.0)
+    shrink = 1.0 - 2 * c.RECKLESS_ARMOR_SHARE_PER_TIER
+    assert kit_effect({"attack": 5}).armor_mul == pytest.approx(shrink)
     plain = at_tier(loadout("speed"), 5).force_mul
     assert kit_effect({"speed": 5}).force_mul < plain
     three = at_tier(loadout("speed"), 3).force_mul
@@ -403,3 +406,103 @@ def test_a_champion_can_reach_four_points_and_a_kit_can_use_all_of_them():
         kit = add_or_upgrade(kit, lean)
     assert kit_points(kit) == points
     apply_kit(seed("gray-wolf"), kit)  # a full kit makes a valid sheet
+
+
+# --- starting stats matter, and enhancing a primary attribute pays extra -----------------------
+
+
+def specialist(name, **stats):
+    base = dict(
+        top_speed_mps=12,
+        attack_force_n=500,
+        attacks_per_s=1.0,
+        armor_0_1=0.1,
+        mass_kg=100,
+        size_m=1.5,
+    )
+    return make_sheet(name, **{**base, **stats})
+
+
+CHEETAH = specialist("cheetah", top_speed_mps=29, armor_0_1=0.05)
+RHINO = specialist("rhino", mass_kg=2000, top_speed_mps=14, attack_force_n=1200, armor_0_1=0.6)
+RABBIT = specialist("rabbit", top_speed_mps=18, attack_force_n=40, armor_0_1=0.05)
+
+
+def test_the_primary_attribute_is_what_the_fighter_is_best_at():
+    assert primary_of(CHEETAH) == "speed"
+    assert primary_of(RHINO) == "defense"
+    assert primary_of(seed("horse")) == "attack"  # its kick
+    assert primary_of(seed("roman-legionary")) == "defense"
+    assert primary_of(seed("grizzly-bear")) == "balanced"  # no clear strength: a generalist
+    scores = primary_scores(CHEETAH)
+    assert scores["speed"] > scores["attack"] > scores["defense"]
+
+
+def test_a_loadout_scales_the_fighters_own_stats_so_strong_starts_gain_more():
+    # The same speed loadout adds far more speed to a cheetah than to a rabbit...
+    fast = {"speed": 1}
+    cheetah_gain = value(apply_kit(CHEETAH, fast), StatName.SPEED) - value(CHEETAH, StatName.SPEED)
+    rabbit_gain = value(apply_kit(RABBIT, fast), StatName.SPEED) - value(RABBIT, StatName.SPEED)
+    assert cheetah_gain > rabbit_gain > 0
+    # ...and the same defense loadout adds far more armor to a rhino than to a cheetah.
+    armored = {"defense": 1}
+    rhino_gain = value(apply_kit(RHINO, armored), StatName.ARMOR) - value(RHINO, StatName.ARMOR)
+    cheetah_armor = value(apply_kit(CHEETAH, armored), StatName.ARMOR) - value(
+        CHEETAH, StatName.ARMOR
+    )
+    assert rhino_gain > cheetah_armor > 0
+
+
+def test_enhancing_the_primary_attribute_gets_even_better():
+    """A cheetah's speed loadout beats a speed loadout on a fighter whose strength lies elsewhere
+    (compared by the multiplier, which is the same base for both)."""
+    boosted = kit_effect({"speed": 3}, "mammal", primary="speed")
+    plain = kit_effect({"speed": 3}, "mammal", primary="attack")
+    gain = c.PRIMARY_SYNERGY
+    assert boosted.speed_mul == pytest.approx(1.0 + (plain.speed_mul - 1.0) * (1.0 + gain))
+    # Only the gains are boosted; the costs (force and armor here) are the same.
+    assert boosted.force_mul == pytest.approx(plain.force_mul)
+    assert boosted.armor_mul == pytest.approx(plain.armor_mul)
+    # On real sheets: the cheetah gets the speed bonus, a rabbit's primary is also speed, and a
+    # rhino (primary defense) gets none from a speed loadout.
+    cheetah_x = value(apply_kit(CHEETAH, {"speed": 3}), StatName.SPEED) / value(
+        CHEETAH, StatName.SPEED
+    )
+    rhino_x = value(apply_kit(RHINO, {"speed": 3}), StatName.SPEED) / value(RHINO, StatName.SPEED)
+    assert cheetah_x > rhino_x
+
+
+def test_the_rhinos_armor_loadout_gets_the_bonus_and_the_cheetahs_does_not():
+    assert primary_of(RHINO) == "defense" and primary_of(CHEETAH) == "speed"
+    kit = {"defense": 3}
+    rhino = kit_effect(kit, "mammal", primary_of(RHINO))
+    cheetah = kit_effect(kit, "mammal", primary_of(CHEETAH))
+    assert (
+        rhino.armor_mul > cheetah.armor_mul
+    )  # the same loadout, a bigger multiplier for the rhino
+    # And the rhino starts with far more armor to multiply (capped at 1.0).
+    assert value(apply_kit(RHINO, kit), StatName.ARMOR) > value(
+        apply_kit(CHEETAH, kit), StatName.ARMOR
+    )
+
+
+def test_the_note_says_when_the_primary_attribute_was_enhanced():
+    sheet = apply_kit(CHEETAH, {"speed": 2})
+    assert "primary attribute: speed" in (sheet.stats[StatName.SPEED].note or "")
+    other = apply_kit(CHEETAH, {"defense": 2})
+    assert "primary attribute" not in (other.stats[StatName.SPEED].note or "")
+
+
+def test_a_fighter_with_no_armor_can_still_gain_some():
+    bare = specialist("bare", armor_0_1=0.0)
+    assert value(apply_kit(bare, {"defense": 1}), StatName.ARMOR) > 0.0
+
+
+def test_the_synergy_never_makes_a_loadout_free_for_any_fighter():
+    """With the bonus the matching loadout is stronger, but it still costs something."""
+    for archetype in c.LOADOUT_ARCHETYPES:
+        for primary in ("attack", "defense", "speed", "balanced"):
+            for item in all_loadouts():
+                for tier in TIERS:
+                    effect = stats_of(kit_effect({item.id: tier}, archetype, primary))
+                    assert any(x < 1.0 for x in effect), (archetype, primary, item.id, tier)

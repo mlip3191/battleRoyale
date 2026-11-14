@@ -144,30 +144,43 @@ VENOM_RESISTANCE: dict[str, float] = {
 # Loadouts (#283, a proposal pending the PM's decision): each is one choice that leans one way and
 # costs something elsewhere, so none is best everywhere. Every number here is an ASSUMPTION, not a
 # sourced figure; each loadout changes only attack force, attack rate, top speed and armor, and is
-# applied to a sheet by code (simulation/loadouts.py), never by the engine. "armor_add" adds to the
-# 0-1 armor value (kept within 0 to 1); the others multiply the sheet's value.
+# applied to a sheet by code (simulation/loadouts.py), never by the engine. All four are
+# multipliers on the sheet's OWN value, so a fighter's starting stats matter: a cheetah's speed
+# loadout adds far more speed than a wolf's, and a rhino's armor loadout adds far more armor than a
+# rabbit's. (Armor is multiplied too, from a small floor so a fighter with none can still gain.)
 LOADOUTS: dict[str, dict[str, float | str]] = {
     "attack": {
         "label": "an attack loadout",
-        "force_mul": 1.5, "rate_mul": 0.8, "speed_mul": 0.95, "armor_add": 0.0,
+        "force_mul": 1.5, "rate_mul": 0.8, "speed_mul": 0.95, "armor_mul": 1.0,
     },  # a heavier weapon hits harder and slower, and weighs the fighter down a little
     "defense": {
         "label": "a defense loadout",
-        "force_mul": 1.0, "rate_mul": 0.9, "speed_mul": 0.9, "armor_add": 0.2,
+        "force_mul": 1.0, "rate_mul": 0.9, "speed_mul": 0.9, "armor_mul": 1.5,
     },  # armor or a shield blocks more, at the cost of speed and a slower swing
     "speed": {
         "label": "a speed loadout",
-        "force_mul": 0.9, "rate_mul": 1.0, "speed_mul": 1.25, "armor_add": -0.1,
+        "force_mul": 0.9, "rate_mul": 1.0, "speed_mul": 1.25, "armor_mul": 0.8,
     },  # light gear moves faster but protects less and hits a little softer
     "balanced": {
         "label": "a balanced loadout",
-        "force_mul": 1.15, "rate_mul": 1.0, "speed_mul": 0.97, "armor_add": 0.08,
+        "force_mul": 1.15, "rate_mul": 1.0, "speed_mul": 0.97, "armor_mul": 1.2,
     },  # small gains in force and armor for a small loss of speed
 }  # fmt: skip
+# The lowest armor a fighter is treated as having when a loadout multiplies it.
+ARMOR_FLOOR = 0.05
+# A fighter's primary attribute: what it is best at, by a fixed reference scale (assumptions, from
+# typical strong values): attack = attack force times attack rate (N per s), defense = armor (0 to
+# 1), speed = top speed (m/s). The primary attribute is the one with the highest ratio, if it
+# leads the next by this margin; otherwise the fighter is a generalist ("balanced").
+PRIMARY_REFERENCE: dict[str, float] = {"attack": 1500.0, "defense": 0.4, "speed": 20.0}
+PRIMARY_CLEAR_MARGIN = 1.2
+# Enhancing the primary attribute pays extra: the gains of the matching loadout (not its costs)
+# grow by this share, so "a rhino's armor gets even better, a cheetah's speed gets even better".
+PRIMARY_SYNERGY = 0.3
 
 # Loadout tiers (#283): a tier-up deepens a loadout's trade-off instead of just adding strength.
-# Tier 1 is the table above; tier t scales every change (the multipliers' distance from 1, and the
-# armor addition) by this factor, so the gains grow and so do the costs (ASSUMPTION).
+# Tier 1 is the table above; tier t scales every change (each multiplier's distance from 1) by this
+# factor, so the gains grow and so do the costs (ASSUMPTION).
 LOADOUT_TIER_SCALE: dict[int, float] = {1: 1.0, 2: 1.4, 3: 1.8, 4: 2.2, 5: 2.6}
 
 # A fighter can carry several loadouts at once (a "kit": each loadout at its own tier). Each round
@@ -212,8 +225,8 @@ ENCUMBRANCE_SPEED_PER_LOAD = 0.06
 ENCUMBRANCE_RATE_PER_LOAD = 0.03
 ENCUMBRANCE_SPEED_FLOOR = 0.5
 ENCUMBRANCE_RATE_FLOOR = 0.6
-# Reckless: each attack tier above 3 lowers armor by this much (a fighter who only hits).
-RECKLESS_ARMOR_PER_TIER = 0.05
+# Reckless: each attack tier above 3 cuts armor by this share (a fighter who only hits).
+RECKLESS_ARMOR_SHARE_PER_TIER = 0.1
 # Fragile: each speed tier above 3 cuts attack force by this share (gear too light to hit hard).
 FRAGILE_FORCE_PER_TIER = 0.04
 FRAGILE_FORCE_FLOOR = 0.5
