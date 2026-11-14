@@ -242,11 +242,29 @@ def _with_synergy(one: Loadout) -> Loadout:
     )
 
 
+def _focused(one: Loadout, share: float) -> Loadout:
+    """The loadout with its gains (not its costs) scaled by `share` (1.0 = unchanged)."""
+
+    def scale(multiplier: float) -> float:
+        return 1.0 + (multiplier - 1.0) * share if multiplier > 1.0 else multiplier
+
+    return Loadout(
+        one.id,
+        one.lean,
+        one.label,
+        scale(one.force_mul),
+        scale(one.rate_mul),
+        scale(one.speed_mul),
+        scale(one.armor_mul),
+    )
+
+
 def kit_effect(kit: Kit, archetype: str = DEFAULT_ARCHETYPE, primary: str | None = None) -> Loadout:
     """The combined effect of a kit, including the negative traits of carrying a lot.
 
-    Each loadout at its tier multiplies force, rate, speed and armor, and the loadout that matches
-    the fighter's `primary` attribute has its gains grown by `PRIMARY_SYNERGY`; then:
+    Each loadout at its tier multiplies force, rate, speed and armor; the loadout that matches the
+    fighter's `primary` attribute has its gains grown by `PRIMARY_SYNERGY`, and every loadout
+    beyond the first shrinks all the gains by `SPLIT_FOCUS_PENALTY` (split focus); then:
     - **encumbrance:** load above the archetype's free load slows the fighter and its swing (so
       too much defense, or too much of anything heavy, reduces speed);
     - **reckless:** attack above tier 3 cuts armor;
@@ -254,10 +272,12 @@ def kit_effect(kit: Kit, archetype: str = DEFAULT_ARCHETYPE, primary: str | None
     """
     _check_kit(kit)
     force = rate = speed = armor = 1.0
+    focus = max(c.SPLIT_FOCUS_FLOOR, 1.0 - c.SPLIT_FOCUS_PENALTY * (len(kit) - 1))
     for lean, tier in kit.items():
         one = at_tier(loadout(lean), tier)
         if lean == primary:
             one = _with_synergy(one)
+        one = _focused(one, focus)
         force, rate, speed, armor = (
             force * one.force_mul,
             rate * one.rate_mul,

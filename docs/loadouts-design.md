@@ -118,13 +118,13 @@ Resulting multipliers for one loadout alone at each tier, for a warrior (force /
 | Attack | 1.5 / 0.80 / 0.95 / 1.0 | 1.7 / 0.72 / 0.93 / 1.0 | 1.9 / 0.62 / 0.86 / 1.0 | 2.1 / 0.53 / 0.78 / 0.9 | 2.3 / 0.44 / 0.71 / 0.8 |
 | Defense | 1.0 / 0.90 / 0.90 / 1.5 | 1.0 / 0.83 / 0.81 / 1.7 | 1.0 / 0.76 / 0.70 / 1.9 | 1.0 / 0.69 / 0.59 / 2.1 | 1.0 / 0.62 / 0.50 / 2.3 |
 | Speed | 0.90 / 1.0 / 1.25 / 0.8 | 0.86 / 1.0 / 1.35 / 0.72 | 0.82 / 1.0 / 1.45 / 0.64 | 0.75 / 1.0 / 1.55 / 0.56 | 0.68 / 1.0 / 1.65 / 0.48 |
-| Balanced | 1.15 / 1.0 / 0.97 / 1.2 | 1.21 / 1.0 / 0.96 / 1.28 | 1.27 / 0.99 / 0.92 / 1.36 | 1.33 / 0.96 / 0.87 / 1.44 | 1.39 / 0.94 / 0.81 / 1.52 |
+| Balanced | 1.08 / 1.0 / 0.96 / 1.10 | 1.11 / 1.0 / 0.94 / 1.14 | 1.14 / 0.99 / 0.91 / 1.18 | 1.18 / 0.96 / 0.85 / 1.22 | 1.21 / 0.94 / 0.79 / 1.26 |
 
 ### Starting stats matter, and a fighter's primary attribute pays extra
 
 Every change is a **multiplier on the fighter's own stat**, never a flat number, so the starting stats decide how much a loadout is worth. The same tier-3 speed loadout takes a cheetah from 29 to 46 m/s (+17) but a gray wolf only from 17.8 to 28.2 (+10); the same tier-3 defense loadout takes a rhino's armor from 0.60 to 1.0 but a wolf's from 0.15 to 0.28. (Armor is multiplied from a floor of 0.05, so a fighter with none can still gain a little.)
 
-On top of that each fighter has a **primary attribute**: what it is best at, measured on a fixed scale (attack = force times rate against 1,500 N per second, defense = armor against 0.4, speed against 20 m/s; `PRIMARY_REFERENCE`). The best one counts if it leads the next by 20%; otherwise the fighter is a generalist and the *balanced* loadout is its match. **Enhancing the primary attribute pays extra:** the matching loadout's gains (not its costs) grow by 30% (`PRIMARY_SYNERGY`), so a cheetah's speed loadout and a rhino's armor loadout get even better, while the same loadout on a fighter whose strength lies elsewhere does not.
+On top of that each fighter has a **primary attribute**: what it is best at, measured on a fixed scale (attack = force times rate against 1,500 N per second, defense = armor against 0.4, speed against 20 m/s; `PRIMARY_REFERENCE`). The best one counts if it leads the next by 20%; otherwise the fighter is a generalist and the *balanced* loadout is its match. **Enhancing the primary attribute pays extra:** the matching loadout's gains (not its costs) grow by 60% (`PRIMARY_SYNERGY`), so a cheetah's speed loadout and a rhino's armor loadout get even better, while the same loadout on a fighter whose strength lies elsewhere does not.
 
 | Fighter | Attack | Defense | Speed | Primary |
 |---|---|---|---|---|
@@ -136,6 +136,8 @@ On top of that each fighter has a **primary attribute**: what it is best at, mea
 | Roman legionary | 0.10 | 1.50 | 0.40 | defense |
 | Honey badger | 0.19 | 0.75 | 0.60 | defense |
 | Grizzly bear | 0.75 | 0.75 | 0.67 | generalist (balanced) |
+
+**Split focus:** every loadout a fighter carries beyond the first shrinks the gains of all of them by 20% (floored at 40% of the gain; `SPLIT_FOCUS_PENALTY`), while the costs stay. Spreading points thin is no longer free.
 
 (Scores are each stat against the reference scale, so a score above 1 means well above it. The reference scale is an assumption, like every number here; the machine and crocodile scores are dominated by their huge ram and bite forces.) The note on a changed stat says "primary attribute: speed" when the bonus applied, so the sheet stays honest.
 
@@ -151,19 +153,31 @@ It moves close fights, and the kind of fighter changes what works. Win share of 
 
 | Fight | none | attack 3 | defense 1 | defense 5 | speed 4 | balanced 3 | mixed |
 |---|---|---|---|---|---|---|---|
-| Roman legionary (primary defense) v gray wolf | 9% | 14% | 12% | **6%** | 4% | 21% | **27%** |
-| Gray wolf (primary speed) v Roman legionary | 88% | 96% | 91% | **78%** | 86% | 94% | 97% |
-| Honey badger (primary defense) v house cat | 91% | 92% | 94% | 89% | 88% | 96% | 97% |
-| Horse (primary attack) v saltwater crocodile | 1% | 3% | 1% | 0% | 0% | 1% | 3% |
+| Roman legionary (primary defense) v gray wolf | 9% | 14% | 14% | 11% | 3% | 20% | 12% |
+| Gray wolf (primary speed) v Roman legionary | 89% | 93% | 89% | **77%** | 83% | 91% | 89% |
+| Honey badger (primary defense) v house cat | 92% | 91% | 93% | 89% | 89% | 93% | 90% |
+| Horse (primary attack) v saltwater crocodile | 1% | 4% | 0% | 0% | 0% | 1% | 0% |
 | Tank v elephant, house cat v wolf and similar | lopsided, unchanged by any kit | | | | | | |
 
-What stands out:
-- **Heavy gear hurts, and more for a warrior than an animal.** Full plate (defense 5) makes the legionary worse (9% to 6%) and the wolf worse too (88% to 78%) because the multiplier cuts its speed and swing; at tier 1 or 2 the same defense helps both.
-- **A mixed kit is the best result** in every close fight above (27%, 97%, 97%), so each round's choice (add a new loadout or deepen one) is a real decision.
-- **The primary-attribute bonus changes the stats a lot but the win share less:** the wolf's speed 4 takes it from 17.8 to over 30 m/s and the bonus applies, yet its win share barely moves (88% to 86%), because the engine rewards speed only a little (`HIT_SPEED_EXP` 0.3). Attack, which the engine rewards most, gives the biggest swings for a fighter of any primary (the wolf's attack 3 is +8 points). If speed and defense loadouts should matter more, the engine's use of speed (a dodge or initiative effect) or the tier scale has to change; that is an engine decision with a version bump, not a loadout constant.
-- **Lopsided fights stay lopsided:** the sample bracket never changes, and a tank or elephant is untouched by any kit. With today's assumptions a loadout is a nudge for fights that were already close.
+The effects are small, and the balance report (below) is the honest reading. The wolf's defense 5 drops it from 89% to 77%: heavy gear slows it and costs swing. The legionary's primary is defense, so the same tier gives it 11% where the wolf loses ground. A speed-heavy kit is a trap for both (3% and 83%).
 
-If that is too small, the options are bigger tier scales (which also grow the costs), a bigger primary bonus, giving speed and armor more weight in the engine, or seeding the bracket so early rounds are close. These are assumptions, so changing them is a design call.
+### The balance report (`backend/scripts/loadout_balance.py`)
+
+The script runs every seed fighter against every other with every kit that spends the same number of points (a kit with more points would win just for having more), counts only contested pairs (an unequipped win share between 10% and 90%) and reports which kit shape is best. It found three problems in my first version, which is why the constants changed:
+
+| | First version | After rebalancing |
+|---|---|---|
+| At 2 points, most common best kit | "attack 1 + balanced 1", best in 58% of pairs (a **dominant strategy**) | "attack 2", best in 42%; 8 of 10 kits are best somewhere |
+| At 2 points, all points in the fighter's primary attribute is best | 2 of 17 (12%): specializing never paid | 8 of 17 (47%) |
+| At 4 points | a spread kit was best in every pair (19 of 19) | two loadouts best in 74%, all in one in 26%, 8 of 35 kits best somewhere |
+
+What changed: the balanced loadout was nearly free (it appeared in every winning kit), so its gains were cut roughly in half; the primary-attribute bonus went from 30% to 60%; and the split-focus penalty was added so spreading is no longer free. It is still not a solved-proof design: only **19 pairs of the 15 seed fighters are contested** (the rest are lopsided), so the sample is small; attack stays the strongest lean because the engine rewards it most; and at 4 points a two-loadout kit is still the usual best. Rerun the script after any constant change.
+
+### Previews (`backend/app/simulation/loadout_preview.py`)
+
+Before each round the user can see what every choice would do: `preview_choices` runs a short simulation (200 runs, about 0.1 s per choice) for each loadout that can still be added or upgraded and returns them best first, with the item name, the new win share, the change and the noise (a change is only called "clear" if it is bigger than the 95% noise, about 7 points at 200 runs). It uses the opponent's visible kit, so the best choice depends on who is across the ring. For the legionary v the gray wolf it says: short sword and cloak (balanced) +12, wooden shield +9, wooden club +8, leather wraps (speed) -4. Every percentage is a real simulation result for the two sheets as they stand; only the loadout multipliers behind them are assumptions.
+
+What would still make it better, in order: give speed and armor a real effect in the engine (a dodge or initiative effect; an engine change with a version bump and Mike's approval), narrate the loadout in the announcer ("the plate slowed it down"), and source the items so the multipliers become derived from real masses and materials.
 
 ## 5. Open questions for Mike
 

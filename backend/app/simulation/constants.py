@@ -163,7 +163,7 @@ LOADOUTS: dict[str, dict[str, float | str]] = {
     },  # light gear moves faster but protects less and hits a little softer
     "balanced": {
         "label": "a balanced loadout",
-        "force_mul": 1.15, "rate_mul": 1.0, "speed_mul": 0.97, "armor_mul": 1.2,
+        "force_mul": 1.08, "rate_mul": 1.0, "speed_mul": 0.96, "armor_mul": 1.1,
     },  # small gains in force and armor for a small loss of speed
 }  # fmt: skip
 # The lowest armor a fighter is treated as having when a loadout multiplies it.
@@ -176,7 +176,11 @@ PRIMARY_REFERENCE: dict[str, float] = {"attack": 1500.0, "defense": 0.4, "speed"
 PRIMARY_CLEAR_MARGIN = 1.2
 # Enhancing the primary attribute pays extra: the gains of the matching loadout (not its costs)
 # grow by this share, so "a rhino's armor gets even better, a cheetah's speed gets even better".
-PRIMARY_SYNERGY = 0.3
+PRIMARY_SYNERGY = 0.6
+# Split focus: every loadout a fighter carries beyond the first shrinks the gains of all of them
+# by this share (the costs stay), so spreading points thin is not free (ASSUMPTION).
+SPLIT_FOCUS_PENALTY = 0.2
+SPLIT_FOCUS_FLOOR = 0.4
 
 # Loadout tiers (#283): a tier-up deepens a loadout's trade-off instead of just adding strength.
 # Tier 1 is the table above; tier t scales every change (each multiplier's distance from 1) by this

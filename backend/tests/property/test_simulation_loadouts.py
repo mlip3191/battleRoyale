@@ -506,3 +506,17 @@ def test_the_synergy_never_makes_a_loadout_free_for_any_fighter():
                 for tier in TIERS:
                     effect = stats_of(kit_effect({item.id: tier}, archetype, primary))
                     assert any(x < 1.0 for x in effect), (archetype, primary, item.id, tier)
+
+
+def test_split_focus_shrinks_the_gains_of_every_loadout_but_not_the_costs():
+    alone = kit_effect({"attack": 2}, "mammal")
+    split = kit_effect({"attack": 2, "defense": 1}, "mammal")
+    share = 1.0 - c.SPLIT_FOCUS_PENALTY
+    # The attack gain (force) shrinks by the focus share when a second loadout is carried...
+    assert split.force_mul == pytest.approx(1.0 + (alone.force_mul - 1.0) * share)
+    # ...but the attack cost (a slower swing) does not shrink.
+    defense = at_tier(loadout("defense"), 1)
+    assert split.rate_mul == pytest.approx(alone.rate_mul * defense.rate_mul)
+    # The floor keeps a big kit from losing every gain.
+    big = kit_effect({"attack": 1, "defense": 1, "speed": 1, "balanced": 1}, "mammal")
+    assert big.force_mul > 1.0 or big.armor_mul > 1.0
