@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from app.models.terrain import Terrain
+from app.text import IRREGULAR_PLURALS, UNCHANGED
 
 # --- Counts -------------------------------------------------------------------------------
 
@@ -115,30 +116,8 @@ def clamp_count(count: int, entity: str, max_count: int) -> tuple[int, str | Non
 
 # --- Names --------------------------------------------------------------------------------
 
-# Plural -> singular for words the suffix rules below would get wrong.
-IRREGULAR_PLURALS = {
-    "wolves": "wolf", "geese": "goose", "mice": "mouse", "oxen": "ox", "men": "man",
-    "women": "woman", "people": "person", "lice": "louse", "calves": "calf", "elves": "elf",
-    "dwarves": "dwarf", "dwarfs": "dwarf", "hooves": "hoof", "knives": "knife",
-    "leaves": "leaf", "loaves": "loaf", "thieves": "thief", "wives": "wife",
-    "octopi": "octopus", "octopuses": "octopus", "cacti": "cactus", "cactuses": "cactus",
-    "fungi": "fungus", "larvae": "larva", "walruses": "walrus", "platypuses": "platypus",
-    "hippopotamuses": "hippopotamus", "hippopotami": "hippopotamus", "buses": "bus",
-    "rhinoceroses": "rhinoceros", "mantises": "mantis", "ibises": "ibis",
-    "buffaloes": "buffalo", "mosquitoes": "mosquito", "tomatoes": "tomato",
-    "potatoes": "potato", "heroes": "hero", "volcanoes": "volcano", "teeth": "tooth",
-    "feet": "foot", "dice": "die", "emus": "emu", "gnus": "gnu", "dingoes": "dingo",
-    "flamingoes": "flamingo", "torpedoes": "torpedo", "echoes": "echo", "viruses": "virus",
-    "zombies": "zombie", "pixies": "pixie", "genies": "genie", "cookies": "cookie",
-    "collies": "collie", "magpies": "magpie", "budgies": "budgie", "yorkies": "yorkie",
-    "movies": "movie", "brownies": "brownie", "rookies": "rookie", "goalies": "goalie",
-}  # fmt: skip
-# Words that are the same in singular and plural, or that only look plural.
-UNCHANGED = {
-    "moose", "deer", "sheep", "fish", "bison", "salmon", "trout", "shrimp", "squid", "species",
-    "series", "aircraft", "swine", "cattle", "rhinoceros", "mercedes", "news", "chaos",
-    "mantis", "ibis", "chassis", "atlas", "gas", "lens", "canvas", "triceratops", "cyclops",
-}  # fmt: skip
+# IRREGULAR_PLURALS (plural -> singular) and UNCHANGED live in app/text.py, shared with the
+# pluralizer (#271); they are imported at the top of this module.
 # Singular endings that end in "s" and must keep it ("albatross", "walrus", "stegosaurus").
 KEEP_S_ENDINGS = ("ss", "us")
 

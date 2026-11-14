@@ -55,7 +55,8 @@ test("fixtures mode: /battle/thousand-vs-one plays 1,000 ducks vs 1 lion with th
 
 test("fixtures mode: /battle/two-hundred-vs-five plays the log that fills the event cap", async () => {
   vi.stubEnv("VITE_USE_FIXTURES", "true");
-  const log = CROWD_BATTLES.get("two-hundred-vs-five")!.representative_log;
+  const log = (await CROWD_BATTLES.get("two-hundred-vs-five")!())
+    .representative_log;
   expect(log.length).toBeGreaterThan(290);
   expect(log.length).toBeLessThanOrEqual(300); // the engine's MAX_LOG_EVENTS
   expect(log.some((e) => e.text_hint === "more go down")).toBe(true);

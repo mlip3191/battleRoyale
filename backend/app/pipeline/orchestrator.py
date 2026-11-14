@@ -1,9 +1,11 @@
 """The battle orchestrator (A05): runs the stages in ARCHITECTURE §4 order and records progress.
 
 Flow: research (both fighters and any size_reference entities, in parallel) -> simulate ->
-then in parallel: summary + fair fight, challenger, images, and the broadcast (scripts, then
-audio and music in parallel). Images start right after simulate (ARCHITECTURE §4), not
-after the scripts. The verdict is saved before any of those start, so it never
+then in parallel: summary + fair fight, challenger, images, and the broadcast (scripts once the
+summary ends, then audio and music in parallel). Scripts wait for the summary because the fair
+fight is an input to write_scripts (the outro's fair-fight line); they get None if the summary
+fell back. Images and challenger start right after simulate (ARCHITECTURE §4), not after the
+scripts. The verdict is saved before any of those start, so it never
 waits for media. Every stage has a time limit (`stages.STAGE_BUDGETS_S`). Research or
 simulate failing fails the battle; any later stage failing ends "fallback" and the battle
 goes on. The battle is "done" if and only if simulate succeeded, and it never stays "running".
@@ -12,9 +14,8 @@ lends its verdict, plus its fair fight and challenger when it has them; each cop
 "done" with detail "cached", and one it lacks runs fresh.
 
 TODO, remaining A05 pieces (issue #36):
-- when the owning modules land, swap the stubs in stages.py for real calls: research
-  (G04 get_stat_sheet, with the all-estimate fallback sheet and banner), scripts (A06),
-  audio and music (A07). Stub output is not saved to the record today.
+- when the owning module lands, swap research's seed-sheet lookup for G04 get_stat_sheet
+  (with the all-estimate fallback sheet and banner). Stub output is not saved to the record.
 - seed-sheet lookup ignores `variant`; match variants once variant sheets exist.
 """
 
@@ -55,6 +56,8 @@ FALLBACK_DETAILS = {
 # Notes for a stage whose fallback path still produced something worth saving.
 FALLBACK_WITH_VALUE = {
     "challenger": "Next challenger picked by quick tests of seed fighters this time.",
+    "script": "Some of the commentary used the template script this time.",
+    "audio": "Some parts have captions only this time, no announcer voice.",
     "images": "Placeholder shapes for some of the pictures this time.",
 }
 # For a stage with a saved stand-in value but no note of its own above.
@@ -154,24 +157,37 @@ async def _after_simulate(
     fair_done = CACHED if saved_fair is not None else None
     next_done = CACHED if saved_next is not None else None
     async with asyncio.TaskGroup() as group:
-        group.create_task(
+        summary = group.create_task(
             _optional(battle_id, store, "summary", fair_fight, "fair_fight", fair_done)
         )
         group.create_task(
             _optional(battle_id, store, "challenger", challenger, "challenger", next_done)
         )
-        group.create_task(_broadcast(battle_id, store, found, result))
+        group.create_task(_broadcast(battle_id, store, matchup, found, result, summary))
         group.create_task(
             _optional(battle_id, store, "images", lambda: stages.images(matchup, found), "assets")
         )
 
 
-# Scripts first; once they exist, the announcer's voice and the music in parallel.
+# Scripts once the summary ends (the outro needs the fair fight); then the announcer's voice
+# and the music in parallel. The summary is awaited before the script stage starts its own
+# budget, so a slow fair fight never eats the script's time.
 async def _broadcast(
-    battle_id: str, store: BattleStore, found: Research, result: SimulationResult
+    battle_id: str,
+    store: BattleStore,
+    matchup: Matchup,
+    found: Research,
+    result: SimulationResult,
+    summary: Awaitable[Stubbed[FairFight | None] | None],
 ) -> None:
+    summarized = await summary
+    fair = summarized.value if summarized is not None and not summarized.stub else None
     written = await _optional(
-        battle_id, store, "script", lambda: stages.scripts(found, result), "scripts"
+        battle_id,
+        store,
+        "script",
+        lambda: stages.scripts(matchup, found, result, fair),
+        "scripts",
     )
     lines = written.value if written is not None else []
     async with asyncio.TaskGroup() as group:
@@ -179,7 +195,9 @@ async def _broadcast(
             _optional(battle_id, store, "audio", lambda: stages.audio(lines), "assets")
         )
         group.create_task(
-            _optional(battle_id, store, "music", lambda: stages.music(found), "assets")
+            _optional(
+                battle_id, store, "music", lambda: stages.music(matchup, found, result), "assets"
+            )
         )
 
 
