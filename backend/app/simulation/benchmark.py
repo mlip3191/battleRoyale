@@ -205,12 +205,6 @@ def seed_sheets(directory: Path | None = None) -> SheetSource:
     return IndexedSheets(sheets)
 
 
-def research_sheets() -> SheetSource:
-    raise BenchmarkError(
-        "--sheets research needs the research pipeline (task G04), which has not landed yet"
-    )
-
-
 # --- Judging ----------------------------------------------------------------------------
 
 

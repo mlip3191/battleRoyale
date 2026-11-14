@@ -8,17 +8,44 @@ From the repo root:
   uv run --directory backend python scripts/run_benchmark.py --live --sheets research
       The real run: data/benchmark/matchups.yaml (tuning) and heldout.yaml (never tuned on).
 
-The simulation itself uses no endpoints; only `--sheets research` would (task G04).
+The simulation itself uses no endpoints. `--sheets research` builds every sheet with the research
+pipeline (G04) and so uses the providers set in `.env` (PROVIDER_MODE=mock needs none, but then
+the sheets are mock output, not a real result). It ignores the hand-verified seed sheets.
 """
 
 import argparse
+import asyncio
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import get_settings  # noqa: E402
+from app.db.connection import connect  # noqa: E402
+from app.db.migrate import apply_migrations  # noqa: E402
+from app.providers.registry import ProviderConfigError, get_provider  # noqa: E402
+from app.research.benchmark_sheets import research_sheets  # noqa: E402
 from app.simulation import benchmark as bm  # noqa: E402
+
+
+def build_research_sheets(entries: list[bm.Entry]) -> bm.SheetSource:
+    """Run the research pipeline for every fighter in the benchmark (can take a while, and live
+    providers cost calls)."""
+    try:
+        providers = (get_provider("chat"), get_provider("embedder"), get_provider("reranker"))
+    except ProviderConfigError as error:
+        raise bm.BenchmarkError(f"the providers are not set up: {error}") from error
+    connection = connect()
+    try:
+        apply_migrations(connection)
+        if connection.execute("SELECT 1 FROM chunks LIMIT 1").fetchone() is None:
+            raise bm.BenchmarkError(
+                "the knowledge base is empty, so every sheet would be built from defaults: "
+                "run `npm run ingest` first"
+            )
+        return asyncio.run(research_sheets(entries, connection, providers))
+    finally:
+        connection.close()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -48,7 +75,11 @@ def main(argv: list[str] | None = None) -> int:
         else:
             tuning = bm.load_entries(args.matchups or bm.BENCHMARK_DIR / "matchups.yaml", False)
             held = bm.load_entries(args.heldout or bm.BENCHMARK_DIR / "heldout.yaml", True)
-            sheets = bm.seed_sheets() if args.sheets == "seed" else bm.research_sheets()
+            sheets = (
+                bm.seed_sheets()
+                if args.sheets == "seed"
+                else build_research_sheets([*tuning, *held])
+            )
             label = args.sheets
             runs, output = args.runs or get_settings().sim_runs, args.output or bm.RESULTS_FILE
         report = bm.run_benchmark(sheets, label, tuning, held, runs, args.tuning_only)

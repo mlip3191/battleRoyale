@@ -172,7 +172,7 @@ def test_live_modes_say_what_they_are_waiting_for(tmp_path, capsys):
     mock_files = ["--matchups", str(bm.MOCK_DIR / "matchups.yaml")]
     mock_files += ["--heldout", str(bm.MOCK_DIR / "heldout.yaml")]
     assert main(["--live", "--sheets", "research", *mock_files]) == 2
-    assert "G04" in capsys.readouterr().err
+    assert "knowledge base is empty" in capsys.readouterr().err
 
 
 def test_unknown_fighter_is_a_clear_error():
