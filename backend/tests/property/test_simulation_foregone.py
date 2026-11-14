@@ -181,8 +181,9 @@ def test_a_stalemate_crowd_below_the_threshold_never_runs_the_swarm_loop(monkeyp
     result = run(matchup_of(100, 100), [ant, boulder], runs=50, explain=False)
     assert result.outcome == "draw" and result.mean_duration_s == c.MAX_FIGHT_S
     # Only the one representative replay is simulated in full (it records real events); the 50
-    # counted runs are all shortcut. Without the shortcut this is 51 swarm fights.
-    assert len(calls) <= 1
+    # counted runs are all shortcut. Without the shortcut this is 51 swarm fights. Exactly one
+    # call also proves the work rule did send this fight to swarm mode (the test is not trivial).
+    assert len(calls) == 1
 
 
 def test_the_fair_fight_search_stays_cheap_when_attackers_just_run_out_of_time():

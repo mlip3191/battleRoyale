@@ -176,7 +176,7 @@ Head count is a poor predictor of how long a fight takes to simulate: 200 v 200 
 - The fight lasts until the faster side would remove the other: the hits needed (each defender needs its own hits, and overkill is wasted) divided by hits landed per second. It never exceeds the time limit or a machine's operating time.
 - Work is the sum of both sides' attack rates times that duration. The estimate is made once per matchup from the sheets' central values and used for every run, the deciding-factor runs and the replay.
 
-A fight with more than `SWARM_THRESHOLD` per side (the ceiling) or more work than `SWARM_WORK_BUDGET` runs in swarm mode. The estimate tracks real cost well (it predicted 2,080 attacks for a fight that makes about 1,790). It does not model approach time, morale or thinning attackers, so it is an estimate, not a bound, and the certain-result shortcut is skipped for any fight that runs in swarm mode.
+A fight with more than `SWARM_THRESHOLD` per side (the ceiling) or more work than `SWARM_WORK_BUDGET` runs in swarm mode. The estimate tracks real cost well (it predicted 2,080 attacks for a fight that makes about 1,790). It does not model approach time, morale or thinning attackers, so it is an estimate, not a bound. Only head count (more than `SWARM_THRESHOLD` on a side) turns off the certain-result shortcut; a hopeless stalemate below that is still shortcut even when the work rule sends it to swarm mode.
 
 ## References
 

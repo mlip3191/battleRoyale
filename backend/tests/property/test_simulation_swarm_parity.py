@@ -22,11 +22,10 @@ RUNS = 300
 
 def both(monkeypatch, sheets, na, nb, runs=RUNS):
     results = []
+    budget = c.SWARM_WORK_BUDGET  # read before the loop: the first pass changes it
     for threshold in (ALWAYS_INDIVIDUAL, ALWAYS_SWARM):
         monkeypatch.setattr(c, "SWARM_THRESHOLD", threshold)
-        monkeypatch.setattr(
-            c, "SWARM_WORK_BUDGET", float("inf") if threshold else c.SWARM_WORK_BUDGET
-        )
+        monkeypatch.setattr(c, "SWARM_WORK_BUDGET", float("inf") if threshold else budget)
         results.append(run(matchup_of(na, nb), sheets, runs=runs, explain=False))
     return results
 
