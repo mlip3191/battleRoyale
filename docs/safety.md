@@ -6,13 +6,13 @@ voice or music provider is called for a blocked request (tested in
 
 ## 1. What's blocked and why
 
-The rules come from DECISIONS D-07 (allowed and blocked fighters) and D-38 (widened to objects,
-machines and mythical creature types). Each block has one reason; the user sees a friendly
+The rules come from DECISIONS D-07 (allowed and blocked fighters), D-38 (widened to objects,
+machines and mythical creature types) and D-59 (the safety gate policy). Each block has one reason; the user sees a friendly
 message for it (`safety/verdict.py`), never the layer or the model's words.
 
 | Reason | Blocks | Example |
 |---|---|---|
-| `real_person` | named real people, the user or someone they know, bands (groups of real people) | "Napoleon", "my brother", "the Beatles" |
+| `real_person` | named real people, the user or someone they know, bands and sports teams (groups of real people, D-59) | "Napoleon", "my brother", "the Beatles", "the Lakers" |
 | `minor` | children of any kind, ages 17 and under | "a toddler", "a 6-year-old" |
 | `hate` | groups of people: nationalities, ethnicities, religions | "Canadians vs Australians" |
 | `sexual` | sexual content | "…make it a steamy bedroom scene" |
@@ -28,7 +28,8 @@ A harmful ask added before or after a harmless matchup blocks the whole request.
 words between fighters ("the bear attacks", "kill or be killed") are fine.
 
 **Allowed:** animals (living and extinct), historical unit types ("a Roman legionary", "a
-samurai"), objects and plants, vehicles and machines (brands are fine: "a Jeep"), and mythical
+samurai"), objects and plants, vehicles and machines (companies, organizations and brands are
+fine: "a Jeep"), and mythical
 creature *types* ("a dragon", "a werewolf"). Capitalized breed and species names ("a German
 Shepherd", "a Komodo dragon") and lowercase common nouns that are also names ("a napoleon", the
 pastry; "a wolverine", the animal) are allowed too. Kinds of objects are never places, even where
@@ -82,8 +83,10 @@ the query, ignoring case), in search order, passing over:
   the Moon.
 - **Creative works** (`demote_matches`): magazines, films, albums, songs and the like, used only
   if nothing else fits ("Dragon" the magazine loses to the dragon).
-- **Bands**, when a *kind* item (anything with a "subclass of" value, or a taxon) also matched
-  exactly: "Grizzly Bear" the band loses to the grizzly bear.
+- **Bands and sports teams**, when a *kind* item (anything with a "subclass of" value, or a
+  taxon) also matched exactly: "Grizzly Bear" the band loses to the grizzly bear. A band must
+  match by its label; a team may also match by an alias, since teams go by their nickname
+  ("Lakers" matches the Los Angeles Lakers).
 
 **Common nouns use the kind item.** When the top pick is not itself a kind of thing, the check
 also finds the first *kind* item among the top 10 results. A name typed as a common noun (see
@@ -93,8 +96,8 @@ pick, so they block.
 
 **How it climbs:** the picked item's own classes ("instance of" and "subclass of"), then "subclass
 of" up to two more levels. If any class on the way is in the class map, the name is blocked with
-that class's reason. `instance_only` classes (human, the band classes) count only on the item's
-own "instance of", so the class "Roman legionary" is never a real person. `individuals_only`
+that class's reason. `instance_only` classes (human, the band and team classes) count only on the
+item's own "instance of", so the class "Roman legionary" is never a real person. `individuals_only`
 classes (geographic location) count only for an item that is not a kind of thing: Paris and
 Times Square are places, but the kind "vending machine" (which Wikidata files under shop →
 workplace → geographic location) is not. Kinds of landforms ("a mountain") still block through
@@ -105,15 +108,20 @@ article or count ("Napoleon"), or when a word after "a", "the" or a number is ca
 Napoleon"). Otherwise it is a common noun ("a napoleon", "3 wolverines"). `real_person` counts
 only for proper names: "a Napoleon" is blocked; "a napoleon" (the pastry) is not.
 
-**The band rule** (D-38: groups of people). A band item blocks only when the typed name names it,
-with capitals matching the label:
+**The band and sports-team rule** (D-59; D-38: groups of people). Bands and sports teams are
+*groups* (`group: band` or `group: team` in the class map; any item whose own "instance of"
+includes one is a group). A group blocks as `real_person` only when the typed name names it,
+with capitals matching its name (a band's label, or the alias a team matched, such as "Lakers"):
 
-- "the" (any capitals) plus the band's label without its own "the": "the Beatles" and "the
-  Eagles" are blocked; "the eagles" is not.
-- The bare label, only when the band's name is **not a common word**. The check looks up the
-  singular ("eagles" → "eagle") and asks whether any exact match is a kind item. "Beatles" is
-  blocked ("beatle" has no exact match); "Eagles" is allowed (the eagle is an animal). This costs
-  one extra search, only for band picks whose last word is plural.
+- "the" (any capitals) plus the name without its own "the": "the Beatles", "the Eagles", "the
+  Lakers" and "the Bulls" are blocked; "the eagles" is not.
+- The bare name, only when it is **not a common word**. The check looks up the singular
+  ("eagles" → "eagle") and asks whether any exact match among its top 10 results is a kind item.
+  "Beatles" and "Lakers" are blocked (no kind item for "beatle" or "laker"); "Eagles", "Bulls"
+  and "Wolves" are allowed (the eagle, the bull and the grey wolf, result 6 for "wolf"). This
+  costs one extra search, only for group picks whose last word is plural.
+
+Companies, organizations and brands are not groups and stay allowed ("a Jeep" is a car brand).
 
 **The cache:** SQLite table `wikidata_safety_cache` in `data/app.db`, one row per lookup text with
 both the top pick and the kind item, so either reading works from a cache hit. A match is kept
@@ -136,8 +144,8 @@ another version are ignored, so a class-map change takes effect at once.
 
 ## 6. Running the eval
 
-The cases live in `backend/tests/fixtures/safety_cases.yaml` (79 cases: 41 blocked covering every
-reason, 38 allowed, 12 of them objects, machines or mythical creatures, and 7 prompt-injection
+The cases live in `backend/tests/fixtures/safety_cases.yaml` (83 cases: 44 blocked covering every
+reason, 39 allowed, 12 of them objects, machines or mythical creatures, and 7 prompt-injection
 pairs). Each case says what it expects, which layer should decide on mocks, and how the stand-in
 models answer.
 
@@ -185,7 +193,11 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   possible follow-up: treat a lowercase multi-word name whose top pick is a human as a person.
 - **Capitalized brands that are also people's names** can be blocked as `real_person` ("a Tesla"
   may pick a person). Lowercase works.
-- **Bands** are blocked only through the band rule; a band that matches only through an alias,
-  or whose label differs from what was typed, is left to the classifier.
+- **Bands and sports teams** are blocked only through the band and sports-team rule; a band that
+  matches only through an alias, or a group whose name differs from what was typed, is left to
+  the classifier. Only the listed team classes count (sports team, professional sports team,
+  basketball, American football, ice hockey and baseball teams, football and rugby union clubs);
+  a team filed under another class, or one that isn't in the top 5 results, is missed. Some
+  nicknames pick another item first ("the Yankees" picks "Americans", which isn't blocked).
 - **The classifier can answer differently from run to run.** Re-run the live eval after any
   prompt change and compare.

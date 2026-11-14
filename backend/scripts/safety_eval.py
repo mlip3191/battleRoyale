@@ -151,7 +151,7 @@ async def wikidata_picks(names: Sequence[str], cache: wikidata.WikidataCache) ->
         elif check.qid is None:
             picks.append(f"{name!r}: no exact match")
         else:
-            extra = ", band" if check.band else ""
+            extra = ", band or team" if check.group else ""
             picks.append(
                 f"{name!r}: {check.qid} {check.label!r} -> {check.reason or 'not blocked'}"
                 f" (proper name: {proper}{extra})"

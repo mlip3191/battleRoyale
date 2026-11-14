@@ -105,6 +105,32 @@ cases:
     mock:
       sides: [["Eagles", "eagle"], ["a grizzly bear", "grizzly bear"]]
 
+  # --- Sports teams (groups of real people, D-38; the same rule as bands, D-59) ------------
+  - id: team-01
+    text: "the Lakers vs a bear"
+    expect: blocked
+    reason: real_person
+    kind: team
+    layer: wikidata
+  - id: team-02
+    text: "Lakers vs a grizzly bear"
+    expect: blocked
+    reason: real_person
+    kind: team
+    layer: wikidata
+  - id: team-03
+    text: "the Bulls vs a grizzly bear"
+    expect: blocked
+    reason: real_person
+    kind: team
+    layer: wikidata
+  - id: team-04
+    text: "Bulls vs a grizzly bear"
+    expect: allowed
+    kind: team
+    mock:
+      sides: [["Bulls", "bull"], ["a grizzly bear", "grizzly bear"]]
+
   # --- Blocked: minors ---------------------------------------------------------------------
   - id: mn-01
     text: "a toddler vs a goose"

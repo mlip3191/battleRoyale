@@ -89,9 +89,9 @@ def test_the_class_map_uses_only_contract_reasons() -> None:
     class_map = load_class_map()
     assert class_map.version >= 3
     assert set(class_map.reasons.values()) <= set(BLOCKED_REASONS)
-    # Only human and the band classes count on the item's own P31 alone.
-    assert class_map.instance_only == {"Q5"} | class_map.bands
-    assert {"Q215380", "Q5741069"} <= class_map.bands  # musical group, rock band
+    # Only human and the group (band and team) classes count on the item's own P31 alone.
+    assert class_map.instance_only == {"Q5"} | class_map.groups
+    assert {"Q215380", "Q5741069"} <= class_map.groups  # musical group, rock band
     assert {FAMILY_NAME, GIVEN_NAME, DISAMBIGUATION} <= class_map.name_items
     assert not class_map.name_items & set(class_map.reasons)
     assert not class_map.name_items & class_map.demoted
