@@ -167,3 +167,16 @@ def test_startup_loads_the_showcase_and_warns_about_an_empty_knowledge_base(
         assert saved.get(loaded, "b-7f3k2q") is not None
     finally:
         loaded.close()
+
+
+def test_a_manifest_id_that_points_outside_the_folder_is_refused(source, tmp_path: Path) -> None:
+    connection, media = source
+    out = tmp_path / "showcase"
+    export_showcase(connection, [("b-7f3k2q", None)], media, out)
+    (out / "manifest.json").write_text('[{"battle_id": "../escape", "title": "x"}]')
+    fresh = database(tmp_path / "fresh.db")
+    try:
+        with pytest.raises(ValueError, match="plain id"):
+            import_showcase(fresh, tmp_path / "m", out)
+    finally:
+        fresh.close()

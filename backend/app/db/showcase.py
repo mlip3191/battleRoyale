@@ -8,6 +8,7 @@ per battle under battles/, and the media files under media/ with the same paths 
 
 import json
 import logging
+import re
 import shutil
 import sqlite3
 from dataclasses import dataclass, field
@@ -26,6 +27,7 @@ MAX_SHOWCASE_BYTES = 20 * 1024 * 1024  # the committed folder stays small (G08)
 # battlefields always stay, because the battle can't be shown without them.
 DROP_ORDER = ("music", "narration_audio")
 MEDIA_PREFIX = "/media/"
+BATTLE_ID = re.compile(r"[A-Za-z0-9_-]+")
 
 
 @dataclass
@@ -130,13 +132,19 @@ def import_showcase(
     if not rows or connection.execute("SELECT 1 FROM battles LIMIT 1").fetchone():
         return 0
     for row in rows:
+        # Ids are plain words, so a manifest entry can't point outside battles/.
+        if not BATTLE_ID.fullmatch(row.battle_id):
+            raise ValueError(f"showcase battle id {row.battle_id!r} isn't a plain id")
         text = (showcase_dir / "battles" / f"{row.battle_id}.json").read_text("utf-8")
         record = BattleRecord.model_validate_json(text)
+        if record.battle_id != row.battle_id:
+            raise ValueError(f"showcase file for {row.battle_id} holds {record.battle_id}")
         saved.save(connection, record, cache_key=None)
         for asset in record.assets:
-            source = showcase_dir / "media" / asset.url.removeprefix(MEDIA_PREFIX)
+            # Both ends are checked to stay inside their media folders.
+            source = media_path(asset.url, showcase_dir / "media")
             target = media_path(asset.url, media_dir)
-            if target is not None and source.is_file() and not target.exists():
+            if source and target and source.is_file() and not target.exists():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(source, target)
     logger.info("Loaded %d showcase battles.", len(rows))
