@@ -2,24 +2,42 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import running from "../fixtures/battle-record-running.json";
 import done from "../fixtures/battle-record-done.json";
+import stageStatus from "../fixtures/stage-status.json";
 import { reset } from "./fixtures.ts";
 import { NOT_FOUND, POLL_MS, RETRYING, useBattle } from "./useBattle.ts";
+
+type Listener = (event: MessageEvent<string>) => void;
+
+// The stream exactly as backend/app/api/battles.py writes it: named "stage" and "end" events.
+const STAGE_EVENT = `event: stage\ndata: ${JSON.stringify(stageStatus)}\n\n`;
+const END_EVENT = `event: end\ndata: ${JSON.stringify({ status: "done" })}\n\n`;
 
 // A stand-in EventSource that records what it opened and lets tests fire its events.
 class FakeEventSource {
   static all: FakeEventSource[] = [];
   onopen: (() => void) | null = null;
-  onmessage: (() => void) | null = null;
+  onmessage: Listener | null = null;
   onerror: (() => void) | null = null;
-  named: Record<string, () => void> = {};
+  named: Record<string, Listener> = {};
   closed = false;
   url: string;
   constructor(url: string) {
     this.url = url;
     FakeEventSource.all.push(this);
   }
-  addEventListener(name: string, fn: () => void) {
+  addEventListener(name: string, fn: Listener) {
     this.named[name] = fn;
+  }
+  // Deliver raw stream text the way a browser would: a named event goes to its listener,
+  // an event with no name goes to onmessage.
+  receive(wire: string) {
+    for (const block of wire.split("\n\n").filter(Boolean)) {
+      const field = (key: string) =>
+        block.match(new RegExp(`^${key}: (.*)$`, "m"))?.[1];
+      const name = field("event") ?? "message";
+      const event = new MessageEvent(name, { data: field("data") });
+      (name === "message" ? this.onmessage : this.named[name])?.(event);
+    }
   }
   close() {
     this.closed = true;
@@ -47,7 +65,7 @@ afterEach(() => {
   FakeEventSource.all = [];
 });
 
-test("listens for live updates and refetches on open, unnamed, and named events", async () => {
+test("listens for live updates and refetches on open and on each named stage event", async () => {
   const fetchMock = vi.fn(() => reply(running));
   vi.stubGlobal("fetch", fetchMock);
   const { result } = renderHook(() => useBattle("b-7f3k2q"));
@@ -58,20 +76,31 @@ test("listens for live updates and refetches on open, unnamed, and named events"
 
   source.onopen!();
   await flush();
-  source.onmessage!();
-  await flush();
-  source.named.stage();
+  source.receive(STAGE_EVENT + STAGE_EVENT); // two stage changes in one chunk
   await flush();
   expect(fetchMock).toHaveBeenCalledTimes(4);
+  expect(source.closed).toBe(false);
 });
 
-test("closes the stream once an update says the battle is done", async () => {
+test("ignores unnamed messages, which the backend never sends", async () => {
+  const fetchMock = vi.fn(() => reply(running));
+  vi.stubGlobal("fetch", fetchMock);
+  renderHook(() => useBattle("b-7f3k2q"));
+  await flush();
+  const source = FakeEventSource.last!;
+  expect(source.onmessage).toBeNull();
+  source.receive(`data: ${JSON.stringify(stageStatus)}\n\n`);
+  await flush();
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+test("closes the stream after the named end event once the battle is done", async () => {
   const fetchMock = vi.fn(() => reply(running));
   vi.stubGlobal("fetch", fetchMock);
   const { result } = renderHook(() => useBattle("b-7f3k2q"));
   await flush();
   fetchMock.mockImplementation(() => reply(done));
-  FakeEventSource.last!.named.end();
+  FakeEventSource.last!.receive(END_EVENT);
   await flush();
   expect(result.current.battle?.status).toBe("done");
   expect(FakeEventSource.last!.closed).toBe(true);
@@ -89,14 +118,39 @@ test("ignores a reply older than the one already shown", async () => {
   const { result } = renderHook(() => useBattle("b-7f3k2q"));
   await flush();
 
-  FakeEventSource.last!.onmessage!(); // request 2 (will answer "running", late)
-  FakeEventSource.last!.onmessage!(); // request 3 (answers "done" first)
+  FakeEventSource.last!.receive(STAGE_EVENT); // request 2 (will answer "running", late)
+  FakeEventSource.last!.receive(STAGE_EVENT); // request 3 (answers "done" first)
   await flush();
   slow[1](Response.json(done));
   await flush();
   slow[0](Response.json(running));
   await flush();
   expect(result.current.battle?.status).toBe("done");
+});
+
+test("a late 404 from an old request never replaces a newer record", async () => {
+  const slow: Array<(r: Response) => void> = [];
+  const fetchMock = vi
+    .fn()
+    .mockImplementationOnce(() => reply(running))
+    .mockImplementation(
+      () => new Promise<Response>((resolve) => slow.push(resolve)),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const { result } = renderHook(() => useBattle("b-7f3k2q"));
+  await flush();
+  const source = FakeEventSource.last!;
+
+  source.receive(STAGE_EVENT); // request 2 (will answer 404, late)
+  source.receive(STAGE_EVENT); // request 3 (answers first with a newer record)
+  await flush();
+  slow[1](Response.json(running));
+  await flush();
+  slow[0](Response.json({ detail: "not found" }, { status: 404 }));
+  await flush();
+  expect(result.current.battle?.status).toBe("running");
+  expect(result.current.error).toBeNull();
+  expect(source.closed).toBe(false); // still listening
 });
 
 test("falls back to polling every second when the live connection fails", async () => {
@@ -131,7 +185,7 @@ test("a failed fetch while streaming says Retrying and really retries by polling
   vi.stubGlobal("fetch", fetchMock);
   const { result } = renderHook(() => useBattle("b-7f3k2q"));
   await flush();
-  FakeEventSource.last!.onmessage!();
+  FakeEventSource.last!.receive(STAGE_EVENT);
   await flush();
   expect(result.current.battle?.status).toBe("running"); // keeps the last good record
   expect(FakeEventSource.last!.closed).toBe(true);

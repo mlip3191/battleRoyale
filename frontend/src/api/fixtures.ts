@@ -1,13 +1,20 @@
 // A pretend backend for VITE_USE_FIXTURES=true: answers from src/fixtures/ with realistic delays,
 // and plays a battle through every stage in about BATTLE_MS so the UI can be built without the backend.
 import type { components } from "./schema";
+import { ApiError } from "./api-error.ts";
+import battleCreated from "../fixtures/battle-created.json";
 import battleDone from "../fixtures/battle-record-done.json";
+import fighterMatch from "../fixtures/fighter-match.json";
 import intakeResult from "../fixtures/intake-result.json";
+import showcaseBattle from "../fixtures/showcase-battle.json";
 import grizzly from "../fixtures/stat-sheet.json";
 import wolf from "../fixtures/stat-sheet-gray-wolf.json";
 
+type BattleCreated = components["schemas"]["BattleCreated"];
 type BattleRecord = components["schemas"]["BattleRecord"];
+type FighterMatch = components["schemas"]["FighterMatch"];
 type FighterRequest = components["schemas"]["FighterRequest"];
+type ShowcaseBattle = components["schemas"]["ShowcaseBattle"];
 type SimulationResult = components["schemas"]["SimulationResult"];
 type StatSheet = components["schemas"]["StatSheet"];
 
@@ -24,11 +31,12 @@ const later = <T>(value: T): Promise<T> =>
 export const intake = () =>
   later(intakeResult as unknown as components["schemas"]["IntakeResult"]);
 
-// Start a new pretend battle; its clock begins now.
+// Start a new pretend battle; its clock begins now. The reply is the synced battle-created.json
+// with a fresh id, since each pretend battle keeps its own clock.
 export function createBattle() {
   const battle_id = `fixture-${started.size + 1}`;
   started.set(battle_id, Date.now());
-  return later({ battle_id });
+  return later<BattleCreated>({ ...battleCreated, battle_id });
 }
 
 // The battle as it looks right now: stages finish one by one, and each part appears when its stage is done.
@@ -142,44 +150,48 @@ export function getBattle(id: string) {
   return later(battleAt(id, Date.now() - started.get(id)!));
 }
 
-// The five planned showcase battles (PRODUCT_SPEC §9) until Gunnar's G08 saves the real ones.
-// Every id plays the same pretend battle in fixtures mode.
-export const SHOWCASE: { battle_id: string; title: string }[] = [
-  {
-    battle_id: "showcase-horses-duck",
-    title: "100 duck-sized horses vs 1 horse-sized duck",
-  },
-  {
-    battle_id: done.battle_id,
-    title: "Grizzly bear vs 6 gray wolves (forest)",
-  },
-  { battle_id: "showcase-badger-cobra", title: "Honey badger vs king cobra" },
-  {
-    battle_id: "showcase-legionary-gorilla",
-    title: "Roman legionary vs gorilla",
-  },
-  {
-    battle_id: "showcase-dragon-tank",
-    title: "A dragon vs a main battle tank (open field)",
-  },
+// A planned showcase row, shaped like the synced showcase-battle.json.
+const planned = (battle_id: string, title: string): ShowcaseBattle => ({
+  ...showcaseBattle,
+  battle_id,
+  title,
+});
+
+// The five planned showcase battles (PRODUCT_SPEC §9) until Gunnar's G08 saves the real ones;
+// the grizzly row is showcase-battle.json itself. Every id plays the same pretend battle.
+export const SHOWCASE: ShowcaseBattle[] = [
+  planned(
+    "showcase-horses-duck",
+    "100 duck-sized horses vs 1 horse-sized duck",
+  ),
+  showcaseBattle,
+  planned("showcase-badger-cobra", "Honey badger vs king cobra"),
+  planned("showcase-legionary-gorilla", "Roman legionary vs gorilla"),
+  planned(
+    "showcase-dragon-tank",
+    "A dragon vs a main battle tank (open field)",
+  ),
 ];
 
 export const showcase = () => later(SHOWCASE);
 
+// Known fighters whose name contains the search text, each shaped like the synced
+// fighter-match.json (the grizzly match is that file exactly).
 export const searchFighters = (q: string) =>
   later(
     sheets
       .filter((s) => s.display_name.toLowerCase().includes(q.toLowerCase()))
-      .map((s) => ({
+      .map((s): FighterMatch => ({
+        ...fighterMatch,
         fighter_id: s.fighter_id,
         display_name: s.display_name,
-        cached: true,
       })),
   );
 
+// One fighter's sheet, or a 404 ApiError just like the live backend.
 export function getFighter(fighterId: string) {
   const sheet = sheets.find((s) => s.fighter_id === fighterId);
-  return sheet ? later(sheet) : Promise.reject(new Error("HTTP 404"));
+  return sheet ? later(sheet) : Promise.reject(new ApiError(404));
 }
 
 // Forget every pretend battle (tests use this between runs).

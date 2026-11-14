@@ -1,0 +1,21 @@
+scientific_name,source,field,value,unit,reference
+Apis mellifera,animaltraits,body mass,8.4e-05,kg,"https://zenodo.org/records/6468938/files/observations.csv#row-1206 (Mares, Ash, & Gronenberg, 2005)"
+Canis lupus,animaltraits,body mass,22.68,kg,"https://zenodo.org/records/6468938/files/observations.csv#row-2098 (Crile & Quiring, 1940; male)"
+Mellivora capensis,animaltraits,body mass,9,kg,"https://zenodo.org/records/6468938/files/observations.csv#row-1423 (Stankowich & Romero, 2017)"
+Mus musculus,animaltraits,body mass,0.0321,kg,"https://zenodo.org/records/6468938/files/observations.csv#row-3533 (Else & Hulbert, 1981)"
+Pan troglodytes,animaltraits,body mass,60.43316,kg,"https://zenodo.org/records/6468938/files/observations.csv#row-1457 (Boddy et al., 2012)"
+Pan troglodytes,animaltraits,body mass,25.85,kg,"https://zenodo.org/records/6468938/files/observations.csv#row-2142 (Crile & Quiring, 1940; male)"
+Pan troglodytes,animaltraits,body mass,56.69,kg,"https://zenodo.org/records/6468938/files/observations.csv#row-2143 (Crile & Quiring, 1940; male)"
+Pan troglodytes,animaltraits,body mass,43.99,kg,"https://zenodo.org/records/6468938/files/observations.csv#row-2144 (Crile & Quiring, 1940; female)"
+Panthera leo,animaltraits,body mass,84,kg,"https://zenodo.org/records/6468938/files/observations.csv#row-1918 (Warnke, 1908)"
+Canis lupus,pantheria,5-1_AdultBodyMass_g,31756.51,g,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Canis_lupus
+Canis lupus,pantheria,13-1_AdultHeadBodyLen_mm,1055,mm,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Canis_lupus
+Felis catus,pantheria,5-1_AdultBodyMass_g,2884.8,g,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Felis_catus
+Hippopotamus amphibius,pantheria,5-1_AdultBodyMass_g,1536310.4,g,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Hippopotamus_amphibius
+Mellivora capensis,pantheria,5-1_AdultBodyMass_g,8999.99,g,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Mellivora_capensis
+Mellivora capensis,pantheria,13-1_AdultHeadBodyLen_mm,682.96,mm,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Mellivora_capensis
+Mus musculus,pantheria,5-1_AdultBodyMass_g,19.3,g,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Mus_musculus
+Pan troglodytes,pantheria,5-1_AdultBodyMass_g,45000,g,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Pan_troglodytes
+Pan troglodytes,pantheria,13-1_AdultHeadBodyLen_mm,796.09,mm,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Pan_troglodytes
+Panthera leo,pantheria,5-1_AdultBodyMass_g,158623.93,g,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Panthera_leo
+Panthera leo,pantheria,13-1_AdultHeadBodyLen_mm,1835.16,mm,https://esapubs.org/archive/ecol/E090/184/PanTHERIA_1-0_WR05_Aug2008.txt#Panthera_leo

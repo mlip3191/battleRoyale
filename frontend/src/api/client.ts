@@ -1,6 +1,7 @@
 // Typed calls to our own backend (ARCHITECTURE §6). Types come only from the generated schema.
 // With VITE_USE_FIXTURES=true every call is answered from src/fixtures/ instead (see fixtures.ts).
 import type { components } from "./schema";
+import { ApiError } from "./api-error.ts";
 import * as fake from "./fixtures.ts";
 
 export type BattleRecord = components["schemas"]["BattleRecord"];
@@ -24,17 +25,8 @@ export type Script = components["schemas"]["Script"];
 export type ScriptLine = components["schemas"]["ScriptLine"];
 export type FighterRequest = components["schemas"]["FighterRequest"];
 
-// An HTTP error from our backend; `status` lets callers tell "not found" from a passing hiccup,
-// and `detail` carries the server's own plain-language message when it sent one.
-export class ApiError extends Error {
-  status: number;
-  detail: string | null;
-  constructor(status: number, detail: string | null = null) {
-    super(`HTTP ${status}`);
-    this.status = status;
-    this.detail = detail;
-  }
-}
+// The HTTP error class, shared with fixtures mode; existing imports from client.ts keep working.
+export { ApiError };
 
 // Longest server message we keep; anything longer isn't one of our short plain-language lines.
 const MAX_DETAIL = 300;
