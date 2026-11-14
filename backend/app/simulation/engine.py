@@ -576,8 +576,15 @@ def _spread_tracked(
     share, extra = divmod(hits, g)
     survivors: list[float] = []  # fronts that took no kill
     killers: list[float] = []  # fronts that killed and started on a new fighter
-    groups = list(Counter(fronts).items())  # (hit points, how many fronts have them)
+    groups = [] if g == 1 else list(Counter(fronts).items())  # (hit points, how many fronts)
     fronts_left, extra_left = g, extra
+    if g == 1:
+        # One front (a lone defender, or one attacker engaged): every hit lands on it, with no
+        # draw for the leftover. Same result and same random draws as the loop below, just
+        # without grouping, which is most of a step's cost in fights like 150 cats v 1 elephant.
+        k, _, f = _apply_hits(hits, dmg, n, fronts[0], full_hp)
+        kills = k
+        (killers if k else survivors).append(f)
     for position, (hp, size) in enumerate(groups):
         if position == len(groups) - 1:
             lucky = extra_left  # the leftover hits all land on the last group
