@@ -47,7 +47,10 @@ def test_connection_uses_wal_foreign_keys_and_sqlite_vec(database: sqlite3.Conne
 
 def test_migrations_apply_once(database: sqlite3.Connection) -> None:
     assert apply_migrations(database) == []
-    assert count(database, "schema_migrations") == len(list(MIGRATIONS_DIR.glob("*.sql")))
+    # One row per migration file, however many there are (D08 added the second).
+    files = list(MIGRATIONS_DIR.glob("*.sql"))
+    assert len(files) >= 2
+    assert count(database, "schema_migrations") == len(files)
 
 
 def test_a_failed_migration_leaves_nothing_behind(tmp_path: Path) -> None:

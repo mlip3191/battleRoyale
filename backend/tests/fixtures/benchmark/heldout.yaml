@@ -1,0 +1,12 @@
+# Mock held-out set for CI (--mock): reported separately, never used to tune anything.
+matchups:
+  - id: mock-wolves-to-match-a-bear
+    group: count
+    fighters:
+      - {entity: grizzly bear, count: 1, variant: adult male}
+      - {entity: gray wolf, count: 1}
+    terrain: forest
+    expected_winner: 0
+    confidence: medium
+    expected_fair_count: [3, 12]
+    source: "mock: pack size that evens the odds"

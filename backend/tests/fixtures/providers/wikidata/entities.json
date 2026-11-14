@@ -1,5 +1,5 @@
 {
-  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before a football team that has 'Eagles' as an alias) with made-up item IDs. 'wolves' and 'sharks' are made up: a band that matches only through an alias. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. Moose, shredder, hulk and the napoleon pastry (#186, D-51) are made-up item IDs copying the shape of the live search: a person 'Moose' before the animal labelled 'moose'; the character 'Shredder' before kinds that match only through the alias 'shredder' ('paper shredder', 'grater'); the character 'Hulk' before a ship type labelled 'hulk'; 'Napoleon' before the pastry 'mille-feuille' (alias 'napoleon'). 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
+  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before a football team that has 'Eagles' as an alias) with made-up item IDs. 'wolves' and 'sharks' are made up: a band that matches only through an alias. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. Lakers, Bulls, bull and Jeep (D-59) use real IDs and the live search order of 2026-11-14 (the Lakers and Chicago Bulls match through their 'Lakers' and 'Bulls' aliases; 'bull' the family name ranks before the animal; 'Jeep' the given name before the car brand), with the class walk cut short. Moose, shredder, hulk and the napoleon pastry (#186, D-51) are made-up item IDs copying the shape of the live search: a person 'Moose' before the animal labelled 'moose'; the character 'Shredder' before kinds that match only through the alias 'shredder' ('paper shredder', 'grater'); the character 'Hulk' before a ship type labelled 'hulk'; 'Napoleon' before the pastry 'mille-feuille' (alias 'napoleon'). 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
   "search": {
     "default": [],
     "napoleon": [
@@ -101,6 +101,28 @@
     "vending machine": [
       { "id": "Q211584", "label": "vending machine" },
       { "id": "Q121063999", "label": "Vending machine" }
+    ],
+    "lakers": [
+      { "id": "Q121783", "label": "Los Angeles Lakers", "match": "Lakers" },
+      { "id": "Q2342499", "label": "Celtics-Lakers rivalry", "match": "Lakers-Celtics rivalry" }
+    ],
+    "los angeles lakers": [{ "id": "Q121783", "label": "Los Angeles Lakers" }],
+    "bulls": [
+      { "id": "Q128109", "label": "Chicago Bulls", "match": "Bulls" },
+      { "id": "Q37555751", "label": "Bulls" },
+      { "id": "Q1378158", "label": "Bulls" },
+      { "id": "Q2928116", "label": "South Florida Bulls", "match": "Bulls" },
+      { "id": "Q324", "label": "Uranus", "match": "Bulls-eye planet" }
+    ],
+    "bull": [
+      { "id": "Q13570075", "label": "Bull" },
+      { "id": "Q15716527", "label": "Bulletin of the Seismological Society of America" },
+      { "id": "Q2720088", "label": "Bulletin of Mathematical Biology" },
+      { "id": "Q693690", "label": "bull" }
+    ],
+    "jeep": [
+      { "id": "Q21148055", "label": "Jeep" },
+      { "id": "Q30113", "label": "Jeep" }
     ]
   },
   "entities": {
@@ -212,6 +234,23 @@
     "Q11019": { "P279": [] },
     "Q2221906": { "P279": [] },
     "Q121063999": { "P31": ["Q43305660"] },
-    "Q43305660": { "P279": [] }
+    "Q43305660": { "P279": [] },
+    "Q121783": { "P31": ["Q13393265"] },
+    "Q128109": { "P31": ["Q13393265"] },
+    "Q13393265": { "P279": [] },
+    "Q37555751": { "P31": ["Q101352"] },
+    "Q1378158": { "P31": ["Q43009164"] },
+    "Q2928116": { "P31": ["Q2367225"] },
+    "Q2367225": { "P279": [] },
+    "Q13570075": { "P31": ["Q101352"] },
+    "Q693690": { "P31": ["Q55983715"], "P279": ["Q830"] },
+    "Q830": { "P279": [] },
+    "Q21148055": { "P31": ["Q202444"] },
+    "Q202444": { "P279": [] },
+    "Q30113": { "P31": ["Q4830453", "Q6881511", "Q786820", "Q10429667"] },
+    "Q4830453": { "P279": [] },
+    "Q6881511": { "P279": [] },
+    "Q786820": { "P279": [] },
+    "Q10429667": { "P279": [] }
   }
 }

@@ -21,9 +21,15 @@
 # Version 6 (A04 part 3b): geographic location is individuals_only (live "vending machine" is a
 # subclass of shop -> workplace -> geographic location), and the cache also stores the first
 # kind item for common nouns ("a wolverine": the animal, not the comic-book character).
-# Version 7 (#186, D-51): a bare name typed in lowercase ("moose", "shredder") is judged by its
-# kind item when the top pick is a person or a character, which changes how cached rows block.
-classes_version: 7
+# Version 7 (A04 part 3b, D-59): sports teams join bands as groups (group: band / group: team);
+# a team may match through its alias ("Lakers"), the cached label is that name, a group is any
+# item whose P31 includes a group class, and the common-word check reads the top 10 results
+# (live "wolf": the grey wolf is result 6, so bare "Wolves" is the animals).
+# Version 8 (#186, D-51, merged with D-59): a bare name typed in lowercase ("moose", "shredder")
+# is judged by its kind item when the top pick is a person or a character (groups keep the group
+# rule), which changes how cached rows block. Both branches had bumped to 7 separately, so the
+# merge bumps again: rows cached under either version 7 are ignored.
+classes_version: 8
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed
@@ -107,78 +113,135 @@ classes:
     label: human
     reason: real_person
     instance_only: true
-  # A band is a group of real people (D-38). Band classes (band: true) count only on the item's own
-  # P31, are demoted like creative works but yield only to a kind item (see kind_matches), and
-  # block only when typed as "the" + the band's label ("the Eagles"), or as the bare label when
-  # its singular is not a kind item ("Beatles" blocks; "Eagles", "eagles" and "a grizzly bear"
-  # do not). Capitals must match the label. Other
-  # organizations, companies, sports teams and brands stay allowed. Subtypes are listed because
-  # only the item's own P31 counts. Verified live 2026-11-10 against wbgetentities.
+  # Bands and sports teams are groups of real people (D-38, D-59). Group classes (group: band or
+  # group: team) count only on the item's own P31, are demoted like creative works but yield only
+  # to a kind item (see kind_matches), and block only when typed as "the" + the group's name
+  # ("the Eagles", "the Lakers"), or as the bare name when its singular is not a kind item
+  # ("Beatles" and "Lakers" block; "Eagles", "eagles", "Bulls" and "a grizzly bear" do not).
+  # Capitals must match the name. A band's name is its label; a team's may also be the alias
+  # that matched ("Lakers" for "Los Angeles Lakers"). Other organizations, companies and brands
+  # stay allowed (a Jeep). Subtypes are listed because only the item's own P31 counts. Bands
+  # verified live 2026-11-10 against wbgetentities.
   - qid: Q215380
     label: musical group
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q127334927
     label: band
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q5741069
     label: rock band
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q25391823
     label: punk band
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q56816954
     label: heavy metal band
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q2491498
     label: pop band
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q216337
     label: boy band
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q641066
     label: girl group
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q120544
     label: vocal group
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q19351429
     label: a cappella group
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q19464263
     label: rap group # alias "hip hop group"
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q9212979
     label: musical duo
     reason: real_person
     instance_only: true
-    band: true
+    group: band
   - qid: Q281643
     label: musical trio
     reason: real_person
     instance_only: true
-    band: true
+    group: band
+  # Sports teams (D-59). Verified live 2026-11-14 against wbgetentities: the Los Angeles Lakers
+  # (Q121783) and Chicago Bulls (Q128109) are instances of basketball team, the Philadelphia
+  # Eagles (Q219714) of American football team, the Durham Bulls (Q2581129) of baseball team,
+  # Wolverhampton Wanderers (Q19500) of association football club, men's association football
+  # team and professional sports team, and the rugby "Bulls" (Q1378158) of rugby union club.
+  - qid: Q12973014
+    label: sports team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q20639856
+    label: professional sports team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q13393265
+    label: basketball team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q476028
+    label: association football club
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q103229495
+    label: men's association football team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q17270000
+    label: football club
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q17156793
+    label: American football team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q4498974
+    label: ice hockey team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q13027888
+    label: baseball team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q43009164
+    label: rugby union club
+    reason: real_person
+    instance_only: true
+    group: team
   - qid: Q95074
     label: character # alias "fictional character"
     reason: copyrighted_character

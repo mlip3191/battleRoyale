@@ -56,7 +56,8 @@ class Down:
 
 
 def test_the_class_map_version_was_bumped_for_d51() -> None:
-    assert load_class_map().version >= 7
+    # D-51 and D-59 each bumped to 7 on their own branches; the merge bumped again to 8.
+    assert load_class_map().version >= 8
 
 
 @pytest.mark.parametrize(
@@ -164,7 +165,7 @@ async def test_a_creative_work_yields_to_a_kind_item(cache: WikidataCache) -> No
         (NameCheck("D", "Moose", "deity", kind_qid="K", kind_label="moose"), False),
         (NameCheck("P", "Moose", "out_of_scope", kind_qid="K", kind_label="moose"), False),
         (
-            NameCheck("B", "Moose", "real_person", band=True, kind_qid="K", kind_label="moose"),
+            NameCheck("B", "Moose", "real_person", group=True, kind_qid="K", kind_label="moose"),
             False,
         ),
         (NameCheck("H", "Moose", "real_person"), False),  # no kind item

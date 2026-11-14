@@ -22,7 +22,7 @@ Type `/review` or ask Claude "What can I review?". It lists every open PR in gro
 | **Needs your review** | Not yours, not a draft, and still needs an approval. Start here. |
 | **Needs the PM** | A teammate's PR that touches critical files (settings, hooks, contracts, package files). Only Mike's approval (or Gunnar's, as backup, if Mike is away) counts, but you can still comment. If Mike wrote the PR, it goes in the normal group and any one teammate can approve. |
 | **Blocked** | A required check is failing or there are merge conflicts. Reviewing helps; approving waits. |
-| **Approved, ready to merge** | The author should merge it. |
+| **Approved, ready to merge** | The author should merge it; the PM or backup approver may merge it after @mentioning the author (D-49). |
 | **Your PRs** | Yours. You can't review them; the list shows what you need to fix. |
 | **Drafts** | Not ready. Review only if the author asks. |
 
