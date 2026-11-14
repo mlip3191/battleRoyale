@@ -39,6 +39,8 @@ def print_summary(summary: IngestSummary, seconds: float) -> None:
     )
     print("fighters and documents are this run; parsed, chunks, and facts are all stored rows.")
     print(f"Finished in {seconds:.0f} s.")
+    if summary.trait_origin:
+        print(f"Trait rows loaded from {summary.trait_origin}.")
     for failure in summary.failures:
         print(f"Failed: {failure}")
     for fighter in summary.unmatched:

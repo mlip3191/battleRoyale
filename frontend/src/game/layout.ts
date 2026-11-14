@@ -2,6 +2,7 @@
 // Pure functions, no Phaser, so the rules (50-sprite cap, "× N" badge, placeholders) are testable.
 import type { Asset, FighterRequest } from "../api/client.ts";
 import type { Side } from "./timeline.ts";
+import { pluralOf } from "../components/Verdict.tsx";
 
 // The fixed stage the scene draws on; Phaser scales it to fit the page.
 export const STAGE = { width: 960, height: 540 } as const;
@@ -171,4 +172,12 @@ export function layoutStage(
     layoutSide(0, fighters[0]?.entity ?? "?", fighters[0]?.count ?? 1, urls[0]),
     layoutSide(1, fighters[1]?.entity ?? "?", fighters[1]?.count ?? 1, urls[1]),
   ];
+}
+
+// The end banner for a winning side: "GRIZZLY BEAR WINS!" for one fighter, "6 GRAY WOLVES WIN!" for a
+// group, so it matches the verdict's "6 gray wolves" instead of naming a single wolf.
+export function winnerBanner(layout: Pick<SideLayout, "name" | "count">) {
+  if (layout.count <= 1) return `${layout.name.toUpperCase()} WINS!`;
+  const group = `${layout.count.toLocaleString("en-US")} ${pluralOf(layout.name)}`;
+  return `${group.toUpperCase()} WIN!`;
 }
