@@ -192,6 +192,35 @@ describe("audio", () => {
     expect(audioPlan(perScript, "fight").music).toBe("/media/m.mp3");
   });
 
+  test("the files the backend makes (media/audio.py) map to their parts of the show", () => {
+    // What make_audio and make_music save: tagged WAVs under /media/audio.
+    const made: Asset[] = [
+      asset("sprite", "/media/sprites/gray-wolf-v1.png"),
+      voice("/media/audio/narration-intro-0123456789abcdef.wav", "intro"),
+      voice(
+        "/media/audio/narration-play_by_play-fedcba9876543210.wav",
+        "play_by_play",
+      ),
+      voice("/media/audio/narration-outro-00112233aabbccdd.wav", "outro"),
+      asset("music", "/media/audio/music-44556677eeff0011.wav"),
+    ];
+    expect(phases.map((p) => audioPlan(made, p))).toEqual([
+      { music: "/media/audio/music-44556677eeff0011.wav", narration: null },
+      {
+        music: "/media/audio/music-44556677eeff0011.wav",
+        narration: "/media/audio/narration-intro-0123456789abcdef.wav",
+      },
+      {
+        music: "/media/audio/music-44556677eeff0011.wav",
+        narration: "/media/audio/narration-play_by_play-fedcba9876543210.wav",
+      },
+      {
+        music: "/media/audio/music-44556677eeff0011.wav",
+        narration: "/media/audio/narration-outro-00112233aabbccdd.wav",
+      },
+    ]);
+  });
+
   test("the order of the files doesn't matter", () => {
     const shuffled = [...perScript].reverse();
     expect(audioPlan(shuffled, "intro").narration).toBe("/media/intro.mp3");

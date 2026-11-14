@@ -61,13 +61,17 @@ async def _get(
     url: str,
     params: dict[str, str] | None = None,
     sleep: Sleep = asyncio.sleep,
+    headers: dict[str, str] | None = None,
 ) -> httpx.Response | None:
     problem = "no response"
     for attempt in range(RETRIES + 1):
         response: httpx.Response | None = None
         try:
             response = await client.get(
-                url, params=params, headers={"User-Agent": USER_AGENT}, follow_redirects=True
+                url,
+                params=params,
+                headers={"User-Agent": USER_AGENT, **(headers or {})},
+                follow_redirects=True,
             )
         except httpx.TransportError as error:
             problem = type(error).__name__
@@ -85,8 +89,13 @@ async def _get(
 
 
 # Download a whole file, such as a trait dataset; a missing file is an error here.
-async def fetch_file(client: httpx.AsyncClient, url: str, sleep: Sleep = asyncio.sleep) -> bytes:
-    response = await _get(client, url, sleep=sleep)
+async def fetch_file(
+    client: httpx.AsyncClient,
+    url: str,
+    sleep: Sleep = asyncio.sleep,
+    headers: dict[str, str] | None = None,
+) -> bytes:
+    response = await _get(client, url, sleep=sleep, headers=headers)
     if response is None:
         raise SourceError(f"Download failed: {url} not found.")
     return response.content

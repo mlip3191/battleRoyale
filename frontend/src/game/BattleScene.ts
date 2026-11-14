@@ -8,6 +8,7 @@ import {
   STAGE,
   badgeText,
   visibleSlots,
+  winnerBanner,
   type SideLayout,
 } from "./layout.ts";
 import {
@@ -428,7 +429,7 @@ export function createBattleScene(P: typeof Phaser) {
 
     private endText(beat: Beat) {
       if (beat.winner !== null)
-        return `${this.opts.layouts[beat.winner].name.toUpperCase()} WINS!`;
+        return winnerBanner(this.opts.layouts[beat.winner]);
       return this.opts.outcome === "no_contest" ? "NO CONTEST" : "IT'S A DRAW!";
     }
 

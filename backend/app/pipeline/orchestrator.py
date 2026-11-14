@@ -14,9 +14,8 @@ lends its verdict, plus its fair fight and challenger when it has them; each cop
 "done" with detail "cached", and one it lacks runs fresh.
 
 TODO, remaining A05 pieces (issue #36):
-- when the owning modules land, swap the stubs in stages.py for real calls: research
-  (G04 get_stat_sheet, with the all-estimate fallback sheet and banner), audio and music
-  (A07). Stub output is not saved to the record today.
+- when the owning module lands, swap research's seed-sheet lookup for G04 get_stat_sheet
+  (with the all-estimate fallback sheet and banner). Stub output is not saved to the record.
 - seed-sheet lookup ignores `variant`; match variants once variant sheets exist.
 """
 
@@ -58,6 +57,7 @@ FALLBACK_DETAILS = {
 FALLBACK_WITH_VALUE = {
     "challenger": "Next challenger picked by quick tests of seed fighters this time.",
     "script": "Some of the commentary used the template script this time.",
+    "audio": "Some parts have captions only this time, no announcer voice.",
     "images": "Placeholder shapes for some of the pictures this time.",
 }
 # For a stage with a saved stand-in value but no note of its own above.
@@ -195,7 +195,9 @@ async def _broadcast(
             _optional(battle_id, store, "audio", lambda: stages.audio(lines), "assets")
         )
         group.create_task(
-            _optional(battle_id, store, "music", lambda: stages.music(found), "assets")
+            _optional(
+                battle_id, store, "music", lambda: stages.music(matchup, found, result), "assets"
+            )
         )
 
 

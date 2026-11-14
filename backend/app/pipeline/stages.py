@@ -1,18 +1,18 @@
 """One async function per pipeline stage (ARCHITECTURE §4), plus each stage's time budget.
 
-Each function calls the owning module's public function where it exists. Where the module is
-not built yet, a stub returns the matching contract fixture and the result says `stub=True`, so
-the orchestrator marks the stage detail "stub". Stubs remaining: audio and music (A07). Research
-reads the seed sheets until G04's get_stat_sheet lands.
+Each function calls the owning module's public function. A stage that reports `stub=True`
+gets the stage detail "stub" and its output is not saved. No stage in this file is a stub any
+more (intake's "stub" detail comes from the orchestrator). Research reads the seed sheets until
+G04's get_stat_sheet lands.
 """
 
 import asyncio
 import hashlib
-import json
 import logging
 from dataclasses import dataclass, field
 
-from app.config import REPO_ROOT, get_settings
+from app.config import get_settings
+from app.media import audio as media_audio
 from app.media import images as media_images
 from app.models.matchup import Matchup
 from app.models.media import Asset
@@ -44,8 +44,11 @@ STAGE_BUDGETS_S: dict[str, float] = {
 # Share of the script budget the model writer gets; the rest leaves time to swap in the
 # templates and save them before the orchestrator's cut-off.
 SCRIPT_WRITER_SHARE = 0.8
+# Share of the audio and music budgets the providers get; the rest leaves time to save.
+MEDIA_PROVIDER_SHARE = 0.8
+# The scripts that each get a narration file, in broadcast order.
+NARRATED_SCRIPTS = ("intro", "play_by_play", "outro")
 
-CONTRACT_FIXTURES = REPO_ROOT / "backend" / "tests" / "fixtures" / "contracts"
 NOT_FOUND = (
     "We don't have a stat sheet for {name!r} yet. For now, pick one of our ready-made fighters."
 )
@@ -212,14 +215,31 @@ async def scripts(
     return Stubbed(written, fallback=any(script.fallback for script in written))
 
 
-# Step 5 (stub until A07): the announcer's voice for the scripts.
-async def audio(written: list[Script]) -> Stubbed[list[Asset]]:
-    return Stubbed([_asset_fixture()], stub=True)
+# Step 5: the announcer's voice, one file per script (media/audio.py, A07). The provider gets
+# a share of the stage budget, so a slow one is cut off here and the stage still ends in time.
+# Fewer than three files is a fallback: with none the battle is captions only (value None);
+# with some, the saved files are kept and the missing parts are silent.
+async def audio(written: list[Script]) -> Stubbed[list[Asset] | None]:
+    if not written:
+        return Stubbed(None, fallback=True)
+    deadline = STAGE_BUDGETS_S["audio"] * MEDIA_PROVIDER_SHARE
+    assets = await media_audio.make_audio(written, timeout_s=deadline)
+    if not assets:
+        return Stubbed(None, fallback=True)
+    missing = len(assets) < len(NARRATED_SCRIPTS) or len(assets) < len(written)
+    return Stubbed(assets, fallback=missing or any(asset.fallback for asset in assets))
 
 
-# Step 5 (stub until A07): the soundtrack.
-async def music(found: Research) -> Stubbed[list[Asset]]:
-    return Stubbed([_asset_fixture()], stub=True)
+# Step 5: the soundtrack (media/audio.py, A07), with the same share of its budget. No track
+# means the stage ends "fallback" with nothing saved.
+async def music(
+    matchup: Matchup, found: Research, result: SimulationResult
+) -> Stubbed[list[Asset] | None]:
+    deadline = STAGE_BUDGETS_S["music"] * MEDIA_PROVIDER_SHARE
+    track = await media_audio.make_music(matchup, result, found.sheets, timeout_s=deadline)
+    if track is None:
+        return Stubbed(None, fallback=True)
+    return Stubbed([track], fallback=track.fallback)
 
 
 # Step 6: fighter sprites and the battlefield (media/images.py, A08). Pictures that could not be
@@ -227,12 +247,3 @@ async def music(found: Research) -> Stubbed[list[Asset]]:
 async def images(matchup: Matchup, found: Research) -> Stubbed[list[Asset]]:
     assets = await media_images.make_images(matchup, found.sheets)
     return Stubbed(assets, fallback=any(asset.fallback for asset in assets))
-
-
-def _asset_fixture() -> Asset:
-    return Asset.model_validate(_fixture("asset.json"))
-
-
-# Read one contract fixture (the stand-in output of a stage that isn't built yet).
-def _fixture(name: str) -> object:
-    return json.loads((CONTRACT_FIXTURES / name).read_text(encoding="utf-8"))
