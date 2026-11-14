@@ -4,7 +4,7 @@ This is the answer to "where do your numbers come from?" Every constant lives in
 
 Honesty note: published studies say how strong a bite is or how fast an animal runs (that is what the stat sheets cite), but nothing in the literature gives a conversion from "newtons of bite force" to "hit points in a fight." Where a constant has no published source, it is labeled **assumption** below and was chosen so that results look sensible across the benchmark matchups. The benchmark (F07) is how we check that choice.
 
-## How a fight works (engine version 8)
+## How a fight works (engine version 9)
 
 1. **Sampling.** Each of the (default) 1,000 runs draws every stat uniformly between its `low` and `high` for each side, using a generator seeded from the matchup, both stat-sheet hashes, and `ENGINE_VERSION`. Uncertain inputs therefore spread the results.
 2. **Approach.** The sides start `START_DISTANCE_M` apart and close at the sum of their speeds. Each side can attack once the gap is within its own reach, so a long-reach attacker (a breath weapon) opens fire first.
@@ -16,7 +16,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 | Constant | Value | Meaning | Source / status |
 |---|---|---|---|
-| `ENGINE_VERSION` | 8 | Part of the seed; bump whenever results would change. | Bookkeeping |
+| `ENGINE_VERSION` | 9 | Part of the seed; bump whenever results would change. | Bookkeeping |
 | `TICK_S` | 0.1 s | Simulation time step. | Assumption (fine enough for attack rates up to ~10/s; event times only, the attack rate itself is exact) |
 | `MAX_FIGHT_S` | 600 s | A fight this long is a draw. | Design choice (DECISIONS / ARCHITECTURE §9) |
 | `MAX_LOG_EVENTS` | 300 | Cap on the replay log. | `SimulationResult` contract |
@@ -34,9 +34,11 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `LOG_FLOW_SHARE` | 0.5 | Share of the replay log that hits and misses may fill; the rest is kept for knock-outs, retreats and escapes, so a crowded fight still shows fighters going down. | Bookkeeping |
 | `WILSON_Z` | 1.96 | z for a 95% interval. | Standard statistics (Wilson 1927) |
 | `MAX_ENGAGERS` | 8 | Most melee attackers that can surround one target. | Geometry: about 6 neighbors fit around a circle of equal size, 8 allows for smaller attackers stacking. **Assumption** (cap from ARCHITECTURE §9) |
-| `SWARM_THRESHOLD` | 200 | A side with more individuals than this runs in groups. | Design choice (ARCHITECTURE §9); chosen for speed |
+| `SWARM_THRESHOLD` | 200 | A side with more individuals than this always runs in groups (the ceiling; D-50). | Design choice (ARCHITECTURE §9); chosen for speed |
+| `SWARM_WORK_BUDGET` | 2,000 | A fight also runs in groups when its estimated work (attacks both sides make during the expected fight, from stats only) is above this (D-50, #183). | **Assumption**, calibrated: one-by-one cost is 0.8 to 1.3 s per 1,000 runs per 1,000 units of work, so 2,000 keeps a one-by-one fight near 2 s (3 s with the analysis) |
 | `SWARM_STEP_S` | 0.5 s | Shortest swarm step. | **Assumption** |
 | `SWARM_STEP_GROWTH` | 0.1 | Swarm steps are at least this share of elapsed time. | **Assumption**: keeps 600 s swarm fights fast; early moments stay fine-grained |
+| `SWARM_STEP_MAX_S` | 3 s | ...but never longer than this, in fights with at most `SWARM_THRESHOLD` on each side (the ones the work rule sends to swarm mode). Larger crowds were validated without it and are several times slower with it. | **Assumption**, calibrated: without a cap a long slow fight (150 cats v 1 elephant) overrated the crowd by +0.13; at 3 s the gaps are +0.022 (150 v 1) and +0.023 (100 v 1) at 600 runs and the fight takes 2.8 s with the analysis |
 | `MORALE_FLOOR`, `MORALE_SPAN` | 0.2, 0.8 | A side retreats once it has lost `0.2 + 0.8 x aggression_0_1` of its total hit points (timid 20%, fully aggressive never). | **Assumption**; no source measures this. Aggression is itself an assumable stat on the sheet. |
 | `GROUP_TACTICS_BONUS` | 0.5 | With two or more attackers on one target, hit chance rises by up to this share at `group_tactics_0_1` = 1. | **Assumption** (cooperative hunting raises success in packs, e.g. Packer & Ruttan 1988, but no table gives a number) |
 | `DECIDING_RUNS` | 200 | Runs per one-at-a-time sensitivity check. | Design choice (ARCHITECTURE §9) |
@@ -65,7 +67,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 - **Engagement limits (Lanchester linear law).** Each target can be attacked by at most `max_engagers = clamp((size_target / size_attacker)^2, 1, 8)` melee attackers at once. Extra attackers wait in a queue and join when a slot opens (an engaged attacker dies, or its target does). A bear (2.4 m) facing wolves (1.6 m) allows 2 wolves at a time; wolves facing the bear allow 1 each. Fighters with `weapon_ranged` use the **square law**: everyone engages. Lanchester (1916) derived both laws; the linear law is for fights where combatants pair off, the square law for fights where all concentrate fire.
 - **Size references.** For `size_reference` ("horse-sized duck"), the caller passes the reference entity's stat sheet to `run(..., reference_sheets=[...])`. Code computes `k = reference mass / own mass` from the sheets' central values. A resized fighter has mass ×k, hit points ∝ mass, strength and damage ×k^(2/3), size and reach ×k^(1/3), speed ×k^(1/6). Attack rate, armor, and behavior stats are unchanged (assumption). The result's first approach events carry the neutral phrase "scaled to horse size" for the UI and announcer. **Contract gap:** `SimulationResult` has no field for the scale factor; adding one is a `contract-change` for the PM, so for now `engine.scale_factors()` returns it and the phrase rides in `text_hint`.
-- **Swarm mode.** If either side has more than 200 individuals, each side becomes one group of identical fighters. Each 0.5 s step (longer later in the fight), the engaged attackers make attempts (binomial draws), hits are drawn, and the hits are spread at random over as many defenders as can be engaged at once (the same cap of 8 attackers per target as the one-by-one engine), so some defenders fall early and others late. Each wounded defender's hit points are remembered from step to step, and the defenders being fought stay the same until they fall (attackers stay on their target, as in the one-by-one engine); each step's hits are split evenly across them, with the remainder going to random ones, and wounds never heal when fewer are fought. Hits are whole hits, and overkill is wasted, as in the one-by-one engine. Sides act in random order within a step so mirror swarms are fair. Events are group events with `group_size`. Grouped fighters share one set of sampled stats, as individuals do.
+- **Swarm mode.** If either side has more than 200 individuals, or the fight's estimated work is above `SWARM_WORK_BUDGET` (D-50), each side becomes one group of identical fighters. Each 0.5 s step (longer later in the fight), the engaged attackers make attempts (binomial draws), hits are drawn, and the hits are spread at random over as many defenders as can be engaged at once (the same cap of 8 attackers per target as the one-by-one engine), so some defenders fall early and others late. Each wounded defender's hit points are remembered from step to step, and the defenders being fought stay the same until they fall (attackers stay on their target, as in the one-by-one engine); each step's hits are split evenly across them, with the remainder going to random ones, and wounds never heal when fewer are fought. Hits are whole hits, and overkill is wasted, as in the one-by-one engine. Sides act in random order within a step so mirror swarms are fair. Events are group events with `group_size`. Grouped fighters share one set of sampled stats, as individuals do.
 
 **Speed.** On a laptop, 1,000 runs of a 201 v 201 swarm fight take about 0.5 to 0.9 s (the first version of the new swarm model took about 2 s; the old smooth model 0.14 s), 300 v 300 about 0.7 s, 1,000 v 1,000 about 1.3 to 1.9 s, and 10,000 ants v 1 lion (a draw at 600 s) 0.6 to 1 s. Fronts with identical hit points are handled together, which is what keeps it fast. One-by-one fights cost roughly the number of attacks made: 100 v 100 wolves take about 1.7 s and 200 v 200 about 3.1 s, and a long uneven fight can be far slower (150 cats v 1 elephant took about 32 s). CI runners are 2 to 3 times slower than a laptop. Choosing swarm mode by expected work instead of head count is D-50 (#183); see [swarm-validation.md](swarm-validation.md) for the timings.
 
@@ -165,6 +167,16 @@ Fatigue for living fighters (`endurance_s` only stops machines). A `no_contest` 
 - **Errors.** Anything other than exactly eight fighters, or the same fighter twice, raises a `ValueError` with a plain message.
 - **Cost.** Seven 1 v 1 matches: about 1 s in total with the default 1,000 runs and the deciding-factor analysis. `explain=False` is faster, but its deciding factor is a placeholder.
 - **Not changed.** Single-battle results and `ENGINE_VERSION` are untouched. The API, narration and UI come later (#114 to #117).
+
+## Choosing swarm mode by expected work (D-50, #183)
+
+Head count is a poor predictor of how long a fight takes to simulate: 200 v 200 wolves take about 3 s, while 150 cats v 1 elephant took about 32 s with the analysis (a crowd slowly wearing down one huge target). `expected_work(sides)` in `engine.py` estimates the attacks both sides make in one fight, from stats only (never a clock, so the same matchup gives the same mode on every machine):
+
+- Attackers engaged x attack rate, for each side. Melee attackers are capped by how many can reach each defender (`max_engagers`); ranged attackers all engage.
+- The fight lasts until the faster side would remove the other: the hits needed (each defender needs its own hits, and overkill is wasted) divided by hits landed per second. It never exceeds the time limit or a machine's operating time.
+- Work is the sum of both sides' attack rates times that duration. The estimate is made once per matchup from the sheets' central values and used for every run, the deciding-factor runs and the replay.
+
+A fight with more than `SWARM_THRESHOLD` per side (the ceiling) or more work than `SWARM_WORK_BUDGET` runs in swarm mode. The estimate tracks real cost well (it predicted 2,080 attacks for a fight that makes about 1,790). It does not model approach time, morale or thinning attackers, so it is an estimate, not a bound. Only head count (more than `SWARM_THRESHOLD` on a side) turns off the certain-result shortcut; a hopeless stalemate below that is still shortcut even when the work rule sends it to swarm mode.
 
 ## References
 

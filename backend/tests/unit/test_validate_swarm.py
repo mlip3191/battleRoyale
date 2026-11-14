@@ -5,10 +5,10 @@ from scripts import validate_swarm as vs
 
 
 def test_compare_runs_both_engines_and_restores_the_threshold():
-    threshold = c.SWARM_THRESHOLD
+    threshold, budget = c.SWARM_THRESHOLD, c.SWARM_WORK_BUDGET
     label, a, na, b, nb = vs.scenarios()["mirror"][0]
     row = vs.compare(label, a, na, b, nb, runs=40)
-    assert c.SWARM_THRESHOLD == threshold
+    assert (c.SWARM_THRESHOLD, c.SWARM_WORK_BUDGET) == (threshold, budget)
     for result in (row.individual, row.swarm):
         assert result.runs == 40
         assert abs(sum(result.win_prob) + result.draw_prob - 1.0) < 1e-9
@@ -16,7 +16,7 @@ def test_compare_runs_both_engines_and_restores_the_threshold():
 
 
 def test_every_scenario_group_is_present():
-    assert set(vs.scenarios()) == {"mirror", "uneven", "pack", "cats", "ranged", "large"}
+    assert set(vs.scenarios()) == {"mirror", "uneven", "pack", "cats", "ranged", "large", "work"}
 
 
 def test_main_prints_one_section_per_scenario(capsys):

@@ -53,13 +53,15 @@ test("fixtures mode: /battle/thousand-vs-one plays 1,000 ducks vs 1 lion with th
   expect(fetch).not.toHaveBeenCalled();
 });
 
-test("fixtures mode: /battle/two-hundred-vs-five plays the log that fills the event cap", async () => {
+test("fixtures mode: /battle/two-hundred-vs-five plays a swarm log with 200 on a side", async () => {
   vi.stubEnv("VITE_USE_FIXTURES", "true");
   const log = (await CROWD_BATTLES.get("two-hundred-vs-five")!())
     .representative_log;
-  expect(log.length).toBeGreaterThan(290);
+  // Since D-50 (engine version 9) this fight runs in swarm mode although neither side is over
+  // 200: a long log of group events (no single actor), not individual hits and misses.
+  expect(log.length).toBeGreaterThan(50);
   expect(log.length).toBeLessThanOrEqual(300); // the engine's MAX_LOG_EVENTS
-  expect(log.some((e) => e.text_hint === "more go down")).toBe(true);
+  expect(log.some((e) => e.actor === null && e.group_size > 1)).toBe(true);
   open("two-hundred-vs-five");
   const scene = await stageScene();
   expect(

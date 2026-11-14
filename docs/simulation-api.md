@@ -18,7 +18,7 @@ from app.simulation.summary import summary
 | `test_challengers(winner_sheet, candidates, terrain, winner_request=None, winner_reference=None)` | `list[ChallengerSuggestion]`, closest to 50/50 first (may be **empty**: candidates that cannot meet the winner are dropped; `entity` is a display name, not a `fighter_id`). By default the winner duels as one plain fighter; pass the winner's `FighterRequest` (its count and `size_reference`) and the size-reference sheet to duel it as the user saw it ("6 gray wolves", "horse-sized duck"); the reason then names it that way | The "next challenger" step | ~0.3 s for 8 candidates (one plain winner; a winner with a large count makes each duel slower, so check the stage budget when it is wired in) |
 | `summary(result, names)` | `Summary` | The numbers the UI and announcer need | instant |
 
-Timings are typical on a dev laptop at `ENGINE_VERSION 8`; expect similar or faster.
+Timings are typical on a dev laptop at `ENGINE_VERSION 9`; expect similar or faster.
 
 All calls are **deterministic**: the same matchup, sheets, and engine version always give the identical result (the seed is built from the matchup, both `sheet_hash` values, and `ENGINE_VERSION`). That is what lets "same battle requested twice" return the cached answer.
 
@@ -88,7 +88,7 @@ print(fair.message)
 | **Draw / stalemate** | `outcome == "draw"` | There is no favorite (`summary.favorite is None`); the explainer says it was a stalemate |
 | **A side flees** | RETREAT then FLEE: the runner escapes, the other side wins, and the runner is counted among the survivors. RETREAT **without** FLEE means the runner is too slow to get away and the fight continues | The log tells the story |
 | **A machine runs out of operating time** | a KO event with the hint "out of action: its operating time ran out" | Narrate it as breaking down, not dying |
-| **Swarms** (either side over 200) | Group events: `actor`/`target` are `None` and `group_size` is how many acted or fell (it can be 1). In swarm mode every HIT and KO is a group event, for both sides, and there are no MISS events | Animate a crowd, not individuals. Decide "swarm" from the matchup counts (> 200), not from `group_size`; APPROACH, RETREAT and FLEE are group events in every fight |
+| **Swarms** (either side over 200, or a fight too slow to run one by one, D-50) | Group events: `actor`/`target` are `None` and `group_size` is how many acted or fell (it can be 1). In swarm mode every HIT and KO is a group event, for both sides, and there are no MISS events | Animate a crowd, not individuals. Swarm replays can occur below 200 (150 cats v 1 elephant), so detect a swarm from the events (`actor`/`target` are `None`, or `group_size` is set), not from the matchup counts; APPROACH, RETREAT and FLEE are group events in every fight |
 | **Size reference** ("horse-sized duck") | The first APPROACH event's hint ends with ", scaled to horse size" | See below |
 
 ## Size references ("horse-sized duck")
