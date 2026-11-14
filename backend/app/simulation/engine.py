@@ -158,10 +158,17 @@ def expected_work(sides: list[Template]) -> float:
 
 
 def use_swarm(sides: list[Template]) -> bool:
-    """Swarm mode for big groups (the ceiling) or for fights with too much work (D-50)."""
-    return max(side.count for side in sides) > c.SWARM_THRESHOLD or (
-        expected_work(sides) > c.SWARM_WORK_BUDGET
-    )
+    """Swarm mode for big groups (the ceiling) or for fights with too much work (D-50).
+
+    Swarm mode does not carry venom doses (D-44), so a fight with a venomous side is never sent
+    there by the work rule: it stays one by one and keeps its venom (#229). Above the head-count
+    ceiling it is still swarm mode, as before.
+    """
+    if max(side.count for side in sides) > c.SWARM_THRESHOLD:
+        return True
+    if any(side.venomous for side in sides):
+        return False
+    return expected_work(sides) > c.SWARM_WORK_BUDGET
 
 
 def _foregone(sides: list[Template], starts: list[float]) -> tuple[int, float] | None:
