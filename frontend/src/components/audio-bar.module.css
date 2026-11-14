@@ -1,0 +1,45 @@
+/* The sound controls under the replay, in the broadcast theme (src/index.css tokens). */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0.75rem 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--panel);
+  border-left: 4px solid var(--hot);
+}
+
+.button {
+  min-height: 2.75rem;
+  padding: 0.4rem 1rem;
+  font: 700 1rem var(--font-score);
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--bg);
+  border: 2px solid var(--neon);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.button[aria-pressed="true"] {
+  color: var(--banner-text);
+  background: var(--banner);
+  border-color: var(--banner);
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text);
+}
+
+.volume input {
+  accent-color: var(--neon);
+}
+
+.what {
+  color: var(--muted);
+  font-size: 0.9rem;
+}

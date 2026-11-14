@@ -92,11 +92,13 @@ def test_event_log_never_exceeds_300_events():
     assert result.representative_log[-1].type == EventType.END
 
 
-def test_one_v_one_thousand_runs_finish_under_one_second():
+def test_one_v_one_thousand_runs_are_not_grossly_slow():
     bear, wolf = load_sheet("stat-sheet.json"), load_sheet("stat-sheet-gray-wolf.json")
     start = time.perf_counter()
     run(matchup(), [bear, wolf], runs=1000, explain=False)  # the explanation is timed in F05's test
-    assert time.perf_counter() - start < 1.0
+    # About 0.2 s on a laptop; CI is 2 to 3 times slower and a loaded run more. This only catches
+    # a gross slowdown, not a budget (#224).
+    assert time.perf_counter() - start < 5.0
 
 
 def test_zero_runs_is_a_clear_error():

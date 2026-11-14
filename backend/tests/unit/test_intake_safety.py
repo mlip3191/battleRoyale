@@ -14,6 +14,7 @@ from app.models.matchup import IntakeResult
 from app.providers.base import ChatMessage
 from app.providers.live.http import ProviderError
 from app.safety.classify import PROMPT_NAME as SAFETY_PROMPT
+from app.safety.verdict import MESSAGES
 
 # What the classifier stand-in blocks: fighter words -> reason. It ignores instructions.
 BLOCKED_WORDS = {
@@ -262,6 +263,49 @@ async def test_an_unusable_classifier_reply_raises_intake_unavailable() -> None:
 async def test_the_mock_provider_allows_by_default_in_mock_mode() -> None:
     result = await parse_matchup("a grizzly bear vs 6 gray wolves in a forest")
     assert result.status == "ok"
+
+
+# The Home page example chips: the ones on main, then the seed-fighter set from #220.
+HOME_EXAMPLES = [
+    "100 duck-sized horses vs 1 horse-sized duck",
+    "a grizzly bear vs 6 gray wolves in a forest",
+    "a toaster vs a goose",
+    "a honey badger vs a king cobra",
+    "a Roman legionary vs a gorilla",
+    "a dragon vs a main battle tank",
+    "a honey badger vs a saltwater crocodile",
+    "an african elephant vs 12 gray wolves",
+    "a horse vs a gorilla",
+    "50 ducks vs a honey badger",
+    "a saltwater crocodile vs a horse in the water",
+]
+
+
+@pytest.mark.parametrize(
+    ("text", "reason"),
+    [
+        ("Napoleon vs a grizzly bear", "real_person"),
+        ("Taylor Swift vs a goose", "real_person"),
+        ("Batman vs a goose", "copyrighted_character"),
+        ("Zeus vs a bear", "deity"),
+        ("a grizzly bear vs a handgun", "weapon"),
+        ("an AK-47 vs a bear", "weapon"),
+        ("a toddler vs a goose", "minor"),  # code rules, before the mock classifier
+        ("my friend John Smith vs a goose", "real_person"),  # code rules too
+    ],
+)
+async def test_mock_mode_intake_blocks_obvious_people_characters_deities_and_firearms(
+    text: str, reason: str
+) -> None:
+    result = await parse_matchup(text)
+    assert (result.status, result.blocked_reason) == ("blocked", reason)
+    assert result.message == MESSAGES[reason] and result.matchup is None
+
+
+@pytest.mark.parametrize("text", HOME_EXAMPLES)
+async def test_mock_mode_intake_still_allows_the_home_examples(text: str) -> None:
+    result = await parse_matchup(text)
+    assert result.status == "ok", (text, result.message)
 
 
 # --- Prompt injection: same result as the clean version -------------------------------------

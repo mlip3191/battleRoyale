@@ -32,6 +32,8 @@ SETTINGS_PREFIX: dict[ProviderName, str] = {
     "music": "music",
 }
 
+ProviderMode = Literal["mock", "live"]
+
 MOCKS: dict[ProviderName, Callable[[], object]] = {
     "chat": mock.MockChatLLM,
     "structured": mock.MockStructuredLLM,
@@ -62,13 +64,17 @@ def _live_factories() -> dict[ProviderName, Callable[[ServiceConfig, Settings], 
     from app.providers.live.chat import LiveChatLLM
     from app.providers.live.doc_parser import LiveDocParser
     from app.providers.live.embedder import LiveEmbedder
+    from app.providers.live.image import LiveImageGen
+    from app.providers.live.rerank import LiveReranker
     from app.providers.live.structured import LiveStructuredLLM
 
     return {
         "chat": LiveChatLLM,
         "structured": LiveStructuredLLM,
         "embedder": LiveEmbedder,
+        "reranker": LiveReranker,
         "doc_parser": LiveDocParser,
+        "image": LiveImageGen,
     }
 
 
@@ -114,12 +120,19 @@ def get_provider(name: Literal["tts"], settings: Settings | None = None) -> TTS:
 def get_provider(name: Literal["music"], settings: Settings | None = None) -> MusicGen: ...
 
 
+# Whether a provider runs as its mock or live. PROVIDER_MODE is the one switch for every
+# provider today; get_provider and the media cache folders (app/media/files.py) both ask here.
+def provider_mode(name: ProviderName, settings: Settings | None = None) -> ProviderMode:
+    settings = settings or get_settings()
+    return settings.provider_mode
+
+
 # Return the provider for name, honoring PROVIDER_MODE.
 def get_provider(name: ProviderName, settings: Settings | None = None) -> object:
     settings = settings or get_settings()
     if name not in MOCKS:
         raise ValueError(f"Unknown provider '{name}'. Known: {', '.join(MOCKS)}.")
-    if settings.provider_mode == "mock":
+    if provider_mode(name, settings) == "mock":
         return MOCKS[name]()
     factory = _live_factories().get(name)
     if factory is None:
@@ -127,3 +140,18 @@ def get_provider(name: ProviderName, settings: Settings | None = None) -> object
             f"No live '{name}' adapter yet; use PROVIDER_MODE=mock until its task builds one."
         )
     return factory(service_config(name, settings), settings)
+
+
+# The chat model for intake: the same provider, with intake's shorter timeout and fewer retries.
+def get_intake_chat(settings: Settings | None = None) -> ChatLLM:
+    settings = settings or get_settings()
+    if settings.provider_mode == "mock":
+        return mock.MockChatLLM()
+    from app.providers.live.chat import LiveChatLLM
+
+    return LiveChatLLM(
+        service_config("chat", settings),
+        settings,
+        timeout_s=settings.intake_timeout_s,
+        retries=settings.intake_retries,
+    )
