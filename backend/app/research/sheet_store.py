@@ -23,7 +23,12 @@ from app.research.seed_fighters import (
     find_seed_sheet,
     load_seed_fighters,
 )
-from app.research.statsheet import build_stat_sheet, load_facts, profile_from_seed
+from app.research.statsheet import (
+    FighterProfile,
+    build_stat_sheet,
+    load_facts,
+    profile_from_seed,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,13 +90,25 @@ async def resolve_stat_sheet(
             build_sheet_with_evidence(connection, providers, profile), EXTRACTION_BUDGET_S
         )
     except TimeoutError:
+        # Not cached: a later battle retries extraction instead of reusing this weaker sheet.
         logger.warning("Extraction for %s ran out of time; built from facts.", fighter.id)
-        sheet = build_stat_sheet(profile, load_facts(connection, fighter.id))
+        return _sheet_without_extraction(connection, profile)
     except ValueError as error:  # a stat with no level that applies (see build_stat_sheet)
         logger.warning("Could not build a sheet for %s: %s", fighter.id, error)
         return None
     save_sheet(connection, sheet)
     return sheet
+
+
+# A sheet from stored facts and defaults only, or None when one can't be built.
+def _sheet_without_extraction(
+    connection: sqlite3.Connection, profile: FighterProfile
+) -> StatSheet | None:
+    try:
+        return build_stat_sheet(profile, load_facts(connection, profile.fighter_id))
+    except ValueError as error:
+        logger.warning("Could not build a sheet for %s: %s", profile.fighter_id, error)
+        return None
 
 
 # Fighters whose name or id contains the search text: seed-list fighters, then cached ones.

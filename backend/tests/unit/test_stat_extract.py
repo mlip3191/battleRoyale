@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import sqlite3
 from datetime import UTC, datetime
 
 import pytest
@@ -304,3 +305,47 @@ def test_a_page_with_no_fetch_date_or_a_huge_quote_is_rejected() -> None:
     passages = [Passage(1, "Cat", URL, "CC BY-SA 4.0", None, long_passage, 0.1)]
     reply = answer(5, "kg", long_passage, passage=1)
     assert verified_value(StatName.MASS, reply, passages, {URL: WHEN}) is None
+
+
+def test_a_passage_from_an_unapproved_site_is_rejected() -> None:
+    url = "https://example-fan-wiki.org/Cat"
+    passages = [Passage(1, "Cat", url, "CC BY-SA 4.0", None, "Cats weigh 5 kg.", 0.1)]
+    reply = answer(5, "kg", "Cats weigh 5 kg.", passage=1)
+    assert verified_value(StatName.MASS, reply, passages, {url: WHEN}) is None
+
+
+@pytest.mark.parametrize(
+    ("number", "unit", "quote"),
+    [(5, "m", "lasts 5 ms"), (5, "g", "pulls 5 gs")],
+)
+def test_short_symbols_take_no_plural(number, unit, quote) -> None:
+    assert not number_has_unit_in_quote(number, unit, quote)
+
+
+def test_mega_and_giga_symbols_are_rejected() -> None:
+    passages = [Passage(1, "Cat", URL, "CC BY-SA 4.0", None, "It spans 5 Mm.", 0.1)]
+    reply = answer(5, "Mm", "It spans 5 Mm.", passage=1)
+    assert verified_value(StatName.SIZE, reply, passages, {URL: WHEN}) is None
+
+
+def test_a_database_error_extracts_nothing(monkeypatch) -> None:
+    async def locked(connection, embedder, reranker, fighter_id, stat):
+        raise sqlite3.OperationalError("database is locked")
+
+    monkeypatch.setattr(extract, "evidence_for", locked)
+    providers = (FakeChat(), None, None)
+    assert asyncio.run(extract.extract_stat(None, providers, CAT, StatName.MASS)) is None
+
+
+def test_a_failing_chat_still_builds_the_whole_sheet(monkeypatch) -> None:
+    async def evidence(connection, embedder, reranker, fighter_id, stat):
+        return PASSAGES
+
+    class BrokenChat:
+        async def complete(self, messages, *, prompt_name, json_schema=None) -> str:
+            raise ValueError("200 reply that isn't JSON")
+
+    monkeypatch.setattr(extract, "evidence_for", evidence)
+    monkeypatch.setattr(extract, "load_facts", lambda connection, fighter_id: [])
+    sheet = asyncio.run(extract.build_sheet_with_evidence(None, (BrokenChat(), None, None), CAT))
+    assert all(stat.method != "extracted" for stat in sheet.stats.values())

@@ -96,7 +96,7 @@ def test_slow_extraction_falls_back_to_facts_and_defaults(
     monkeypatch.setattr(sheet_store, "EXTRACTION_BUDGET_S", 0.01)
     sheet = resolve(db, "toaster")
     assert sheet is not None and sheet.fighter_id == "toaster"
-    assert cached_sheet(db, "toaster") == sheet
+    assert cached_sheet(db, "toaster") is None  # not cached, so the next battle retries
 
 
 def test_a_sheet_with_no_evidence_gets_the_guesswork_banner(db: sqlite3.Connection) -> None:
