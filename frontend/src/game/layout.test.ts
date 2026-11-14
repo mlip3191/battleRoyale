@@ -12,6 +12,7 @@ import {
   layoutStage,
   spriteUrls,
   visibleSlots,
+  winnerBanner,
 } from "./layout.ts";
 
 const assets = done.assets as Asset[];
@@ -171,5 +172,26 @@ describe("placeholders when images are missing", () => {
   test("two unnamed sprites are taken in fighter order", () => {
     const two = [sprite("s1", "/media/a.png"), sprite("s2", "/media/b.png")];
     expect(spriteUrls(two, fighters)).toEqual(["/media/a.png", "/media/b.png"]);
+  });
+});
+
+describe("winnerBanner", () => {
+  test("one fighter keeps its name and 'WINS!'", () => {
+    expect(winnerBanner({ name: "grizzly bear", count: 1 })).toBe(
+      "GRIZZLY BEAR WINS!",
+    );
+  });
+
+  test("a group shows its head count and plural, like the verdict", () => {
+    expect(winnerBanner({ name: "gray wolf", count: 6 })).toBe(
+      "6 GRAY WOLVES WIN!",
+    );
+    expect(winnerBanner({ name: "goose", count: 3 })).toBe("3 GEESE WIN!");
+  });
+
+  test("a crowd's count gets thousands separators", () => {
+    expect(winnerBanner({ name: "fire ant", count: 1000 })).toBe(
+      "1,000 FIRE ANTS WIN!",
+    );
   });
 });
