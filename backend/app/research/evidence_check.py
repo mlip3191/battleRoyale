@@ -18,6 +18,8 @@ def quote_in_passage(quote: str, passage: str) -> bool:
     cleaned = normalize_text(quote)
     if not cleaned:
         return False
+    # A "-" may come before the quote, on purpose: it keeps "5 kg" matching inside "4-5 kg".
+    # So "5" also matches inside "-5"; that's harmless while negatives fail the sanity bounds.
     pattern = r"(?<![\w.,])" + re.escape(cleaned) + r"(?!\w|[.,]\d)"
     return re.search(pattern, normalize_text(passage)) is not None
 
@@ -61,8 +63,10 @@ def number_has_unit_in_quote(value_as_written: float, unit: str, quote: str) -> 
     flags = re.IGNORECASE if len(unit_text) > SHORT_UNIT_CHARS else 0
     # "in" is also a word, so as inches it can't be followed by another word ("5 in the wild").
     word_after = r"(?!\s+[A-Za-z])" if unit_text.lower() in UNITS_THAT_ARE_WORDS else ""
+    # One- and two-letter symbols take no plural, so "5 ms" is not metres nor "5 gs" grams.
+    plural = "" if len(unit_text) <= 2 else r"(?:e?s)?"
     tail = re.compile(
-        RANGE_TAIL + re.escape(unit_text) + r"(?:e?s)?(?![A-Za-z/²³])" + word_after, flags
+        RANGE_TAIL + re.escape(unit_text) + plural + r"(?![A-Za-z/²³])" + word_after, flags
     )
     for found in NUMBER.finditer(text):
         number = float(found.group().replace(",", ""))
