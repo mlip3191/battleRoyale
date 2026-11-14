@@ -1,13 +1,12 @@
-"""Run the five showcase battles through the engine with stand-in sheets (an engine sanity check).
+"""Run the five showcase battles through the engine (an engine sanity check).
 
 From the repo root:
   uv run --directory backend python scripts/showcase_dry_run.py
 
-The real sheets come from tasks G05 and G09. So far only the grizzly and the gray wolf are real
-(the hand-verified seed sheets in data/seed/fighters/); every other fighter is a stand-in with
-round numbers from common reference values. They are NOT sourced and must never reach the UI:
-this script only checks that the engine gives sensible, explainable results for the demo, and
-shows what to tune if not.
+Every fighter except the dragon is a real, hand-verified seed sheet (G05, in data/seed/fighters/).
+The dragon is still a stand-in with round numbers (G09 builds the real mythical sheets from their
+analogs): it is NOT sourced and must never reach the UI. This script checks that the engine gives
+sensible, explainable results for the demo, and shows what to tune if not.
 """
 
 import argparse
@@ -31,13 +30,13 @@ from app.simulation.summary import Summary, summary  # noqa: E402
 # path); moving `sim_helpers` breaks it. `make_sheet` labels every overridden stat as an unsourced
 # stand-in (#86), but the numbers are still invented, so the stand-in sheets built here must never
 # be shown, saved, or used as fixtures.
-from tests.property.sim_helpers import make_dragon, make_sheet, matchup_of  # noqa: E402
+from tests.property.sim_helpers import make_dragon, matchup_of  # noqa: E402
 
 SEED_FIGHTERS = Path(__file__).resolve().parents[2] / "data" / "seed" / "fighters"
 
 BANNER = (
-    "STAND-IN SHEETS: only the grizzly and the gray wolf are real (G05 seed sheets); every other "
-    "fighter is an unsourced stand-in.\nEngine check only, not demo results."
+    "ENGINE CHECK ONLY: real seed sheets for every fighter except the dragon, an unsourced "
+    "stand-in (G09).\nNot demo results."
 )
 
 
@@ -47,52 +46,9 @@ def seed_sheet(name: str) -> StatSheet:
     return StatSheet.model_validate(json.loads(path.read_text("utf-8")))
 
 
-def stand_ins() -> dict[str, StatSheet]:
-    """Round-number stand-ins (see the module docstring)."""
-    return {
-        "horse": make_sheet(
-            "horse", mass_kg=500, size_m=2.4, top_speed_mps=20, attack_force_n=6000,
-            attacks_per_s=0.5, reach_m=1.5, armor_0_1=0.05, aggression_0_1=0.3,
-            group_tactics_0_1=0.4,
-        ),
-        "duck": make_sheet(
-            "duck",
-            category="bird", mass_kg=1.2, size_m=0.55, top_speed_mps=5, attack_force_n=20,
-            attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=0.3,
-            group_tactics_0_1=0.3,
-        ),
-        "honey badger": make_sheet(
-            "honey badger",
-            fighter_id="honey-badger", category="mammal", mass_kg=10, size_m=0.75,
-            top_speed_mps=8, attack_force_n=300, attacks_per_s=2.0, reach_m=0.3, armor_0_1=0.5,
-            aggression_0_1=1.0, group_tactics_0_1=0.0,
-        ),
-        "king cobra": make_sheet(
-            "king cobra",
-            weapons=["venom", "teeth"], category="reptile", mass_kg=6, size_m=3.5,
-            top_speed_mps=5, attack_force_n=100, attacks_per_s=1.5, reach_m=1.2, armor_0_1=0.1,
-            aggression_0_1=0.5, group_tactics_0_1=0.0,
-        ),
-        "legionary": make_sheet(
-            "legionary",
-            category="human_archetype", mass_kg=75, size_m=1.75, top_speed_mps=6,
-            attack_force_n=1500, attacks_per_s=1.0, reach_m=0.9, armor_0_1=0.5, aggression_0_1=0.7,
-            group_tactics_0_1=0.9, weapons=["weapon_melee"],
-        ),
-        "gorilla": make_sheet(
-            "gorilla",
-            category="mammal", mass_kg=160, size_m=1.7, top_speed_mps=7, attack_force_n=6000,
-            attacks_per_s=1.0, reach_m=1.0, armor_0_1=0.15, aggression_0_1=0.5,
-            group_tactics_0_1=0.2,
-        ),
-        "dragon": make_dragon(["flight", "breath_weapon"], name="dragon"),
-        "tank": make_sheet(
-            "tank",
-            category="vehicle", body="machine", weapons=["ramming"], mass_kg=60000, size_m=10.0,
-            top_speed_mps=18, attack_force_n=0, attacks_per_s=0.1, reach_m=1.0,
-            armor_0_1=0.9, endurance_s=7200, aggression_0_1=0.0, group_tactics_0_1=0.0,
-        ),
-    }  # fmt: skip
+def dragon() -> StatSheet:
+    """The one stand-in left: a dragon with round numbers (see the module docstring)."""
+    return make_dragon(["flight", "breath_weapon"], name="dragon")
 
 
 @dataclass(frozen=True)
@@ -104,14 +60,17 @@ class Battle:
 
 
 def battles() -> list[Battle]:
-    s = stand_ins()
+    horse, duck = seed_sheet("horse"), seed_sheet("duck")
     bear, wolf = seed_sheet("grizzly-bear"), seed_sheet("gray-wolf")
+    badger, cobra = seed_sheet("honey-badger"), seed_sheet("king-cobra")
+    legionary, gorilla = seed_sheet("roman-legionary"), seed_sheet("gorilla")
+    tank = seed_sheet("main-battle-tank")
     return [
         Battle(
             "100 duck-sized horses vs 1 horse-sized duck",
             matchup_of(100, 1, ref_0="duck", ref_1="horse", terrain=Terrain.OPEN_FIELD),
-            [s["horse"], s["duck"]],
-            [s["duck"], s["horse"]],
+            [horse, duck],
+            [duck, horse],
         ),
         Battle(
             "Grizzly vs 6 wolves (forest)",
@@ -121,17 +80,17 @@ def battles() -> list[Battle]:
         Battle(
             "Honey badger vs king cobra",
             matchup_of(1, 1, terrain=Terrain.OPEN_FIELD),
-            [s["honey badger"], s["king cobra"]],
+            [badger, cobra],
         ),
         Battle(
             "Roman legionary vs gorilla",
             matchup_of(1, 1, terrain=Terrain.FOREST),
-            [s["legionary"], s["gorilla"]],
+            [legionary, gorilla],
         ),
         Battle(
             "A dragon vs a main battle tank (open field)",
             matchup_of(1, 1, terrain=Terrain.OPEN_FIELD),
-            [s["dragon"], s["tank"]],
+            [dragon(), tank],
         ),
     ]
 
