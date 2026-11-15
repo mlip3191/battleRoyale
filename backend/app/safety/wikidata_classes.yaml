@@ -29,7 +29,12 @@
 # item whose P31 includes a group class, and the common-word check reads the top 10 results
 # (live "wolf": the grey wolf is result 6, so bare "Wolves" is the animals). A group that lost
 # the pick to a kind item (version 6) may be a team too.
-classes_version: 8
+# Version 9 (#186, D-51, merged with D-59 and the #164 group fixes): a bare name typed in
+# lowercase ("moose", "shredder") is judged by its kind item when the top pick is a person or a
+# character (groups keep the group rule; a group that lost the pick still blocks first), which
+# changes how cached rows block. Both branches had bumped to 8 separately, so the merge bumps
+# again: rows cached under either version 8 are ignored.
+classes_version: 9
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed

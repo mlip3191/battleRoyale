@@ -108,6 +108,27 @@ article or count ("Napoleon"), or when a word after "a", "the" or a number is ca
 Napoleon"). Otherwise it is a common noun ("a napoleon", "3 wolverines"). `real_person` counts
 only for proper names: "a Napoleon" is blocked; "a napoleon" (the pastry) is not.
 
+**Bare lowercase names (D-51, #186).** A bare name typed with no capital letters ("moose",
+"shredder") is judged by the kind item, like a common noun, when the top pick is a person, a
+fictional character or a creative work and a kind item also matched:
+
+- Against a **person**, only when the kind item's *label* is the typed word. "a million ants vs
+  moose" is allowed (the animal is labelled "moose"); "napoleon vs a goose" is still blocked
+  (the pastry is labelled "mille-feuille" and has "napoleon" only as an alias).
+- Against a **character or creative work**, an alias match is enough: "stapler vs shredder" is
+  allowed ("paper shredder" has the alias "shredder").
+- **Capitals mean a proper name**: "Moose vs a wolf" and "Shredder vs a stapler" still block, and
+  so does a request that types the same name both ways ("moose" and "Moose"). A name only the
+  model wrote ("napoleon" from "the short emperor") keeps the proper-name reading too.
+- Deities, groups (bands and sports teams, which keep the group rule below) and other picks are
+  unchanged: "thor" still blocks as a deity.
+- Accepted on purpose: lowercase "hulk" passes this layer (a ship type is labelled "hulk"), so
+  only the classifier blocks "hulk vs a goose" (case bn-04). The same goes for other real people
+  and characters ("madonna", "superman"; cases bn-06 and bn-07); see section 8.
+
+The label-or-alias test is made when the name is checked, from the cached kind item's label, so
+the cache needed no new column.
+
 **The band and sports-team rule** (D-59; D-38: groups of people). Bands and sports teams are
 *groups* (`group: band` or `group: team` in the class map; any item whose own "instance of"
 includes one is a group). A group blocks as `real_person` only when the typed name names it,
@@ -191,11 +212,16 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   item for common nouns from the top 10), so the right item can be missing. Some picks are odd
   but harmless, such as "a bulldozer" picking a record label (an organization, which isn't
   blocked).
-- **Bare lowercase names read as proper names.** "moose vs a wolf" (no article) looks up "moose"
-  as a name, and live Wikidata's top pick is a person called Moose, so it can be blocked as
-  `real_person`. Likewise "stapler vs shredder" picks Shredder, the cartoon character. "a moose"
-  and "a shredder" work. The classifier's lowercase rule doesn't help here, because any block
-  wins.
+- **Bare lowercase names of real people and characters can pass the Wikidata check** when some
+  kind item shares the name (D-51), so only the classifier blocks them:
+  - *Real people*, when a kind item has the name as its label: "madonna", "adele", "bono",
+    "usher", "pink", "flea" (case bn-06).
+  - *Characters*, when a kind item has the name even only as an alias: "hulk" (a ship type),
+    "superman", "goku", "bowser", "grinch", "simba", "thanos", "cyclops", "wolverine", "link"
+    (cases bn-04 and bn-07).
+
+  A bare capitalized name ("Madonna", "Moose") still reads as a proper name and blocks here. If
+  the live eval shows the classifier missing these, the fix is to tighten what counts as a kind.
 - **The attack-planning rule is a word list.** It catches clear phrasings only; the classifier
   covers the rest.
 - **Self-harm phrases also match fight text about a fighter.** "a cornered rat that doesn't want

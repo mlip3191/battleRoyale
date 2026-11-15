@@ -114,6 +114,13 @@ def wikidata_names(fighters: Sequence[Side]) -> list[str]:
     return names
 
 
+# The names in wikidata_names that the model wrote and the user never typed (an entity looked up
+# bare, see entity_name). Their lowercase says nothing, so they never count as a bare lowercase
+# name under D-51 (#186): "napoleon" from "the short emperor" stays a proper name.
+def model_written_names(fighters: Sequence[Side]) -> list[str]:
+    return [f.entity for f in fighters if f.entity and entity_name(f.entity, f.raw) == f.entity]
+
+
 # Run safety checks at the same time; if one raises, cancel the rest before re-raising.
 async def _run_together(*checks: Awaitable[SafetyVerdict]) -> list[SafetyVerdict]:
     tasks = [asyncio.ensure_future(check) for check in checks]
@@ -125,6 +132,18 @@ async def _run_together(*checks: Awaitable[SafetyVerdict]) -> list[SafetyVerdict
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
         raise
+
+
+# The Wikidata name check on the sides' names, telling it which ones the model wrote.
+async def _check_side_names(
+    fighters: Sequence[Side], lookup: WikidataLookup | None, cache: WikidataCache | None
+) -> SafetyVerdict:
+    return await check_names(
+        wikidata_names(fighters),
+        lookup=lookup,
+        cache=cache,
+        model_written=model_written_names(fighters),
+    )
 
 
 # The first block in order (classifier before Wikidata), else ALLOWED.
@@ -146,7 +165,7 @@ async def check_parsed_sides(
     verdict = check_side_rules(fighters)
     if not verdict.allowed:
         return verdict
-    checks = [check_names(wikidata_names(fighters), lookup=wikidata_lookup, cache=wikidata_cache)]
+    checks = [_check_side_names(fighters, wikidata_lookup, wikidata_cache)]
     if adds_new_words(fighters, text):
         checks.insert(0, classify_text(describe_sides(fighters), chat=chat))
     return _first_block(await _run_together(*checks))
@@ -169,6 +188,6 @@ async def check_matchup(
     verdicts = await _run_together(
         classify_text(matchup.raw_text, chat=chat),
         classify_text(describe_sides(matchup.fighters), chat=chat),
-        check_names(wikidata_names(matchup.fighters), lookup=wikidata_lookup, cache=wikidata_cache),
+        _check_side_names(matchup.fighters, wikidata_lookup, wikidata_cache),
     )
     return _first_block(verdicts)
