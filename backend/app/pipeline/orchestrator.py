@@ -11,12 +11,11 @@ simulate failing fails the battle; any later stage failing ends "fallback" and t
 goes on. The battle is "done" if and only if simulate succeeded, and it never stays "running".
 Repeat battles: after research, a finished battle with the same cache key (`stages.cache_key`)
 lends its verdict, plus its fair fight and challenger when it has them; each copied stage ends
-"done" with detail "cached", and one it lacks runs fresh.
+"done" with detail "cached", and one it lacks runs fresh. Stub output is not saved to the
+record. Research finds sheets through G04's `resolve_stat_sheet` (variant plus entity first).
 
-TODO, remaining A05 pieces (issue #36):
-- when the owning module lands, swap research's seed-sheet lookup for G04 get_stat_sheet
-  (with the all-estimate fallback sheet and banner). Stub output is not saved to the record.
-- seed-sheet lookup ignores `variant`; match variants once variant sheets exist.
+TODO, remaining A05 piece (issue #36): when no sheet is found, use the all-estimate fallback
+sheet and banner instead of failing research.
 """
 
 import asyncio
