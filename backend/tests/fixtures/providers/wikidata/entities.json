@@ -1,5 +1,5 @@
 {
-  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before a football team that has 'Eagles' as an alias) with made-up item IDs. 'wolves' and 'sharks' are made up: a band that matches only through an alias. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. Lakers, Bulls, bull and Jeep (D-59) use real IDs and the live search order of 2026-11-14 (the Lakers and Chicago Bulls match through their 'Lakers' and 'Bulls' aliases; 'bull' the family name ranks before the animal; 'Jeep' the given name before the car brand), with the class walk cut short. 'police', 'doors' and 'metallica' copy the shape of the live search on 2026-11-14 (the band 'The Police' or 'The Doors' plus a kind item with a P279 matched by label or alias; the band 'Metallica' plus a moth genus that is a bare taxon) with made-up item IDs (Q9003xx). 'heat' is made up in the same shape (the kind item 'heat' with a P279, then the basketball team 'Miami Heat' matching through its 'Heat' alias; Q90033x): a sports team that loses the pick to a kind item. 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
+  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before a football team that has 'Eagles' as an alias) with made-up item IDs. 'wolves' and 'sharks' are made up: a band that matches only through an alias. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. Lakers, Bulls, bull and Jeep (D-59) use real IDs and the live search order of 2026-11-14 (the Lakers and Chicago Bulls match through their 'Lakers' and 'Bulls' aliases; 'bull' the family name ranks before the animal; 'Jeep' the given name before the car brand), with the class walk cut short. 'police', 'doors' and 'metallica' copy the shape of the live search on 2026-11-14 (the band 'The Police' or 'The Doors' plus a kind item with a P279 matched by label or alias; the band 'Metallica' plus a moth genus that is a bare taxon) with made-up item IDs (Q9003xx). 'heat' is made up in the same shape (the kind item 'heat' with a P279, then the basketball team 'Miami Heat' matching through its 'Heat' alias; Q90033x): a sports team that loses the pick to a kind item. 'kraken' (#185) uses real IDs and the live search order of 2026-11-15 (the band Kraken, the Kraken cryptocurrency exchange, a film, a genus that is a bare taxon, then a website), with the class walk cut short: the band loses the pick but still blocks capitalized 'Kraken'. 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
   "search": {
     "default": [],
     "napoleon": [{ "id": "Q900001", "label": "Napoleon" }],
@@ -123,6 +123,13 @@
     "heat": [
       { "id": "Q900331", "label": "heat" },
       { "id": "Q900330", "label": "Miami Heat", "match": "Heat" }
+    ],
+    "kraken": [
+      { "id": "Q6435931", "label": "Kraken" },
+      { "id": "Q22906202", "label": "Kraken" },
+      { "id": "Q134983890", "label": "Kraken" },
+      { "id": "Q25344562", "label": "Kraken" },
+      { "id": "Q124988973", "label": "Kraken" }
     ]
   },
   "entities": {
@@ -251,6 +258,15 @@
     "Q900321": { "P31": ["Q16521"] },
     "Q900330": { "P31": ["Q13393265"] },
     "Q900331": { "P279": ["Q900332"] },
-    "Q900332": { "P279": [] }
+    "Q900332": { "P279": [] },
+    "Q6435931": { "P31": ["Q215380"] },
+    "Q22906202": { "P31": ["Q20107444", "Q25401607"] },
+    "Q20107444": { "P279": [] },
+    "Q25401607": { "P279": [] },
+    "Q134983890": { "P31": ["Q11424"] },
+    "Q11424": { "P279": [] },
+    "Q25344562": { "P31": ["Q16521"] },
+    "Q124988973": { "P31": ["Q35127"] },
+    "Q35127": { "P279": [] }
   }
 }

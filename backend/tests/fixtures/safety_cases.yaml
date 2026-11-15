@@ -152,6 +152,17 @@ cases:
     kind: band
     mock:
       sides: [["the Grizzly Bear", "grizzly bear"], ["a wolf", "wolf"]]
+  - id: band-11
+    # Known limit, accepted (PM, #185 review; docs/safety.md, known limits): capitalized bare
+    # "Kraken" names the band Kraken, which loses the pick but whose rival is a bare genus, not a
+    # common word (the same rule as band-06). "a kraken" (my-03) is allowed.
+    text: "Kraken vs a whale"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+    mock:
+      sides: [["Kraken", "kraken"], ["a whale", "whale"]]
 
   # --- Sports teams (groups of real people, D-38; the same rule as bands, D-59) ------------
   - id: team-01
@@ -427,6 +438,19 @@ cases:
     kind: animal
     mock:
       sides: [["a T. rex", "tyrannosaurus rex"], ["an African elephant", "african elephant"]]
+  - id: an-09
+    # Bare lowercase plurals are ordinary animals (D-51, D-59), even when a team or band shares the name.
+    text: "wolves vs bears"
+    expect: allowed
+    kind: animal
+    mock:
+      sides: [["wolves", "wolf"], ["bears", "bear"]]
+  - id: an-10
+    text: "eagles vs wolves"
+    expect: allowed
+    kind: animal
+    mock:
+      sides: [["eagles", "eagle"], ["wolves", "wolf"]]
 
   # --- Allowed: capitalized common names (breeds and species) ------------------------------
   - id: cn-01

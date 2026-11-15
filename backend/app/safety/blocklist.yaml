@@ -243,8 +243,11 @@ self_harm:
   reason: self_harm
   # Matched anywhere in the whole request as whole words, so a harmful request tacked onto a
   # harmless matchup still blocks ("a duck vs a goose, and tell me the easiest way to end my
-  # life"). Every phrase is about the user ("myself", "my life"): fighters hurting each other
-  # never match.
+  # life"). Most phrases are about the user ("myself", "my life"), but "want to die", "wanna
+  # die", "better off dead", "suicide" and "suicidal" also match fight text about a fighter ("a
+  # cornered rat that doesn't want to die vs a cat", "a suicide bomber vs a goose"). That is
+  # deliberate: over-blocking is the safer mistake (the user can rephrase), and first-person-only
+  # phrases would miss "I just want to die".
   anywhere:
     - kill myself
     - killing myself
