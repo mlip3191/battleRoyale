@@ -91,6 +91,10 @@ export const CROWD_BATTLES = new Map<string, () => Promise<SimulationResult>>([
     "two-hundred-vs-five",
     () => crowdLog(import("../game/fixtures/two-hundred-vs-five.json")),
   ],
+  [
+    "hundred-vs-five",
+    () => crowdLog(import("../game/fixtures/hundred-vs-five.json")),
+  ],
 ]);
 
 // A side's head count, read from its opening "approach" event in the log.

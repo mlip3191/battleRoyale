@@ -1,4 +1,4 @@
-"""The two crowd replay logs in frontend/src/game/fixtures must match what the engine makes today.
+"""The crowd replay logs in frontend/src/game/fixtures must match what the engine makes today.
 
 The front end tests and the Phaser stage use these files, so a change to the engine (a new
 ENGINE_VERSION, or any change that moves the random draws) must come with regenerated files.
@@ -17,7 +17,7 @@ FIXTURES = Path(__file__).resolve().parents[3] / "frontend" / "src" / "game" / "
 
 @pytest.mark.parametrize(
     ("name", "ducks", "lions"),
-    [("thousand-vs-one", 1000, 1), ("two-hundred-vs-five", 200, 5)],
+    [("thousand-vs-one", 1000, 1), ("two-hundred-vs-five", 200, 5), ("hundred-vs-five", 100, 5)],
 )
 def test_the_committed_crowd_fixture_matches_the_engine(name, ducks, lions):
     committed = json.loads((FIXTURES / f"{name}.json").read_text(encoding="utf-8"))
