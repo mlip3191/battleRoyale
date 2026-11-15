@@ -128,8 +128,8 @@ def test_the_choice_changes_the_fight_in_the_expected_direction():
 
     def share(sheet: StatSheet) -> float:
         match = matchup_of(3, 1, terrain=Terrain.OPEN_FIELD)
-        # 1,000 runs: at 300 the speed effect (about -0.07) was inside the noise and flipped when the
-        # engine version moved the random streams.
+        # 1,000 runs: at 300 the speed effect (about -0.07) was inside the noise and flipped
+        # when the engine version moved the random streams.
         return run(match, [sheet, bear], runs=1000, explain=False).win_prob[0]
 
     base = share(wolf)
