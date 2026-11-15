@@ -4,19 +4,24 @@ import json
 import sqlite3
 from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
+from app.api.intake import UNAVAILABLE_MESSAGE, within_deadline
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
 from app.db.showcase import SHOWCASE_DIR, showcase_rows
 from app.models.api import BattleCreated, ShowcaseBattle
 from app.models.battle import BattleRecord
-from app.models.matchup import Matchup
+from app.models.matchup import IntakeResult, Matchup
 from app.pipeline.orchestrator import start_battle
 from app.pipeline.store import BattleStore, battle_store
+from app.providers.base import ChatLLM
+from app.providers.registry import get_intake_chat
+from app.safety import SafetyUnavailable, blocked_result, check_matchup
+from app.safety.wikidata import WikidataLookup, get_lookup
 
 router = APIRouter(prefix="/api/battles", tags=["battles"])
 NOT_FOUND = "We couldn't find that battle."
@@ -32,12 +37,38 @@ def get_store() -> BattleStore:
 Store = Annotated[BattleStore, Depends(get_store)]
 
 
-# Start a battle for a confirmed matchup; it runs in the background.
-# TODO(A05): this route trusts that the matchup was confirmed by intake. Once real research
-# lands, re-run the safety gate here; today it is safe only because fighters resolve from seed
-# sheets alone.
-@router.post("", status_code=202, response_model=BattleCreated)
-async def create_battle(matchup: Matchup, store: Store) -> BattleCreated:
+# The chat model the safety classifier uses (intake's, short timeout); tests swap in a stand-in.
+def get_safety_chat() -> ChatLLM:
+    return get_intake_chat()
+
+
+# The Wikidata lookup for the safety name check (mock or live); tests swap in a stand-in.
+def get_wikidata_lookup() -> WikidataLookup:
+    return get_lookup()
+
+
+SafetyChat = Annotated[ChatLLM, Depends(get_safety_chat)]
+Lookup = Annotated[WikidataLookup, Depends(get_wikidata_lookup)]
+BLOCKED_STATUS = 403
+BLOCKED_RESPONSES: dict[int | str, dict[str, Any]] = {
+    BLOCKED_STATUS: {"model": IntakeResult, "description": "Blocked by the safety gate."},
+    503: {"description": "The safety check is unavailable; no battle was started."},
+}
+
+
+# Start a battle for a matchup that passes the safety gate; it runs in the background. A blocked
+# matchup gets intake's blocked IntakeResult (403) and reaches no research or media provider.
+@router.post("", status_code=202, response_model=BattleCreated, responses=BLOCKED_RESPONSES)
+async def create_battle(
+    matchup: Matchup, store: Store, chat: SafetyChat, lookup: Lookup
+) -> BattleCreated | JSONResponse:
+    try:
+        verdict = await within_deadline(check_matchup(matchup, chat=chat, wikidata_lookup=lookup))
+    except SafetyUnavailable as error:
+        raise HTTPException(status_code=503, detail=UNAVAILABLE_MESSAGE) from error
+    if not verdict.allowed:
+        blocked_body = blocked_result(verdict).model_dump(mode="json")
+        return JSONResponse(status_code=BLOCKED_STATUS, content=blocked_body)
     return BattleCreated(battle_id=await start_battle(matchup, store))
 
 
