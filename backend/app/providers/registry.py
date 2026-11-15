@@ -32,6 +32,8 @@ SETTINGS_PREFIX: dict[ProviderName, str] = {
     "music": "music",
 }
 
+ProviderMode = Literal["mock", "live"]
+
 MOCKS: dict[ProviderName, Callable[[], object]] = {
     "chat": mock.MockChatLLM,
     "structured": mock.MockStructuredLLM,
@@ -118,12 +120,19 @@ def get_provider(name: Literal["tts"], settings: Settings | None = None) -> TTS:
 def get_provider(name: Literal["music"], settings: Settings | None = None) -> MusicGen: ...
 
 
+# Whether a provider runs as its mock or live. PROVIDER_MODE is the one switch for every
+# provider today; get_provider and the media cache folders (app/media/files.py) both ask here.
+def provider_mode(name: ProviderName, settings: Settings | None = None) -> ProviderMode:
+    settings = settings or get_settings()
+    return settings.provider_mode
+
+
 # Return the provider for name, honoring PROVIDER_MODE.
 def get_provider(name: ProviderName, settings: Settings | None = None) -> object:
     settings = settings or get_settings()
     if name not in MOCKS:
         raise ValueError(f"Unknown provider '{name}'. Known: {', '.join(MOCKS)}.")
-    if settings.provider_mode == "mock":
+    if provider_mode(name, settings) == "mock":
         return MOCKS[name]()
     factory = _live_factories().get(name)
     if factory is None:

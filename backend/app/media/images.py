@@ -7,9 +7,10 @@ or anything the user typed. Every request uses the style lock in app/media/style
 
 A sprite is drawn, then edited onto a flat magenta background, which code keys out to real
 transparency (app/media/png.py). Files are cached under <data_dir>/media/ per fighter_id (or
-terrain) and STYLE_VERSION, so each is drawn once; a cache hit makes no provider call. Any
-failure gives an Asset with fallback=True and url="" (the front end draws a placeholder) and
-nothing is cached.
+terrain) and STYLE_VERSION, so each is drawn once; a cache hit (a non-empty file) makes no
+provider call. In mock mode they go under <data_dir>/media/mock/ instead, so mock pictures are
+never reused live (app/media/files.py). Any failure gives an Asset with fallback=True and url=""
+(the front end draws a placeholder) and nothing is cached.
 """
 
 import asyncio
@@ -17,22 +18,19 @@ import functools
 import hashlib
 import json
 import logging
-import os
 import re
-import uuid
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
 
-from app.config import get_settings
-from app.media import png, style
+from app.media import files, png, style
 from app.models.matchup import Matchup
 from app.models.media import Asset
 from app.models.stats import Ability, StatSheet
 from app.models.terrain import Terrain
 from app.providers.base import ImageGen
-from app.providers.registry import get_provider
+from app.providers.registry import ProviderMode, get_provider, provider_mode
 from app.safety.media_names import safe_media_name
 
 logger = logging.getLogger(__name__)
@@ -65,11 +63,17 @@ class ImageRequest:
     kind: Literal["sprite", "battlefield"]
     asset_id: str
     path: Path
-    """File path under the media folder, e.g. sprites/gray-wolf-v1.png."""
+    """File name under the media folder in live mode, e.g. sprites/gray-wolf-v1.png."""
     prompt: str | None
     """None when no safe prompt can be built; such a picture is never requested."""
     size: tuple[int, int]
     edit_prompt: str | None = None
+    mode: ProviderMode = "live"
+
+    # Where the file really is under the media folder: mock pictures live in mock/.
+    @property
+    def cached_path(self) -> Path:
+        return files.cache_path(self.path, self.mode)
 
     # sha256 of the full locked request (prompt and every fixed parameter).
     @property
@@ -89,7 +93,7 @@ class ImageRequest:
 
     # The asset for this picture: the cached file, or a placeholder when it failed.
     def asset(self, *, fallback: bool = False) -> Asset:
-        url = "" if fallback else f"/media/{self.path.as_posix()}"
+        url = "" if fallback else f"/media/{self.cached_path.as_posix()}"
         return Asset(
             asset_id=self.asset_id,
             kind=self.kind,
@@ -150,11 +154,6 @@ def battlefield_request(terrain: Terrain) -> ImageRequest:
         prompt=battlefield_prompt(terrain),
         size=style.BATTLEFIELD_SIZE,
     )
-
-
-# The folder generated media lives in.
-def media_root() -> Path:
-    return get_settings().data_dir / "media"
 
 
 # A fighter's sprite: drawn, background removed, cached per fighter_id + STYLE_VERSION.
@@ -262,7 +261,8 @@ async def _bounded(
         return request.asset(fallback=True)
 
 
-# The cached file if there is one, else draw it, save it, and return its asset.
+# The cached file if there is one (in this provider mode's folder), else draw it, save it, and
+# return its asset.
 async def _make(
     request: ImageRequest,
     draw: Callable[[ImageGen], Awaitable[bytes]],
@@ -273,12 +273,13 @@ async def _make(
     if request.prompt is None:
         logger.warning("image %s not drawn: its name is not safe for a prompt", request.asset_id)
         return request.asset(fallback=True)
-    file = (media_dir or media_root()) / request.path
-    if not force and file.is_file():
+    request = replace(request, mode=provider_mode("image"))
+    file = (media_dir or files.media_root()) / request.cached_path
+    if not force and files.is_cached(file):
         return request.asset()
     try:
         data = await draw(provider or get_provider("image"))
-        await asyncio.to_thread(_save, file, data)
+        await asyncio.to_thread(files.save, file, data)
     except Exception as error:
         logger.warning("image %s fell back (%s)", request.asset_id, type(error).__name__)
         return request.asset(fallback=True)
@@ -298,14 +299,3 @@ def cut_out(data: bytes) -> bytes:
 # Check a battlefield is a readable PNG and store it compressed.
 def _recompress(data: bytes) -> bytes:
     return png.encode(png.decode(data))
-
-
-# Write a file all at once, so a reader never sees half of it.
-def _save(file: Path, data: bytes) -> None:
-    file.parent.mkdir(parents=True, exist_ok=True)
-    partial = file.with_name(f".{file.name}.{uuid.uuid4().hex}.tmp")
-    try:
-        partial.write_bytes(data)
-        os.replace(partial, file)
-    finally:
-        partial.unlink(missing_ok=True)

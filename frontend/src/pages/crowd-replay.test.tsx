@@ -53,19 +53,38 @@ test("fixtures mode: /battle/thousand-vs-one plays 1,000 ducks vs 1 lion with th
   expect(fetch).not.toHaveBeenCalled();
 });
 
-test("fixtures mode: /battle/two-hundred-vs-five plays the log that fills the event cap", async () => {
+test("fixtures mode: /battle/two-hundred-vs-five plays a swarm log with 200 on a side", async () => {
   vi.stubEnv("VITE_USE_FIXTURES", "true");
   const log = (await CROWD_BATTLES.get("two-hundred-vs-five")!())
     .representative_log;
-  expect(log.length).toBeGreaterThan(290);
+  // Since D-50 (engine version 9) this fight runs in swarm mode although neither side is over
+  // 200: a long log of group events (no single actor), not individual hits and misses.
+  expect(log.length).toBeGreaterThan(50);
   expect(log.length).toBeLessThanOrEqual(300); // the engine's MAX_LOG_EVENTS
-  expect(log.some((e) => e.text_hint === "more go down")).toBe(true);
+  expect(log.some((e) => e.actor === null && e.group_size > 1)).toBe(true);
   open("two-hundred-vs-five");
   const scene = await stageScene();
   expect(
     screen.getByRole("img", { name: /200 ducks versus 5 lions/ }),
   ).toBeDefined();
   expect(scene.texts.map((t) => t.text)).toContain("× 200");
+});
+
+test("fixtures mode: /battle/hundred-vs-five plays a dense one-by-one log", async () => {
+  vi.stubEnv("VITE_USE_FIXTURES", "true");
+  const log = (await CROWD_BATTLES.get("hundred-vs-five")!())
+    .representative_log;
+  // 100 v 5 stays one by one under D-50, so the log is dense: individual hits, misses and
+  // knock-outs with a single actor, close to the engine's 300-event cap (the stage under load).
+  expect(log.length).toBeGreaterThan(200);
+  expect(log.length).toBeLessThanOrEqual(300); // the engine's MAX_LOG_EVENTS
+  expect(log.filter((e) => e.actor !== null).length).toBeGreaterThan(200);
+  open("hundred-vs-five");
+  const scene = await stageScene();
+  expect(
+    screen.getByRole("img", { name: /100 ducks versus 5 lions/ }),
+  ).toBeDefined();
+  expect(scene.texts.map((t) => t.text)).toContain("× 100");
 });
 
 test("normal mode: /battle/thousand-vs-one asks the real API like any unknown id", async () => {

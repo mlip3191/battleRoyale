@@ -1,13 +1,18 @@
 """Battle routes (ARCHITECTURE §6): start a battle, read its record, and follow it live (A05)."""
 
 import json
+import sqlite3
 from collections.abc import AsyncIterator
+from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
-from app.models.api import BattleCreated
+from app.db.connection import connect
+from app.db.migrate import apply_migrations
+from app.db.showcase import SHOWCASE_DIR, showcase_rows
+from app.models.api import BattleCreated, ShowcaseBattle
 from app.models.battle import BattleRecord
 from app.models.matchup import Matchup
 from app.pipeline.orchestrator import start_battle
@@ -34,6 +39,38 @@ Store = Annotated[BattleStore, Depends(get_store)]
 @router.post("", status_code=202, response_model=BattleCreated)
 async def create_battle(matchup: Matchup, store: Store) -> BattleCreated:
     return BattleCreated(battle_id=await start_battle(matchup, store))
+
+
+# The app database with migrations applied; async so it opens on the thread that uses it.
+async def get_db() -> AsyncIterator[sqlite3.Connection]:
+    connection = connect()
+    try:
+        apply_migrations(connection)
+        yield connection
+    finally:
+        connection.close()
+
+
+Db = Annotated[sqlite3.Connection, Depends(get_db)]
+ONLY_SHOWCASE = "Only the showcase list is available here: add ?showcase=true."
+
+
+# Where the showcase lives; tests point it at their own folder.
+def get_showcase_dir() -> Path:
+    return SHOWCASE_DIR
+
+
+ShowcaseDir = Annotated[Path, Depends(get_showcase_dir)]
+
+
+# The saved showcase battles for the home page, in their planned order (G08).
+@router.get("", response_model=list[ShowcaseBattle])
+async def list_battles(
+    db: Db, showcase_dir: ShowcaseDir, showcase: Annotated[bool, Query()] = False
+) -> list[ShowcaseBattle]:
+    if not showcase:
+        raise HTTPException(status_code=404, detail=ONLY_SHOWCASE)
+    return showcase_rows(db, showcase_dir)
 
 
 # The battle as it stands now (partial while it is still running).

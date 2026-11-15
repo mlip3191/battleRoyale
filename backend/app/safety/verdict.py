@@ -20,6 +20,8 @@ BlockedReason = Literal[
     "other",
 ]
 BLOCKED_REASONS: tuple[str, ...] = get_args(BlockedReason)
+# Which safety layer decided (internal: tests and logs only).
+Layer = Literal["rules", "classifier", "wikidata"]
 
 # What the user sees for each reason: friendly, never preachy, with something to try instead.
 MESSAGES: dict[str, str] = {
@@ -68,7 +70,7 @@ class SafetyVerdict:
     allowed: bool
     reason: BlockedReason | None = None
     """One of the contract's blocked_reason values when blocked."""
-    layer: Literal["rules", "classifier"] | None = None
+    layer: Layer | None = None
     """Which layer blocked it (for tests and logs; never shown to the user)."""
 
     @property
@@ -81,7 +83,7 @@ ALLOWED = SafetyVerdict(allowed=True)
 
 
 # A blocked verdict from one layer.
-def blocked(reason: BlockedReason, layer: Literal["rules", "classifier"]) -> SafetyVerdict:
+def blocked(reason: BlockedReason, layer: Layer) -> SafetyVerdict:
     return SafetyVerdict(allowed=False, reason=reason, layer=layer)
 
 
