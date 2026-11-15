@@ -196,7 +196,14 @@ async def summary(matchup: Matchup, found: Research, result: SimulationResult) -
 async def challenger(
     matchup: Matchup, found: Research, result: SimulationResult
 ) -> Stubbed[ChallengerSuggestion | None]:
-    pick, fallback = await next_challenger.suggest(found.sheets, result, matchup.terrain)
+    # The engine's own matchup, so the winner duels as the battle was fought (count and size).
+    pick, fallback = await next_challenger.suggest(
+        found.sheets,
+        result,
+        matchup.terrain,
+        matchup=simulation_matchup(matchup, found),
+        reference_sheets=found.reference_sheets,
+    )
     return Stubbed(pick, fallback=fallback)
 
 
