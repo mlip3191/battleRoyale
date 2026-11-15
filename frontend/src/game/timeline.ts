@@ -39,7 +39,7 @@ export interface Beat {
 export interface Timeline {
   beats: Beat[];
   totalMs: number; // length at 1x speed
-  swarm: boolean; // either side has more than SWARM_THRESHOLD fighters
+  swarm: boolean; // the fight ran in swarm mode: a side over SWARM_THRESHOLD, or group events in the log
 }
 
 export const SWARM_THRESHOLD = 200;
@@ -64,9 +64,21 @@ export const MIN_BEAT_MS = 150;
 
 const other = (side: Side): Side => (side === 0 ? 1 : 0);
 
-// Swarm mode is decided from the matchup counts, never from group_size (simulation guide).
-export const isSwarm = (counts: readonly [number, number]) =>
-  counts[0] > SWARM_THRESHOLD || counts[1] > SWARM_THRESHOLD;
+// Swarm mode (D-50): the engine uses it for a side over SWARM_THRESHOLD and also for a slow fight
+// below that, so the counts alone are not enough. A swarm log has group attacks, hits and misses
+// (no single actor, group_size above 1). Never read group_size on an approach or KO: those carry a
+// side's head count in one-by-one fights too (simulation guide).
+const GROUP_ACTIONS = new Set(["attack", "hit", "miss"]);
+export const isSwarm = (
+  counts: readonly [number, number],
+  log: readonly FightEvent[] = [],
+) =>
+  counts[0] > SWARM_THRESHOLD ||
+  counts[1] > SWARM_THRESHOLD ||
+  log.some(
+    (e) =>
+      GROUP_ACTIONS.has(e.type) && e.actor == null && (e.group_size ?? 1) > 1,
+  );
 
 type Who = Omit<Beat, "index" | "start" | "duration" | "hint" | "damage">;
 
@@ -182,7 +194,7 @@ export function buildTimeline(
     clock += duration;
     return beat;
   });
-  return { beats, totalMs: clock, swarm: isSwarm(counts) };
+  return { beats, totalMs: clock, swarm: isSwarm(counts, log) };
 }
 
 // A beat's start and length in real ms at the given speed.

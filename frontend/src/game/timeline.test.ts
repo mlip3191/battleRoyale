@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import type { FightEvent, SimulationResult } from "../api/client.ts";
 import fixture from "../fixtures/simulation-result.json";
 import thousand from "./fixtures/thousand-vs-one.json";
+import twoHundredVsFive from "./fixtures/two-hundred-vs-five.json";
 import {
   MAX_REPLAY_MS,
   MIN_BEAT_MS,
@@ -297,6 +298,22 @@ describe("who acts and who is affected", () => {
     expect(buildTimeline(small, [200, 1]).swarm).toBe(false);
     expect(buildTimeline(small, [1, 201]).swarm).toBe(true);
     expect(buildTimeline(bigResult, [1000, 1]).swarm).toBe(true);
+  });
+
+  test("a swarm log below 200 a side (D-50, by work) is still swarm mode (#302)", () => {
+    const log = twoHundredVsFive as SimulationResult;
+    // 200 ducks v 5 lions: neither side is over the threshold, but the engine ran it in groups.
+    expect(buildTimeline(log, [200, 5]).swarm).toBe(true);
+    // A one-by-one log of the same size has actors on its hits and stays false.
+    const single: Pick<SimulationResult, "representative_log" | "outcome"> = {
+      representative_log: [
+        ev({ type: "approach", group_size: 150 }),
+        ev({ type: "hit", side: 0, actor: 3, target: 0, group_size: 1 }),
+        ev({ type: "ko", side: 1, actor: 0 }),
+      ],
+      outcome: "win_0",
+    };
+    expect(buildTimeline(single, [150, 1]).swarm).toBe(false);
   });
 
   test("the 1,000-v-1 engine log is all crowd events (swarm mode)", () => {
