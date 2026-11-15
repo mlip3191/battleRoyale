@@ -312,7 +312,7 @@ Unit conversion lives in code (`research/units.py`). The model returns the unit 
 | `GET /api/health` | — | `{status, provider_mode, providers: {name: up/down/mock}}` | M06 |
 | `POST /api/intake` | `{text}` | `IntakeResult` | A02 |
 | `POST /api/intake/{pending_id}/answer` | `{answer}` | `IntakeResult` | D08 |
-| `POST /api/battles` | `Matchup` | `202 BattleCreated` `{battle_id}` | A05 |
+| `POST /api/battles` | `Matchup` | `202 BattleCreated` `{battle_id}`; `403 IntakeResult` when the safety gate blocks it (the same reply as intake); `503` when the safety check is unavailable (no battle starts) | A05 |
 | `GET /api/battles/{id}` | — | `BattleRecord` (partial while running) | A05 |
 | `GET /api/battles?showcase=true` | — | `list[ShowcaseBattle]` `[{battle_id, title}]` for the five saved showcase battles | G08 |
 | `GET /api/battles/{id}/events` | — | Server-Sent Events: `StageStatus` updates; poll fallback every 1 s | A05 |
