@@ -1,0 +1,26 @@
+# Slide: what we decided not to build, and what we learned (loadouts)
+
+*One slide for the deck (Limitations and Build Process), from `docs/loadouts-design.md`. Mike's ruling: loadouts are post-MVP (D-56); this slide shows the work and the honest result.*
+
+## Title
+**Fighters that grow: designed, tested, and deliberately parked**
+
+## Four lines
+- **The idea:** after each round a fighter adds or upgrades one loadout (attack, defense, speed, balanced), with gear that fits its kind: claws for a wolf, a hardened hoof for a horse, plate for a legionary (180 sourced-style item names, pre-modern and natural only).
+- **The rule that kept it honest:** every loadout is a multiplier on the fighter's own stat, labeled an assumption, and every choice gains one thing and costs another, so no gear is a free upgrade (a test checks it for every kind of fighter).
+- **What our own balance check found:** the first version was a dominant strategy (one kit was best in 58% of close fights). We rebalanced until the best kit was best in 42% and eight of ten were best somewhere.
+- **Why it is parked:** it needs a contract change, a cache key and narration, its multipliers are new assumptions the benchmark cannot check yet, and the engine rewards attack far more than speed or armor (changing that is an engine version bump).
+
+## A number to show (all from the simulator)
+| Fight | No kit | Best kit | Worst kit |
+|---|---|---|---|
+| Roman legionary v gray wolf | 9% | 20% (balanced, tier 3) | 3% (speed, tier 4) |
+| Gray wolf v Roman legionary | 89% | 93% (attack, tier 3) | 77% (defense, tier 5: heavy gear slows it) |
+
+*Win share of the first fighter, 500 runs; from `docs/loadouts-design.md` section 4 (measured before the engine moved to version 10, so the exact figures shift within noise).*
+
+## Speaker note (20 seconds)
+"We built the whole system and then asked our own harness whether it was fair. It was not, so we fixed it, and the honest result is that gear only nudges fights that were already close. With code complete near, the PM parked it, and the design and the harness are in the repo for next time."
+
+## Sources
+`docs/loadouts-design.md`, `backend/scripts/loadout_balance.py`, PR #284, D-56.
