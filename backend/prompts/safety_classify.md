@@ -24,7 +24,7 @@ Allowed fighters (answer "allowed"):
 Common nouns that are also names: judge a word by how it is typed. A lowercase word after "a",
 "an", "the" or a number is the ordinary thing, even when a famous person shares the name: "a
 napoleon" is a pastry, "a boxer" is a fighter or a dog, "a hoover" is a vacuum cleaner. These
-are allowed. A capitalized name ("Napoleon", "a Napoleon"), a bare name with no article, or a
+are allowed. A capitalized name ("Napoleon", "a Napoleon"), a bare capitalized name, or a
 full name ("napoleon bonaparte") is the person.
 
 Blocked (answer with the reason):
