@@ -70,6 +70,23 @@ test("fixtures mode: /battle/two-hundred-vs-five plays a swarm log with 200 on a
   expect(scene.texts.map((t) => t.text)).toContain("× 200");
 });
 
+test("fixtures mode: /battle/hundred-vs-five plays a dense one-by-one log", async () => {
+  vi.stubEnv("VITE_USE_FIXTURES", "true");
+  const log = (await CROWD_BATTLES.get("hundred-vs-five")!())
+    .representative_log;
+  // 100 v 5 stays one by one under D-50, so the log is dense: individual hits, misses and
+  // knock-outs with a single actor, close to the engine's 300-event cap (the stage under load).
+  expect(log.length).toBeGreaterThan(200);
+  expect(log.length).toBeLessThanOrEqual(300); // the engine's MAX_LOG_EVENTS
+  expect(log.filter((e) => e.actor !== null).length).toBeGreaterThan(200);
+  open("hundred-vs-five");
+  const scene = await stageScene();
+  expect(
+    screen.getByRole("img", { name: /100 ducks versus 5 lions/ }),
+  ).toBeDefined();
+  expect(scene.texts.map((t) => t.text)).toContain("× 100");
+});
+
 test("normal mode: /battle/thousand-vs-one asks the real API like any unknown id", async () => {
   vi.stubEnv("VITE_USE_FIXTURES", "false");
   vi.stubGlobal(
