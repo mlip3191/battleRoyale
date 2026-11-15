@@ -142,11 +142,11 @@ async def test_stages_move_pending_running_done(store: BattleStore) -> None:
 
 
 def test_unknown_fighter_fails_the_battle_with_a_reason(client: TestClient) -> None:
-    record = wait_until_finished(client, start(client, matchup_body("grizzly bear", "unicorn")))
+    record = wait_until_finished(client, start(client, matchup_body("grizzly bear", "okapi")))
     assert record.status == "failed"
     research = final_stage(record, "research")
     assert research.status == "failed"
-    assert research.detail and "unicorn" in research.detail
+    assert research.detail and "okapi" in research.detail
     assert record.result is None
     assert final_stage(record, "simulate").status == "pending"
 
@@ -256,7 +256,7 @@ def test_event_stream_sends_every_stage_change_then_end(client: TestClient) -> N
 
 
 def test_event_stream_ends_for_a_failed_battle(client: TestClient) -> None:
-    battle_id = start(client, matchup_body("unicorn", "gray wolf"))
+    battle_id = start(client, matchup_body("okapi", "gray wolf"))
     events = parse_sse(read_events(client, battle_id).text)
     assert events[-1] == ("end", json.dumps({"status": "failed"}))
     last_change = StageStatus.model_validate_json(events[-2][1])

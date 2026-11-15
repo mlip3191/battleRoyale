@@ -2,8 +2,10 @@
 
 Order: the hand-verified seed sheet, then a sheet cached for an earlier battle, then a new
 sheet built from stored facts and model extraction for a seed-list fighter, which is saved so
-repeat battles reuse the same sheet (and the same simulation seed). Mythical fighters and
-names off the seed list get None until G09 researches new fighters on demand.
+repeat battles reuse the same sheet (and the same simulation seed). A creature in
+data/seed/mythical.yaml is built from its analogs (G09). A legend that isn't in the file is
+modeled from its Wikipedia article by resolve_legend (G09, live mode only); anything else
+gets None.
 """
 
 import asyncio
@@ -11,14 +13,19 @@ import logging
 import sqlite3
 from datetime import UTC, datetime
 
+import httpx
 from pydantic import ValidationError
 
+from app.config import get_settings
 from app.models.api import FighterMatch
 from app.models.stats import StatSheet
 from app.providers.base import ChatLLM, Embedder, Reranker
 from app.research.extract import build_sheet_with_evidence
+from app.research.lore import UNAVAILABLE, LoreOutcome, lore_for
+from app.research.mythical import build_mythical_sheet, find_creature
 from app.research.seed_fighters import (
     SEED_SHEETS_DIR,
+    fighter_slug,
     find_seed_fighter,
     find_seed_sheet,
     load_seed_fighters,
@@ -34,6 +41,9 @@ logger = logging.getLogger(__name__)
 
 # Model extraction gets this long inside research's 45 s budget; after it, facts and defaults.
 EXTRACTION_BUDGET_S = 30.0
+# Fetching a legend's article and asking the model get this long, also inside research's budget.
+LEGEND_BUDGET_S = 30.0
+ARTICLE_TIMEOUT_S = 10.0
 SEARCH_LIMIT = 20
 
 
@@ -78,6 +88,9 @@ async def resolve_stat_sheet(
     seed = find_seed_sheet(entity, variant, raw)
     if seed is not None:
         return seed
+    creature = find_creature(entity)
+    if creature is not None:  # cheap and deterministic, so built each time rather than cached
+        return build_mythical_sheet(creature)
     fighter = find_seed_fighter(entity, variant, raw)
     if fighter is None or fighter.category == "mythical":
         return None
@@ -129,3 +142,39 @@ def search_fighters(
         if text and (text in n.lower() or text in i)
     ]
     return matches[:limit]
+
+
+# A client for Wikipedia in live mode; None in mock mode, so tests and CI never go online.
+def legend_client() -> httpx.AsyncClient | None:
+    if get_settings().provider_mode == "mock":
+        return None
+    return httpx.AsyncClient(timeout=ARTICLE_TIMEOUT_S)
+
+
+# A legend not in mythical.yaml (G09): its cached sheet, or one modeled from its article now
+# and saved. Otherwise the LoreOutcome says why (blocked, or a service is down), or None in
+# mock mode, where no article can be fetched.
+async def resolve_legend(
+    connection: sqlite3.Connection, chat: ChatLLM, name: str
+) -> StatSheet | LoreOutcome | None:
+    cached = cached_sheet(connection, fighter_slug(name))
+    if cached is not None and cached.category == "mythical":
+        return cached
+    client = legend_client()
+    if client is None:
+        return None
+    try:
+        async with client:
+            outcome = await asyncio.wait_for(lore_for(name, client, chat), LEGEND_BUDGET_S)
+    except TimeoutError:
+        logger.warning("Modeling the legend %r ran out of time.", name)
+        return UNAVAILABLE
+    if outcome.creature is None:
+        return outcome
+    try:
+        sheet = build_mythical_sheet(outcome.creature)
+    except ValueError as error:  # an analog whose sheet can't be built
+        logger.warning("Could not build a sheet for the legend %r: %s", name, error)
+        return UNAVAILABLE
+    save_sheet(connection, sheet)
+    return sheet
