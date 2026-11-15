@@ -104,6 +104,54 @@ cases:
     kind: band
     mock:
       sides: [["Eagles", "eagle"], ["a grizzly bear", "grizzly bear"]]
+  # Mike's #164 review: bands that lose the pick to a kind item, a band whose rival is a bare
+  # taxon, ALL CAPS names, and a band whose name is a common word (docs/safety.md).
+  - id: band-04
+    # The item "police" wins the pick; the band's own "The" still names it.
+    text: "the Police vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+  - id: band-05
+    # "doorway" matches through its alias "doors" and wins the pick.
+    text: "the Doors vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+  - id: band-06
+    # Its rival is a moth genus, a bare taxon, not a common word.
+    text: "Metallica vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+  - id: band-07
+    text: "THE BEATLES vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+  - id: band-08
+    text: "THE EAGLES vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+  - id: band-09
+    # The animal wins the pick and the band's name has no "The" of its own: the animal.
+    text: "Grizzly Bear vs a wolf"
+    expect: allowed
+    kind: band
+    mock:
+      sides: [["Grizzly Bear", "grizzly bear"], ["a wolf", "wolf"]]
+  - id: band-10
+    text: "the Grizzly Bear vs a wolf"
+    expect: allowed
+    kind: band
+    mock:
+      sides: [["the Grizzly Bear", "grizzly bear"], ["a wolf", "wolf"]]
 
   # --- Sports teams (groups of real people, D-38; the same rule as bands, D-59) ------------
   - id: team-01

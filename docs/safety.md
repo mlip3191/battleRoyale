@@ -141,6 +141,16 @@ with capitals matching its name (a band's label, or the alias a team matched, su
   "Beatles" and "Lakers" are blocked (no kind item for "beatle" or "laker"); "Eagles", "Bulls"
   and "Wolves" are allowed (the eagle, the bull and the grey wolf, result 6 for "wolf"). This
   costs one extra search, only for group picks whose last word is plural.
+- **ALL CAPS** counts as matching capitals: "THE BEATLES", "THE EAGLES" and "BEATLES" are
+  blocked ("EAGLES" is still the birds). Mixed capitals must match the name.
+- **A group that lost the pick** to a kind item is remembered with the lookup. If the kind is a
+  common word (it has a "subclass of" value, or is an organism known by a common name), only the
+  group's full name with its own "The" names it: "the Police" and "the Doors" are blocked (the
+  item "police", and "doorway" through its alias "doors", win the pick); "Police", "the police"
+  and "the Grizzly Bear" are not. If the kind is only a bare taxon, not a common word, the
+  normal wording applies: "Metallica" is blocked (its rival is a moth genus), "metallica" is not.
+  Sports teams follow the same rule; a team's alias has no "The" of its own, so "the Heat" (the
+  kind "heat" wins) is left to the classifier.
 
 Companies, organizations and brands are not groups and stay allowed ("a Jeep" is a car brand).
 
@@ -225,5 +235,7 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   basketball, American football, ice hockey and baseball teams, football and rugby union clubs);
   a team filed under another class, or one that isn't in the top 5 results, is missed. Some
   nicknames pick another item first ("the Yankees" picks "Americans", which isn't blocked).
+  "the Who", "the Cure" and "the Animals" pass the Wikidata layer: the band isn't among the top
+  search results read, so the classifier is the remaining layer for them.
 - **The classifier can answer differently from run to run.** Re-run the live eval after any
   prompt change and compare.

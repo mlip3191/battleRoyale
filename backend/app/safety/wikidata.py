@@ -5,7 +5,10 @@ kind item matched too, and creative works while another exact match is left), re
 (P31 and P279, then P279 up to two more levels), and blocks it if they include a class in
 wikidata_classes.yaml. A group of real people (a band or a sports team, D-59) blocks only when
 typed as "the" + its name, or as its bare name when that is not a common word ("Beatles" and
-"Lakers" block; "Eagles" and "Bulls" do not: "eagle" and "bull" are animals).
+"Lakers" block; "Eagles" and "Bulls" do not: "eagle" and "bull" are animals). ALL CAPS counts
+as matching capitals ("THE BEATLES"). A group that lost the pick to a kind item is remembered
+too, so "the Police" still blocks (the item "police" wins the pick) and "Metallica" blocks (a
+moth genus is not a common word).
 A common noun ("a wolverine": an article or count, no capitals) is judged by its first kind item
 when one matched (the animal, not the comic-book character ranked above it). So is a bare name
 typed all in lowercase ("moose", "shredder") whose top pick is a person or a character, under the
@@ -62,6 +65,9 @@ PICK_LIMIT = 5
 MAX_IDS_PER_CALL = 50
 MATCH_TTL = timedelta(days=30)
 NO_MATCH_TTL = timedelta(days=7)
+GROUP_REASON: BlockedReason = "real_person"
+"""Why a band or team blocks (D-38, D-59: groups of real people); load_class_map checks the yaml
+agrees."""
 
 
 class WikidataUnavailable(RuntimeError):
@@ -95,7 +101,9 @@ class NameCheck:
     first kind item among the exact matches when the top pick is not itself a kind; a name typed
     as a common noun is judged by it, and so is a bare lowercase name when kind_beats_name says
     so (D-51, #186). Whether the kind item matched by label or only by alias is read from
-    kind_label at check time, so cached rows need no extra field."""
+    kind_label at check time, so cached rows need no extra field. lost_group is the name of a
+    group that lost the pick to a kind item ("The Police" for the item "police"); common then
+    says whether a real kind (see is_common_kind) shares the name."""
 
     qid: str | None
     label: str | None
@@ -105,6 +113,7 @@ class NameCheck:
     kind_qid: str | None = None
     kind_label: str | None = None
     kind_reason: BlockedReason | None = None
+    lost_group: str | None = None
 
 
 class WikidataLookup(Protocol):
@@ -139,6 +148,8 @@ class ClassMap:
     individuals_only: frozenset[str] = frozenset()
     """Classes marked individuals_only: they block only an item that is not a kind of thing
     (the city Paris is a geographic location; the kind "vending machine" is not)."""
+    common_kinds: frozenset[str] = frozenset()
+    """kind_matches marked common_word: true (organisms known by a particular common name)."""
 
     # True when an item's P31 is non-empty and only name/meta classes (family name, etc.).
     def is_name_item(self, classes: EntityClasses) -> bool:
@@ -162,6 +173,12 @@ class ClassMap:
     def is_kind(self, classes: EntityClasses) -> bool:
         kind = bool(classes.subclass_of) or bool(set(classes.instance_of) & self.kinds)
         return kind and not self.is_demoted(classes) and not self.is_group(classes)
+
+    # True when a kind item is also a common word: it has a P279, or a common_word P31. A bare
+    # scientific taxon (the moth genus "Metallica") is a kind but not a common word.
+    def is_common_kind(self, classes: EntityClasses) -> bool:
+        common = bool(classes.subclass_of) or bool(set(classes.instance_of) & self.common_kinds)
+        return common and self.is_kind(classes)
 
     # The first blocked reason among these class IDs (file order), skipping instance-only ones
     # unless direct, and individuals-only ones when the item is a kind of thing.
@@ -194,6 +211,8 @@ def load_class_map(path: Path = CLASSES_PATH) -> ClassMap:
         group = entry.get("group")
         if group not in (None, "band", "team"):
             raise ValueError(f"{path.name}: unknown group '{group}' for {entry['qid']}.")
+        if group and entry["reason"] != GROUP_REASON:
+            raise ValueError(f"{path.name}: group class {entry['qid']} must be {GROUP_REASON}.")
         if group:
             groups.add(entry["qid"])
         if group == "team":
@@ -202,7 +221,9 @@ def load_class_map(path: Path = CLASSES_PATH) -> ClassMap:
             individuals.add(entry["qid"])
     name_items = frozenset(entry["qid"] for entry in data.get("skip_matches") or [])
     demoted = frozenset(entry["qid"] for entry in data.get("demote_matches") or []) | groups
-    kinds = frozenset(entry["qid"] for entry in data.get("kind_matches") or [])
+    kind_entries = data.get("kind_matches") or []
+    kinds = frozenset(entry["qid"] for entry in kind_entries)
+    common_kinds = frozenset(entry["qid"] for entry in kind_entries if entry.get("common_word"))
     return ClassMap(
         int(data["classes_version"]),
         reasons,
@@ -213,6 +234,7 @@ def load_class_map(path: Path = CLASSES_PATH) -> ClassMap:
         frozenset(teams),
         kinds,
         frozenset(individuals),
+        common_kinds,
     )
 
 
@@ -283,14 +305,19 @@ async def _exact_with_classes(
     return [(m, found[m.qid]) for m in matches]
 
 
-# The exact match to judge, in search order, passing over: name and meta items (the family name
-# "Moon", the given name "Thor"); a group (band or sports team) when a kind item also matched
-# (the band "Grizzly Bear" for the animal) or when it has no group_name for the query (a band
-# that only matched an alias); and creative works, used only if nothing else fits (the magazine
-# "Dragon"). A group otherwise keeps its search rank, so "the Beatles" the band beats the
-# asteroid "8749 Beatles", and "Lakers" picks the Los Angeles Lakers.
+# The exact matches minus name and meta items (the family name "Moon", the given name "Thor").
+def _usable(matches: Sequence[Match], class_map: ClassMap) -> list[Match]:
+    return [(m, own) for m, own in matches if not class_map.is_name_item(own)]
+
+
+# The exact match to judge, in search order, passing over: name and meta items; a group (band or
+# sports team) when a kind item also matched (the band "Grizzly Bear" for the animal; see
+# lost_group) or when it has no group_name for the query (a band that only matched an alias);
+# and creative works, used only if nothing else fits (the magazine "Dragon"). A group otherwise
+# keeps its search rank, so "the Beatles" the band beats the asteroid "8749 Beatles", and
+# "Lakers" picks the Los Angeles Lakers.
 def top_exact_match(query: str, matches: Sequence[Match], class_map: ClassMap) -> Match | None:
-    usable = [(m, own) for m, own in matches if not class_map.is_name_item(own)]
+    usable = _usable(matches, class_map)
     has_kind = any(class_map.is_kind(own) for _, own in usable)
     fallback: tuple[Candidate, EntityClasses] | None = None
     for match, own in usable:
@@ -302,6 +329,17 @@ def top_exact_match(query: str, matches: Sequence[Match], class_map: ClassMap) -
         else:
             fallback = fallback or (match, own)
     return fallback
+
+
+# The name of the first group that has one for the query, when a kind item among the matches took
+# the pick from it ("The Police" for the item "police"); None when there is no kind item or no
+# such group.
+def lost_group(query: str, matches: Sequence[Match], class_map: ClassMap) -> str | None:
+    usable = _usable(matches, class_map)
+    if not any(class_map.is_kind(own) for _, own in usable):
+        return None
+    names = (group_name(query, m, own, class_map) for m, own in usable if class_map.is_group(own))
+    return next((name for name in names if name is not None), None)
 
 
 # The first kind item among the exact matches (name items never are kinds): what a common noun
@@ -326,18 +364,28 @@ def group_name(query: str, match: Candidate, own: EntityClasses, class_map: Clas
     return None
 
 
-# True when a typed name names a group (capitals must match; "the" may be any case): a leading
-# "the" plus its name without its own "the" ("the Eagles", "the Lakers"), or, only when the
-# name is not a common word, the bare name ("Beatles", "Lakers" block; "Eagles", "Bulls" don't).
-def names_group(typed: str, label: str | None, common: bool) -> bool:
+# True when a typed name names a group (capitals must match, or the name is ALL CAPS; "the" may
+# be any case): a leading "the" plus its name without its own "the" ("the Eagles", "the Lakers",
+# "THE BEATLES"), or, only when the name is not a common word, the bare name ("Beatles",
+# "BEATLES", "Lakers" block; "Eagles", "EAGLES", "Bulls" don't). For a group that lost the pick
+# to a common-word kind item (lost and common), only its full name names it, and only if that
+# name has its own "The": "the Police" blocks; "the Grizzly Bear" and "Grizzly Bear" do not.
+def names_group(typed: str, label: str | None, common: bool, *, lost: bool = False) -> bool:
     if label is None:
         return False
     text = " ".join(typed.split())
-    bare_label = re.sub(r"^the ", "", " ".join(label.split()), flags=re.IGNORECASE)
+    full_label = " ".join(label.split())
+    bare_label = re.sub(r"^the ", "", full_label, flags=re.IGNORECASE)
     rest = re.sub(r"^the ", "", text, flags=re.IGNORECASE)
-    if rest != text:
-        return rest == bare_label
-    return not common and text == bare_label
+    same = _same_name(rest, bare_label)
+    if lost and common:
+        return full_label != bare_label and rest != text and same
+    return same if rest != text else (not common and same)
+
+
+# True when typed text is the label as written, or the label in ALL CAPS ("BEATLES").
+def _same_name(typed: str, label: str) -> bool:
+    return typed == label or (typed.isupper() and typed.casefold() == label.casefold())
 
 
 # True when a group's name is also a common word: its singular form ("eagle" for "eagles") has
@@ -374,13 +422,16 @@ async def class_reason(
 
 
 # Ask Wikidata about one query: the top exact match among the first PICK_LIMIT results and its
-# reason; for a group, the name it matched and whether that is a common word; and, when the
-# pick is not a kind of thing, the first kind item among all SEARCH_LIMIT results and its reason.
+# reason; for a group, the name it matched and whether that is a common word; for a group that
+# lost the pick to a kind item, its name and whether a common-word kind item shares it; and, when
+# the pick is not a kind of thing, the first kind item among all SEARCH_LIMIT results and its
+# reason.
 async def resolve(query: str, lookup: WikidataLookup, class_map: ClassMap) -> NameCheck:
     results = await lookup.search(query)
     matches = await _exact_with_classes(query, results, lookup, SEARCH_LIMIT)
     head = results[:PICK_LIMIT]
-    picked = top_exact_match(query, [(m, own) for m, own in matches if m in head], class_map)
+    head_matches = [(m, own) for m, own in matches if m in head]
+    picked = top_exact_match(query, head_matches, class_map)
     kind = None if picked and class_map.is_kind(picked[1]) else first_kind_match(matches, class_map)
     if picked is None and kind is None:
         return NameCheck(None, None, None)
@@ -393,6 +444,9 @@ async def resolve(query: str, lookup: WikidataLookup, class_map: ClassMap) -> Na
     label = picked[0].label if picked else None
     if picked and group:
         label = group_name(query, picked[0], picked[1], class_map)
+    lost = None if group else lost_group(query, head_matches, class_map)
+    if lost is not None:
+        common = any(class_map.is_common_kind(own) for _, own in _usable(head_matches, class_map))
     return NameCheck(
         picked[0].qid if picked else None,
         label,
@@ -402,6 +456,7 @@ async def resolve(query: str, lookup: WikidataLookup, class_map: ClassMap) -> Na
         kind[0].qid if kind else None,
         kind[0].label if kind else None,
         kind_reason,
+        lost,
     )
 
 
@@ -426,8 +481,9 @@ async def _classes_of(lookup: WikidataLookup, qids: Sequence[str]) -> dict[str, 
 class WikidataCache:
     """wikidata_safety_cache rows in SQLite; stale or older-version rows count as misses.
 
-    The band and band_common columns (migration 004) hold NameCheck.group and .common, for bands
-    and sports teams alike.
+    The grouped, grouped_common and grouped_lost_label columns (migration 004) hold
+    NameCheck.group, .common and .lost_group, for bands and sports teams alike; the kind_*
+    columns (migration 005) hold the kind item.
 
     The cache fails open like Wikidata itself: a database or file-system error on read is a miss
     and on write is skipped, each with a warning, so a cache problem never crashes the safety check.
@@ -469,8 +525,8 @@ class WikidataCache:
             connection = self._connect()
             try:
                 row = connection.execute(
-                    "SELECT qid, label, reason, band, band_common, kind_qid, kind_label, "
-                    "kind_reason, classes_version, checked_at "
+                    "SELECT qid, label, reason, grouped, grouped_common, grouped_lost_label, "
+                    "kind_qid, kind_label, kind_reason, classes_version, checked_at "
                     "FROM wikidata_safety_cache WHERE query = ?",
                     (query,),
                 ).fetchone()
@@ -485,8 +541,9 @@ class WikidataCache:
         if not self._fresh(row["checked_at"], MATCH_TTL if matched else NO_MATCH_TTL):
             return None
         return NameCheck(
-            row["qid"], row["label"], row["reason"], bool(row["band"]), bool(row["band_common"]),
-            row["kind_qid"], row["kind_label"], row["kind_reason"],
+            row["qid"], row["label"], row["reason"], bool(row["grouped"]),
+            bool(row["grouped_common"]), row["kind_qid"], row["kind_label"], row["kind_reason"],
+            row["grouped_lost_label"],
         )  # fmt: skip
 
     # True when checked_at is a readable, time-zoned moment no later than now and within ttl.
@@ -509,12 +566,12 @@ class WikidataCache:
                 with connection:
                     connection.execute(
                         "INSERT OR REPLACE INTO wikidata_safety_cache "
-                        "(query, qid, label, reason, band, band_common, kind_qid, kind_label, "
-                        "kind_reason, classes_version, checked_at) "
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        "(query, qid, label, reason, grouped, grouped_common, grouped_lost_label, "
+                        "kind_qid, kind_label, kind_reason, classes_version, checked_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                         (query, check.qid, check.label, check.reason, int(check.group),
-                         int(check.common), check.kind_qid, check.kind_label, check.kind_reason,
-                         classes_version, self.now().isoformat()),
+                         int(check.common), check.lost_group, check.kind_qid, check.kind_label,
+                         check.kind_reason, classes_version, self.now().isoformat()),
                     )  # fmt: skip
             finally:
                 connection.close()
@@ -674,6 +731,9 @@ def kind_beats_name(query: str, check: NameCheck) -> bool:
 # real_person only counts for names that read as proper names: "a Napoleon" counts, "a napoleon"
 # does not. A band or sports team also needs one of the typed names to name it (names_group):
 # "the Eagles", "Beatles", "the Lakers" and "Lakers" count; "Eagles", "eagles" and "Bulls" do not.
+# A group that lost the pick to a kind item still blocks a name that names it, checked first:
+# "the Police", "Metallica" (its rival is a bare moth genus, not a common word); not "the Grizzly
+# Bear".
 async def check_names(
     names: Sequence[str],
     *,
@@ -704,6 +764,10 @@ async def check_names(
         if check is None:
             continue
         typed = typed_by_query[query]
+        if check.lost_group is not None and any(
+            names_group(t, check.lost_group, check.common, lost=True) for t in typed
+        ):
+            return blocked(GROUP_REASON, "wikidata")
         lowercase_name = lowercase_by_query[query] and any(bare_lowercase(t) for t in typed)
         if check.kind_qid is not None and (
             not proper or (lowercase_name and kind_beats_name(query, check))
