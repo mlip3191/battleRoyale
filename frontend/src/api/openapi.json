@@ -146,6 +146,19 @@
               }
             }
           },
+          "403": {
+            "description": "Blocked by the safety gate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeResult"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The safety check is unavailable; no battle was started."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
