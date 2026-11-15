@@ -522,6 +522,33 @@ async def test_a_team_yields_to_a_kind_item(cache: WikidataCache, team: str) -> 
     assert (await check_names(["the Gizmos"], lookup=lookup, cache=cache)).allowed
 
 
+async def test_a_team_that_lost_the_pick_follows_the_band_rule(cache: WikidataCache) -> None:
+    # Teams keep the lost-pick rule (D-59: teams block like bands). The mock "heat": the kind
+    # item "heat" (a P279, so a common word) wins the pick over the Miami Heat, which matched
+    # through its "Heat" alias. The team is recorded, but its name has no "The" of its own, so
+    # like "the Grizzly Bear" no wording names it here; the classifier is the remaining layer.
+    check = await resolve("heat", MockWikidataLookup(), load_class_map())
+    assert (check.qid, check.group, check.lost_group, check.common) == (
+        "Q900331", False, "Heat", True,
+    )  # fmt: skip
+    for typed in ["the Heat", "THE HEAT", "Heat", "the heat"]:
+        assert (await check_names([typed], lookup=MockWikidataLookup(), cache=cache)).allowed
+    # When the rival kind is not a common word (a bare taxon), the team's alias blocks, the
+    # same as "Metallica".
+    lookup = AliasMatch(
+        ("T", EntityClasses((BASKETBALL_TEAM,))), ("K", EntityClasses((TAXON,))),
+        label="Gizmo City Gizmos",
+    )  # fmt: skip
+    check = await resolve("gizmos", lookup, load_class_map())
+    assert (check.qid, check.lost_group, check.common) == ("K", "Gizmos", False)
+    for typed, reason in [
+        ("Gizmos", "real_person"),
+        ("the Gizmos", "real_person"),
+        ("gizmos", None),
+    ]:
+        assert (await check_names([typed], lookup=lookup, cache=cache)).reason == reason
+
+
 async def test_a_club_that_is_also_a_business_is_still_a_team(cache: WikidataCache) -> None:
     # Live clubs often have more P31 values (Wolverhampton Wanderers: three team classes); any
     # group class makes the item a group, so the wording rule still decides.
