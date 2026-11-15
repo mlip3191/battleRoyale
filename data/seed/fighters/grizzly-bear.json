@@ -26,7 +26,7 @@
       "method": "hand_verified",
       "low": 139.0,
       "high": 389.0,
-      "note": "Coastal Alaskan males; low is the northern interior Canada male figure, 139 kg, in the next sentence."
+      "note": "Coastal Alaskan males; low is the northern interior Canada male figure, 139 kg, in the next sentence. The source gives one male figure per population and no overall mean or typical figure, so value is the upper quoted figure (D-47 rule 4 fallback; rechecked in #166)."
     },
     "size_m": {
       "value": 2.4,
@@ -77,7 +77,7 @@
       "method": "hand_verified",
       "low": 563.0,
       "high": 939.0,
-      "note": "Canine bite force for Ursus arctos, of which the grizzly is a subspecies, estimated from a skull of a 128.8 kg bear, so it likely runs low; range is +/-25%."
+      "note": "Canine bite force for Ursus arctos, of which the grizzly is a subspecies, estimated from a skull of a 128.8 kg bear, so it likely runs low; range is +/-25%. Rechecked in #166: no better-sourced bite figure exists among the approved sources, so 751 N stays."
     },
     "attacks_per_s": {
       "value": 1.5,
@@ -147,5 +147,5 @@
     }
   },
   "schema_version": 1,
-  "sheet_hash": "931ca549fe7dbb68316b6c52e90ab4eb32173fbde43225d37c61ad97bf127a80"
+  "sheet_hash": "042d30bfd50683204dd89b09f638838828fa481c53eea2ce7445fb0aa7b9bb1c"
 }
