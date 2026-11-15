@@ -177,13 +177,13 @@ def test_names_are_raw_plus_a_different_entity_never_the_variant() -> None:
         "the short emperor",
         "napoleon",
         "a dog named Napoleon",
-        "dog",
+        "a dog",  # typed by the user in lowercase: a common noun (part 3b)
         "a tiny napoleon",
         "a napoleon",
         "a pack of napoleons",
-        "a napoleon",
+        "a napoleons",  # the user's own words and casing (part 3b)
         "a tiny Napoleon",
-        "napoleon",
+        "a Napoleon",  # capitalized by the user: still a proper name
     ]
 
 

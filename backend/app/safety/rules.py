@@ -1,8 +1,9 @@
-"""Safety code rules (A04 layer 1): block clear human cases before any model is called.
+"""Safety code rules (A04 layer 1): block clear cases before any model is called.
 
 Pure: no providers, no settings. The word lists live in blocklist.yaml. These rules only catch
-clear cases (toddlers, "the French", "my brother"); everything else goes to the classifier, so a
-rule here must never block an animal or an archetype ("German shepherd", "baby elephant").
+clear cases (toddlers, "the French", "my brother", "end my life", "plans to attack a shopping
+mall"); everything else goes to the classifier, so a rule here must never block an animal or an
+archetype ("German shepherd", "baby elephant") or ordinary fight wording ("the bear attacks").
 """
 
 import re
@@ -23,6 +24,8 @@ TAIL = re.compile(r"\s+(?:in|on|at|inside|near|under|atop|during|with|from|ridin
 # "6 year old", "twenty five years old" (hyphens already turned into spaces) at a side's end;
 # group 1 is an optional tens word, group 2 the number.
 AGE = re.compile(r"(?:\b([a-z]+)\s+)?\b(\d{1,3}|[a-z]+)\s+(?:year|yr)s?\s+olds?$")
+# Curly and modifier apostrophes as a plain one, so "don’t" is not read as "don t".
+APOSTROPHES = str.maketrans({"’": "'", "‘": "'", "ʼ": "'"})
 
 
 @dataclass(frozen=True)
@@ -37,6 +40,35 @@ class Blocklist:
     self_words: frozenset[str]
     owners: frozenset[str]
     relations: frozenset[str]
+    self_harm: frozenset[str] = frozenset()
+    attack_ask: frozenset[str] = frozenset()
+    attack: re.Pattern[str] = re.compile(r"(?!)")
+    """A harm word, then within four words a target not followed by "of" (on _clean text)."""
+    attack_person: re.Pattern[str] = re.compile(r"(?!)")
+    """A direct ask, a harm word, then within two words a person target (on _clean text)."""
+
+
+# Phrases as one regex alternative, longest first, each as whole words.
+def _alternatives(phrases: frozenset[str]) -> str:
+    return "|".join(re.escape(p) for p in sorted(phrases, key=len, reverse=True))
+
+
+# The attack-planning pattern from its harm and target lists.
+def _attack_pattern(harm: frozenset[str], targets: frozenset[str]) -> re.Pattern[str]:
+    return re.compile(
+        rf"\b(?:{_alternatives(harm)})\b(?:\s+[a-z0-9']+){{0,4}}?\s+"
+        rf"(?:{_alternatives(targets)})\b(?!\s+of\b)"
+    )
+
+
+# The person-target pattern: "how to poison someone", "help me hurt somebody".
+def _attack_person_pattern(
+    asks: frozenset[str], harm: frozenset[str], targets: frozenset[str]
+) -> re.Pattern[str]:
+    return re.compile(
+        rf"\b(?:{_alternatives(asks)})\s+(?:{_alternatives(harm)})"
+        rf"(?:\s+[a-z0-9']+){{0,2}}?\s+(?:{_alternatives(targets)})\b"
+    )
 
 
 # Read blocklist.yaml once.
@@ -45,7 +77,7 @@ def load_blocklist() -> Blocklist:
     data = yaml.safe_load(BLOCKLIST_PATH.read_text(encoding="utf-8"))
 
     def words(section: str, key: str) -> frozenset[str]:
-        return frozenset(str(w).lower() for w in data[section][key])
+        return frozenset(_clean(str(w)) for w in data[section][key])
 
     return Blocklist(
         minor_anywhere=words("minor", "anywhere"),
@@ -56,12 +88,25 @@ def load_blocklist() -> Blocklist:
         self_words=words("real_person", "self_words"),
         owners=words("real_person", "owners"),
         relations=words("real_person", "relations"),
+        self_harm=words("self_harm", "anywhere"),
+        attack_ask=words("attack_planning", "ask"),
+        attack=_attack_pattern(
+            words("attack_planning", "harm"), words("attack_planning", "targets")
+        ),
+        attack_person=_attack_person_pattern(
+            words("attack_planning", "direct_ask"),
+            words("attack_planning", "harm"),
+            words("attack_planning", "person_targets"),
+        ),
     )
 
 
-# Lowercase words with hyphens as spaces: "Six-Year-Old" -> "six year old".
+# Lowercase words with hyphens as spaces and straight apostrophes: "Six-Year-Old" -> "six year
+# old", "don’t" -> "don't", "my self" -> "myself".
 def _clean(text: str) -> str:
-    return " ".join(re.sub(r"[^a-z0-9' ]+", " ", text.lower().replace("-", " ")).split())
+    text = text.lower().replace("-", " ").translate(APOSTROPHES)
+    words = " ".join(re.sub(r"[^a-z0-9' ]+", " ", text).split())
+    return re.sub(r"\bmy self\b", "myself", words)
 
 
 # The text's sides, each cut before its place phrase: "a toddler vs a goose in a pond" -> 2.
@@ -125,9 +170,22 @@ def _names_someone_known(text: str, lists: Blocklist) -> bool:
     return False
 
 
-# Layer 1 on any text (the whole request, or one side's raw or entity): clear human cases only.
+# True when the text asks for real-world attack planning: an ask word ("step by step", "how to")
+# and a harm word followed by a real-world target ("attack a shopping mall"), both needed; or a
+# direct ask right before harm to a person ("how to poison someone").
+def _asks_for_attack_plans(text: str, lists: Blocklist) -> bool:
+    cleaned = _clean(text)
+    if lists.attack_person.search(cleaned):
+        return True
+    return _has_phrase(text, lists.attack_ask) and bool(lists.attack.search(cleaned))
+
+
+# Layer 1 on any text (the whole request, or one side's raw or entity): clear cases only.
+# Self-harm comes first, so its message (with the crisis line) wins over any other reason.
 def check_text_rules(text: str) -> SafetyVerdict:
     lists = load_blocklist()
+    if _has_phrase(text, lists.self_harm):
+        return blocked("self_harm", "rules")
     if _has_phrase(text, lists.minor_anywhere):
         return blocked("minor", "rules")
     if _names_someone_known(text, lists):
@@ -136,6 +194,8 @@ def check_text_rules(text: str) -> SafetyVerdict:
         verdict = _check_side(words, lists)
         if not verdict.allowed:
             return verdict
+    if _asks_for_attack_plans(text, lists):
+        return blocked("other", "rules")
     return ALLOWED
 
 

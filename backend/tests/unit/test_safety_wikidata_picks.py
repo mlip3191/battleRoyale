@@ -1,7 +1,8 @@
 """A04 part 3a (#27): which exact Wikidata match is picked (creative works and bands demoted),
 bands blocked as real people for proper names only (ALL CAPS included, and bands that lost the
 pick to a kind item), the weapons-of-mass-destruction class, the classes_version bump and
-migration 004. Mock Wikidata and a temp cache only; no network."""
+migration 004; part 3b (D-59): sports teams follow the band rule. Mock Wikidata and a temp cache
+only; no network."""
 
 import shutil
 import sqlite3
@@ -20,7 +21,7 @@ from app.safety.wikidata import (
     WikidataUnavailable,
     check_names,
     load_class_map,
-    names_band,
+    names_group,
     resolve,
 )
 
@@ -31,6 +32,8 @@ TAXON, FAMILY_NAME, COMMON_NAME = "Q16521", "Q101352", "Q55983715"
 MALE_NAME, FEMALE_NAME, UNISEX_NAME = "Q12308941", "Q11879590", "Q3409032"
 ASTEROID = "Q3863"
 WMD, NUCLEAR_WEAPON = "Q49394", "Q12802"
+SPORTS_TEAM, BASKETBALL_TEAM, FOOTBALL_CLUB = "Q12973014", "Q13393265", "Q476028"
+BUSINESS, CAR_BRAND = "Q4830453", "Q10429667"
 
 
 @pytest.fixture
@@ -66,7 +69,7 @@ def test_the_class_map_demotes_creative_works_and_bands_and_lists_wmd() -> None:
     class_map = load_class_map()
     assert class_map.version >= 6
     bands = {MUSICAL_GROUP, ROCK_BAND, GIRL_GROUP, BOY_BAND, METAL_BAND, DUO}
-    assert bands <= class_map.bands
+    assert bands <= class_map.groups
     assert {MAGAZINE, FILM, ALBUM} | bands <= class_map.demoted
     assert {class_map.reasons[band] for band in bands} == {"real_person"}
     assert {MALE_NAME, FEMALE_NAME, UNISEX_NAME} <= class_map.name_items
@@ -231,7 +234,7 @@ async def test_the_band_label_check_also_applies_to_cached_picks(cache: Wikidata
     lookup = ExactMatches(("B", EntityClasses((MUSICAL_GROUP,))), label="Eagles")
     assert (await check_names(["Eagles"], lookup=lookup, cache=cache)).reason == "real_person"
     cached = await cache.get("eagles", load_class_map().version)
-    assert cached == NameCheck("B", "Eagles", "real_person", band=True)
+    assert cached == NameCheck("B", "Eagles", "real_person", group=True)
     assert (await check_names(["eagles"], lookup=lookup, cache=cache)).allowed  # a cache hit
 
 
@@ -261,8 +264,8 @@ async def test_the_band_label_check_also_applies_to_cached_picks(cache: Wikidata
         ("BeAtLeS", "The Beatles", False, False),
     ],
 )
-def test_names_band(typed: str, label: str | None, common: bool, expected: bool) -> None:
-    assert names_band(typed, label, common) is expected
+def test_names_group(typed: str, label: str | None, common: bool, expected: bool) -> None:
+    assert names_group(typed, label, common) is expected
 
 
 @pytest.mark.parametrize(
@@ -282,10 +285,10 @@ def test_names_band(typed: str, label: str | None, common: bool, expected: bool)
         ("metallica", "Metallica", False, False),
     ],
 )
-def test_names_band_for_a_band_that_lost_the_pick(
+def test_names_group_for_a_band_that_lost_the_pick(
     typed: str, label: str, common: bool, expected: bool
 ) -> None:
-    assert names_band(typed, label, common, lost=True) is expected
+    assert names_group(typed, label, common, lost=True) is expected
 
 
 @pytest.mark.parametrize(
@@ -305,8 +308,8 @@ async def test_a_band_that_lost_the_pick_is_recorded(
     query: str, lost: str | None, common: bool
 ) -> None:
     check = await resolve(query, MockWikidataLookup(), load_class_map())
-    assert (check.lost_band, check.common if lost else False) == (lost, common)
-    assert not (check.band and lost)
+    assert (check.lost_group, check.common if lost else False) == (lost, common)
+    assert not (check.group and lost)
 
 
 @pytest.mark.parametrize(
@@ -322,7 +325,7 @@ async def test_a_lost_bands_bare_name_blocks_unless_a_common_word_shares_it(
 ) -> None:
     lookup = ExactMatches(("B", EntityClasses((MUSICAL_GROUP,))), ("K", rival), label="Gizmo")
     check = await resolve("gizmo", lookup, load_class_map())
-    assert (check.qid, check.lost_band, check.common) == ("K", "Gizmo", not blocks)
+    assert (check.qid, check.lost_group, check.common) == ("K", "Gizmo", not blocks)
     verdict = await check_names(["Gizmo"], lookup=lookup, cache=cache)
     assert verdict.reason == ("real_person" if blocks else None)
 
@@ -331,7 +334,7 @@ async def test_a_lost_band_is_cached(cache: WikidataCache) -> None:
     lookup = MockWikidataLookup()
     assert (await check_names(["the Police"], lookup=lookup, cache=cache)).reason == "real_person"
     cached = await cache.get("police", load_class_map().version)
-    assert cached == NameCheck("Q900201", "police", None, common=True, lost_band="The Police")
+    assert cached == NameCheck("Q900301", "police", None, common=True, lost_group="The Police")
     assert (await check_names(["Police"], lookup=lookup, cache=cache)).allowed  # a cache hit
     assert (await check_names(["THE POLICE"], lookup=lookup, cache=cache)).reason == "real_person"
 
@@ -371,7 +374,7 @@ async def test_a_bands_name_is_common_when_its_singular_is_a_kind(
 ) -> None:
     lookup = SingularLookup(("B", EntityClasses((MUSICAL_GROUP,))), singular)
     check = await resolve("gizmos", lookup, load_class_map())
-    assert (check.qid, check.band, check.common) == ("B", True, common)
+    assert (check.qid, check.group, check.common) == ("B", True, common)
     assert lookup.searches == ["gizmos", "gizmo"]  # one extra search, for the singular
     bare = await check_names(["Gizmos"], lookup=lookup, cache=cache)
     assert bare.reason == (None if common else "real_person")
@@ -402,7 +405,7 @@ async def test_the_common_word_flag_is_cached(cache: WikidataCache) -> None:
     lookup = MockWikidataLookup()
     assert (await check_names(["the Eagles"], lookup=lookup, cache=cache)).reason == "real_person"
     cached = await cache.get("eagles", load_class_map().version)
-    assert cached == NameCheck("Q900160", "Eagles", "real_person", band=True, common=True)
+    assert cached == NameCheck("Q900160", "Eagles", "real_person", group=True, common=True)
     assert (await check_names(["Eagles"], lookup=lookup, cache=cache)).allowed  # a cache hit
 
 
@@ -426,6 +429,171 @@ async def test_a_non_demoted_match_beats_the_band(cache: WikidataCache) -> None:
     assert (await check_names(["Gizmo"], lookup=lookup, cache=cache)).allowed
 
 
+# --- Sports teams: the band rule (D-59) -------------------------------------------------------
+
+
+class AliasMatch(ExactMatches):
+    """ExactMatches where every item is labelled `label` and matched only through the alias
+    "Gizmos" (as live "Lakers" matches "Los Angeles Lakers")."""
+
+    async def search(self, name: str) -> list[Candidate]:
+        return [Candidate(qid, self.label or name, "Gizmos") for qid, _ in self.items]
+
+
+def test_the_class_map_lists_sports_teams_as_groups() -> None:
+    class_map = load_class_map()
+    assert class_map.version >= 8
+    teams = {SPORTS_TEAM, BASKETBALL_TEAM, FOOTBALL_CLUB}
+    assert teams <= class_map.teams <= class_map.groups
+    assert MUSICAL_GROUP in class_map.groups - class_map.teams
+    assert {class_map.reasons[team] for team in class_map.teams} == {"real_person"}
+    assert class_map.teams <= class_map.instance_only
+
+
+@pytest.mark.parametrize(
+    ("names", "reason"),
+    [
+        (["the Lakers"], "real_person"),  # "the" + the alias the team matched through
+        (["The Lakers"], "real_person"),
+        (["Lakers"], "real_person"),  # "laker" has no kind item: not a common word
+        (["the lakers"], None),  # capitals must match the name
+        (["lakers"], None),
+        (["a Laker"], None),
+        (["the Bulls"], "real_person"),
+        (["Bulls"], None),  # "bull" is an animal: bare "Bulls" is the animals
+        (["bulls"], None),
+        (["Bulls", "the Bulls"], "real_person"),  # one typed name names the team
+        (["Los Angeles Lakers"], "real_person"),  # the full label, not a common word
+        # Companies, organizations and brands stay allowed: the Jeep car brand is a business.
+        (["a Jeep"], None),
+        (["Jeep"], None),
+    ],
+)
+async def test_mock_fixture_team_examples(
+    cache: WikidataCache, names: list[str], reason: str | None
+) -> None:
+    verdict = await check_names(names, lookup=MockWikidataLookup(), cache=cache)
+    assert verdict.reason == reason
+    assert verdict.layer == ("wikidata" if reason else None)
+
+
+@pytest.mark.parametrize(
+    ("query", "picked", "label", "common"),
+    [
+        ("lakers", "Q121783", "Lakers", False),  # picked through its alias; label is the alias
+        ("bulls", "Q128109", "Bulls", True),  # beats the family name and the rugby "Bulls"
+    ],
+)
+async def test_the_mock_fixture_picks_teams_by_alias(
+    query: str, picked: str, label: str, common: bool
+) -> None:
+    check = await resolve(query, MockWikidataLookup(), load_class_map())
+    assert (check.qid, check.label, check.group, check.common) == (picked, label, True, common)
+
+
+@pytest.mark.parametrize(
+    ("names", "reason"),
+    [
+        (["the Gizmos"], "real_person"),
+        (["Gizmos"], "real_person"),
+        (["the gizmos"], None),
+        (["Gizmo City Gizmos"], "real_person"),  # the full label names the team too
+    ],
+)
+async def test_a_team_blocks_by_the_alias_it_matched(
+    cache: WikidataCache, names: list[str], reason: str | None
+) -> None:
+    lookup = AliasMatch(("T", EntityClasses((BASKETBALL_TEAM,))), label="Gizmo City Gizmos")
+    assert (await check_names(names, lookup=lookup, cache=cache)).reason == reason
+
+
+async def test_a_band_still_needs_its_label_not_an_alias(cache: WikidataCache) -> None:
+    lookup = AliasMatch(("B", EntityClasses((MUSICAL_GROUP,))), label="Gizmo City Gizmos")
+    check = await resolve("gizmos", lookup, load_class_map())
+    assert check.qid is None  # passed over, like the mock "Sharks" band
+    assert (await check_names(["the Gizmos"], lookup=lookup, cache=cache)).allowed
+
+
+@pytest.mark.parametrize("team", [SPORTS_TEAM, BASKETBALL_TEAM, FOOTBALL_CLUB])
+async def test_a_team_yields_to_a_kind_item(cache: WikidataCache, team: str) -> None:
+    lookup = ExactMatches(("T", EntityClasses((team,))), ("K", EntityClasses((TAXON,))))
+    check = await resolve("gizmos", lookup, load_class_map())
+    assert (check.qid, check.group) == ("K", False)
+    assert (await check_names(["the Gizmos"], lookup=lookup, cache=cache)).allowed
+
+
+async def test_a_team_that_lost_the_pick_follows_the_band_rule(cache: WikidataCache) -> None:
+    # Teams keep the lost-pick rule (D-59: teams block like bands). The mock "heat": the kind
+    # item "heat" (a P279, so a common word) wins the pick over the Miami Heat, which matched
+    # through its "Heat" alias. The team is recorded, but its name has no "The" of its own, so
+    # like "the Grizzly Bear" no wording names it here; the classifier is the remaining layer.
+    check = await resolve("heat", MockWikidataLookup(), load_class_map())
+    assert (check.qid, check.group, check.lost_group, check.common) == (
+        "Q900331", False, "Heat", True,
+    )  # fmt: skip
+    for typed in ["the Heat", "THE HEAT", "Heat", "the heat"]:
+        assert (await check_names([typed], lookup=MockWikidataLookup(), cache=cache)).allowed
+    # When the rival kind is not a common word (a bare taxon), the team's alias blocks, the
+    # same as "Metallica".
+    lookup = AliasMatch(
+        ("T", EntityClasses((BASKETBALL_TEAM,))), ("K", EntityClasses((TAXON,))),
+        label="Gizmo City Gizmos",
+    )  # fmt: skip
+    check = await resolve("gizmos", lookup, load_class_map())
+    assert (check.qid, check.lost_group, check.common) == ("K", "Gizmos", False)
+    for typed, reason in [
+        ("Gizmos", "real_person"),
+        ("the Gizmos", "real_person"),
+        ("gizmos", None),
+    ]:
+        assert (await check_names([typed], lookup=lookup, cache=cache)).reason == reason
+
+
+async def test_a_club_that_is_also_a_business_is_still_a_team(cache: WikidataCache) -> None:
+    # Live clubs often have more P31 values (Wolverhampton Wanderers: three team classes); any
+    # group class makes the item a group, so the wording rule still decides.
+    singular = [("K", EntityClasses((TAXON,)))]
+    lookup = SingularLookup(("T", EntityClasses((FOOTBALL_CLUB, BUSINESS))), singular)
+    check = await resolve("gizmos", lookup, load_class_map())
+    assert (check.qid, check.reason, check.group, check.common) == ("T", "real_person", True, True)
+    assert (await check_names(["Gizmos"], lookup=lookup, cache=cache)).allowed
+    assert (await check_names(["the Gizmos"], lookup=lookup, cache=cache)).reason == "real_person"
+
+
+async def test_the_common_word_check_reads_past_the_top_five(cache: WikidataCache) -> None:
+    # Live "wolf": five other "Wolf" items rank before the grey wolf, so bare "Wolves" (the
+    # Wolverhampton Wanderers nickname) must still read as the animals.
+    others = [(f"N{i}", EntityClasses((FAMILY_NAME,))) for i in range(5)]
+    lookup = SingularLookup(
+        ("T", EntityClasses((FOOTBALL_CLUB,))), [*others, ("K", EntityClasses((TAXON,)))]
+    )
+    assert (await resolve("gizmos", lookup, load_class_map())).common
+    assert (await check_names(["Gizmos"], lookup=lookup, cache=cache)).allowed
+    assert (await check_names(["the Gizmos"], lookup=lookup, cache=cache)).reason == "real_person"
+
+
+async def test_the_team_flags_are_cached(cache: WikidataCache) -> None:
+    lookup, version = MockWikidataLookup(), load_class_map().version
+    assert (await check_names(["the Bulls"], lookup=lookup, cache=cache)).reason == "real_person"
+    assert (await check_names(["the Lakers"], lookup=lookup, cache=cache)).reason == "real_person"
+    bulls = NameCheck("Q128109", "Bulls", "real_person", group=True, common=True)
+    assert await cache.get("bulls", version) == bulls
+    lakers = NameCheck("Q121783", "Lakers", "real_person", group=True)
+    assert await cache.get("lakers", version) == lakers
+    # Cache hits: the wording rule is redone from the stored flags and name.
+    assert (await check_names(["Bulls"], lookup=lookup, cache=cache)).allowed
+    assert (await check_names(["Lakers"], lookup=lookup, cache=cache)).reason == "real_person"
+    assert (await check_names(["lakers"], lookup=lookup, cache=cache)).allowed
+
+
+@pytest.mark.parametrize("org", [BUSINESS, CAR_BRAND, "Q43229"])  # Q43229: organization
+async def test_companies_and_brands_are_not_teams(cache: WikidataCache, org: str) -> None:
+    lookup = ExactMatches(("O", EntityClasses((org,))), label="Gizmos")
+    check = await resolve("gizmos", lookup, load_class_map())
+    assert (check.qid, check.reason, check.group) == ("O", None, False)
+    assert (await check_names(["the Gizmos"], lookup=lookup, cache=cache)).allowed
+
+
 # --- Weapons of mass destruction --------------------------------------------------------------
 
 
@@ -447,7 +615,7 @@ async def test_the_version_bump_ignores_rows_cached_before_it(cache: WikidataCac
     assert (verdict.reason, verdict.layer) == ("real_person", "wikidata")
     version = load_class_map().version
     assert await cache.get("beatles", version) == NameCheck(
-        "Q900130", "The Beatles", "real_person", band=True
+        "Q900130", "The Beatles", "real_person", group=True
     )
 
 
