@@ -126,14 +126,14 @@
         "summary": "Create Battle",
         "operationId": "create_battle_api_battles_post",
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Matchup"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -142,6 +142,51 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BattleCreated"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "battles"
+        ],
+        "summary": "List Battles",
+        "operationId": "list_battles_api_battles_get",
+        "parameters": [
+          {
+            "name": "showcase",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Showcase"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ShowcaseBattle"
+                  },
+                  "title": "Response List Battles Api Battles Get"
                 }
               }
             }
@@ -225,6 +270,96 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fighters": {
+      "get": {
+        "tags": [
+          "fighters"
+        ],
+        "summary": "Find Fighters",
+        "operationId": "find_fighters_api_fighters_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FighterMatch"
+                  },
+                  "title": "Response Find Fighters Api Fighters Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fighters/{fighter_id}": {
+      "get": {
+        "tags": [
+          "fighters"
+        ],
+        "summary": "Read Fighter",
+        "operationId": "read_fighter_api_fighters__fighter_id__get",
+        "parameters": [
+          {
+            "name": "fighter_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Fighter Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatSheet"
+                }
               }
             }
           },
@@ -644,6 +779,34 @@
         "title": "FightEvent",
         "type": "object"
       },
+      "FighterMatch": {
+        "additionalProperties": false,
+        "description": "One row of GET /api/fighters?q=: a fighter whose name matches the search text.",
+        "properties": {
+          "fighter_id": {
+            "description": "Stable fighter id, e.g. \"grizzly-bear\".",
+            "title": "Fighter Id",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Name shown to the user.",
+            "title": "Display Name",
+            "type": "string"
+          },
+          "cached": {
+            "description": "True when a stat sheet is already saved, so the battle can skip research.",
+            "title": "Cached",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "fighter_id",
+          "display_name",
+          "cached"
+        ],
+        "title": "FighterMatch",
+        "type": "object"
+      },
       "FighterRequest": {
         "additionalProperties": false,
         "description": "One side of the matchup, as understood from the user's words.",
@@ -1034,6 +1197,28 @@
           "text"
         ],
         "title": "ScriptLine",
+        "type": "object"
+      },
+      "ShowcaseBattle": {
+        "additionalProperties": false,
+        "description": "One row of GET /api/battles?showcase=true: a saved showcase battle.",
+        "properties": {
+          "battle_id": {
+            "description": "Id of the saved battle.",
+            "title": "Battle Id",
+            "type": "string"
+          },
+          "title": {
+            "description": "Matchup title shown on the home page, e.g. \"Grizzly bear vs Gray wolf\".",
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "battle_id",
+          "title"
+        ],
+        "title": "ShowcaseBattle",
         "type": "object"
       },
       "SimulationResult": {
@@ -1574,56 +1759,6 @@
           "type"
         ],
         "title": "ValidationError"
-      },
-      "FighterMatch": {
-        "additionalProperties": false,
-        "description": "One row of GET /api/fighters?q=: a fighter whose name matches the search text.",
-        "properties": {
-          "fighter_id": {
-            "description": "Stable fighter id, e.g. \"grizzly-bear\".",
-            "title": "Fighter Id",
-            "type": "string"
-          },
-          "display_name": {
-            "description": "Name shown to the user.",
-            "title": "Display Name",
-            "type": "string"
-          },
-          "cached": {
-            "description": "True when a stat sheet is already saved, so the battle can skip research.",
-            "title": "Cached",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "fighter_id",
-          "display_name",
-          "cached"
-        ],
-        "title": "FighterMatch",
-        "type": "object"
-      },
-      "ShowcaseBattle": {
-        "additionalProperties": false,
-        "description": "One row of GET /api/battles?showcase=true: a saved showcase battle.",
-        "properties": {
-          "battle_id": {
-            "description": "Id of the saved battle.",
-            "title": "Battle Id",
-            "type": "string"
-          },
-          "title": {
-            "description": "Matchup title shown on the home page, e.g. \"Grizzly bear vs Gray wolf\".",
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "battle_id",
-          "title"
-        ],
-        "title": "ShowcaseBattle",
-        "type": "object"
       }
     }
   }

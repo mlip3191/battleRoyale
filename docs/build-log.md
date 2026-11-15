@@ -91,3 +91,35 @@ Started 2026-11-08 by Mike with Claude Code (Opus 5.5).
   Dry run: issue #52, PR #53.
   Ruleset "main protection" (id 26832578) read back: PR with 1 approval; required checks = 4 CI + Secret scan + Critical files approval; force push and deletion blocked; no bypass; D-26's four options off. Team board: #54 (pinned).
 - Kickoff call held 2026-11-09: all five attended; everyone's `npm run env:check` shows all ok and `npm run setup` works. Recap on the Team board (#54). No weekly meeting: written Done / Doing / Blocked check-ins on #54 instead.
+
+## Milestones
+
+### MS-1 walking skeleton (due Sat Nov 14), started Nov 11, final on Nov 14
+
+Dates are Mountain Time.
+
+- **What works (Nov 14; `main` at 5da83dc):**
+  - **MS-1 status: met.** Running the app on `main` at cb41095 in mock mode (`npm start`), "a grizzly bear vs a gorilla" gives the parsed fight card, all nine pipeline stages finish, the Phaser stage plays the fight to its end banner, and the Battle page shows the verdict and links to the full Results page with the cited tale of the tape (screenshots below). No errors in the browser console or the server log during the browser run. API re-run on 5da83dc (no browser), after battles switched to the stat-sheet builder (#269): the same nine stages and the same verdict. The script stage ends "fallback" on mocks by design: the mock play-by-play has no canned reply, so the template play-by-play, which follows the real fight log, is used. First confirmed on Nov 12 at 70d0169, after the A05 stub path (#197) and the intake API with its one clarifying question (D08, #158) landed.
+  - **Known issue:** the gorilla wins 79% because its 3,420 N bite is a modeled molar maximum compared with the grizzly's canine bite (#260; ruled: use the code's carnivore fit, about 1,016 N).
+  - **Built by Nov 12:** the engine (F02–F06, F08 and the tournament bracket; F07, the benchmark runner, is in review in #72), with swarm mode now matching the one-by-one engine (#106), venom resolved after the fight (#107) and a proof that more fighters never hurt above the swarm threshold (#108). The live-tested intake parser (A02, #137, #140) and its follow-ups (#147, #231, #236, #237, #239), the first part of the A04 safety gate (#152) and a mock safety classifier for offline demos (#241). The pipeline's stage graph with time budgets, its next-challenger stage, and battle persistence with a repeat-battle cache (A05, #199, #200, #203). Narration part 1: the number guard, the fact list and the template scripts (A06, #216, #217, #218) with the number-guard and fair-fight wording fixes (#252, #253), and `script_kind` on narration assets (#247). The knowledge base with retrieval and reranking (G02, G03, #150), the benchmark matchup set and pass rules (G07, #129), the seed ingest with Wikidata, PanTHERIA and AnimalTraits facts (#190, #196), the stat-sheet builder without model extraction (G04 part 1, #232) and 14 hand-verified seed sheets (G05, most recently the king cobra and Roman legionary, #243, and the African lion, bulldozer and bald eagle, #254). Fighter sprites and battlefield images (A08, #248). The app shell and intake page with its outage and expired-question messages (D02, D03, #207), the wired Results page (D04, #127, #128), the Phaser battle stage with replay controls (D05, #121, #123), and the broadcast Battle page with caption sync, sound controls and degraded modes (D07, #187, #188).
+  - **Built Nov 13–14:** the announcer LLM writer, wired into the pipeline (A06 part 2, #244, #261), with number words in fighter names ignored by the number guard (#262), an honest "template commentary" notice (#272), narration that matches each broadcast phase (#268), and announcer audio and music through the mock providers (#276). The house cat, so all 15 seed sheets are on `main` (G05, #257). Model stat extraction with verified quotes (G04 part 2, #266), and the stat-sheet builder used in battles, with `/api/fighters` (G04 part 3, #269). The 12 mythical creature types and brand-safe media names (G09, #264, #291). Seed trait rows loaded from the team's Hugging Face dataset, pinned to one dataset version (G02, #288, #292). A showcase dry run on the real seed sheets (#282). On the front end: why a battle failed, on the Battle and Results pages (#265); crowd replay logs only in fixtures mode (#267); a skip link and per-page tab titles (#275); a tighter API client (#278); and the whole winning side named in the end banner (#286). A shared pluralizer (#263, #273), and waiting for a fresh database instead of failing with "locked" (#298).
+  - **Approved or in review, not on `main` yet:** mythical creature sheets from their analogs and on demand (G09, #274, #293), the showcase export and startup import (G08 part 1, #295), keeping mock media out of the live cache (#299), the one-word answer splice (#297, changes requested), and the F07 benchmark runner (#72), whose first live baseline left three cases for a PM decision (#304). Swarm mode chosen by work (D-50 build, #193, changes requested). Drafts: the rest of A04 (#156 and the stacked #161, #164, #165 and #185; #185 closes #27) and the first-time user guide (D09, #294).
+- **What changed from the plan:**
+  - **D-41:** the chat model extracts stats; port 9010 only answers decisions.
+  - **D-42/D-44:** venom is modeled and resolved after the fight (built in #107).
+  - **D-43:** dragon-vs-tank calibration waits for G09's real dragon sheet (in review in #274); no changes to breath damage or machine hit points until then.
+  - **D-45:** swarm mode matches the one-by-one engine (built in #106).
+  - **D-46:** plain-slug fighter IDs, two dataset licenses, derived machine values.
+  - **D-47:** seed-sheet labeling rules.
+  - **D-48:** the repo is public, after GitHub Actions stopped on the private repo for billing.
+  - **D-49:** the PM or the backup may merge a teammate's approved PR after an @mention.
+  - **D-50:** swarm mode is chosen by how much work a fight is, not by head count (recorded in #184, wording refined in #194; build in review in #193).
+  - **D-51:** a bare lowercase word that matches a famous name stays a possible proper name unless the name is also a common word (not built yet, issue #186).
+  - **D-52:** the intake budget is about 7 s typical with a 25 s limit, not 3 s.
+  - **D-53:** a published arm length counts as reach; an arm span alone doesn't.
+  - **D-54:** the king cobra may have 4 estimates and the Roman legionary 3.
+  - **D-55:** the house cat may have 3 estimates, a kill hold isn't fighting endurance, and the image-style templates may stay in code.
+  - **D-56:** fighter loadouts and progression are post-MVP, and raising `HIT_SPEED_EXP` is declined for now.
+  - **D-57:** weapons on built stat sheets are a stopgap until G09 or intake supplies real ones (recorded in #269).
+  - **The board:** the "PR linked → In review" automation was turned on (#172).
+- **Screenshots (Nov 14, mocks, `main` at cb41095):** [the parsed fight card](media/ms1-tonights-card.jpg) and [the verdict on the Battle page](media/ms1-verdict.jpg).

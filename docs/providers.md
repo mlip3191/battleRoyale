@@ -110,6 +110,8 @@ Base URL: `http://<host>:9006`
 
 **Pre-drawing the demo sprites:** `uv run --directory backend python scripts/pregen_sprites.py` (with `PROVIDER_MODE=live`) draws a sprite for every seed fighter and a battlefield for every terrain, cached in `data/media/` per fighter id (or terrain) and style version, checks that every sprite is a PNG with four transparent corners, and prints a PASS/FAIL table (exit code 1 on any failure). `--thumbs DIR` writes small thumbnails and a contact sheet for a PR; `--force` redraws everything. It prints only ids, timings, sizes, and PASS/FAIL.
 
+**Where generated media is cached (all of `image`, `tts`, `music`; #280):** live files go in `data/media/` (`sprites/`, `battlefields/`, `audio/`) and are served at `/media/...`, e.g. `/media/sprites/gray-wolf-v1.png`. Files made in mock mode go in `data/media/mock/` instead (`/media/mock/sprites/gray-wolf-v1.png`, `/media/mock/audio/...`), so mock placeholders and silent WAVs are **never reused in live mode**: switching to `PROVIDER_MODE=live` makes the real files the first time. The mode comes from the same place the provider registry uses (`provider_mode()` in `backend/app/providers/registry.py`). A cache hit needs a non-empty regular file; an empty or missing file is made again. The shared helpers are in `backend/app/media/files.py`.
+
 ## `tts` — Text-to-Speech and Voice Cloning
 
 Base URL: `http://<host>:9008`

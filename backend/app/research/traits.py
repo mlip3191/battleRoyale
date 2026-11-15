@@ -30,7 +30,15 @@ TRAIT_LICENSES = {"pantheria": PANTHERIA_LICENSE, "animaltraits": ANIMALTRAITS_L
 # fighters only, built by scripts/build_seed_traits.py and uploaded by a teammate. Each row keeps
 # its original source, reference, and license; Hugging Face only hosts the file.
 HF_TRAITS_DATASET = "MBAX6418Bros/battle-royale-seed-traits"
-HF_TRAITS_URL = f"https://huggingface.co/datasets/{HF_TRAITS_DATASET}/resolve/main/seed-traits.csv"
+# A fixed version of the dataset, so its numbers change only with a reviewed code change. After
+# uploading a new seed-traits.csv, put the dataset's new commit id here (docs/research.md).
+HF_TRAITS_REVISION = "56ddcbf41e7f661bd6b37b2ed024bcf72870fd8b"
+HF_TRAITS_URL = (
+    f"https://huggingface.co/datasets/{HF_TRAITS_DATASET}/resolve/{HF_TRAITS_REVISION}"
+    "/seed-traits.csv"
+)
+# Hugging Face answers these to a bad or expired token, even for a public dataset.
+REJECTED_TOKEN = frozenset({401, 403})
 TEAM_COLUMNS = ("scientific_name", "source", "field", "value", "unit", "reference")
 
 
@@ -119,7 +127,7 @@ async def _dataset_text(client: httpx.AsyncClient, url: str, path: Path, sleep: 
 
 # The team dataset's rows: every stored fact for the given scientific names, in a fixed order.
 def team_rows(tables: TraitTables, names: set[str]) -> list[dict[str, str]]:
-    rows = [
+    return [
         {
             "scientific_name": name,
             "source": source,
@@ -132,7 +140,6 @@ def team_rows(tables: TraitTables, names: set[str]) -> list[dict[str, str]]:
         for name in sorted(names)
         for fact in table.get(name, [])
     ]
-    return rows
 
 
 # The rows as CSV text, ready to upload.
@@ -144,20 +151,23 @@ def team_csv(rows: list[dict[str, str]]) -> str:
     return out.getvalue()
 
 
-# Read the team CSV back into tables; rows with an unknown source or a bad number are skipped.
+# Read the team CSV back into tables; rows with an unknown source, a bad number, or no
+# reference are skipped, so every fact keeps a real link to where it came from.
 def team_tables(text: str) -> TraitTables:
     tables = TraitTables(origin=f"the Hugging Face team dataset ({HF_TRAITS_DATASET})")
     for row in csv.DictReader(io.StringIO(text)):
         source, name = (row.get("source") or "").strip(), (row.get("scientific_name") or "").strip()
-        value = _number(row.get("value"))
+        value, reference = _number(row.get("value")), (row.get("reference") or "").strip()
         if source not in TRAIT_LICENSES or not name or value is None or value <= 0:
+            continue
+        if not reference:
             continue
         fact = Fact(
             source=source,
             field=(row.get("field") or "").strip(),
             value=value,
             unit=(row.get("unit") or "").strip(),
-            reference=f"{(row.get('reference') or '').strip()} (via {HF_TRAITS_URL})",
+            reference=f"{reference} (via {HF_TRAITS_URL})",
         )
         tables.by_source.setdefault(source, {}).setdefault(name, []).append(fact)
         tables.licenses[source] = TRAIT_LICENSES[source]
@@ -171,7 +181,15 @@ async def load_team_dataset(
 ) -> TraitTables | None:
     headers = {"Authorization": f"Bearer {token}"} if token else None
     try:
-        body = await fetch_file(client, HF_TRAITS_URL, sleep=sleep, headers=headers)
+        try:
+            body = await fetch_file(client, HF_TRAITS_URL, sleep=sleep, headers=headers)
+        except SourceError as error:
+            if not (token and error.status in REJECTED_TOKEN):
+                raise
+            # The dataset is public, so a rejected token shouldn't stop it loading. If this
+            # retry fails too, its error falls to the outer except and the originals are used.
+            logger.warning("Hugging Face rejected HF_TOKEN; downloading without it.")
+            body = await fetch_file(client, HF_TRAITS_URL, sleep=sleep)
     except (SourceError, httpx.HTTPError) as error:
         logger.warning("Hugging Face team dataset unavailable (%s); using the originals.", error)
         return None

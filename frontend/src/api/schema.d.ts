@@ -62,7 +62,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Battles */
+        get: operations["list_battles_api_battles_get"];
         put?: never;
         /** Create Battle */
         post: operations["create_battle_api_battles_post"];
@@ -98,6 +99,40 @@ export interface paths {
         };
         /** Battle Events */
         get: operations["battle_events_api_battles__battle_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fighters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Find Fighters */
+        get: operations["find_fighters_api_fighters_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fighters/{fighter_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Fighter */
+        get: operations["read_fighter_api_fighters__fighter_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -344,6 +379,27 @@ export interface components {
             text_hint: string;
         };
         /**
+         * FighterMatch
+         * @description One row of GET /api/fighters?q=: a fighter whose name matches the search text.
+         */
+        FighterMatch: {
+            /**
+             * Fighter Id
+             * @description Stable fighter id, e.g. "grizzly-bear".
+             */
+            fighter_id: string;
+            /**
+             * Display Name
+             * @description Name shown to the user.
+             */
+            display_name: string;
+            /**
+             * Cached
+             * @description True when a stat sheet is already saved, so the battle can skip research.
+             */
+            cached: boolean;
+        };
+        /**
          * FighterRequest
          * @description One side of the matchup, as understood from the user's words.
          */
@@ -557,6 +613,22 @@ export interface components {
              * @default null
              */
             at_event: number | null;
+        };
+        /**
+         * ShowcaseBattle
+         * @description One row of GET /api/battles?showcase=true: a saved showcase battle.
+         */
+        ShowcaseBattle: {
+            /**
+             * Battle Id
+             * @description Id of the saved battle.
+             */
+            battle_id: string;
+            /**
+             * Title
+             * @description Matchup title shown on the home page, e.g. "Grizzly bear vs Gray wolf".
+             */
+            title: string;
         };
         /**
          * SimulationResult
@@ -832,43 +904,6 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
-        /**
-         * FighterMatch
-         * @description One row of GET /api/fighters?q=: a fighter whose name matches the search text.
-         */
-        FighterMatch: {
-            /**
-             * Fighter Id
-             * @description Stable fighter id, e.g. "grizzly-bear".
-             */
-            fighter_id: string;
-            /**
-             * Display Name
-             * @description Name shown to the user.
-             */
-            display_name: string;
-            /**
-             * Cached
-             * @description True when a stat sheet is already saved, so the battle can skip research.
-             */
-            cached: boolean;
-        };
-        /**
-         * ShowcaseBattle
-         * @description One row of GET /api/battles?showcase=true: a saved showcase battle.
-         */
-        ShowcaseBattle: {
-            /**
-             * Battle Id
-             * @description Id of the saved battle.
-             */
-            battle_id: string;
-            /**
-             * Title
-             * @description Matchup title shown on the home page, e.g. "Grizzly bear vs Gray wolf".
-             */
-            title: string;
-        };
     };
     responses: never;
     parameters: never;
@@ -968,6 +1003,37 @@ export interface operations {
             };
         };
     };
+    list_battles_api_battles_get: {
+        parameters: {
+            query?: {
+                showcase?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShowcaseBattle"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_battle_api_battles_post: {
         parameters: {
             query?: never;
@@ -1050,6 +1116,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    find_fighters_api_fighters_get: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FighterMatch"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_fighter_api_fighters__fighter_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fighter_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatSheet"];
                 };
             };
             /** @description Validation Error */
