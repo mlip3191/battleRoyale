@@ -1,5 +1,5 @@
 {
-  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before a football team that has 'Eagles' as an alias) with made-up item IDs. 'wolves' and 'sharks' are made up: a band that matches only through an alias. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. Lakers, Bulls, bull and Jeep (D-59) use real IDs and the live search order of 2026-11-14 (the Lakers and Chicago Bulls match through their 'Lakers' and 'Bulls' aliases; 'bull' the family name ranks before the animal; 'Jeep' the given name before the car brand), with the class walk cut short. 'police', 'doors' and 'metallica' copy the shape of the live search on 2026-11-14 (the band 'The Police' or 'The Doors' plus a kind item with a P279 matched by label or alias; the band 'Metallica' plus a moth genus that is a bare taxon) with made-up item IDs (Q9003xx). 'heat' is made up in the same shape (the kind item 'heat' with a P279, then the basketball team 'Miami Heat' matching through its 'Heat' alias; Q90033x): a sports team that loses the pick to a kind item. Moose, shredder, hulk and the napoleon pastry (#186, D-51) are made-up item IDs copying the shape of the live search: a person 'Moose' before the animal labelled 'moose'; the character 'Shredder' before kinds that match only through the alias 'shredder' ('paper shredder', 'grater'); the character 'Hulk' before a ship type labelled 'hulk'; 'Napoleon' before the pastry 'mille-feuille' (alias 'napoleon'). 'kraken' (#185) uses real IDs and the live search order of 2026-11-15 (the band Kraken, the Kraken cryptocurrency exchange, a film, a genus that is a bare taxon, then a website), with the class walk cut short: the band loses the pick but still blocks capitalized 'Kraken'. 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
+  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before the Philadelphia Eagles, which match through their 'Eagles' alias) with made-up item IDs, except the Philadelphia Eagles (real ID, #310). 'wolves' and 'sharks' are made up: a band that matches only through an alias; in 'wolves' it comes before a football club with the live Wolverhampton Wanderers' three team classes (#310), so the club is picked. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. Lakers, Bulls, bull and Jeep (D-59) use real IDs and the live search order of 2026-11-14 (the Lakers and Chicago Bulls match through their 'Lakers' and 'Bulls' aliases; 'bull' the family name ranks before the animal; 'Jeep' the given name before the car brand), with the class walk cut short. 'police', 'doors' and 'metallica' copy the shape of the live search on 2026-11-14 (the band 'The Police' or 'The Doors' plus a kind item with a P279 matched by label or alias; the band 'Metallica' plus a moth genus that is a bare taxon) with made-up item IDs (Q9003xx). 'heat' is made up in the same shape (the kind item 'heat' with a P279, then the basketball team 'Miami Heat' matching through its 'Heat' alias; Q90033x): a sports team that loses the pick to a kind item. Moose, shredder, hulk and the napoleon pastry (#186, D-51) are made-up item IDs copying the shape of the live search: a person 'Moose' before the animal labelled 'moose'; the character 'Shredder' before kinds that match only through the alias 'shredder' ('paper shredder', 'grater'); the character 'Hulk' before a ship type labelled 'hulk'; 'Napoleon' before the pastry 'mille-feuille' (alias 'napoleon'). 'kraken' (#185) uses real IDs and the live search order of 2026-11-15 (the band Kraken, the Kraken cryptocurrency exchange, a film, a genus that is a bare taxon, then a website), with the class walk cut short: the band loses the pick but still blocks capitalized 'Kraken'. 'chicago bulls', 'philadelphia eagles', 'wolf' and 'yankees' (#310) use real IDs and the live search order of 2026-11-15, with the class walk cut short: the Chicago Bulls basketball team before a defunct American football team of the same name; the Philadelphia Eagles before an article on their history; five other items before the grey wolf (result 6, with the family name 'Wolf' first); and for 'yankees' the item 'Americans' first, the New York Yankees second (through their 'Yankees' alias), then the United States, and the kinds 'Yankee' and 'Northerners' (both alias 'Yankees'), so the team loses the pick to a kind item and its alias has no 'The' of its own (the 'heat' shape; docs/safety.md, known limits). 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
   "search": {
     "default": [],
     "napoleon": [
@@ -66,7 +66,15 @@
     ],
     "eagles": [
       { "id": "Q900160", "label": "Eagles" },
-      { "id": "Q900161", "label": "Philadelphia Testles", "match": "Eagles" }
+      { "id": "Q219714", "label": "Philadelphia Eagles", "match": "Eagles" }
+    ],
+    "philadelphia eagles": [
+      { "id": "Q219714", "label": "Philadelphia Eagles" },
+      {
+        "id": "Q5870207",
+        "label": "history of the Philadelphia Eagles",
+        "match": "Philadelphia Eagles history"
+      }
     ],
     "eagle": [
       { "id": "Q900163", "label": "Eagle" },
@@ -80,6 +88,14 @@
     "wolves": [
       { "id": "Q900170", "label": "Testwolf Pack", "match": "Wolves" },
       { "id": "Q900171", "label": "Wolverhampton Testers", "match": "Wolves" }
+    ],
+    "wolf": [
+      { "id": "Q16093204", "label": "Wolf" },
+      { "id": "Q2588576", "label": "Wolf" },
+      { "id": "Q2589157", "label": "Wolfgang" },
+      { "id": "Q8029793", "label": "Wolf" },
+      { "id": "Q254", "label": "Wolfgang Amadeus Mozart" },
+      { "id": "Q18498", "label": "grey wolf", "match": "wolf" }
     ],
     "sharks": [{ "id": "Q900180", "label": "The Sharkz Crew", "match": "Sharks" }],
     "abraham lincoln": [{ "id": "Q900200", "label": "Abraham Lincoln" }],
@@ -107,6 +123,22 @@
       { "id": "Q2342499", "label": "Celtics-Lakers rivalry", "match": "Lakers-Celtics rivalry" }
     ],
     "los angeles lakers": [{ "id": "Q121783", "label": "Los Angeles Lakers" }],
+    "chicago bulls": [
+      { "id": "Q128109", "label": "Chicago Bulls" },
+      { "id": "Q5095520", "label": "Chicago Bulls" },
+      {
+        "id": "Q56670521",
+        "label": "Game 4 of 1988 NBA Playoffs Eastern Conference First Round, Chicago Bulls at Cleveland Cavaliers",
+        "match": "Chicago Bulls at Cleveland Cavaliers, May 5, 1988"
+      }
+    ],
+    "yankees": [
+      { "id": "Q846570", "label": "Americans", "match": "Yankees" },
+      { "id": "Q213417", "label": "New York Yankees", "match": "Yankees" },
+      { "id": "Q30", "label": "United States", "match": "Yankees" },
+      { "id": "Q692062", "label": "Yankee", "match": "Yankees" },
+      { "id": "Q100885106", "label": "Northerners", "match": "Yankees" }
+    ],
     "bulls": [
       { "id": "Q128109", "label": "Chicago Bulls", "match": "Bulls" },
       { "id": "Q37555751", "label": "Bulls" },
@@ -216,10 +248,23 @@
     "Q900151": { "P31": ["Q900021"] },
     "Q900152": { "P31": ["Q16521"] },
     "Q900160": { "P31": ["Q215380"] },
-    "Q900161": { "P31": ["Q900162"] },
-    "Q900162": { "P279": [] },
+    "Q219714": { "P31": ["Q17156793"] },
+    "Q17156793": { "P279": [] },
     "Q900170": { "P31": ["Q641066"] },
-    "Q900171": { "P31": ["Q900162"] },
+    "Q900171": { "P31": ["Q476028", "Q103229495", "Q20639856"] },
+    "Q476028": { "P279": [] },
+    "Q103229495": { "P279": [] },
+    "Q20639856": { "P279": [] },
+    "Q16093204": { "P31": ["Q101352", "Q98775491", "Q333021", "Q612090"] },
+    "Q98775491": { "P279": [] },
+    "Q333021": { "P279": [] },
+    "Q612090": { "P279": [] },
+    "Q2588576": { "P31": ["Q12308941"] },
+    "Q8029793": { "P31": ["Q482994"] },
+    "Q482994": { "P279": [] },
+    "Q18498": { "P31": ["Q16521", "Q19067"], "P279": ["Q25324"] },
+    "Q19067": { "P279": [] },
+    "Q25324": { "P279": [] },
     "Q900163": { "P31": ["Q101352"] },
     "Q900164": { "P31": ["Q55983715"] },
     "Q101352": { "P279": [] },
@@ -261,6 +306,23 @@
     "Q121783": { "P31": ["Q13393265"] },
     "Q128109": { "P31": ["Q13393265"] },
     "Q13393265": { "P279": [] },
+    "Q5095520": { "P31": ["Q17156793"] },
+    "Q846570": { "P31": ["Q33829", "Q231002", "Q42138"] },
+    "Q33829": { "P279": [] },
+    "Q231002": { "P279": [] },
+    "Q42138": { "P279": [] },
+    "Q213417": { "P31": ["Q13027888"] },
+    "Q13027888": { "P279": [] },
+    "Q30": { "P31": ["Q3624078", "Q1489259", "Q6256", "Q99541706", "Q1520223", "Q5035794"] },
+    "Q3624078": { "P279": [] },
+    "Q1489259": { "P279": [] },
+    "Q6256": { "P279": [] },
+    "Q99541706": { "P279": [] },
+    "Q1520223": { "P279": [] },
+    "Q5035794": { "P279": [] },
+    "Q692062": { "P31": ["Q1371427"], "P279": ["Q846570"] },
+    "Q1371427": { "P279": [] },
+    "Q100885106": { "P31": ["Q33829"], "P279": ["Q846570"] },
     "Q37555751": { "P31": ["Q101352"] },
     "Q1378158": { "P31": ["Q43009164"] },
     "Q2928116": { "P31": ["Q2367225"] },

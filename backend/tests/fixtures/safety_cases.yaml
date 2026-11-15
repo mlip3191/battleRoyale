@@ -189,6 +189,30 @@ cases:
     kind: team
     mock:
       sides: [["Bulls", "bull"], ["a grizzly bear", "grizzly bear"]]
+  # #310: full team names, and a nickname Wikidata misses.
+  - id: team-05
+    text: "the Chicago Bulls vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: team
+    layer: wikidata
+  - id: team-06
+    text: "the Philadelphia Eagles vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: team
+    layer: wikidata
+  - id: team-07
+    # Known limit (docs/safety.md, known limits): "yankees" picks the item "Americans", and the
+    # kind "Yankee" beats the New York Yankees, whose alias has no "The" of its own (like "the
+    # Heat"), so the Wikidata check passes it: only the classifier blocks it.
+    text: "the Yankees vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: team
+    layer: classifier
+    mock:
+      classifier: real_person
 
   # --- Blocked: minors ---------------------------------------------------------------------
   - id: mn-01

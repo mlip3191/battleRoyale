@@ -464,6 +464,14 @@ def test_the_class_map_lists_sports_teams_as_groups() -> None:
         (["bulls"], None),
         (["Bulls", "the Bulls"], "real_person"),  # one typed name names the team
         (["Los Angeles Lakers"], "real_person"),  # the full label, not a common word
+        # #310: full team names (live search order), and the nickname "Wolves".
+        (["the Chicago Bulls"], "real_person"),
+        (["Chicago Bulls"], "real_person"),
+        (["the Philadelphia Eagles"], "real_person"),
+        (["the chicago bulls"], None),  # lowercase after an article reads as a common noun
+        (["the Wolves"], "real_person"),  # "the" + the alias of the club that is picked
+        (["Wolves"], None),  # "wolf" is an animal (result 6): bare "Wolves" is the animals
+        (["wolves"], None),
         # Companies, organizations and brands stay allowed: the Jeep car brand is a business.
         (["a Jeep"], None),
         (["Jeep"], None),
@@ -482,6 +490,9 @@ async def test_mock_fixture_team_examples(
     [
         ("lakers", "Q121783", "Lakers", False),  # picked through its alias; label is the alias
         ("bulls", "Q128109", "Bulls", True),  # beats the family name and the rugby "Bulls"
+        ("wolves", "Q900171", "Wolves", True),  # the band matched only an alias; the club wins
+        ("chicago bulls", "Q128109", "Chicago Bulls", False),  # the first of two teams
+        ("philadelphia eagles", "Q219714", "Philadelphia Eagles", False),
     ],
 )
 async def test_the_mock_fixture_picks_teams_by_alias(
@@ -547,6 +558,18 @@ async def test_a_team_that_lost_the_pick_follows_the_band_rule(cache: WikidataCa
         ("gizmos", None),
     ]:
         assert (await check_names([typed], lookup=lookup, cache=cache)).reason == reason
+
+
+async def test_the_yankees_is_a_known_miss(cache: WikidataCache) -> None:
+    # Known limit (#310, docs/safety.md): live "yankees" ranks "Americans" first, then the New
+    # York Yankees (alias "Yankees"), with the kind "Yankee" (alias "Yankees", a P279) in the top
+    # 5. The team loses the pick to a common-word kind and its alias has no "The" of its own (the
+    # "heat" shape above), so no wording names it here; the classifier blocks it (case team-07).
+    check = await resolve("yankees", MockWikidataLookup(), load_class_map())
+    assert (check.qid, check.reason, check.group) == ("Q846570", None, False)
+    assert (check.lost_group, check.common) == ("Yankees", True)
+    for typed in ["the Yankees", "Yankees", "the yankees"]:
+        assert (await check_names([typed], lookup=MockWikidataLookup(), cache=cache)).allowed
 
 
 async def test_a_club_that_is_also_a_business_is_still_a_team(cache: WikidataCache) -> None:
