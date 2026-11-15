@@ -1,6 +1,6 @@
 # Battle Royale user guide
 
-This guide is for someone who has never seen the app, and maybe never used a terminal. It takes about 20 minutes the first time, mostly waiting for installs.
+This guide is for someone who has never seen the app, and maybe never used a terminal. It takes about 30 minutes the first time, mostly waiting for installs.
 
 **Contents:** [1. What it is](#1-what-the-app-does) · [2. Run it](#2-run-it-on-your-computer) · [3. Use it](#3-use-it) · [4. What it won't do](#4-what-it-wont-do) · [5. Troubleshooting](#5-troubleshooting)
 
@@ -29,16 +29,17 @@ Type each command below exactly, then press Enter, and wait for it to finish bef
 
 > **Windows tip:** if PowerShell says *"running scripts is disabled on this system"* when you type `npm`, type `npm.cmd` instead of `npm` in every command (for example `npm.cmd start`). See [Troubleshooting](#5-troubleshooting).
 
-### Step 1: Install Node 26 and uv
+### Step 1: Install Node 26, uv and Git
 
-Node runs the web page, and uv runs the Python back end (it installs the right Python for you).
+Node runs the web page, uv runs the Python back end (it installs the right Python for you), and Git downloads the code.
 
 | | Windows | Mac |
 |---|---|---|
 | **Node 26** | Download the installer from [nodejs.org](https://nodejs.org) and click through it. On the "Tools for Native Modules" screen, leave the box **unchecked**. | Download the installer from [nodejs.org](https://nodejs.org), or `brew install fnm` then `fnm install 26` |
 | **uv** | `winget install astral-sh.uv` | `brew install uv` |
+| **Git** | `winget install Git.Git` | `xcode-select --install` (or `brew install git`) |
 
-**Close the terminal and open a new one** so it finds the new programs. Then check both:
+**Close the terminal and open a new one** so it finds the new programs. Then check them:
 
 ```bash
 node --version
@@ -54,12 +55,19 @@ You should see `v26` and a uv version number:
 
 ### Step 2: Get the code
 
-Either download it or clone it:
+Clone it with Git:
 
-- **Download:** on the project's GitHub page, click the green **Code** button, then **Download ZIP**. Unzip it somewhere easy, like your Documents folder.
-- **Clone (if you have Git):** `git clone https://github.com/mlip3191/battleRoyale.git`
+```bash
+git clone https://github.com/mlip3191/battleRoyale.git
+```
 
-Then move the terminal into that folder. Type `cd ` (with a space), drag the folder from File Explorer or Finder onto the terminal window, and press Enter.
+Then move the terminal into that folder:
+
+```bash
+cd battleRoyale
+```
+
+> **No Git?** On the project's GitHub page you can click the green **Code** button, then **Download ZIP**, and unzip it somewhere easy. To move the terminal into that folder, type `cd ` (with a space), drag the folder from File Explorer or Finder onto the terminal window, and press Enter. Everything works, except that `npm run setup` (step 4) ends with a *"not a git repository"* (or *"git is not recognized"*) error after the installs finish. That last part only turns on a check for people changing the code, so you can ignore it.
 
 ### Step 3: Connect the course AI endpoints (optional)
 
@@ -87,7 +95,17 @@ This downloads everything the app needs. It takes a minute or two the first time
 
 ![Terminal showing npm run setup installing packages and finishing](images/user-guide/03-setup.png)
 
-### Step 5: Start the app
+### Step 5: Build the knowledge base (live mode only)
+
+If you did step 3, run this once:
+
+```bash
+npm run ingest
+```
+
+It downloads the reference articles the app researches fighters from, and takes a few minutes. You only need it once, not every time you start the app. In mock mode (you skipped step 3) you don't need it.
+
+### Step 6: Start the app
 
 ```bash
 npm start
@@ -97,13 +115,13 @@ Wait until you see **"Battle Royale is starting at http://localhost:8000"** and 
 
 ![Terminal showing npm start building the page and then "Battle Royale is starting at http://localhost:8000"](images/user-guide/04-start.png)
 
-### Step 6: Open the app
+### Step 7: Open the app
 
 Open your web browser (Chrome, Edge, Safari or Firefox) and go to **http://localhost:8000**.
 
 ![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button and example matchups](images/user-guide/05-home.png)
 
-**To stop the app:** click the terminal window and press **Ctrl+C**. To start it again later, open a terminal in the same folder and run `npm start`. You don't need to repeat steps 1 to 4.
+**To stop the app:** click the terminal window and press **Ctrl+C**. To start it again later, open a terminal in the same folder and run `npm start`. You don't need to repeat steps 1 to 5.
 
 ## 3. Use it
 
@@ -183,7 +201,7 @@ Click **See the full results**. Each part, top to bottom:
 
 ### Showcase battles
 
-Five ready-made battles show off what the app can do. When they're ready, they appear under **Showcase** on the home page:
+Five ready-made battles show off what the app can do. They load automatically when the app starts and appear under **Showcase** on the home page:
 
 1. 100 duck-sized horses vs 1 horse-sized duck
 2. A grizzly bear vs 6 gray wolves in a forest
@@ -221,6 +239,8 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **"Address already in use"** or port 8000 is busy when you run `npm start` | The app (or something else) is already running. Use the window where it's already running, or close it with Ctrl+C and run `npm start` again. Restarting the computer also clears it. |
 | **The page looks old or a button does nothing after you update the code** | Stop the app with Ctrl+C, run `npm run setup` and then `npm start` again, and refresh the browser page. |
 | **No announcer voice or music** | Sound is optional, and the captions always work. Click **Play sound**, check that **Mute** is off and your computer isn't muted. A note at the top of the broadcast says when a voice or music track couldn't be made this time. |
-| **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then stop and restart the app. |
+| **`npm run setup` ends with "not a git repository" or "git is not recognized"** | You downloaded the ZIP instead of cloning. The installs already finished, so you can ignore it and go on. |
+| **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and skipped [step 5](#step-5-build-the-knowledge-base-live-mode-only). Stop the app with Ctrl+C, run `npm run ingest` once, then `npm start` again. |
+| **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then run `npm run ingest` once and restart the app. |
 
 Still stuck? Run `npm run doctor`. It checks your computer's setup and says what to fix, without showing any secret values.
