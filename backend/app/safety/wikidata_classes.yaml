@@ -11,7 +11,18 @@
 #
 # Not listed yet: weapons of mass destruction and religious figures. The rules and classifier
 # layers already cover them; Wikidata classes for them can be added in A04 part 3.
-classes_version: 1
+classes_version: 2
+
+# Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
+# these classes is skipped and the next exact match is used: "Moon" the family name is passed
+# over for the Moon. Verified live 2026-11-10 against wbgetentities (labels as returned).
+skip_matches:
+  - qid: Q101352
+    label: family name
+  - qid: Q202444
+    label: given name
+  - qid: Q4167410
+    label: Wikimedia disambiguation page
 
 classes:
   - qid: Q5
@@ -35,6 +46,17 @@ classes:
     reason: weapon
   - qid: Q6999
     label: astronomical object
+    reason: out_of_scope
+  # The Moon, the Sun and planets sit more than two levels below "astronomical object" (the Moon
+  # is a planetary moon -> natural satellite -> ...), so their nearer classes are listed too.
+  - qid: Q2537
+    label: natural satellite
+    reason: out_of_scope
+  - qid: Q634
+    label: planet
+    reason: out_of_scope
+  - qid: Q523
+    label: star
     reason: out_of_scope
   - qid: Q2221906
     label: geographic location

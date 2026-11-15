@@ -3,7 +3,7 @@
 check_names() finds each name's top exact Wikidata match, reads its classes (P31 and P279, then
 P279 up to two more levels), and blocks it if they include a class in wikidata_classes.yaml.
 Results are cached in SQLite. This layer fails open: if Wikidata is slow or down, it gives no
-verdict and the rules and classifier still decide. Not wired into gate.py yet (part 2b).
+verdict and the rules and classifier still decide. gate.py runs it alongside the classifier.
 """
 
 import asyncio
@@ -35,7 +35,7 @@ CLASSES_PATH = Path(__file__).with_name("wikidata_classes.yaml")
 MOCK_FIXTURE = (
     REPO_ROOT / "backend" / "tests" / "fixtures" / "providers" / "wikidata" / "entities.json"
 )
-TIMEOUT_S = 1.5
+TIMEOUT_S = 2.5
 """Most time one name's lookup may take (all its calls together); no retries."""
 PARENT_LEVELS = 2
 """How many P279 (subclass of) levels to climb above the entity's own classes."""
@@ -93,6 +93,12 @@ class ClassMap:
     version: int
     reasons: dict[str, BlockedReason]
     instance_only: frozenset[str]
+    name_items: frozenset[str] = frozenset()
+    """skip_matches: P31 classes of name/meta items, passed over when picking the top match."""
+
+    # True when an item's P31 is non-empty and only name/meta classes (family name, etc.).
+    def is_name_item(self, classes: EntityClasses) -> bool:
+        return bool(classes.instance_of) and set(classes.instance_of) <= self.name_items
 
     # The first blocked reason among these class IDs (file order), skipping instance-only ones
     # unless allowed.
@@ -116,7 +122,8 @@ def load_class_map(path: Path = CLASSES_PATH) -> ClassMap:
         reasons[entry["qid"]] = entry["reason"]
         if entry.get("instance_only"):
             instance_only.add(entry["qid"])
-    return ClassMap(int(data["classes_version"]), reasons, frozenset(instance_only))
+    name_items = frozenset(entry["qid"] for entry in data.get("skip_matches") or [])
+    return ClassMap(int(data["classes_version"]), reasons, frozenset(instance_only), name_items)
 
 
 # --- Names -----------------------------------------------------------------------------------
@@ -136,21 +143,36 @@ def lookup_query(name: str) -> tuple[str, bool]:
     return normalize_entity(lowered), any(word[:1].isupper() for word in words)
 
 
-# The first search result whose label or alias equals the query, ignoring case.
-def top_exact_match(query: str, candidates: Sequence[Candidate]) -> Candidate | None:
+# Every search result whose label or alias equals the query, ignoring case, in search order.
+def exact_matches(query: str, candidates: Sequence[Candidate]) -> list[Candidate]:
     wanted = query.casefold()
-    for candidate in candidates:
-        if wanted in (candidate.label.casefold(), candidate.matched_text.casefold()):
-            return candidate
+    return [c for c in candidates if wanted in (c.label.casefold(), c.matched_text.casefold())]
+
+
+# The first exact match that is not only a name or meta item (e.g. the family name "Moon"),
+# with its own classes; each skipped item's classes must be known, or the pick is unsafe.
+async def top_exact_match(
+    query: str, lookup: WikidataLookup, class_map: ClassMap
+) -> tuple[Candidate, EntityClasses] | None:
+    matches = exact_matches(query, await lookup.search(query))
+    if not matches:
+        return None
+    found = await lookup.classes(list(dict.fromkeys(c.qid for c in matches)))
+    for match in matches:
+        if match.qid not in found:
+            raise WikidataUnavailable(f"Wikidata sent no data for {match.qid}.")
+        own = found[match.qid]
+        if not class_map.is_name_item(own):
+            return match, own
     return None
 
 
 # Ask Wikidata about one query: top exact match, then its classes up to PARENT_LEVELS higher.
 async def resolve(query: str, lookup: WikidataLookup, class_map: ClassMap) -> NameCheck:
-    match = top_exact_match(query, await lookup.search(query))
-    if match is None:
+    picked = await top_exact_match(query, lookup, class_map)
+    if picked is None:
         return NameCheck(None, None, None)
-    own = (await _classes_of(lookup, [match.qid]))[match.qid]
+    match, own = picked
     reason = class_map.reason_for(own.instance_of, direct=True)
     level, seen = set(own.instance_of) | set(own.subclass_of), set[str]()
     for climbed in range(PARENT_LEVELS + 1):
@@ -179,8 +201,8 @@ async def _classes_of(lookup: WikidataLookup, qids: Sequence[str]) -> dict[str, 
 class WikidataCache:
     """wikidata_safety_cache rows in SQLite; stale or older-version rows count as misses.
 
-    The cache fails open like Wikidata itself: a database error on read is a miss and on write
-    is skipped, each with a warning, so a cache problem never crashes the safety check.
+    The cache fails open like Wikidata itself: a database or file-system error on read is a miss
+    and on write is skipped, each with a warning, so a cache problem never crashes the safety check.
     """
 
     _setup_lock = threading.Lock()
@@ -225,7 +247,7 @@ class WikidataCache:
                 ).fetchone()
             finally:
                 connection.close()
-        except sqlite3.Error as error:
+        except (sqlite3.Error, OSError) as error:
             logger.warning("Wikidata cache read failed (%s); treating it as a miss.", error)
             return None
         if row is None or row["classes_version"] != classes_version:
@@ -261,7 +283,7 @@ class WikidataCache:
                     )  # fmt: skip
             finally:
                 connection.close()
-        except sqlite3.Error as error:
+        except (sqlite3.Error, OSError) as error:
             logger.warning("Wikidata cache write skipped (%s).", error)
 
 
@@ -384,7 +406,8 @@ async def _check_one(
     try:
         check = await asyncio.wait_for(resolve(query, lookup, class_map), TIMEOUT_S)
     except (WikidataUnavailable, TimeoutError) as error:
-        logger.warning("Wikidata check skipped (%s); other safety layers still apply.", error)
+        detail = f"{type(error).__name__}: {error}" if str(error) else type(error).__name__
+        logger.warning("Wikidata check skipped (%s); other safety layers still apply.", detail)
         return None
     await cache.put(query, check, class_map.version)
     return check
