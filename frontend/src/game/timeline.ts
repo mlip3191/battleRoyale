@@ -65,20 +65,16 @@ export const MIN_BEAT_MS = 150;
 const other = (side: Side): Side => (side === 0 ? 1 : 0);
 
 // Swarm mode (D-50): the engine uses it for a side over SWARM_THRESHOLD and also for a slow fight
-// below that, so the counts alone are not enough. A swarm log has group attacks, hits and misses
-// (no single actor, group_size above 1). Never read group_size on an approach or KO: those carry a
-// side's head count in one-by-one fights too (simulation guide).
-const GROUP_ACTIONS = new Set(["attack", "hit", "miss"]);
+// below that, so the counts alone are not enough. A swarm log has group HITs (`actor` is null,
+// `group_size` can be 1); a one-by-one HIT always has an actor. KO is not checked: the summary KO
+// ("more go down") has no actor in any fight (simulation guide).
 export const isSwarm = (
   counts: readonly [number, number],
   log: readonly FightEvent[] = [],
 ) =>
   counts[0] > SWARM_THRESHOLD ||
   counts[1] > SWARM_THRESHOLD ||
-  log.some(
-    (e) =>
-      GROUP_ACTIONS.has(e.type) && e.actor == null && (e.group_size ?? 1) > 1,
-  );
+  log.some((e) => e.type === "hit" && e.actor == null);
 
 type Who = Omit<Beat, "index" | "start" | "duration" | "hint" | "damage">;
 

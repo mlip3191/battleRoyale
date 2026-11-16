@@ -316,6 +316,25 @@ describe("who acts and who is affected", () => {
     expect(buildTimeline(single, [150, 1]).swarm).toBe(false);
   });
 
+  test("a swarm hit of one still counts; a summary KO does not (#302)", () => {
+    const hitOfOne: Pick<SimulationResult, "representative_log" | "outcome"> = {
+      representative_log: [
+        ev({ type: "hit", side: 0, actor: null, group_size: 1 }),
+      ],
+      outcome: "win_0",
+    };
+    expect(buildTimeline(hitOfOne, [150, 1]).swarm).toBe(true);
+    const summaryKo: Pick<SimulationResult, "representative_log" | "outcome"> =
+      {
+        representative_log: [
+          ev({ type: "hit", side: 0, actor: 3, target: 0, group_size: 1 }),
+          ev({ type: "ko", side: 1, actor: null, group_size: 40 }),
+        ],
+        outcome: "win_0",
+      };
+    expect(buildTimeline(summaryKo, [150, 1]).swarm).toBe(false);
+  });
+
   test("the 1,000-v-1 engine log is all crowd events (swarm mode)", () => {
     const { beats } = buildTimeline(bigResult, [1000, 1]);
     const fighting = beats.filter((b) =>
