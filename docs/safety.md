@@ -268,9 +268,13 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   Angeles Lakers, Manchester United, Real Madrid, FC Barcelona, Wolverhampton Wanderers and
   Chicago Bears all have a listed team class as their own "instance of", so "sports club" isn't
   needed.) A team whose nickname is also a kind of thing's name loses the pick, and its nickname
-  has no "The" of its own, so it is left to the classifier: "the Yankees" picks the item
-  "Americans", and the kind "Yankee" (alias "Yankees") beats the New York Yankees (case
-  team-07; "the New York Yankees" is blocked here). "the Heat" is the same. A band found only
+  has no "The" of its own, so it passes this check: "the Yankees" picks the item "Americans",
+  and the kind "Yankee" (alias "Yankees") beats the New York Yankees ("the New York Yankees" is
+  blocked here). "the Heat" is the same. The classifier is the backstop for these alias-only
+  team names: its prompt names sports teams and clubs as groups of real people (#328; cases
+  team-07 and team-08), while an animal kind that a team shares ("the Lions", "wolves",
+  "bears") stays the animal (cases team-09, an-09, an-10). A model's judgment, not a
+  guarantee: the live eval measures it. A band found only
   by the "the" search (#316) must be in that search's top 5 with the label "The" + the name;
   one labelled otherwise is left to the classifier.
 - **The classifier can answer differently from run to run.** Re-run the live eval after any
