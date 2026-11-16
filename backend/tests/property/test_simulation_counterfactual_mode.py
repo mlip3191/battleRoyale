@@ -4,6 +4,7 @@ purpose and chooses its own mode."""
 
 import pytest
 
+from app.models.stats import StatName
 from app.simulation import engine
 from app.simulation.decide import decide
 from app.simulation.engine import run
@@ -116,3 +117,28 @@ def test_nothing_measured_because_every_factor_was_skipped_says_so_without_namin
     base = engine._simulate(matchup, sheets, (1.0, 1.0), 1, 40, swarm=False)
     decision = decide(matchup, sheets, base, lambda *args, **kwargs: None)
     assert decision.explainer == "Not every factor could be tested for a fight this big."
+
+
+def test_a_variant_exactly_at_the_cutoff_runs_and_just_above_it_is_skipped(monkeypatch):
+    sheets, matchup = [eagle(), elephant()], matchup_of(50, 2)
+    monkeypatch.setattr(engine, "expected_work", lambda sides: 8000.0)
+    assert not engine._variant_too_slow(matchup, sheets, (1.0, 1.0), True)
+    monkeypatch.setattr(engine, "expected_work", lambda sides: 8000.1)
+    assert engine._variant_too_slow(matchup, sheets, (1.0, 1.0), True)
+
+
+def test_a_partly_skipped_analysis_does_not_claim_nothing_mattered():
+    """#348 review: if the skipped factor was the decisive one and every measured factor is
+    small, the text must not say "no single stat was decisive" or "wins comfortably"."""
+    sheets = [elephant(), eagle()]
+    matchup = matchup_of(1, 30)
+    base = engine._simulate(matchup, sheets, (1.0, 1.0), 1, 40, swarm=False)
+    mass = sheets[0].stats[StatName.MASS].value
+
+    def simulate(m, sh, terrain, n, scaled=True, **kwargs):
+        return None if sh[0].stats[StatName.MASS].value != mass else base[:n]
+
+    unmeasured = "Not every factor could be tested for a fight this big."
+    assert decide(matchup, sheets, base, simulate).explainer == unmeasured
+    measured_all = decide(matchup, sheets, base, lambda m, sh, t, n, scaled=True, **k: base[:n])
+    assert measured_all.explainer != unmeasured

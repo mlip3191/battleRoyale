@@ -102,7 +102,7 @@ def decide(
     base = base[:n]
     fav = _favorite(base)
     base_won, base_left = _score(base, fav, matchup.fighters[fav].count)
-    skipped: list[str] = []  # factors the caller would not run (#341); never named in the text
+    skipped: set[str] = set()  # factors the caller would not run (#341); never named in the text
     cache: dict[str, tuple[float, float]] = {}  # factor -> (signed effect, size of effect)
 
     def effect(
@@ -119,7 +119,7 @@ def decide(
             extra = {"own_mode": True} if own_mode else {}
             outcomes = simulate(variant, variant_sheets, terrain, n, scaled, **extra)
             if outcomes is None:  # too slow to run in the baseline's mode (#341): not measured
-                skipped.append(factor)
+                skipped.add(factor)
                 return 0.0, 0.0
             won, left = _score(outcomes, fav, variant.fighters[fav].count)
             signed = (base_won - won) + c.SURVIVOR_WEIGHT * (base_left - left)
@@ -172,6 +172,8 @@ def decide(
     if len(base) - wins[0] - wins[1] > max(wins) and not draws_from_venom:
         return Decision(shown, _explain_stalemate())  # most runs were draws: nobody "won"
     if size < c.MIN_EFFECT:
+        if skipped:  # an unmeasured factor may be the one that mattered (#341)
+            return Decision(shown, _explain_unmeasured())
         if base_won >= 0.9:
             return Decision(shown, _explain_comfortable(sheets[fav].display_name))
         return Decision(shown, _explain_even())
