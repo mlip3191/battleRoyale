@@ -932,9 +932,15 @@ def _simulate(
     seed: int,
     runs: int,
     use_terrain: bool = True,
+    swarm: bool | None = None,
 ) -> list[RunOutcome]:
-    """Run `runs` fights with a fixed seed (run k always uses the same random stream)."""
-    swarm = _swarm_for(matchup, sheets, ks, use_terrain)
+    """Run `runs` fights with a fixed seed (run k always uses the same random stream).
+
+    `swarm` forces the mode; None decides it from the inputs (D-50). The deciding-factor analysis
+    passes the baseline's mode so a variant differs from it in one factor only (#301).
+    """
+    if swarm is None:
+        swarm = _swarm_for(matchup, sheets, ks, use_terrain)
     outcomes = []
     for k in range(runs):
         rng = run_rng(seed, k)
@@ -974,7 +980,8 @@ def run(
     if not (can_hurt(central[0], central[1]) or can_hurt(central[1], central[0])):
         return _no_contest(matchup, stat_sheets, seed, runs, harmless=True)
 
-    outcomes = _simulate(matchup, stat_sheets, ks, seed, runs)
+    baseline_swarm = _swarm_for(matchup, stat_sheets, ks)
+    outcomes = _simulate(matchup, stat_sheets, ks, seed, runs, swarm=baseline_swarm)
 
     wins = [sum(o.winner == s for o in outcomes) for s in (0, 1)]
     draws = runs - wins[0] - wins[1]
@@ -996,7 +1003,7 @@ def run(
         rng,
         record_events=True,
         notes=_notes(matchup, ks),
-        swarm=_swarm_for(matchup, stat_sheets, ks),
+        swarm=baseline_swarm,
     )
 
     if explain:
@@ -1004,8 +1011,16 @@ def run(
             matchup,
             stat_sheets,
             outcomes,
-            lambda m, sh, terrain, n, scaled=True: _simulate(
-                m, sh, ks if scaled else (1.0, 1.0), seed, n, terrain
+            # Every variant runs in the baseline's mode, so only its one factor differs (#301);
+            # the "numbers" variant changes the head counts on purpose and chooses its own.
+            lambda m, sh, terrain, n, scaled=True, own_mode=False: _simulate(
+                m,
+                sh,
+                ks if scaled else (1.0, 1.0),
+                seed,
+                n,
+                terrain,
+                swarm=None if own_mode else baseline_swarm,
             ),
             ks,
         )

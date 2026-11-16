@@ -110,9 +110,13 @@ def decide(
         variant_sheets: list[StatSheet],
         terrain: bool,
         scaled: bool = True,
+        own_mode: bool = False,
     ) -> tuple[float, float]:
         if factor not in cache:
-            outcomes = simulate(variant, variant_sheets, terrain, n, scaled)
+            # own_mode: the variant chooses its swarm mode itself (only "numbers", which changes
+            # the head counts on purpose); every other variant runs in the baseline's (#301).
+            extra = {"own_mode": True} if own_mode else {}
+            outcomes = simulate(variant, variant_sheets, terrain, n, scaled, **extra)
             won, left = _score(outcomes, fav, variant.fighters[fav].count)
             signed = (base_won - won) + c.SURVIVOR_WEIGHT * (base_left - left)
             cache[factor] = (signed, abs(signed))
@@ -128,7 +132,7 @@ def decide(
         even = matchup.model_copy(deep=True)
         for f in even.fighters:
             f.count = min(counts)
-        effect("numbers", even, sheets, True)
+        effect("numbers", even, sheets, True, own_mode=True)
 
     if scales != (1.0, 1.0):
         # A size reference ('horse-sized duck') matters on its own: drop the scaling and re-run.
