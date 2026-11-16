@@ -135,3 +135,45 @@ async def test_a_long_section_is_cut_into_pieces_that_are_parsed_at_once(
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
         assert await ingest_on_demand(db, http, parser, MockEmbedder(), "moose", "Moose")
     assert len(parser.pieces) >= 4 and parser.most == len(parser.pieces)
+
+
+class OneFailsParser:
+    """The first piece fails at once; the rest wait, and record whether they were cancelled."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self.cancelled = 0
+
+    async def parse(self, data: bytes, mime: str) -> str:
+        self.calls += 1
+        if self.calls == 1:
+            raise ProviderError("Live 'doc_parser' call failed: HTTP 503.")
+        try:
+            await asyncio.sleep(5.0)
+        except asyncio.CancelledError:
+            self.cancelled += 1
+            raise
+        return data.decode("utf-8")
+
+
+class BlankParser:
+    """Replies with nothing at all, as a broken parser might."""
+
+    async def parse(self, data: bytes, mime: str) -> str:
+        return "  \n"
+
+
+async def test_one_failed_piece_cancels_the_others(db: sqlite3.Connection) -> None:
+    parser = OneFailsParser()
+    async with client() as http:
+        assert not await ingest_on_demand(db, http, parser, MockEmbedder(), "moose", "Moose")
+    assert parser.calls == 2 and parser.cancelled == 1  # the other piece stopped, not left running
+    assert db.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 0
+
+
+async def test_blank_parser_replies_store_nothing_so_a_later_lookup_retries(
+    db: sqlite3.Connection,
+) -> None:
+    async with client() as http:
+        assert not await ingest_on_demand(db, http, BlankParser(), MockEmbedder(), "moose", "Moose")
+    assert db.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 0

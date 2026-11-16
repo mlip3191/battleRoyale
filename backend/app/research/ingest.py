@@ -233,9 +233,19 @@ async def _ingest_needed(
         for section in sections
         for piece in split_pieces(strip_markup(section), limit=ON_DEMAND_PIECE_CHARS)
     ]
-    texts = await asyncio.gather(
-        *(parser.parse(piece.encode("utf-8"), article.media_type) for piece in pieces)
-    )
+    # A TaskGroup cancels the other pieces as soon as one fails, so no parser calls run on.
+    try:
+        async with asyncio.TaskGroup() as group:
+            tasks = [
+                group.create_task(parser.parse(piece.encode("utf-8"), article.media_type))
+                for piece in pieces
+            ]
+    except ExceptionGroup as failed:
+        raise failed.exceptions[0] from failed
+    texts = [task.result() for task in tasks]
+    if not any(text.strip() for text in texts):
+        logger.warning("Parser returned no text for %s; stored nothing.", fighter_id)
+        return False  # nothing stored, so a later lookup tries again
     record = DocumentRecord(
         doc_id=f"{fighter_id}/wikipedia",
         fighter_id=fighter_id,

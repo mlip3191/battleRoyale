@@ -98,6 +98,8 @@ async def evidence_for(
 
 # Evidence for a fighter off the seed list: its article is ingested on demand first when none
 # is stored. A failed ingest gives no evidence, so the G04 builder falls back to defaults.
+# The 30 s budget covers the ingest only; the search after it has its own provider timeouts
+# and the reranker fallback, and takes about 2-3 s.
 async def evidence_on_demand(
     connection: sqlite3.Connection,
     client: httpx.AsyncClient,

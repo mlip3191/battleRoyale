@@ -87,7 +87,8 @@ def piece_paragraphs(piece: str) -> list[str]:
 
 
 # The model sometimes skips whole paragraphs without saying so (#34): add any missing one back
-# from the page's own text, word for word, so no sentence or number is lost.
+# from the page's own text, word for word, so no sentence or number is lost. They go after the
+# reply, not back in their place: retrieval searches passages, so order on the page doesn't matter.
 def restore_dropped(piece: str, reply: str) -> str:
     kept = NOT_ALPHANUMERIC.sub("", reply.lower())
     missing = [
