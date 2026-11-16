@@ -24,6 +24,8 @@ class SeedFighter:
     body: str
     habitat: str
     article: str
+    # Pinned so a vandalized or changed Wikidata name can't break the trait match (#290).
+    scientific_name: str | None = None
 
 
 # Read the seed list.
