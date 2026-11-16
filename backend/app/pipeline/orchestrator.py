@@ -13,9 +13,11 @@ Repeat battles: after research, a finished battle with the same cache key (`stag
 lends its verdict, plus its fair fight and challenger when it has them; each copied stage ends
 "done" with detail "cached", and one it lacks runs fresh. Stub output is not saved to the
 record. Research finds sheets through G04's `resolve_stat_sheet` (variant plus entity first).
+A size_reference with no sheet ends research "fallback" with a plain note; that side fights
+at its normal size and the battle goes on.
 
-TODO, remaining A05 piece (issue #36): when no sheet is found, use the all-estimate fallback
-sheet and banner instead of failing research.
+TODO (issue #345): when no fighter sheet is found, use the all-estimate fallback sheet and
+banner instead of failing research.
 """
 
 import asyncio
@@ -61,6 +63,9 @@ FALLBACK_WITH_VALUE = {
 }
 # For a stage with a saved stand-in value but no note of its own above.
 FALLBACK_WITH_VALUE_GENERIC = "A quick stand-in was used for this step this time."
+# Research note when a size_reference has no sheet yet; {names} are the quoted references.
+MISSING_REFERENCE = "No size reference for {names} yet, so that side fights at its normal size."
+MISSING_REFERENCES = "No size reference for {names} yet, so both sides fight at their normal size."
 
 # Running battles; holding a reference keeps a task from being garbage-collected mid-fight.
 _tasks: set[asyncio.Task[None]] = set()
@@ -85,15 +90,20 @@ async def run_battle(battle_id: str, store: BattleStore) -> None:
     matchup = record.matchup
     stage, simulated, reason = "intake", False, UNEXPECTED
     try:
-        # Intake already happened (POST /api/intake) before this battle was created.
-        await store.set_stage(battle_id, "intake", "running", STUB)
-        await store.set_stage(battle_id, "intake", "done", STUB)
+        # Intake really ran before this battle was created (POST /api/intake and the safety
+        # gate), so the stage is recorded as done here.
+        await store.set_stage(battle_id, "intake", "running")
+        await store.set_stage(battle_id, "intake", "done")
 
         stage = "research"
         await store.set_stage(battle_id, stage, "running", _looking_up(matchup))
         found = await _required(stage, lambda: stages.research(matchup), RESEARCH_FAILED)
         await store.update(battle_id, stat_sheets=found.sheets)
-        await store.set_stage(battle_id, stage, "done", STUB if found.stub else None)
+        if found.missing_references:
+            note = _missing_reference_note(found.missing_references)
+            await store.set_stage(battle_id, stage, "fallback", note)
+        else:
+            await store.set_stage(battle_id, stage, "done")
 
         # Same matchup, same sheets, same engine: reuse a finished battle's verdict.
         key = stages.cache_key(matchup, found)
@@ -278,6 +288,13 @@ async def _settle_unfinished(battle_id: str, store: BattleStore, reason: str) ->
     for change in record.stages if record else []:
         if change.status in ("pending", "running"):
             await store.set_stage(battle_id, change.stage, "fallback", reason)
+
+
+# The research note naming each size_reference with no sheet, e.g. 'a school bus'.
+def _missing_reference_note(names: list[str]) -> str:
+    joined = " or ".join(repr(name) for name in dict.fromkeys(names))  # at most two sides
+    template = MISSING_REFERENCE if len(names) == 1 else MISSING_REFERENCES
+    return template.format(names=joined)
 
 
 # A short note shown while research runs.
