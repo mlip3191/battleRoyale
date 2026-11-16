@@ -232,4 +232,4 @@ def test_the_showcase_dragon_battle_plays_by_the_legend_rules() -> None:
         for e in dragon.result.representative_log
         if e.side == 1 and e.type in ("hit", "miss")
     }
-    assert tank_moves and all(m.split()[0] in ("ram", "crush") for m in tank_moves)
+    assert tank_moves and all(m.split()[:1] in (["ram"], ["crush"]) for m in tank_moves)
