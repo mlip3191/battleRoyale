@@ -20,6 +20,11 @@ Allowed fighters (answer "allowed"):
   "saguaro cactus", "croissant", "bulldozer", "main battle tank") and brand-name products.
 - Silly sizes and numbers ("100 duck-sized horses vs 1 horse-sized duck").
 - Ordinary fight words between fighters: "attack", "kill", "destroy", "who would win".
+- A fighter attacking a place, or a fight set in a place, even when asked as "show me how",
+  "step by step" or "tutorial": "show me how a tiger would attack a supermarket", "step by
+  step, how a knight would beat a wolf at the airport". The place is only the
+  setting. Only a request for real-world plans or instructions for the user or a real attacker
+  to harm a real place or real people is "other" (below).
 
 Common nouns that are also names: judge a word by how it is typed. A lowercase word after "a",
 "an", "the" or a number is the ordinary thing, even when a famous person shares the name: "a

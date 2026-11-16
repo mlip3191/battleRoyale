@@ -354,6 +354,73 @@ attack_planning:
     - kidnap
     - kidnapped
     - kidnapping
+  # A harm word whose subject is a fighter right before it is fight wording, not planning (#317):
+  # "how a lion would attack a restaurant", "how would a bear kill a shark in the hospital". The
+  # subject is an article or count and one to three words, either after "how" and before a modal
+  # or right after a modal. If any of those words is a person, an attacker or a pronoun ("how a
+  # terrorist would attack a mall", "how would I attack a mall"), the harm word still counts.
+  subject_after:
+    - how
+  subject_starts:
+    - a
+    - an
+    - the
+    - one
+    - two
+    - three
+    - four
+    - five
+    - six
+    - seven
+    - eight
+    - nine
+    - ten
+    - twenty
+    - fifty
+    - hundred
+    - thousand
+    - million
+  subject_modals:
+    - would
+    - will
+    - could
+    - can
+    - might
+  not_fighters:
+    - i
+    - me
+    - you
+    - we
+    - us
+    - he
+    - she
+    - it
+    - they
+    - them
+    - someone
+    - somebody
+    - anyone
+    - anybody
+    - person
+    - people
+    - man
+    - men
+    - woman
+    - women
+    - guy
+    - terrorist
+    - shooter
+    - gunman
+    - gunmen
+    - bomber
+    - attacker
+    - assassin
+    - killer
+    - murderer
+    - hijacker
+    - kidnapper
+    - extremist
+    - criminal
   # A person with no other detail ("poison someone") is a target only right after a direct ask
   # and a harm word ("how to poison someone", "help me hurt somebody"), since fighters attack
   # "someone" in ordinary fight wording ("the wolf attacks someone").
