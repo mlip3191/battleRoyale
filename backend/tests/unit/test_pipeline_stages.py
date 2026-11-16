@@ -318,6 +318,26 @@ async def test_simulate_past_its_budget_says_the_fight_is_too_big(
     assert all(stage_of(record, s).status == "pending" for s in OPTIONAL)
 
 
+async def test_a_big_venomous_fight_is_refused_before_the_engine_runs(
+    store: BattleStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#330 (D-61): 200 king cobras v 50 legionaries run one by one for about 20 s, so the
+    Simulate stage answers "too big to simulate quickly" at once and never starts the engine."""
+
+    def engine_must_not_run(*_: Any, **__: Any) -> Any:
+        raise AssertionError("the engine ran a fight that is too big")
+
+    monkeypatch.setattr(stages.engine, "run", engine_must_not_run)
+    fight = _fight(
+        {"entity": "king cobra", "count": 200}, {"entity": "roman legionary", "count": 50}
+    )
+    record = await battle(store, fight)
+    assert record.status == "failed"
+    simulate = stage_of(record, "simulate")
+    assert (simulate.status, simulate.detail) == ("failed", orchestrator.SIMULATE_TOO_SLOW)
+    assert record.result is None
+
+
 async def test_size_reference_entities_are_looked_up_in_parallel(
     store: BattleStore, monkeypatch: pytest.MonkeyPatch
 ) -> None:

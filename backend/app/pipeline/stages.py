@@ -171,9 +171,15 @@ def cache_key(matchup: Matchup, found: Research) -> str:
 # Functions run via to_thread must stay pure and never write to the store: a thread that
 # ran past its budget keeps running in the background after the stage has moved on.
 async def simulate(matchup: Matchup, found: Research) -> SimulationResult:
+    engine_matchup = simulation_matchup(matchup, found)
+    if engine.too_big_for_venom(engine_matchup, found.sheets, found.reference_sheets):
+        # A venomous crowd below the swarm ceiling runs one by one for 20 to 30 s (#330, D-61).
+        # Answer "too big to simulate quickly" now (the orchestrator maps a TimeoutError to that
+        # message) instead of burning a thread after the stage has already given up.
+        raise TimeoutError("venomous fight too big to run one by one")
     return await asyncio.to_thread(
         engine.run,
-        simulation_matchup(matchup, found),
+        engine_matchup,
         found.sheets,
         reference_sheets=found.reference_sheets,
     )
