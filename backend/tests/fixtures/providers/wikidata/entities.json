@@ -1,5 +1,5 @@
 {
-  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before the Philadelphia Eagles, which match through their 'Eagles' alias) with made-up item IDs, except the Philadelphia Eagles (real ID, #310). 'wolves' and 'sharks' are made up: a band that matches only through an alias; in 'wolves' it comes before a football club with the live Wolverhampton Wanderers' three team classes (#310), so the club is picked. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. Lakers, Bulls, bull and Jeep (D-59) use real IDs and the live search order of 2026-11-14 (the Lakers and Chicago Bulls match through their 'Lakers' and 'Bulls' aliases; 'bull' the family name ranks before the animal; 'Jeep' the given name before the car brand), with the class walk cut short. 'police', 'doors' and 'metallica' copy the shape of the live search on 2026-11-14 (the band 'The Police' or 'The Doors' plus a kind item with a P279 matched by label or alias; the band 'Metallica' plus a moth genus that is a bare taxon) with made-up item IDs (Q9003xx). 'heat' is made up in the same shape (the kind item 'heat' with a P279, then the basketball team 'Miami Heat' matching through its 'Heat' alias; Q90033x): a sports team that loses the pick to a kind item. Moose, shredder, hulk and the napoleon pastry (#186, D-51) are made-up item IDs copying the shape of the live search: a person 'Moose' before the animal labelled 'moose'; the character 'Shredder' before kinds that match only through the alias 'shredder' ('paper shredder', 'grater'); the character 'Hulk' before a ship type labelled 'hulk'; 'Napoleon' before the pastry 'mille-feuille' (alias 'napoleon'). 'kraken' (#185) uses real IDs and the live search order of 2026-11-15 (the band Kraken, the Kraken cryptocurrency exchange, a film, a genus that is a bare taxon, then a website), with the class walk cut short: the band loses the pick but still blocks capitalized 'Kraken'. 'chicago bulls', 'philadelphia eagles', 'wolf' and 'yankees' (#310) use real IDs and the live search order of 2026-11-15, with the class walk cut short: the Chicago Bulls basketball team before a defunct American football team of the same name; the Philadelphia Eagles before an article on their history; five other items before the grey wolf (result 6, with the family name 'Wolf' first); and for 'yankees' the item 'Americans' first, the New York Yankees second (through their 'Yankees' alias), then the United States, and the kinds 'Yankee' and 'Northerners' (both alias 'Yankees'), so the team loses the pick to a kind item and its alias has no 'The' of its own (the 'heat' shape; docs/safety.md, known limits). 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
+  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before the Philadelphia Eagles, which match through their 'Eagles' alias) with made-up item IDs, except the Philadelphia Eagles (real ID, #310). 'wolves' and 'sharks' are made up: a band that matches only through an alias; in 'wolves' it comes before a football club with the live Wolverhampton Wanderers' three team classes (#310), so the club is picked. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. Lakers, Bulls, bull and Jeep (D-59) use real IDs and the live search order of 2026-11-14 (the Lakers and Chicago Bulls match through their 'Lakers' and 'Bulls' aliases; 'bull' the family name ranks before the animal; 'Jeep' the given name before the car brand), with the class walk cut short. 'police', 'doors' and 'metallica' copy the shape of the live search on 2026-11-14 (the band 'The Police' or 'The Doors' plus a kind item with a P279 matched by label or alias; the band 'Metallica' plus a moth genus that is a bare taxon) with made-up item IDs (Q9003xx). 'heat' is made up in the same shape (the kind item 'heat' with a P279, then the basketball team 'Miami Heat' matching through its 'Heat' alias; Q90033x): a sports team that loses the pick to a kind item. Moose, shredder, hulk and the napoleon pastry (#186, D-51) are made-up item IDs copying the shape of the live search: a person 'Moose' before the animal labelled 'moose'; the character 'Shredder' before kinds that match only through the alias 'shredder' ('paper shredder', 'grater'); the character 'Hulk' before a ship type labelled 'hulk'; 'Napoleon' before the pastry 'mille-feuille' (alias 'napoleon'). 'kraken' (#185) uses real IDs and the live search order of 2026-11-15 (the band Kraken, the Kraken cryptocurrency exchange, a film, a genus that is a bare taxon, then a website), with the class walk cut short: the band loses the pick but still blocks capitalized 'Kraken'. 'chicago bulls', 'philadelphia eagles', 'wolf' and 'yankees' (#310) use real IDs and the live search order of 2026-11-15, with the class walk cut short: the Chicago Bulls basketball team before a defunct American football team of the same name; the Philadelphia Eagles before an article on their history; five other items before the grey wolf (result 6, with the family name 'Wolf' first); and for 'yankees' the item 'Americans' first, the New York Yankees second (through their 'Yankees' alias), then the United States, and the kinds 'Yankee' and 'Northerners' (both alias 'Yankees'), so the team loses the pick to a kind item and its alias has no 'The' of its own (the 'heat' shape; docs/safety.md, known limits). 'who', 'the who', 'the cure', 'the animals', 'the strokes' and 'the cars' (#316) use real IDs and the live search order of 2026-11-15 ('who': all 10 results; the others: the first 5), with the class walk cut short: 'who' has the World Health Organization first (through its 'WHO' alias), a single 'Who' (result 8) and a film 'WHO' (result 9), and no band; each 'the' search has the band labelled 'The ...' first (musical group or rock band), with the other items labelled 'The ...' after it (an album, single, film, game or musical work). 'cure', 'animals', 'strokes' and 'cars' use 'default'.'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
   "search": {
     "default": [],
     "napoleon": [
@@ -178,6 +178,56 @@
       { "id": "Q134983890", "label": "Kraken" },
       { "id": "Q25344562", "label": "Kraken" },
       { "id": "Q124988973", "label": "Kraken" }
+    ],
+    "who": [
+      { "id": "Q7817", "label": "World Health Organization", "match": "WHO" },
+      { "id": "Q49001", "label": "Whoopi Goldberg" },
+      { "id": "Q36463449", "label": "Who's Who in Animated Cartoon" },
+      { "id": "Q7997549", "label": "whole blood" },
+      { "id": "Q2567271", "label": "Who's Who" },
+      { "id": "Q5924723", "label": "Who's Who in France" },
+      { "id": "Q59294700", "label": "record group", "match": "whole collection" },
+      { "id": "Q127869935", "label": "Who" },
+      { "id": "Q140169908", "label": "WHO" },
+      { "id": "Q2068526", "label": "whole genome sequencing" }
+    ],
+    "the who": [
+      { "id": "Q93346", "label": "The Who" },
+      { "id": "Q1757594", "label": "The Whole Story" },
+      { "id": "Q18155816", "label": "The Whole Truth" },
+      { "id": "Q61910937", "label": "The whole city" },
+      { "id": "Q3990010", "label": "The Whole World's Dancing" }
+    ],
+    "the cure": [
+      { "id": "Q484427", "label": "The Cure" },
+      { "id": "Q29426937", "label": "The Cure" },
+      { "id": "Q98546106", "label": "The Cure" },
+      { "id": "Q139852871", "label": "The Cure" },
+      { "id": "Q122313910", "label": "THE CURE" }
+    ],
+    "the animals": [
+      { "id": "Q131422", "label": "The Animals" },
+      { "id": "Q3299752", "label": "The Animals" },
+      { "id": "Q3446204", "label": "The Animals" },
+      { "id": "Q1469127", "label": "The Animals of Farthing Wood" },
+      { "id": "Q16828621", "label": "The Animals" }
+    ],
+    "the strokes": [
+      { "id": "Q211583", "label": "The Strokes" },
+      { "id": "Q111670467", "label": "Someday", "match": "The Strokes: Someday" },
+      { "id": "Q1329804", "label": "The Strokes discography" },
+      { "id": "Q124011391", "label": "The Strokes at Barclays Center, Brooklyn" },
+      {
+        "id": "Q99311651",
+        "label": "The Strokes concert performed during Montreux Jazz Festival the 2006-07-14"
+      }
+    ],
+    "the cars": [
+      { "id": "Q858388", "label": "The Cars" },
+      { "id": "Q1188848", "label": "The Cars" },
+      { "id": "Q4353192", "label": "The Carsey-Werner Company" },
+      { "id": "Q926678", "label": "The Cars That Ate Paris" },
+      { "id": "Q1763448", "label": "Greatest Hits", "match": "The Cars - Greatest Hits" }
     ]
   },
   "entities": {
@@ -356,6 +406,29 @@
     "Q11424": { "P279": [] },
     "Q25344562": { "P31": ["Q16521"] },
     "Q124988973": { "P31": ["Q35127"] },
-    "Q35127": { "P279": [] }
+    "Q35127": { "P279": [] },
+    "Q7817": { "P31": ["Q15925165", "Q45400320", "Q484652", "Q96888669"] },
+    "Q15925165": { "P279": [] },
+    "Q45400320": { "P279": [] },
+    "Q484652": { "P279": [] },
+    "Q96888669": { "P279": [] },
+    "Q127869935": { "P31": ["Q134556"] },
+    "Q134556": { "P279": [] },
+    "Q140169908": { "P31": ["Q11424"] },
+    "Q93346": { "P31": ["Q215380"] },
+    "Q484427": { "P31": ["Q215380"] },
+    "Q29426937": { "P31": ["Q134556"] },
+    "Q98546106": { "P31": ["Q7302866"] },
+    "Q7302866": { "P279": [] },
+    "Q139852871": { "P31": ["Q105543609", "Q55850593"] },
+    "Q105543609": { "P279": [] },
+    "Q122313910": { "P31": ["Q7889"] },
+    "Q131422": { "P31": ["Q215380"] },
+    "Q3299752": { "P31": ["Q482994"] },
+    "Q3446204": { "P31": ["Q482994"] },
+    "Q16828621": { "P31": ["Q11424"] },
+    "Q211583": { "P31": ["Q5741069"] },
+    "Q858388": { "P31": ["Q5741069"] },
+    "Q1188848": { "P31": ["Q482994"] }
   }
 }

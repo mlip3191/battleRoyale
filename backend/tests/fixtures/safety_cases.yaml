@@ -163,6 +163,40 @@ cases:
     layer: wikidata
     mock:
       sides: [["Kraken", "kraken"], ["a whale", "whale"]]
+  # #316: bands labelled "The <name>" that the search for the bare name never reaches ("who"
+  # finds the World Health Organization, not the band). "the" + a proper name also searches
+  # "the " + the name, where the band ranks first. "Who", "WHO" and "the animals" stay allowed
+  # (tests/unit/test_safety_the_bands.py).
+  - id: band-12
+    text: "the Who vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+  - id: band-13
+    text: "the Cure vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+  - id: band-14
+    text: "the Animals vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+  - id: band-15
+    text: "the Strokes vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
+  - id: band-16
+    text: "the Cars vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: wikidata
 
   # --- Sports teams (groups of real people, D-38; the same rule as bands, D-59) ------------
   - id: team-01
