@@ -161,16 +161,19 @@ with capitals matching its name (a band's label, or the alias a team matched, su
   name blocks: "the Who", "The Who", "THE WHO", "the Cure", "the Animals", "the Strokes" and "the
   Cars" are blocked; "Who", "WHO", "the who" and "the animals" are not. The extra search runs
   only when a typed name starts with "the" and reads as a proper name; a lowercase "the who"
-  could never name the band, so it isn't searched.
+  could never name the band, so it isn't searched. If only the extra search fails (a rate limit,
+  say), the plain search's answer is used, so "the Beatles" still blocks (#329); if the plain
+  search fails, the layer fails open as usual.
 
 Companies, organizations and brands are not groups and stay allowed ("a Jeep" is a car brand).
 
 **The cache:** SQLite table `wikidata_safety_cache` in `data/app.db`, one row per lookup text with
 both the top pick and the kind item, so either reading works from a cache hit. A "the" lookup
 ("the Who") is stored under its own text, "the who", with what both searches found, and its
-plain answer under "who", so neither ever answers the other's question. A match is kept
-30 days and a no-match 7 days. Each row stores the class map's `classes_version`; rows from
-another version are ignored, so a class-map change takes effect at once.
+plain answer under "who", so neither ever answers the other's question. When only the "the"
+search failed, just the plain answer is stored, so the next "the Who" searches again. A match
+is kept 30 days and a no-match 7 days. Each row stores the class map's `classes_version`; rows
+from another version are ignored, so a class-map change takes effect at once.
 
 ## 5. Adding a class
 
