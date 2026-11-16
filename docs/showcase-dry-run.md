@@ -15,7 +15,7 @@ The five showcase battles (PRODUCT_SPEC section 9) run through the engine to fin
 | 100 duck-sized horses vs 1 horse-sized duck (open field) | Duck wins 100% (about 74 s). A fair fight needs 600 horses | Yes; the explanation credits the scaling (finding 1, fixed) | 2.7 s |
 | Grizzly vs 4 wolves (forest) (battle 2 since #320) | **Wolves 57% / grizzly 43%**, about 29 s, "the wolf came out ahead in spite of its size". The fair fight is 1 grizzly against 4 wolves | Yes: a believable "crowd wears down a tougher fighter" (finding 5) | 0.6 s |
 | Honey badger vs king cobra | Badger wins 94.8%, cobra 5.2%, no draws, about 9 s; the explainer credits its venom resistance. A fair fight needs about 4 cobras | Yes: venom matters now, and the badger mostly shrugs it off (findings 2 and 6) | 0.3 s |
-| Roman legionary vs gorilla (forest) | Gorilla 100% (about 8.5 s), "strength decided it". A fair fight needs 40 legionaries | Yes, but the legionary is weak: its sheet uses a 150 N stab (finding 6) | 0.9 s |
+| Roman legionary vs gorilla (forest) | Gorilla 100% (about 24.5 s), "strength decided it". A fair fight needs 12 legionaries | Yes, but the legionary is weak: its sheet uses a 150 N stab (finding 6) | 0.9 s |
 | A dragon vs a main battle tank (open field) | Tank wins 100% (about 78 s), "size decided it". A fair fight needs about 5 dragons | Possible, but a foregone conclusion (finding 3) | 1.0 s |
 
 ## Findings
@@ -57,7 +57,7 @@ The earlier stand-in run (contract fixtures, engine version 5) gave grizzly 53% 
 
 ### 6. The real cobra and legionary move battles 3 and 4
 Replacing the stand-ins with the sourced sheets changes two battles, and neither is an engine problem.
-- **Roman legionary vs gorilla:** the legionary's attack force is 150 N (Nolan et al. stab-force study, D-54(3)), against the 1,500 N stand-in. The gorilla still wins 100%, but a fair fight now needs **40 legionaries** instead of about 4, and "strength decided it" reads 3,420 N against 150 N. The same sheet makes the benchmark row cnt-05 (legionary v grizzly, expected fair count 2 to 8) fail with a count of 24; whether 150 N is a fair stand-in for a trained sword thrust is Mike's and Gunnar's call, not an engine change.
+- **Roman legionary vs gorilla:** the legionary's attack force is 150 N (Nolan et al. stab-force study, D-54(3)), against the 1,500 N stand-in. The gorilla still wins 100%. Since #260 the gorilla's bite is the code's carnivore fit for 140 kg (1,016 N, `derived`) instead of the 3,420 N molar figure, so the fight lasts about 24.5 s, a fair fight needs **12 legionaries** (40 before #260), and "strength decided it" reads 1020 N against 150 N. The same sheet makes the benchmark row cnt-05 (legionary v grizzly, expected fair count 2 to 8) fail with a count of 24; whether 150 N is a fair stand-in for a trained sword thrust is Mike's and Gunnar's call, not an engine change.
 - **Honey badger vs king cobra:** the real cobra bites harder (300 N, 10 kg, venom), so the badger wins 93.5% instead of 100%, with a few draws from poisoned badgers, and a fair fight needs about 4 cobras instead of 30. The badger's venom resistance still decides it.
 
 ## What this does not check
