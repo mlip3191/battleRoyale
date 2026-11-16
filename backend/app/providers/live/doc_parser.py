@@ -142,6 +142,7 @@ class LiveDocParser:
         try:
             return restore_dropped(piece, await self._parse_piece(piece))
         except CutOffReply as error:
+            # Only this except path reaches the split below (a success returns), so `why` is set.
             why = "was too big for" if isinstance(error, PieceTooBig) else "looped on"
             if len(piece) <= MIN_PIECE_CHARS:
                 logger.warning("Parser %s a %d-character piece; used its text.", why, len(piece))
