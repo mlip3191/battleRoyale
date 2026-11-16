@@ -332,27 +332,37 @@ def test_the_parity_harness_runs_swarm_with_the_production_step_cap(monkeypatch)
     assert swarm.mean_survivors[0] == pytest.approx(one.mean_survivors[0], rel=0.03)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Known gap (#330): above SWARM_THRESHOLD swarm mode drops venom "
-    "(D-44), so a 201st king cobra flips the verdict. Needs Mike: carry doses in swarm mode, or "
-    "keep small-work venomous sides one by one above 200. Remove this mark when fixed.",
-)
-def test_a_venomous_crowd_does_not_flip_at_the_head_count_ceiling():
+def _seed(name):
     import json
     from pathlib import Path
 
     from app.models.stats import StatSheet
 
     root = Path(__file__).resolve().parents[3] / "data" / "seed" / "fighters"
+    data = json.loads((root / f"{name}.json").read_text("utf-8"))
+    return StatSheet.model_validate(data.get("sheet", data.get("stat_sheet", data)))
 
-    def seed(name):
-        data = json.loads((root / f"{name}.json").read_text("utf-8"))
-        return StatSheet.model_validate(data.get("sheet", data.get("stat_sheet", data)))
 
-    pair = [seed("king-cobra"), seed("roman-legionary")]
-    below = run(matchup_of(c.SWARM_THRESHOLD, 50), pair, runs=200, explain=False)
-    above = run(matchup_of(c.SWARM_THRESHOLD + 1, 50), pair, runs=200, explain=False)
-    # Measured at 400 runs: the legion wins 17% against 200 cobras and 96% against 201.
-    for side in (0, 1):
-        assert abs(above.win_prob[side] - below.win_prob[side]) <= 0.10
+def test_a_venomous_crowd_loses_its_venom_above_the_ceiling_and_big_ones_below_are_refused():
+    """The documented limit (#330, D-61; docs/simulation-model.md): venom is dropped in swarm mode,
+    so 201 king cobras v 50 legionaries are swarm mode with no venom and the legion wins most
+    fights (measured 17% against 200 cobras, 96% against 201). At 200 the fight stays one by one,
+    which takes about 20 s, so the Simulate stage refuses it (`too_big_for_venom`)."""
+    from app.simulation.engine import too_big_for_venom
+
+    pair = [_seed("king-cobra"), _seed("roman-legionary")]
+    at_ceiling, above = matchup_of(c.SWARM_THRESHOLD, 50), matchup_of(c.SWARM_THRESHOLD + 1, 50)
+    assert not _fight(pair, c.SWARM_THRESHOLD, 50) and too_big_for_venom(at_ceiling, pair)
+    assert _fight(pair, c.SWARM_THRESHOLD + 1, 50) and not too_big_for_venom(above, pair)
+    assert run(above, pair, runs=100, explain=False).win_prob[1] > 0.8
+
+
+def test_the_venom_cap_leaves_small_venomous_fights_and_other_crowds_alone():
+    from app.simulation.engine import too_big_for_venom
+
+    cobra, legion, wolf_sheet = _seed("king-cobra"), _seed("roman-legionary"), wolf()
+    assert not too_big_for_venom(matchup_of(1, 1), [cobra, _seed("grizzly-bear")])
+    assert not too_big_for_venom(matchup_of(10, 10), [cobra, legion])  # work well under the cap
+    assert not too_big_for_venom(matchup_of(200, 50), [wolf_sheet, legion])  # no venom: work rule
+    assert too_big_for_venom(matchup_of(50, 50), [cobra, legion])  # venom on the left
+    assert too_big_for_venom(matchup_of(50, 50), [legion, cobra])  # or on the right

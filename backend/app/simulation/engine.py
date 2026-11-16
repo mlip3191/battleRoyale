@@ -925,6 +925,36 @@ def _swarm_for(
     return use_swarm(central)
 
 
+def too_big_for_venom(
+    matchup: Matchup,
+    stat_sheets: list[StatSheet],
+    reference_sheets: list[StatSheet | None] | None = None,
+) -> bool:
+    """Whether a fight with a venomous side would run one by one for too long (#330, D-61).
+
+    Swarm mode drops venom (D-44), so below SWARM_THRESHOLD a venomous fight cannot use the work
+    rule and can take 20 to 30 s. The Simulate stage calls this before running and answers "too
+    big to simulate quickly" instead. It changes no result, only whether a fight is run, so it
+    needs no ENGINE_VERSION bump. Fights that end at once (no contest) are never too big.
+    """
+    ks = scale_factors(matchup, stat_sheets, reference_sheets)
+    habitats = [effective_habitat(sheet) for sheet in stat_sheets]
+    if not can_engage(matchup.terrain, habitats[0], habitats[1]):
+        return False
+    central = [
+        apply_terrain(
+            sample_template(
+                stat_sheets[s], matchup.fighters[s].count, random.Random(0), ks[s], central=True
+            ),
+            matchup.terrain,
+        )
+        for s in (0, 1)
+    ]
+    if use_swarm(central) or not any(side.venomous for side in central):
+        return False
+    return expected_work(central) > c.VENOM_WORK_MAX
+
+
 def _simulate(
     matchup: Matchup,
     sheets: list[StatSheet],
