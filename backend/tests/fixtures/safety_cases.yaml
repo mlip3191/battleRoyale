@@ -239,7 +239,7 @@ cases:
   - id: team-07
     # Known limit (docs/safety.md, known limits): "yankees" picks the item "Americans", and the
     # kind "Yankee" beats the New York Yankees, whose alias has no "The" of its own (like "the
-    # Heat"), so the Wikidata check passes it: only the classifier blocks it.
+    # Heat"), so the Wikidata check passes it: the classifier prompt names teams (#328) and blocks it.
     text: "the Yankees vs a goose"
     expect: blocked
     reason: real_person
@@ -247,6 +247,22 @@ cases:
     layer: classifier
     mock:
       classifier: real_person
+  # #328: the classifier prompt names teams (team-08), but an animal team name stays the animal (team-09).
+  - id: team-08
+    text: "the Heat vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: team
+    layer: classifier
+    mock:
+      sides: [["the Heat", "heat"], ["a goose", "goose"]]
+      classifier: real_person
+  - id: team-09
+    text: "the Lions vs a goose"
+    expect: allowed
+    kind: team
+    mock:
+      sides: [["the Lions", "lion"], ["a goose", "goose"]]
 
   # --- Blocked: minors ---------------------------------------------------------------------
   - id: mn-01
