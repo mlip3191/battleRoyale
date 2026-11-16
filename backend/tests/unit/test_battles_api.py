@@ -108,14 +108,13 @@ def test_battle_reaches_done_with_a_verdict(client: TestClient) -> None:
     assert 0.0 <= record.challenger.tested_win_prob <= 1.0
 
 
-def test_every_stub_stage_says_stub(client: TestClient) -> None:
+def test_no_stage_says_stub(client: TestClient) -> None:
     record = wait_until_finished(client, start(client, matchup_body("horse", "duck")))
     for name in STAGES:
-        detail = final_stage(record, name).detail
-        if name != "intake":  # intake is the only stub left
-            assert detail != STUB, name
-        else:
-            assert detail == STUB, name
+        assert final_stage(record, name).detail != STUB, name
+    # Intake ran before the battle was created, so it ends plain "done".
+    intake = final_stage(record, "intake")
+    assert (intake.status, intake.detail) == ("done", None)
 
 
 # Each stage went running -> done exactly once; research and simulate came first, in order.

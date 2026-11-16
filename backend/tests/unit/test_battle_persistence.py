@@ -138,6 +138,29 @@ async def test_a_cache_hit_without_fair_fight_or_challenger_works_them_out_fresh
     assert stage(second, "challenger")[1] != CACHED
 
 
+async def test_a_battle_whose_research_fell_back_is_still_reused(
+    store: BattleStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A size_reference with no sheet ends research "fallback"; the verdict is cached as before.
+    fight_with_ref = matchup("horse", "duck").model_copy(deep=True)
+    fight_with_ref.fighters[0].size_reference = "a school bus"
+
+    async def run(fight_: Matchup) -> BattleRecord:
+        record = await store.create(fight_)
+        await run_battle(record.battle_id, store)
+        final = await store.get(record.battle_id)
+        assert final is not None
+        return final
+
+    first = await run(fight_with_ref)
+    assert stage(first, "research")[0] == "fallback" and first.result is not None
+    monkeypatch.setattr(stages.engine, "run", lambda *a, **k: pytest.fail("not cached"))
+    second = await run(fight_with_ref)
+    assert stage(second, "research")[0] == "fallback"
+    assert stage(second, "simulate") == ("done", CACHED)
+    assert second.result == first.result
+
+
 def test_battles_left_running_by_a_restart_are_marked_failed(db_path: Path) -> None:
     async def leave_running() -> tuple[str, str]:
         before = BattleStore(db_path=db_path)

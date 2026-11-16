@@ -362,14 +362,27 @@ async def test_size_reference_entities_are_looked_up_in_parallel(
     assert [s.fighter_id for s in record.stat_sheets] == ["duck", "horse"]
 
 
-async def test_a_size_reference_without_a_sheet_is_stub_marked_not_fatal(
+async def test_a_size_reference_without_a_sheet_ends_research_fallback_not_fatal(
     store: BattleStore,
 ) -> None:
-    record = await battle(store, matchup("duck", "horse", refs=("okapi", None)))
+    record = await battle(store, matchup("duck", "horse", refs=("a school bus", None)))
     assert record.status == "done"
     research = stage_of(record, "research")
-    assert (research.status, research.detail) == ("done", STUB)
+    note = "No size reference for 'a school bus' yet, so that side fights at its normal size."
+    assert (research.status, research.detail) == ("fallback", note)
     assert record.result is not None
+    assert stage_of(record, "simulate").status == "done"
+
+
+async def test_two_missing_size_references_share_one_note(store: BattleStore) -> None:
+    record = await battle(store, matchup("duck", "horse", refs=("okapi", "a school bus")))
+    assert record.status == "done" and record.result is not None
+    research = stage_of(record, "research")
+    assert (research.status, research.detail) == (
+        "fallback",
+        "No size reference for 'okapi' or 'a school bus' yet, "
+        "so both sides fight at their normal size.",
+    )
 
 
 async def test_a_missing_fighter_still_fails_research(store: BattleStore) -> None:
@@ -500,9 +513,11 @@ async def test_the_fair_fight_comes_from_the_real_search(store: BattleStore) -> 
     assert record.fair_fight == expected
 
 
-async def test_every_stub_stage_says_stub_and_saves_nothing(store: BattleStore) -> None:
+async def test_no_stage_says_stub_and_every_output_is_saved(store: BattleStore) -> None:
     record = await battle(store)
-    assert stage_of(record, "intake").detail == STUB  # the only stub left
+    intake = stage_of(record, "intake")
+    assert (intake.status, intake.detail) == ("done", None)  # intake ran before the battle
+    assert STUB not in {s.detail for s in record.stages}
     for name in ("research", "simulate", "summary", "challenger", "audio", "music", "images"):
         assert stage_of(record, name).detail is None, name
     assert (stage_of(record, "script").status, stage_of(record, "script").detail) == MOCK_SCRIPT
