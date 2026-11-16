@@ -231,6 +231,20 @@ def _explain_comfortable(fav_name: str) -> str:
     return f"{fav_name} wins comfortably: no single stat or circumstance was decisive."
 
 
+def names_a_factor(explainer: str) -> bool:
+    """Whether an explainer says one factor decided the fight (#351).
+
+    False for the stalemate, no-contest, unmeasured, comfortable and too-close texts, so the
+    announcer never names a factor the results page says did not decide it.
+    """
+    undecided = (_explain_stalemate(), _explain_unmeasured(), _explain_even())
+    return not (
+        explainer in undecided
+        or explainer.startswith("No contest:")
+        or explainer.endswith("no single stat or circumstance was decisive.")
+    )
+
+
 def _explain_unmeasured() -> str:
     return "Not every factor could be tested for a fight this big."
 
