@@ -14,6 +14,7 @@ from app.safety.wikidata import (
     EntityClasses,
     MockWikidataLookup,
     WikidataCache,
+    WikidataUnavailable,
     check_names,
     load_class_map,
     resolve,
@@ -160,6 +161,39 @@ async def test_a_plain_lookup_never_answers_a_the_lookup(cache: WikidataCache) -
     verdict = await check_names(["the Who"], lookup=lookup, cache=cache)
     assert verdict.reason == "real_person"
     assert set(lookup.searched) == {"who", "the who"}
+
+
+class FailingSearch(MockWikidataLookup):
+    """The mock fixture, where the "the" search (failing_the) or the plain search fails, as on a
+    rate limit."""
+
+    def __init__(self, *, failing_the: bool) -> None:
+        super().__init__()
+        self.failing_the = failing_the
+
+    async def search(self, name: str) -> list[Candidate]:
+        if name.startswith("the ") == self.failing_the:
+            raise WikidataUnavailable("rate limited")
+        return await super().search(name)
+
+
+async def test_a_failed_the_search_keeps_the_plain_result(cache: WikidataCache) -> None:
+    # #329: "beatles" alone blocks, so losing the "the beatles" search must not fail open.
+    lookup = FailingSearch(failing_the=True)
+    verdict = await check_names(["the Beatles"], lookup=lookup, cache=cache)
+    assert (verdict.reason, verdict.layer) == ("real_person", "wikidata")
+    version = load_class_map().version
+    assert await cache.get("the beatles", version) is None  # incomplete: retried next time
+    assert await cache.get("beatles", version) is not None  # the plain answer is whole
+
+
+async def test_a_failed_plain_search_still_fails_open(cache: WikidataCache) -> None:
+    lookup = FailingSearch(failing_the=False)
+    verdict = await check_names(["the Beatles"], lookup=lookup, cache=cache)
+    assert verdict.reason is None
+    version = load_class_map().version
+    assert await cache.get("the beatles", version) is None
+    assert await cache.get("beatles", version) is None
 
 
 class TheSearch:
