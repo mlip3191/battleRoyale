@@ -68,11 +68,10 @@ def seed_sheets() -> list[StatSheet]:
     return sheets[:MAX_SEED]
 
 
-# Fighters researched for earlier battles, newest first, from the `stat_sheets` table that G04
-# (issue #35) will create. Assumed shape: one sheet per row as JSON in `sheet_json`, newest
-# row last inserted (`ORDER BY rowid DESC`). If G04 uses different columns or provides a
-# research/ function for this read, this query will need to match; a mismatch or any other
-# read error is caught below and treated as no cached fighters (seed fighters still work).
+# Fighters researched for earlier battles, newest first, from G04's `stat_sheets` table
+# (migration 007, written by research/sheet_store.py): one sheet per row as JSON in
+# `sheet_json`, rows only ever inserted, so `ORDER BY rowid DESC` is newest first. Any read
+# error is caught below and treated as no cached fighters (seed fighters still work).
 def cached_sheets(limit: int = MAX_CACHED, db_path: Path | None = None) -> list[StatSheet]:
     path = db_path or get_settings().data_dir / "app.db"
     if not path.is_file():  # never create the database just to read it
