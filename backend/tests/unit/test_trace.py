@@ -157,6 +157,7 @@ def test_trace_report_checks_every_stored_battle_and_exits_1_on_an_issue(
     assert "b-7f3k2q: 0 issues" in printed and "b-broken: 1 issue " in printed
     assert "outro line 0: numbers not in the inputs: '9,999'" in printed
     assert "Traceable: 1 of 2 battles (50%)." in printed
+    assert "Extracted quotes checked against stored articles: 10; not checkable here: 0." in printed
 
 
 def test_a_stored_record_that_no_longer_loads_is_one_issue(db: sqlite3.Connection) -> None:
@@ -170,9 +171,55 @@ def test_a_stored_record_that_no_longer_loads_is_one_issue(db: sqlite3.Connectio
 def test_trace_report_with_no_battles_says_so(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    assert trace_report.main(["--db", str(tmp_path / "empty.db")]) == 0
+    empty = tmp_path / "empty.db"
+    apply_migrations(connect(empty))  # an existing database with no battles in it
+    assert trace_report.main(["--db", str(empty)]) == 0
     assert "No finished battles stored yet" in capsys.readouterr().out
     assert traceable_share([]) is None
+
+
+def test_trace_report_refuses_a_database_path_that_does_not_exist(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    typo = tmp_path / "typo.db"
+    assert trace_report.main(["--db", str(typo)]) == 2
+    assert "No database at" in capsys.readouterr().err
+    assert not typo.exists()  # a typo never creates an empty database
+
+
+# Mike's #353 review: with no articles stored, every battle passes, so the footer and the
+# benchmark note must say that 0 quotes were actually checked.
+def test_100_percent_with_no_stored_articles_says_no_quote_was_checked(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "no-articles.db"
+    connection = connect(path)
+    apply_migrations(connection)
+    store(connection, clean())
+    assert trace_report.main(["--db", str(path)]) == 0
+    printed = capsys.readouterr().out
+    assert "Traceable: 1 of 1 battles (100%)." in printed
+    assert "Extracted quotes checked against stored articles: 0; not checkable here: 5." in printed
+    monkeypatch.setattr(run_benchmark, "connect", lambda: connect(path))
+    report = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
+    run_benchmark.add_traceability(report, mock=False)
+    assert "0 extracted quotes were checked" in report.notes[0]
+    assert "5 could not be checked here" in report.notes[0]
+    connection.close()
+
+
+def test_a_quote_found_in_any_stored_copy_of_its_article_passes(db: sqlite3.Connection) -> None:
+    source = clean().stat_sheets[0].stats[StatName.MASS].source
+    assert source is not None
+    # A second copy of the same URL whose text lacks the quote, read first (lower rowid).
+    db.execute(
+        "INSERT INTO documents (rowid, doc_id, fighter_id, source, title, url, license, "
+        "retrieved_at, raw_text, content_hash) VALUES (0, 'a-copy', 'other', 'wikipedia', "
+        "'Copy', ?, 'CC BY-SA 4.0', '2026-11-01T00:00:00+00:00', 'An older revision.', 'h')",
+        (str(source.url),),
+    )
+    report = check_battle(clean(), db)
+    assert report.ok and report.quotes_checked == 5
 
 
 def test_the_benchmark_fills_its_traceability_column_from_stored_battles(
@@ -184,6 +231,10 @@ def test_the_benchmark_fills_its_traceability_column_from_stored_battles(
     run_benchmark.add_traceability(report, mock=False)
     assert report.traceability == 1.0
     assert "traceability 100%" in bm.render_run(report)
+    assert (
+        "5 extracted quotes were checked against stored articles and 0 could not be checked"
+        in (report.notes[0])
+    )
     mock = bm.RunReport("mock", [], 0.0, "abc1234", datetime.now())
     run_benchmark.add_traceability(mock, mock=True)
     assert mock.traceability is None and "isn't checked in mock mode" in mock.notes[0]

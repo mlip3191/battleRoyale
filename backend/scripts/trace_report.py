@@ -6,8 +6,9 @@ From the repo root:
 
 Each battle gets one line ("b-7f3k2q: 0 issues (...)") and every issue is listed under it.
 Extracted quotes whose article isn't stored here are counted as unchecked, not as issues.
-Exits 1 when any battle has an issue, so it can gate a run. The benchmark (F07) uses the same
-check for its traceability column.
+The footer gives the share of battles with no issues and how many quotes it was checked against.
+Exits 1 when any battle has an issue, so it can gate a run, and 2 when --db names no file. The
+benchmark (F07) uses the same check for its traceability column.
 """
 
 import argparse
@@ -32,6 +33,13 @@ def render(reports: list[TraceReport]) -> str:
     share = traceable_share(reports)
     clean = sum(r.ok for r in reports)
     lines.append(f"\nTraceable: {clean} of {len(reports)} battles ({round((share or 0) * 100)}%).")
+    # What the share rests on: a quote whose article isn't stored here can't fail (#353 review).
+    checked = sum(r.quotes_checked for r in reports)
+    unchecked = sum(r.quotes_unchecked for r in reports)
+    lines.append(
+        f"Extracted quotes checked against stored articles: {checked}; "
+        f"not checkable here: {unchecked}."
+    )
     return "\n".join(lines)
 
 
@@ -43,6 +51,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+    if args.db is not None and not args.db.is_file():  # a typo must not create an empty database
+        print(f"No database at {args.db}; nothing was checked.", file=sys.stderr)
+        return 2
     connection = connect(args.db) if args.db else connect()
     try:
         apply_migrations(connection)

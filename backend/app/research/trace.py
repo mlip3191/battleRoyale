@@ -116,16 +116,17 @@ def _check_quote(
 ) -> None:
     assert stat.source is not None  # checked by the caller
     url = str(stat.source.url)
-    row = (
-        connection.execute("SELECT raw_text FROM documents WHERE url = ?", (url,)).fetchone()
+    # A URL can be stored more than once (two fighters sharing an article), so any copy counts.
+    texts = (
+        [r[0] for r in connection.execute("SELECT raw_text FROM documents WHERE url = ?", (url,))]
         if connection is not None
-        else None
+        else []
     )
-    if row is None:
+    if not texts:
         report.quotes_unchecked += 1
         return
     report.quotes_checked += 1
-    if not quote_in_passage(stat.source.quote, row[0]):
+    if not any(quote_in_passage(stat.source.quote, text) for text in texts):
         report.issues.append(
             TraceIssue(where, f"quote {stat.source.quote!r} is not in the stored article {url}")
         )

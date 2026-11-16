@@ -64,9 +64,12 @@ def add_traceability(report: bm.RunReport, mock: bool) -> None:
         connection.close()
     report.traceability = traceable_share(traced)
     clean = sum(t.ok for t in traced)
+    checked = sum(t.quotes_checked for t in traced)
+    unchecked = sum(t.quotes_unchecked for t in traced)
     report.notes.append(
-        f"Traceability (G06): {clean} of {len(traced)} stored battles pass "
-        "`scripts/trace_report.py`; run it to see any issues."
+        f"Traceability (G06): {clean} of {len(traced)} stored battles have no issues; "
+        f"{checked} extracted quotes were checked against stored articles and "
+        f"{unchecked} could not be checked here. Run `scripts/trace_report.py` for details."
         if traced
         else "Traceability (G06): no finished battles stored yet, so it shows n/a."
     )
