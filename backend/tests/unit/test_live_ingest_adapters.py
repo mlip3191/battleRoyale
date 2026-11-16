@@ -323,3 +323,75 @@ async def test_a_reply_that_kept_everything_is_unchanged_even_with_new_spacing()
     page = f"<p>{LEAD}</p><p>{SIZE}</p>".encode()
     reply = f"{LEAD}\n\n{SIZE.replace(' (858 lb)', '  ( 858 lb )')}"
     assert await parser_with(answering(reply)).parse(page, "text/html") == reply
+
+
+# --- #176: a piece too big for the model's window is split and retried, like a cut-off reply --
+
+# The live parser's own wording for an oversized prompt (vLLM's), checked on 2026-11-16.
+OVERFLOW = {
+    "error": {
+        "message": "This model's maximum context length is 8192 tokens. However, your prompt "
+        "contains at least 8193 input tokens, which exceeds this limit even without any output "
+        "tokens. Please reduce the length of the input prompt. (parameter=input_tokens, "
+        "value=8193)",
+        "type": "BadRequestError",
+        "param": "input_tokens",
+        "code": 400,
+    }
+}
+
+
+async def test_a_context_overflow_400_is_split_and_retried() -> None:
+    sizes: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        content = json.loads(request.content)["messages"][0]["content"]
+        piece = content.split("<document>\n")[1].split("\n</document>")[0]
+        sizes.append(len(piece))
+        if len(piece) > 2_000:
+            return httpx.Response(400, json=OVERFLOW)
+        return chat_reply(clean_reply(piece.replace("</p>", "\n")))  # a faithful conversion
+
+    page = ("<p>" + "x" * 90 + "</p>") * 30  # about 2,900 characters, one piece
+    text = await parser_with(handler).parse(page.encode(), "text/html")
+    assert sizes[0] == len(page) and len(sizes) == 3 and all(size <= 2_000 for size in sizes[1:])
+    assert text.count("x" * 90) == 30  # the document succeeds, every paragraph once
+
+
+async def test_another_400_is_not_split_or_retried() -> None:
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        calls.append(request.url.path)
+        return httpx.Response(400, json={"error": {"message": "temperature must be >= 0"}})
+
+    page = ("<p>" + "x" * 90 + "</p>") * 30
+    with pytest.raises(ProviderError, match="HTTP 400"):
+        await parser_with(handler).parse(page.encode(), "text/html")
+    assert len(calls) == 1
+
+
+async def test_a_small_piece_that_still_overflows_uses_the_pages_own_text() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        return httpx.Response(400, json=OVERFLOW)
+
+    text = await parser_with(handler).parse(b"<p>Weighs 500 kg</p>", "text/html")
+    assert text == "Weighs 500 kg"  # the same MIN_PIECE_CHARS floor as a cut-off reply
+
+
+async def test_the_error_body_never_reaches_the_message() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        return httpx.Response(400, json={"error": {"message": "secret-looking detail"}})
+
+    with pytest.raises(ProviderError) as raised:
+        await parser_with(handler).parse(b"<p>Weighs 500 kg</p>", "text/html")
+    assert "secret-looking" not in str(raised.value)
+    assert raised.value.status == 400 and "secret-looking" in raised.value.detail

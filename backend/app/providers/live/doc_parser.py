@@ -56,6 +56,19 @@ class CutOffReply(ProviderError):
     """The parser ran out of room before finishing, so its reply is incomplete."""
 
 
+class PieceTooBig(CutOffReply):
+    """The piece didn't fit the model's window (#176); split and retried like a cut-off reply."""
+
+
+# The parser's 400 for a prompt over its token window (vLLM's wording, seen live on 2026-11-16).
+CONTEXT_OVERFLOW = re.compile(r"maximum context length|context_length_exceeded", re.IGNORECASE)
+
+
+# True when a failed call means the piece was too big for the model, not some other bad request.
+def is_context_overflow(error: ProviderError) -> bool:
+    return error.status == 400 and CONTEXT_OVERFLOW.search(error.detail) is not None
+
+
 # Remove what holds no article text, and write exponents as ^ so 10<sup>6</sup> can't become 106.
 def strip_markup(html: str) -> str:
     text = FOOTNOTES.sub("", DROPPED_BLOCKS.sub("", html))
@@ -128,11 +141,12 @@ class LiveDocParser:
     async def _parse_or_split(self, piece: str) -> str:
         try:
             return restore_dropped(piece, await self._parse_piece(piece))
-        except CutOffReply:
+        except CutOffReply as error:
+            why = "was too big for" if isinstance(error, PieceTooBig) else "looped on"
             if len(piece) <= MIN_PIECE_CHARS:
-                logger.warning("Parser looped on a %d-character piece; used its text.", len(piece))
+                logger.warning("Parser %s a %d-character piece; used its text.", why, len(piece))
                 return clean_reply(piece)
-        logger.info("Parser reply cut off; splitting a %d-character piece.", len(piece))
+        logger.info("Parser %s a %d-character piece; splitting it.", why, len(piece))
         halves = split_pieces(piece, limit=len(piece) // 2 + 1)
         return "\n".join([await self._parse_or_split(half) for half in halves])
 
@@ -140,20 +154,25 @@ class LiveDocParser:
     async def _parse_piece(self, piece: str) -> str:
         document = CLOSING_TAG.sub("", piece)  # the page cannot close the data block
         content = f"{self._instruction}\n\n<document>\n{document}\n</document>"
-        reply = await post_json(
-            provider="doc_parser",
-            base_url=self.config.base_url,
-            path="/v1/chat/completions",
-            api_key=self.config.api_key.get_secret_value(),
-            payload={
-                "model": await self._model_name(),
-                "messages": [{"role": "user", "content": content}],
-                "temperature": 0,
-                "max_tokens": MAX_TOKENS,
-            },
-            timeout_s=PARSE_TIMEOUT_S,
-            client=self.client,
-        )
+        try:
+            reply = await post_json(
+                provider="doc_parser",
+                base_url=self.config.base_url,
+                path="/v1/chat/completions",
+                api_key=self.config.api_key.get_secret_value(),
+                payload={
+                    "model": await self._model_name(),
+                    "messages": [{"role": "user", "content": content}],
+                    "temperature": 0,
+                    "max_tokens": MAX_TOKENS,
+                },
+                timeout_s=PARSE_TIMEOUT_S,
+                client=self.client,
+            )
+        except ProviderError as error:
+            if is_context_overflow(error):  # too big for the window: split it, as for a cut-off
+                raise PieceTooBig("Live 'doc_parser' piece was too big for the model.") from error
+            raise
         try:
             choice = reply["choices"][0]
             text = choice["message"]["content"]
