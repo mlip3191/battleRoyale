@@ -119,7 +119,7 @@ Wait until you see **"Battle Royale is starting at http://localhost:8000"** and 
 
 Open your web browser (Chrome, Edge, Safari or Firefox) and go to **http://localhost:8000**.
 
-![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button and example matchups](images/user-guide/05-home.png)
+![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button, example matchups and the showcase battles](images/user-guide/05-home.png)
 
 **To stop the app:** click the terminal window and press **Ctrl+C**. To start it again later, open a terminal in the same folder and run `npm start`. You don't need to repeat steps 1 to 5.
 
@@ -127,12 +127,12 @@ Open your web browser (Chrome, Edge, Safari or Firefox) and go to **http://local
 
 ### Type a matchup
 
-Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under the box.
+Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under the box: it fills in the box, and then you click **FIGHT!**.
 
 Good examples:
 
 - `a grizzly bear vs 6 gray wolves in a forest`
-- `100 duck-sized horses vs 1 horse-sized duck`
+- `10 duck-sized horses vs 1 horse-sized duck`
 - `a honey badger vs a king cobra`
 - `a saltwater crocodile vs a horse in the water`
 
@@ -201,13 +201,12 @@ Click **See the full results**. Each part, top to bottom:
 
 ### Showcase battles
 
-Five ready-made battles show off what the app can do. They load automatically when the app starts and appear under **Showcase** on the home page:
+Ready-made battles show off what the app can do. They load automatically when the app starts and appear under **Showcase** on the home page. Click one to watch it straight away, with no waiting:
 
-1. 100 duck-sized horses vs 1 horse-sized duck
-2. A grizzly bear vs 6 gray wolves in a forest
-3. A honey badger vs a king cobra
-4. A Roman legionary vs a gorilla in a forest
-5. A dragon vs a main battle tank
+1. Grizzly bear vs 4 gray wolves
+2. Honey badger vs king cobra
+3. Roman legionary vs gorilla
+4. Dragon vs main battle tank
 
 ## 4. What it won't do
 
@@ -233,6 +232,7 @@ The show is PG: knockouts and retreats, no blood or gore.
 | Problem | Fix |
 |---|---|
 | **Windows: "running scripts is disabled on this system"** when you type `npm` | Type `npm.cmd` instead of `npm`, for example `npm.cmd run setup` and `npm.cmd start`. There's no need to change any Windows security settings. |
+| **Windows: `npm start` stops with "Failed to spawn: uvicorn" and "An Application Control policy has blocked this file"** | Windows blocked one of the app's newly installed programs. Start the app this way instead: run `npm run build`, then `uv run --directory backend python -m uvicorn app.main:app --port 8000`, and open http://localhost:8000 as usual. There's no need to change any Windows security settings. |
 | **"'node' (or 'uv') is not recognized" / "command not found"** | Close the terminal and open a new one after installing, so it finds the new programs. If it still fails, install that program again (step 1). |
 | **The page says "We couldn't reach the studio"**, or the browser says it can't connect to localhost:8000 | The app isn't running. Check that the `npm start` window is still open and shows "Application startup complete". If you closed it, run `npm start` again, then refresh the page (F5, or Cmd+R on Mac). |
 | **"This fight was called off"** with "We don't have a stat sheet for … yet" | The app doesn't know that fighter yet. Pick one of the 15 fighters listed in [Type a matchup](#type-a-matchup), or click an example matchup. |
