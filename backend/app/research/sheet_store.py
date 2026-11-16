@@ -197,7 +197,7 @@ async def _resolve_legend(
         return UNAVAILABLE
     if outcome.creature is None:
         if outcome.blocked:
-            _REFUSED[slug] = time.monotonic()
+            remember_refusal(slug)
         return outcome
     try:
         sheet = build_mythical_sheet(outcome.creature)
@@ -217,6 +217,14 @@ def recently_refused(slug: str) -> bool:
         return True
     del _REFUSED[slug]
     return False
+
+
+# Remember a refusal, dropping any that have expired so the memory never grows without bound.
+def remember_refusal(slug: str) -> None:
+    now = time.monotonic()
+    for old in [name for name, at in _REFUSED.items() if now - at >= REFUSAL_MEMORY_S]:
+        del _REFUSED[old]
+    _REFUSED[slug] = now
 
 
 # Forget every remembered refusal (tests start clean; a restart does the same in the app).

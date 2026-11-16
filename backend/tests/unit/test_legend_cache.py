@@ -109,6 +109,15 @@ async def test_a_refused_name_is_not_looked_up_again_for_a_while(
     assert chat.calls == 2  # after the window it asks again
 
 
+def test_recording_a_refusal_drops_expired_ones(monkeypatch: pytest.MonkeyPatch) -> None:
+    now = [1000.0]
+    monkeypatch.setattr(sheet_store.time, "monotonic", lambda: now[0])
+    sheet_store.remember_refusal("old-name")
+    now[0] += sheet_store.REFUSAL_MEMORY_S + 1
+    sheet_store.remember_refusal("new-name")
+    assert set(sheet_store._REFUSED) == {"new-name"}  # the expired one was pruned
+
+
 async def test_an_outage_is_not_remembered(monkeypatch: pytest.MonkeyPatch) -> None:
     fetches: list[str] = []
 
