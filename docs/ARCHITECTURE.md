@@ -230,7 +230,7 @@ class FightEvent(BaseModel):
     side: Literal[0, 1]
     actor: int | None = None               # index within side, or None for group events
     target: int | None = None
-    group_size: int = 1                    # >1 for aggregated swarm events
+    group_size: int = 1                    # fighters a group event (actor None) covers; can be 1
     damage: float | None = None
     text_hint: str                         # short neutral description for narration, e.g. "bite lands"
 

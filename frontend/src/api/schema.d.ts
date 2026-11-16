@@ -362,7 +362,7 @@ export interface components {
             target: number | null;
             /**
              * Group Size
-             * @description How many fighters acted together (more than 1 for swarm events).
+             * @description How many fighters a group event (`actor` None) covers, which can be 1; otherwise 1.
              * @default 1
              */
             group_size: number;
