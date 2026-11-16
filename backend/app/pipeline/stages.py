@@ -10,6 +10,7 @@ import asyncio
 import hashlib
 import logging
 from dataclasses import dataclass, field
+from typing import cast
 
 from app.config import get_settings
 from app.db.connection import connect
@@ -145,7 +146,8 @@ async def research(matchup: Matchup) -> Research:
         *(lookup_fighter(f) for f in fighters),
         *(lookup_sheet(ref) for ref in references if ref is not None),
     )
-    sheets: list[StatSheet] = [sheet for sheet in found[: len(fighters)] if sheet is not None]
+    # lookup_fighter raises rather than return None, so the first results are all sheets.
+    sheets = cast(list[StatSheet], list(found[: len(fighters)]))
     found_refs = iter(found[len(fighters) :])
     reference_sheets: list[StatSheet | None] = []
     missing: list[str] = []
