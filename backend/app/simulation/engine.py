@@ -908,6 +908,19 @@ def _no_contest(
     )
 
 
+def _central_sides(
+    matchup: Matchup, sheets: list[StatSheet], ks: tuple[float, float], use_terrain: bool = True
+) -> list[Template]:
+    """Both sides at their central values (the stats-only view D-50 decides from)."""
+    central = [
+        sample_template(sheets[s], matchup.fighters[s].count, random.Random(0), ks[s], central=True)
+        for s in (0, 1)
+    ]
+    if use_terrain:
+        central = [apply_terrain(t, matchup.terrain) for t in central]
+    return central
+
+
 def _swarm_for(
     matchup: Matchup, sheets: list[StatSheet], ks: tuple[float, float], use_terrain: bool = True
 ) -> bool:
@@ -916,13 +929,20 @@ def _swarm_for(
     Every run of a matchup uses the same mode (sampling each run's stats could flip it near the
     budget), and the decision depends only on the inputs (D-50).
     """
-    central = [
-        sample_template(sheets[s], matchup.fighters[s].count, random.Random(0), ks[s], central=True)
-        for s in (0, 1)
-    ]
-    if use_terrain:
-        central = [apply_terrain(t, matchup.terrain) for t in central]
-    return use_swarm(central)
+    return use_swarm(_central_sides(matchup, sheets, ks, use_terrain))
+
+
+def _variant_too_slow(
+    matchup: Matchup, sheets: list[StatSheet], ks: tuple[float, float], use_terrain: bool
+) -> bool:
+    """Whether a one-by-one variant has far more work than a one-by-one fight is allowed (#341).
+
+    A variant runs in its baseline's mode (#301), so a one-by-one baseline cannot send a variant
+    that grew past the budget to swarm mode. Past VARIANT_WORK_CUTOFF times the budget it is
+    skipped instead of run, so one factor is never left unmeasured by running a different engine.
+    """
+    work = expected_work(_central_sides(matchup, sheets, ks, use_terrain))
+    return work > c.VARIANT_WORK_CUTOFF * c.SWARM_WORK_BUDGET
 
 
 def too_big_for_venom(
@@ -1036,6 +1056,17 @@ def run(
         swarm=baseline_swarm,
     )
 
+    def variant_runner(
+        m: Matchup, sh: list[StatSheet], terrain: bool, n: int, scaled: bool = True,
+        own_mode: bool = False,
+    ) -> "list[RunOutcome] | None":  # fmt: skip
+        variant_ks = ks if scaled else (1.0, 1.0)
+        if not own_mode and not baseline_swarm and _variant_too_slow(m, sh, variant_ks, terrain):
+            return None  # skipped: this factor is not measured for this fight (#341)
+        return _simulate(
+            m, sh, variant_ks, seed, n, terrain, swarm=None if own_mode else baseline_swarm
+        )
+
     if explain:
         decision = decide(
             matchup,
@@ -1043,15 +1074,7 @@ def run(
             outcomes,
             # Every variant runs in the baseline's mode, so only its one factor differs (#301);
             # the "numbers" variant changes the head counts on purpose and chooses its own.
-            lambda m, sh, terrain, n, scaled=True, own_mode=False: _simulate(
-                m,
-                sh,
-                ks if scaled else (1.0, 1.0),
-                seed,
-                n,
-                terrain,
-                swarm=None if own_mode else baseline_swarm,
-            ),
+            variant_runner,
             ks,
         )
         factor, explainer = decision.factor, decision.explainer
