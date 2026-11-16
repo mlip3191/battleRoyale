@@ -111,7 +111,7 @@ Issue (Ready) → branch issue-<n>-… → Claude plans → you approve → buil
 | 1 | "No language model sets a number" conflicts with the model filling the stat schema | Precise rule: models copy numbers only with a verified quote; estimates come from code | ARCHITECTURE §5, D-14 |
 | 2 | Five endpoints have no port listed (Structured Decisions, Reranking, TTS/Voice, Music, STT); endpoints are public URLs | Provider layer + smoke test discovers and documents them; mocks unblock everyone meanwhile; URLs kept in `.env` | ARCHITECTURE §7, M06, D-03 |
 | 3 | Course endpoints aren't reachable from GitHub CI | Mock-first providers; CI always in mock mode | D-15 |
-| 4 | Proposal names Hermes as the coding agent; team uses Claude Code | Claude Code for the build; Hermes Agent builds task G06 for the report | D-02 |
+| 4 | Proposal names Hermes as the coding agent; team uses Claude Code | Claude Code for the whole build; Hermes Agent isn't used | D-02, D-62 |
 | 5 | Dillon isn't on the proposal; group letter and last names are blank | Group A, Dillon confirmed, names and handles recorded | D-06, D-08 |
 | 6 | Deliverables weren't mapped to work | Final Project Overview mapped to owners, record-keeping, bug bash, and instructor access | plan/DELIVERABLES.md |
 | 7 | The repo was public; going private on GitHub Free would silently drop branch protection | Was private + GitHub Pro (Student Pack). Public again since D-48, which keeps branch protection and turns on GitHub's secret scanning and push protection; the gitleaks Secret scan still runs | D-01, D-48, Step 8 |
