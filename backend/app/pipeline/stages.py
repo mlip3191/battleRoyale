@@ -2,8 +2,9 @@
 
 Each function calls the owning module's public function. A stage that reports `stub=True`
 gets the stage detail "stub" and its output is not saved. No stage in this file is a stub any
-more (intake's "stub" detail comes from the orchestrator). Research uses G04's sheet lookup:
-seed sheet, cached sheet, or a newly built one.
+more. Research uses G04's sheet lookup: seed sheet, cached sheet, or a newly built one; a
+size_reference with no sheet is listed in `Research.missing_references` (research then ends
+"fallback" with a plain note).
 """
 
 import asyncio
@@ -98,10 +99,6 @@ class Research:
     reference_sheets: list[StatSheet | None]
     missing_references: list[str] = field(default_factory=list)
     """size_reference names with no sheet yet; those sides fight at their normal size."""
-
-    @property
-    def stub(self) -> bool:
-        return bool(self.missing_references)
 
 
 # Find one fighter's stat sheet (G04): seed sheet, cached sheet, or one built and cached now.
