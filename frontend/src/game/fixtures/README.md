@@ -1,22 +1,23 @@
 # Game fixtures
 
-Two real `SimulationResult` logs for big crowds, used to check the battle scene under load: the 50-sprite cap, the "× N" badge, and the frame rate.
+Three real `SimulationResult` logs for big crowds, used to check the battle scene under load: the 50-sprite cap, the "× N" badge, and the frame rate.
 
-| File                       | Matchup               | Events | What it tests                                                                                                         |
-| -------------------------- | --------------------- | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 96     | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                         |
-| `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 103    | A swarm replay below 200 per side (D-50, since engine version 9): group hits and knock-outs, never individual misses. |
+| File                       | Matchup               | Events | What it tests                                                                                                                                                                               |
+| -------------------------- | --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 89     | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                                                                                               |
+| `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 104    | A swarm replay below 200 per side (D-50, since engine version 9; regenerated at 10): group hits and knock-outs, never individual misses.                                                    |
+| `hundred-vs-five.json`     | 100 ducks vs 5 lions  | 246    | A dense one-by-one log (the work rule keeps it out of swarm mode): individual hits, misses and knock-outs near the 300-event cap, so the stage and frame rate are tested under load (#300). |
 
-- **Made by:** the simulation engine at `ENGINE_VERSION = 9` (`backend/app/simulation/constants.py`).
-- **Fighters:** the stand-in `duck()` and `lion()` sheets from `backend/tests/property/sim_helpers.py` (round numbers, not sourced), in an open field, via `matchup_of(1000, 1)` and `matchup_of(200, 5)`.
-- **Seeds:** `80807545943446929` (thousand-vs-one) and `6642410140495138710` (two-hundred-vs-five). The same engine version always gives the identical files.
+- **Made by:** the simulation engine at `ENGINE_VERSION = 10` (`backend/app/simulation/constants.py`).
+- **Fighters:** the stand-in `duck()` and `lion()` sheets from `backend/tests/property/sim_helpers.py` (round numbers, not sourced), in an open field, via `matchup_of(1000, 1)`, `matchup_of(200, 5)` and `matchup_of(100, 5)`.
+- **Seeds:** `2080278297451690464` (thousand-vs-one), `8047624840395600210` (two-hundred-vs-five) and `1891816691813673153` (hundred-vs-five). The same engine version always gives the identical files.
 
 ## How to watch them in the app
 
-In fixtures mode (`VITE_USE_FIXTURES=true`), two reserved battle ids open these replays straight away, already finished, with no backend: `/battle/thousand-vs-one` and `/battle/two-hundred-vs-five`. In normal mode those ids are not special: the app asks the backend, which says the battle doesn't exist. The code is `crowdBattle` in `src/api/fixtures.ts`.
+In fixtures mode (`VITE_USE_FIXTURES=true`), three reserved battle ids open these replays straight away, already finished, with no backend: `/battle/thousand-vs-one`, `/battle/two-hundred-vs-five` and `/battle/hundred-vs-five`. In normal mode those ids are not special: the app asks the backend, which says the battle doesn't exist. The code is `crowdBattle` in `src/api/fixtures.ts`.
 
 1. Start the front end in fixtures mode from the repo root. Git Bash or a Mac terminal: `VITE_USE_FIXTURES=true npm run dev:frontend`. Windows PowerShell: `$env:VITE_USE_FIXTURES = "true"; npm run dev:frontend` (the setting lasts until you close that terminal).
-2. In Chrome, open http://localhost:5173/battle/thousand-vs-one (or `/battle/two-hundred-vs-five`).
+2. In Chrome, open http://localhost:5173/battle/thousand-vs-one (or `/battle/two-hundred-vs-five`, or `/battle/hundred-vs-five` for the dense one-by-one log).
 3. Check the stage: 50 duck sprites on the left with a "× 1,000" badge, one lion on the right.
 
 ## How to measure the frame rate
@@ -34,6 +35,7 @@ Do this when `ENGINE_VERSION` changes. From the repo root, in Git Bash on Window
 cd backend
 uv run python -c "import sys; sys.path[:0] = ['.', 'tests/property']; from app.simulation.engine import run; from sim_helpers import duck, lion, matchup_of; print(run(matchup_of(1000, 1), [duck(), lion()]).model_dump_json(indent=2))" > ../frontend/src/game/fixtures/thousand-vs-one.json
 uv run python -c "import sys; sys.path[:0] = ['.', 'tests/property']; from app.simulation.engine import run; from sim_helpers import duck, lion, matchup_of; print(run(matchup_of(200, 5), [duck(), lion()]).model_dump_json(indent=2))" > ../frontend/src/game/fixtures/two-hundred-vs-five.json
+uv run python -c "import sys; sys.path[:0] = ['.', 'tests/property']; from app.simulation.engine import run; from sim_helpers import duck, lion, matchup_of; print(run(matchup_of(100, 5), [duck(), lion()]).model_dump_json(indent=2))" > ../frontend/src/game/fixtures/hundred-vs-five.json
 ```
 
 A test (`backend/tests/property/test_crowd_fixtures.py`) fails with "regenerate the crowd fixtures" when the files no longer match the engine. Then update the engine version, seeds and event counts above, run `npm run format` (Prettier tidies the JSON), and run `npm run check`.
