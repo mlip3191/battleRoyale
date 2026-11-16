@@ -31,6 +31,7 @@ from tests.property.sim_helpers import FIXTURES, make_sheet, matchup_of  # noqa:
 
 ALWAYS_INDIVIDUAL = 10**9  # a threshold no fight reaches
 ALWAYS_SWARM_BUDGET = 0.0  # any work is over budget: every fight swarms, with the real cap
+# (Not for a venomous scenario: the work rule skips venomous fights, so this would not force swarm.)
 NO_WORK_BUDGET = float("inf")  # with the head-count threshold, keeps a fight one by one (D-50)
 
 

@@ -249,10 +249,21 @@ def test_event_stream_sends_every_stage_change_then_end(client: TestClient) -> N
     events = parse_sse(response.text)
     names = [name for name, _ in events]
     assert names == ["stage"] * (2 * len(STAGES)) + ["end"]
-    assert_each_stage_ran([StageStatus.model_validate_json(data) for _, data in events[:-1]])
+    changes = [StageStatus.model_validate_json(data) for _, data in events[:-1]]
+    assert_each_stage_ran(changes)
     assert json.loads(events[-1][1]) == {"status": "done"}
     # Polling after the stream ends returns the same final record.
-    assert wait_until_finished(client, battle_id).status == "done"
+    record = wait_until_finished(client, battle_id)
+    assert record.status == "done"
+    assert_stream_matches_record(changes, record)
+
+
+# The last streamed change for each stage has the record's final status and detail, and the
+# stream covered every stage in the record.
+def assert_stream_matches_record(changes: list[StageStatus], record: BattleRecord) -> None:
+    last = {change.stage: (change.status, change.detail) for change in changes}
+    final = {stage.stage: (stage.status, stage.detail) for stage in record.stages}
+    assert last == final
 
 
 def test_event_stream_ends_for_a_failed_battle(client: TestClient) -> None:
