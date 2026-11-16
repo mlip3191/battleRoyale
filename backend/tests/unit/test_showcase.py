@@ -197,3 +197,39 @@ def test_a_broken_battle_file_leaves_the_database_empty_not_half_loaded(
         assert fresh.execute("SELECT COUNT(*) FROM battles").fetchone()[0] == 0
     finally:
         fresh.close()
+
+
+# The committed showcase (data/showcase/) loads whole into an empty database, media included.
+def test_the_committed_showcase_loads_into_an_empty_database(tmp_path: Path) -> None:
+    connection = database(tmp_path / "app.db")
+    media = tmp_path / "media"
+    rows = load_manifest()
+    assert rows and import_showcase(connection, media) == len(rows)
+    assert showcase_rows(connection) == rows
+    for row in rows:
+        battle = saved.get(connection, row.battle_id)
+        assert battle is not None and battle.status == "done"
+        for asset in battle.assets:
+            assert (media / asset.url.removeprefix("/media/")).is_file(), asset.url
+    connection.close()
+
+
+# Mike's G08 checks on the dragon battle: every dragon stat is an assumption, the lore names both
+# analogs, the script says "according to legend", and the tank only rams or crushes.
+def test_the_showcase_dragon_battle_plays_by_the_legend_rules() -> None:
+    showcase = Path(__file__).parents[3] / "data" / "showcase" / "battles"
+    battles = [
+        BattleRecord.model_validate_json(p.read_text("utf-8")) for p in showcase.glob("*.json")
+    ]
+    dragon = next(b for b in battles if b.stat_sheets[0].display_name == "Dragon")
+    sheet, tank = dragon.stat_sheets
+    assert all(stat.method == "assumption" for stat in sheet.stats.values())
+    assert sheet.lore is not None and sheet.lore.body_analog and sheet.lore.size_analog
+    assert "according to legend" in dragon.model_dump_json().lower()
+    assert set(tank.weapons) <= {"ramming", "crushing"}
+    tank_moves = {
+        e.text_hint
+        for e in dragon.result.representative_log
+        if e.side == 1 and e.type in ("hit", "miss")
+    }
+    assert tank_moves and all(m.split()[0] in ("ram", "crush") for m in tank_moves)
