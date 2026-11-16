@@ -7,6 +7,7 @@ archetype ("German shepherd", "baby elephant") or ordinary fight wording ("the b
 """
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -105,7 +106,19 @@ def load_blocklist() -> Blocklist:
         subject_starts=words("attack_planning", "subject_starts"),
         subject_modals=words("attack_planning", "subject_modals"),
         subject_after=words("attack_planning", "subject_after"),
-        not_fighters=words("attack_planning", "not_fighters"),
+        not_fighters=_not_fighters(words),
+    )
+
+
+# Subject words that are never a fighter: the not_fighters list plus every people list above.
+def _not_fighters(words: Callable[[str, str], frozenset[str]]) -> frozenset[str]:
+    return (
+        words("attack_planning", "not_fighters")
+        | words("minor", "head")
+        | words("minor", "anywhere")
+        | words("group_of_people", "head")
+        | words("group_of_people", "people_words")
+        | words("real_person", "relations")
     )
 
 
@@ -202,6 +215,8 @@ def _harms_a_target(cleaned: str, lists: Blocklist) -> bool:
 # True when the words before a harm word end in "how <fighter> <modal>" or "<modal> <fighter>":
 # "how a lion would", "would 6 wolves"; not if a subject word is a person or pronoun ("how a
 # terrorist would", "would i"), or the subject is part of a longer phrase ("with a gun would").
+# A subject of four or more words ("a very angry unemployed pilot") is not read as a fighter, so it
+# fails safe and still blocks; the limit stays at three words on purpose.
 def _fighter_is_subject(before: list[str], lists: Blocklist) -> bool:
     modal_last = bool(before) and before[-1] in lists.subject_modals
     words = before[:-1] if modal_last else before

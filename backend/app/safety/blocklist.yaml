@@ -359,6 +359,10 @@ attack_planning:
   # subject is an article or count and one to three words, either after "how" and before a modal
   # or right after a modal. If any of those words is a person, an attacker or a pronoun ("how a
   # terrorist would attack a mall", "how would I attack a mall"), the harm word still counts.
+  # The words that count as a person are not_fighters below PLUS every people list in this file
+  # (minor head and anywhere, group_of_people head and people_words, real_person relations), so
+  # "how would a boy attack a school" still blocks. Fighter archetypes (ninja, knight, samurai,
+  # pirate) stay off. A person subject on none of these lists is left to the classifier.
   subject_after:
     - how
   subject_starts:
@@ -421,6 +425,54 @@ attack_planning:
     - kidnapper
     - extremist
     - criminal
+    - dude
+    - kid
+    - student
+    - employee
+    - worker
+    - coworker
+    - boss
+    - stranger
+    - neighbor
+    - mother
+    - father
+    - mom
+    - dad
+    - parent
+    - human
+    - adult
+    - lady
+    - gentleman
+    - user
+    - player
+    - madman
+    - lunatic
+    - maniac
+    - psychopath
+    - sniper
+    - robber
+    - burglar
+    - arsonist
+    - intruder
+    - mercenary
+    - hacker
+    - jihadi
+    - incel
+    - fanatic
+    - radical
+    - militant
+    - insurgent
+    - cultist
+    - hijacker
+    - gang
+    - mob
+    - militia
+    - cult
+    - cell
+    - group
+    - crowd
+    - team
+    - squad
   # A person with no other detail ("poison someone") is a target only right after a direct ask
   # and a harm word ("how to poison someone", "help me hurt somebody"), since fighters attack
   # "someone" in ordinary fight wording ("the wolf attacks someone").
