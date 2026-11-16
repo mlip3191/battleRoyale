@@ -4,7 +4,7 @@ This is the answer to "where do your numbers come from?" Every constant lives in
 
 Honesty note: published studies say how strong a bite is or how fast an animal runs (that is what the stat sheets cite), but nothing in the literature gives a conversion from "newtons of bite force" to "hit points in a fight." Where a constant has no published source, it is labeled **assumption** below and was chosen so that results look sensible across the benchmark matchups. The benchmark (F07) is how we check that choice.
 
-## How a fight works (engine version 10)
+## How a fight works (engine version 11)
 
 1. **Sampling.** Each of the (default) 1,000 runs draws every stat uniformly between its `low` and `high` for each side, using a generator seeded from the matchup, both stat-sheet hashes, and `ENGINE_VERSION`. Uncertain inputs therefore spread the results.
 2. **Approach.** The sides start `START_DISTANCE_M` apart and close at the sum of their speeds. Each side can attack once the gap is within its own reach, so a long-reach attacker (a breath weapon) opens fire first.
@@ -16,7 +16,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 | Constant | Value | Meaning | Source / status |
 |---|---|---|---|
-| `ENGINE_VERSION` | 10 | Part of the seed; bump whenever results would change. | Bookkeeping |
+| `ENGINE_VERSION` | 11 | Part of the seed; bump whenever results would change. | Bookkeeping |
 | `TICK_S` | 0.1 s | Simulation time step. | Assumption (fine enough for attack rates up to ~10/s; event times only, the attack rate itself is exact) |
 | `MAX_FIGHT_S` | 600 s | A fight this long is a draw. | Design choice (DECISIONS / ARCHITECTURE §9) |
 | `MAX_LOG_EVENTS` | 300 | Cap on the replay log. | `SimulationResult` contract |
