@@ -135,7 +135,8 @@ includes one is a group). A group blocks as `real_person` only when the typed na
 with capitals matching its name (a band's label, or the alias a team matched, such as "Lakers"):
 
 - "the" (any capitals) plus the name without its own "the": "the Beatles", "the Eagles", "the
-  Lakers" and "the Bulls" are blocked; "the eagles" is not.
+  Lakers" and "the Bulls" are blocked, and so are full team names ("the Chicago Bulls", "the
+  Philadelphia Eagles"); "the eagles" is not.
 - The bare name, only when it is **not a common word**. The check looks up the singular
   ("eagles" → "eagle") and asks whether any exact match among its top 10 results is a kind item.
   "Beatles" and "Lakers" are blocked (no kind item for "beatle" or "laker"); "Eagles", "Bulls"
@@ -150,7 +151,7 @@ with capitals matching its name (a band's label, or the alias a team matched, su
   and "the Grizzly Bear" are not. If the kind is only a bare taxon, not a common word, the
   normal wording applies: "Metallica" is blocked (its rival is a moth genus), "metallica" is not.
   Sports teams follow the same rule; a team's alias has no "The" of its own, so "the Heat" (the
-  kind "heat" wins) is left to the classifier.
+  kind "heat" wins) and "the Yankees" (the kind "Yankee" wins) are left to the classifier.
 
 Companies, organizations and brands are not groups and stay allowed ("a Jeep" is a car brand).
 
@@ -247,8 +248,14 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   matches only through an alias, or a group whose name differs from what was typed, is left to
   the classifier. Only the listed team classes count (sports team, professional sports team,
   basketball, American football, ice hockey and baseball teams, football and rugby union clubs);
-  a team filed under another class, or one that isn't in the top 5 results, is missed. Some
-  nicknames pick another item first ("the Yankees" picks "Americans", which isn't blocked).
+  a team filed under another class, or one that isn't in the top 5 results, is missed. (Checked
+  live 2026-11-15 for #310: the Chicago Bulls, Philadelphia Eagles, New York Yankees, Los
+  Angeles Lakers, Manchester United, Real Madrid, FC Barcelona, Wolverhampton Wanderers and
+  Chicago Bears all have a listed team class as their own "instance of", so "sports club" isn't
+  needed.) A team whose nickname is also a kind of thing's name loses the pick, and its nickname
+  has no "The" of its own, so it is left to the classifier: "the Yankees" picks the item
+  "Americans", and the kind "Yankee" (alias "Yankees") beats the New York Yankees (case
+  team-07; "the New York Yankees" is blocked here). "the Heat" is the same.
   "the Who", "the Cure" and "the Animals" pass the Wikidata layer: the band isn't among the top
   search results read, so the classifier is the remaining layer for them.
 - **The classifier can answer differently from run to run.** Re-run the live eval after any
