@@ -202,8 +202,8 @@ def needed_sections(html: str) -> list[str]:
     for piece in pieces:
         heading = HEADING.search(piece)
         level = int(heading.group(1)) if heading and heading.start() < 300 else None
-        if level == 2:
-            keep = bool(NEEDED_HEADINGS.search(heading.group(2))) if heading else False
+        if heading and level == 2:  # heading is set whenever level is
+            keep = bool(NEEDED_HEADINGS.search(heading.group(2)))
             if keep:
                 groups.append([])
         elif level is None and not groups:
