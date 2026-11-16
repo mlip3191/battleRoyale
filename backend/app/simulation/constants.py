@@ -5,7 +5,7 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-ENGINE_VERSION = 10  # 10: a fight with a venomous side never uses the work rule (#229)
+ENGINE_VERSION = 11  # 11: deciding-factor variants use the baseline's swarm mode (#301); 10: #229
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1

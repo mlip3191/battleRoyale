@@ -1,0 +1,76 @@
+"""#301: the deciding-factor analysis runs every variant in the baseline's swarm mode, so a variant
+differs from the baseline in one factor only. The "numbers" variant changes the head counts on
+purpose and chooses its own mode."""
+
+import pytest
+
+from app.simulation import engine
+from app.simulation.engine import run
+from tests.property.sim_helpers import load_sheet, make_sheet, matchup_of
+
+
+def elephant():
+    return make_sheet(
+        "elephant", mass_kg=5000, size_m=3.2, top_speed_mps=11, attack_force_n=20000,
+        attacks_per_s=0.5, reach_m=2.0, armor_0_1=0.5,
+    )  # fmt: skip
+
+
+def small_cat():
+    return make_sheet(
+        "cat", mass_kg=4.5, size_m=0.46, top_speed_mps=13, attack_force_n=80,
+        attacks_per_s=2.0, reach_m=0.2, armor_0_1=0.05, aggression_0_1=1.0,
+    )  # fmt: skip
+
+
+def modes_used(monkeypatch, sheets, na, nb):
+    """(baseline's mode, mode forced on each variant run, in order) for one explained run."""
+    calls = []
+    real = engine._simulate
+
+    def spy(matchup, sh, ks, seed, runs, use_terrain=True, swarm=None):
+        counts = tuple(f.count for f in matchup.fighters)
+        calls.append((counts, swarm))
+        return real(matchup, sh, ks, seed, runs, use_terrain, swarm)
+
+    monkeypatch.setattr(engine, "_simulate", spy)
+    run(matchup_of(na, nb), sheets, runs=40, explain=True)
+    baseline = calls[0]
+    return (
+        baseline[1],
+        [swarm for counts, swarm in calls[1:] if counts == baseline[0]],
+        [swarm for counts, swarm in calls[1:] if counts != baseline[0]],
+    )
+
+
+@pytest.mark.parametrize(
+    ("sheets", "na", "nb", "expected_mode"),
+    [
+        ([small_cat(), elephant()], 150, 1, True),  # swarm by the work rule (D-50)
+        ([load_sheet("stat-sheet-gray-wolf.json"), elephant()], 30, 2, False),  # one by one
+    ],
+)
+def test_every_variant_but_numbers_runs_in_the_baselines_mode(
+    monkeypatch, sheets, na, nb, expected_mode
+):
+    baseline, variants, numbers = modes_used(monkeypatch, sheets, na, nb)
+    assert baseline is expected_mode
+    assert variants and all(mode is expected_mode for mode in variants)
+    assert numbers == [None]  # the numbers variant chooses its own mode
+
+
+def test_a_variant_that_would_cross_the_work_budget_stays_in_the_baselines_mode(monkeypatch):
+    """Equalizing the stats of 150 cats and an elephant moves the fight across SWARM_WORK_BUDGET
+    on its own, which used to put the variant in a different engine from the baseline."""
+    calls = []
+    real = engine._simulate
+
+    def spy(matchup, sh, ks, seed, runs, use_terrain=True, swarm=None):
+        decided = swarm if swarm is not None else engine._swarm_for(matchup, sh, ks, use_terrain)
+        calls.append((tuple(f.count for f in matchup.fighters), decided))
+        return real(matchup, sh, ks, seed, runs, use_terrain, swarm)
+
+    monkeypatch.setattr(engine, "_simulate", spy)
+    run(matchup_of(150, 1), [small_cat(), elephant()], runs=40, explain=True)
+    same_counts = [mode for counts, mode in calls if counts == (150, 1)]
+    assert len(same_counts) > 2 and len(set(same_counts)) == 1

@@ -4,13 +4,13 @@ Three real `SimulationResult` logs for big crowds, used to check the battle scen
 
 | File                       | Matchup               | Events | What it tests                                                                                                                                                                               |
 | -------------------------- | --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 89     | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                                                                                               |
-| `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 104    | A swarm replay below 200 per side (D-50, since engine version 9; regenerated at 10): group hits and knock-outs, never individual misses.                                                    |
-| `hundred-vs-five.json`     | 100 ducks vs 5 lions  | 246    | A dense one-by-one log (the work rule keeps it out of swarm mode): individual hits, misses and knock-outs near the 300-event cap, so the stage and frame rate are tested under load (#300). |
+| `thousand-vs-one.json`     | 1,000 ducks vs 1 lion | 96     | The biggest crowd: swarm mode, 50 sprites, the "× 1,000" badge counting down.                                                                                                               |
+| `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 103    | A swarm replay below 200 per side (D-50, since engine version 9; regenerated at 11): group hits and knock-outs, never individual misses.                                                    |
+| `hundred-vs-five.json`     | 100 ducks vs 5 lions  | 243    | A dense one-by-one log (the work rule keeps it out of swarm mode): individual hits, misses and knock-outs near the 300-event cap, so the stage and frame rate are tested under load (#300). |
 
-- **Made by:** the simulation engine at `ENGINE_VERSION = 10` (`backend/app/simulation/constants.py`).
+- **Made by:** the simulation engine at `ENGINE_VERSION = 11` (`backend/app/simulation/constants.py`).
 - **Fighters:** the stand-in `duck()` and `lion()` sheets from `backend/tests/property/sim_helpers.py` (round numbers, not sourced), in an open field, via `matchup_of(1000, 1)`, `matchup_of(200, 5)` and `matchup_of(100, 5)`.
-- **Seeds:** `2080278297451690464` (thousand-vs-one), `8047624840395600210` (two-hundred-vs-five) and `1891816691813673153` (hundred-vs-five). The same engine version always gives the identical files.
+- **Seeds:** `5534030524117973883` (thousand-vs-one), `8794130858969971510` (two-hundred-vs-five) and `256923565140131766` (hundred-vs-five). The same engine version always gives the identical files.
 
 ## How to watch them in the app
 

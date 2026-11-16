@@ -18,7 +18,7 @@ from app.simulation.summary import summary
 | `test_challengers(winner_sheet, candidates, terrain, winner_request=None, winner_reference=None)` | `list[ChallengerSuggestion]`, closest to 50/50 first (may be **empty**: candidates that cannot meet the winner are dropped; `entity` is a display name, not a `fighter_id`). By default the winner duels as one plain fighter; pass the winner's `FighterRequest` (its count and `size_reference`) and the size-reference sheet to duel it as the user saw it ("6 gray wolves", "horse-sized duck"); the reason then names it that way | The "next challenger" step | ~0.3 s for 8 candidates (one plain winner; a winner with a large count makes each duel slower, so check the stage budget when it is wired in) |
 | `summary(result, names)` | `Summary` | The numbers the UI and announcer need | instant |
 
-Timings are typical on a dev laptop at `ENGINE_VERSION 10` (re-checked on 1 v 1 wolves, 100 v 100 wolves and 150 cats v 1 elephant: the same or faster than at 9; version 10 changes only venomous fights below 200 a side, which are slower, see `docs/simulation-model.md`); expect similar or faster.
+Timings are typical on a dev laptop at `ENGINE_VERSION 11` (re-checked on 1 v 1 wolves, 100 v 100 wolves and 150 cats v 1 elephant: the same or faster than at 9; version 10 changes only venomous fights below 200 a side, which are slower, and version 11 only which mode the deciding-factor variants use, see `docs/simulation-model.md`); expect similar or faster.
 
 All calls are **deterministic**: the same matchup, sheets, and engine version always give the identical result (the seed is built from the matchup, both `sheet_hash` values, and `ENGINE_VERSION`). That is what lets "same battle requested twice" return the cached answer.
 
