@@ -8,13 +8,16 @@ import httpx
 import sqlite_vec
 
 from app.models.stats import ASSUMABLE_STATS, StatName
-from app.providers.base import Embedder, Reranker
+from app.providers.base import DocParser, Embedder, Reranker
 from app.providers.live.http import ProviderError
+from app.research.ingest import ingest_on_demand
 
 logger = logging.getLogger(__name__)
 
 TOP_N = 5
-CANDIDATES = 20
+# Vector search alone ranks some right passages far down (25th to 89th live), while the reranker
+# puts them first once it sees them; 100 gave hit@5 93% against 47% with 20 (#34).
+CANDIDATES = 100
 
 # A search phrase per physical stat, worded the way articles usually state it.
 STAT_QUERIES: dict[StatName, str] = {
@@ -91,3 +94,26 @@ async def evidence_for(
     query = STAT_QUERIES[stat]
     candidates = await retrieve(connection, embedder, fighter_id, query)
     return await rerank(reranker, query, candidates)
+
+
+# Evidence for a fighter off the seed list: its article is ingested on demand first when none
+# is stored. A failed ingest gives no evidence, so the G04 builder falls back to defaults.
+# The 30 s budget covers the ingest only; the search after it has its own provider timeouts
+# and the reranker fallback, and takes about 2-3 s.
+async def evidence_on_demand(
+    connection: sqlite3.Connection,
+    client: httpx.AsyncClient,
+    providers: tuple[DocParser, Embedder, Reranker],
+    fighter_id: str,
+    title: str,
+    stat: StatName,
+) -> list[Passage]:
+    parser, embedder, reranker = providers
+    stored = connection.execute(
+        "SELECT 1 FROM documents WHERE fighter_id = ? LIMIT 1", (fighter_id,)
+    ).fetchone()
+    if stored is None and not await ingest_on_demand(
+        connection, client, parser, embedder, fighter_id, title
+    ):
+        return []
+    return await evidence_for(connection, embedder, reranker, fighter_id, stat)

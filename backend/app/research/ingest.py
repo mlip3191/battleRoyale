@@ -1,8 +1,10 @@
-"""Download, parse, chunk, embed, and store the reference text for the seed fighters."""
+"""Download, parse, chunk, embed, and store the reference text for the seed fighters, and,
+on demand, the parts of the article a stat sheet needs for a fighter off the seed list."""
 
 import asyncio
 import json
 import logging
+import re
 import sqlite3
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -13,6 +15,7 @@ import httpx
 
 from app.config import get_settings
 from app.providers.base import DocParser, Embedder
+from app.providers.live.doc_parser import split_pieces, strip_markup
 from app.providers.live.http import ProviderError
 from app.research.facts import store_facts, wikidata_facts
 from app.research.kb_store import DocumentRecord, ensure_vector_table, store_document
@@ -30,6 +33,17 @@ logger = logging.getLogger(__name__)
 
 # Fighters handled at once; the parser is slow, but Wikipedia asks clients not to hammer it.
 CONCURRENT_FIGHTERS = 3
+# On-demand ingest of one fighter off the seed list must finish within this (G03, #34).
+ON_DEMAND_BUDGET_S = 30.0
+# Half the parser's usual piece: a piece takes about 25 s at full size, too close to the limit.
+ON_DEMAND_PIECE_CHARS = 4_500
+SECTION_START = re.compile(r'<section data-mw-section-id="-?\d+"[^>]*>')
+HEADING = re.compile(r"<h([2-6])\b[^>]*>(.*?)</h\1>", re.DOTALL)
+# Top-level sections that carry size and description, kept with their subsections (PM, #34).
+NEEDED_HEADINGS = re.compile(
+    r"descri|anatom|characteristic|physical|size|appearance|morpholog|specification|design",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -174,3 +188,96 @@ async def ingest_all(
     summary.chunks = _count(connection, "chunks")
     summary.facts = _count(connection, "facts")
     return summary
+
+
+# The article's lead plus its size and description sections, each with its subsections, as
+# HTML pieces. An article without section markup is kept whole.
+def needed_sections(html: str) -> list[str]:
+    starts = [match.start() for match in SECTION_START.finditer(html)]
+    if not starts:
+        return [html]
+    pieces = [html[a:b] for a, b in zip(starts, [*starts[1:], len(html)], strict=True)]
+    groups: list[list[str]] = []
+    keep = True  # the lead comes first and is always kept
+    for piece in pieces:
+        heading = HEADING.search(piece)
+        level = int(heading.group(1)) if heading and heading.start() < 300 else None
+        if heading and level == 2:  # heading is set whenever level is
+            keep = bool(NEEDED_HEADINGS.search(heading.group(2)))
+            if keep:
+                groups.append([])
+        elif level is None and not groups:
+            groups.append([])  # the lead
+        if keep and groups:
+            groups[-1].append(piece)
+    return ["".join(group) for group in groups]
+
+
+# Fetch one article and store only its needed sections, parsed in parallel.
+async def _ingest_needed(
+    connection: sqlite3.Connection,
+    client: httpx.AsyncClient,
+    parser: DocParser,
+    embedder: Embedder,
+    fighter_id: str,
+    title: str,
+) -> bool:
+    article = await fetch_article(client, title)
+    if article is None:
+        logger.info("No article titled %r for %s.", title, fighter_id)
+        return False
+    sections = needed_sections(article.body.decode("utf-8", errors="replace"))
+    # Cut each section into parser-sized pieces here, so every piece is parsed at once.
+    pieces = [
+        piece
+        for section in sections
+        for piece in split_pieces(strip_markup(section), limit=ON_DEMAND_PIECE_CHARS)
+    ]
+    # A TaskGroup cancels the other pieces as soon as one fails, so no parser calls run on.
+    try:
+        async with asyncio.TaskGroup() as group:
+            tasks = [
+                group.create_task(parser.parse(piece.encode("utf-8"), article.media_type))
+                for piece in pieces
+            ]
+    except ExceptionGroup as failed:
+        raise failed.exceptions[0] from failed
+    texts = [task.result() for task in tasks]
+    if not any(text.strip() for text in texts):
+        logger.warning("Parser returned no text for %s; stored nothing.", fighter_id)
+        return False  # nothing stored, so a later lookup tries again
+    record = DocumentRecord(
+        doc_id=f"{fighter_id}/wikipedia",
+        fighter_id=fighter_id,
+        source="wikipedia",
+        title=article.title,
+        url=article.url,
+        license=article.license,
+        retrieved_at=article.retrieved_at.isoformat(),
+        text="\n".join(texts),
+    )
+    await ensure_vector_table(connection, embedder)
+    await store_document(connection, record, embedder)
+    return True
+
+
+# Ingest a fighter off the seed list within ON_DEMAND_BUDGET_S. True when its passages are
+# stored; a timeout or failure is logged and gives False, never an error.
+async def ingest_on_demand(
+    connection: sqlite3.Connection,
+    client: httpx.AsyncClient,
+    parser: DocParser,
+    embedder: Embedder,
+    fighter_id: str,
+    title: str,
+) -> bool:
+    try:
+        return await asyncio.wait_for(
+            _ingest_needed(connection, client, parser, embedder, fighter_id, title),
+            ON_DEMAND_BUDGET_S,
+        )
+    except TimeoutError:
+        logger.warning("On-demand ingest of %s ran past %.0f s.", fighter_id, ON_DEMAND_BUDGET_S)
+    except (SourceError, ProviderError, httpx.HTTPError, ValueError, sqlite3.Error) as error:
+        logger.warning("Could not ingest %s on demand: %s", fighter_id, error)
+    return False

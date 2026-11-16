@@ -42,6 +42,14 @@ INLINE_TAGS = re.compile(r"</?(a|span|abbr)>", re.IGNORECASE)
 INLINE_REPLY_TAGS = re.compile(r"</?(a|span|abbr|b|i|em|strong|u|small|sub)\s*>", re.IGNORECASE)
 ANY_TAG = re.compile(r"</?[a-zA-Z][a-zA-Z0-9]*\s*/?>")
 CLOSING_TAG = re.compile(r"</\s*document\s*>", re.IGNORECASE)
+# Block-level tags end a paragraph, for the check that the model kept every paragraph.
+BLOCK_TAGS = re.compile(
+    r"</?(?:p|li|tr|td|th|h[1-6]|div|dd|dt|figcaption|caption|table|ul|ol|br)\b[^>]*>",
+    re.IGNORECASE,
+)
+NOT_ALPHANUMERIC = re.compile(r"[^0-9a-z]+")
+# Shorter paragraphs (table cells, captions, labels) aren't checked; they rarely hold a figure.
+MIN_CHECKED_CHARS = 40
 
 
 class CutOffReply(ProviderError):
@@ -72,6 +80,28 @@ def split_pieces(text: str, limit: int = PIECE_CHARS) -> list[str]:
     return [*pieces, text] if text else pieces
 
 
+# The piece's own paragraphs, tags removed: the page's exact words, for the loss check.
+def piece_paragraphs(piece: str) -> list[str]:
+    parts = (clean_reply(part) for part in BLOCK_TAGS.split(piece))
+    return [" ".join(part.split()) for part in parts if len(part.strip()) >= MIN_CHECKED_CHARS]
+
+
+# The model sometimes skips whole paragraphs without saying so (#34): add any missing one back
+# from the page's own text, word for word, so no sentence or number is lost. They go after the
+# reply, not back in their place: retrieval searches passages, so order on the page doesn't matter.
+def restore_dropped(piece: str, reply: str) -> str:
+    kept = NOT_ALPHANUMERIC.sub("", reply.lower())
+    missing = [
+        paragraph
+        for paragraph in piece_paragraphs(piece)
+        if NOT_ALPHANUMERIC.sub("", paragraph.lower()) not in kept
+    ]
+    if not missing:
+        return reply
+    logger.warning("Parser skipped %d paragraph(s); added them back from the page.", len(missing))
+    return "\n\n".join([reply, *missing])
+
+
 class LiveDocParser:
     """Sends HTML through the course parser piece by piece; plain text skips parsing."""
 
@@ -97,7 +127,7 @@ class LiveDocParser:
     # uses the page's own text with its tags removed, so no words or numbers are lost or invented.
     async def _parse_or_split(self, piece: str) -> str:
         try:
-            return await self._parse_piece(piece)
+            return restore_dropped(piece, await self._parse_piece(piece))
         except CutOffReply:
             if len(piece) <= MIN_PIECE_CHARS:
                 logger.warning("Parser looped on a %d-character piece; used its text.", len(piece))
