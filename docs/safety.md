@@ -152,11 +152,23 @@ with capitals matching its name (a band's label, or the alias a team matched, su
   normal wording applies: "Metallica" is blocked (its rival is a moth genus), "metallica" is not.
   Sports teams follow the same rule; a team's alias has no "The" of its own, so "the Heat" (the
   kind "heat" wins) and "the Yankees" (the kind "Yankee" wins) are left to the classifier.
+- **"the" + a capitalized name also searches "the " + the name** (#316), at the same time as the
+  search for the name, so it adds no wait inside the 2.5 s limit. The search for "who" never
+  reaches the band The Who (the World Health Organization ranks first and the band isn't in the
+  top results), but the search for "the who" ranks it first. When nothing else recorded a group,
+  the first band or team among that search's top 5 results whose label is "The" + the name
+  (ignoring case) is kept like a group that lost the pick, as a common word, so only "the" + its
+  name blocks: "the Who", "The Who", "THE WHO", "the Cure", "the Animals", "the Strokes" and "the
+  Cars" are blocked; "Who", "WHO", "the who" and "the animals" are not. The extra search runs
+  only when a typed name starts with "the" and reads as a proper name; a lowercase "the who"
+  could never name the band, so it isn't searched.
 
 Companies, organizations and brands are not groups and stay allowed ("a Jeep" is a car brand).
 
 **The cache:** SQLite table `wikidata_safety_cache` in `data/app.db`, one row per lookup text with
-both the top pick and the kind item, so either reading works from a cache hit. A match is kept
+both the top pick and the kind item, so either reading works from a cache hit. A "the" lookup
+("the Who") is stored under its own text, "the who", with what both searches found, and its
+plain answer under "who", so neither ever answers the other's question. A match is kept
 30 days and a no-match 7 days. Each row stores the class map's `classes_version`; rows from
 another version are ignored, so a class-map change takes effect at once.
 
@@ -255,8 +267,8 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   needed.) A team whose nickname is also a kind of thing's name loses the pick, and its nickname
   has no "The" of its own, so it is left to the classifier: "the Yankees" picks the item
   "Americans", and the kind "Yankee" (alias "Yankees") beats the New York Yankees (case
-  team-07; "the New York Yankees" is blocked here). "the Heat" is the same.
-  "the Who", "the Cure" and "the Animals" pass the Wikidata layer: the band isn't among the top
-  search results read, so the classifier is the remaining layer for them.
+  team-07; "the New York Yankees" is blocked here). "the Heat" is the same. A band found only
+  by the "the" search (#316) must be in that search's top 5 with the label "The" + the name;
+  one labelled otherwise is left to the classifier.
 - **The classifier can answer differently from run to run.** Re-run the live eval after any
   prompt change and compare.

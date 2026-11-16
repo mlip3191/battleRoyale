@@ -34,7 +34,10 @@
 # character (groups keep the group rule; a group that lost the pick still blocks first), which
 # changes how cached rows block. Both branches had bumped to 8 separately, so the merge bumps
 # again: rows cached under either version 8 are ignored.
-classes_version: 9
+# Version 10 (#316): "the" + a proper name also searches "the " + the name, and a band or team
+# labelled "The <name>" in its top 5 results is cached as a group that lost the pick ("the Who",
+# "the Cure", "the Animals" block), which changes how cached rows block.
+classes_version: 10
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed
