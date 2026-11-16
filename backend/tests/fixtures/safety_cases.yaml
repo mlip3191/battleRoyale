@@ -530,6 +530,20 @@ cases:
     text: "a unicorn vs a troll"
     expect: allowed
     kind: mythical
+  # Generic kinds the live gate blocked as named characters on 2026-11-15 (#322): kept here so
+  # the live run keeps measuring them until the gate is fixed. Allowed on mocks.
+  - id: my-05
+    text: "a centaur vs a horse"
+    expect: allowed
+    kind: mythical
+  - id: my-06
+    text: "a harpy vs a goose"
+    expect: allowed
+    kind: mythical
+  - id: my-07
+    text: "a sphinx vs a lion"
+    expect: allowed
+    kind: mythical
 
   # --- Allowed: objects and plants ---------------------------------------------------------
   - id: ob-01
