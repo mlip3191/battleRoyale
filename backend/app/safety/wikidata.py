@@ -458,29 +458,44 @@ async def _no_results() -> list[Candidate]:
 async def resolve(
     query: str, lookup: WikidataLookup, class_map: ClassMap, *, the_form: bool = False
 ) -> NameCheck:
-    return (await resolve_both(query, lookup, class_map, the_form=the_form))[1]
+    plain, full = await resolve_both(query, lookup, class_map, the_form=the_form)
+    return full or plain
 
 
 # resolve's answer without and with the "the" search: (plain, full). They differ only when the
 # "the" search found a group that nothing else recorded; without the_form they are the same.
+# full is None when only the "the" search failed (#329): the plain answer still stands.
 async def resolve_both(
     query: str, lookup: WikidataLookup, class_map: ClassMap, *, the_form: bool = False
-) -> tuple[NameCheck, NameCheck]:
-    plain, the_group = await _resolve_plain(query, lookup, class_map, the_form=the_form)
+) -> tuple[NameCheck, NameCheck | None]:
+    plain, the_group, the_ok = await _resolve_plain(query, lookup, class_map, the_form=the_form)
+    if not the_ok:
+        return plain, None
     if the_group is None or plain.group or plain.lost_group is not None:
         return plain, plain
     return plain, replace(plain, common=True, lost_group=the_group)  # only "the" + its name
 
 
-# The plain answer for a query, plus the name of the first group labelled "The <query>" in the
-# "the" search (None without the_form, or when there is none). Both searches run together and
-# share one class read.
+# The plain answer for a query, the name of the first group labelled "The <query>" in the "the"
+# search (None without the_form, or when there is none), and whether the "the" search answered.
+# Both searches run together and share one class read. A failed plain search raises as before;
+# a "the" search that fails on its own is logged and treated as empty (#329).
 async def _resolve_plain(
     query: str, lookup: WikidataLookup, class_map: ClassMap, *, the_form: bool
-) -> tuple[NameCheck, str | None]:
+) -> tuple[NameCheck, str | None, bool]:
     results, the_results = await asyncio.gather(
-        lookup.search(query), lookup.search(the_query(query)) if the_form else _no_results()
+        lookup.search(query),
+        lookup.search(the_query(query)) if the_form else _no_results(),
+        return_exceptions=True,
     )
+    if isinstance(results, BaseException):
+        raise results
+    the_ok = not isinstance(the_results, BaseException)
+    if isinstance(the_results, WikidataUnavailable):
+        logger.warning("Wikidata 'the' search skipped (%s); using the plain one.", the_results)
+        the_results = []
+    elif isinstance(the_results, BaseException):
+        raise the_results
     exact = exact_matches(query, results[:SEARCH_LIMIT])
     labelled = _the_labelled(query, the_results)
     qids = list(dict.fromkeys(c.qid for c in [*exact, *labelled]))
@@ -492,7 +507,7 @@ async def _resolve_plain(
     picked = top_exact_match(query, head_matches, class_map)
     kind = None if picked and class_map.is_kind(picked[1]) else first_kind_match(matches, class_map)
     if picked is None and kind is None:
-        return NameCheck(None, None, None), the_group
+        return NameCheck(None, None, None), the_group, the_ok
     reason, kind_reason = await asyncio.gather(
         class_reason(picked[1], lookup, class_map) if picked else _no_reason(),
         class_reason(kind[1], lookup, class_map) if kind else _no_reason(),
@@ -516,7 +531,7 @@ async def _resolve_plain(
         kind_reason,
         lost,
     )
-    return check, the_group
+    return check, the_group, the_ok
 
 
 # No reason (stands in for a class walk that isn't needed).
@@ -753,6 +768,8 @@ def get_lookup() -> WikidataLookup:
 # One name's check from the cache or Wikidata; None means no verdict (Wikidata failed). A "the"
 # lookup (the_form, #316) is read from its own cache key, the_query(query), and stores both
 # answers: the full one there and the plain one under the query, so a later "Who" is a hit too.
+# When only the "the" search failed (#329), the plain answer is used and cached under the query
+# alone; nothing goes under the "the" key, so the next "the" lookup searches again.
 async def _check_one(
     query: str,
     lookup: WikidataLookup,
@@ -773,6 +790,9 @@ async def _check_one(
         detail = f"{type(error).__name__}: {error}" if str(error) else type(error).__name__
         logger.warning("Wikidata check skipped (%s); other safety layers still apply.", detail)
         return None
+    if check is None:
+        await cache.put(query, plain, class_map.version)
+        return plain
     await cache.put(key, check, class_map.version)
     if the_form:
         await cache.put(query, plain, class_map.version)
