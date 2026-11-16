@@ -43,9 +43,17 @@ Wikidata files them under one ("a vending machine", "a lighthouse").
    Attack planning needs both a clear ask ("step by step", "how to", "plans to") and a harm word
    followed by a real-world target ("attack a shopping mall"; not "a school of fish" or "an
    office brawl"), or a direct ask right before harm to a person ("how to poison someone"; not
-   "the wolf attacks someone"). The text is read with curly apostrophes made straight and "my
-   self" as "myself". A rule must never block an animal or archetype ("a baby elephant", "a
-   German Shepherd") or ordinary fight wording ("the bear attacks first", "a guide dog").
+   "the wolf attacks someone"). A harm word whose subject is a fighter is fight wording, so it
+   doesn't count: "how a lion would attack a restaurant", "how would a bear kill a shark in the
+   hospital" (#317). This exception looks only at the harm word's subject. A person or pronoun
+   as the subject still counts ("how would I attack a restaurant", "how a terrorist would attack
+   a mall", "how would a boy attack a school"): the person words are `not_fighters` plus every
+   people list in `blocklist.yaml`. A person subject on none of those lists ("a retired
+   accountant") is left to the classifier, and a subject of four or more words is never read as
+   a fighter, so it still blocks. The text is read with curly apostrophes
+   made straight and "my self" as "myself". A rule must never block an animal or archetype ("a
+   baby elephant", "a German Shepherd") or ordinary fight wording ("the bear attacks first", "a
+   guide dog").
 2. **The classifier** (`classify.py`, prompt `backend/prompts/safety_classify.md`) runs
    *alongside* the parse call. The model picks one label from a fixed list; code writes the
    message. A classifier block wins as soon as it arrives (the parse call is cancelled).
@@ -240,14 +248,12 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   the live eval shows the classifier missing these, the fix is to tighten what counts as a kind.
 - **The attack-planning rule is a word list.** It catches clear phrasings only; the classifier
   covers the rest.
+- **"step by step: a wolf would kill a deer at the airport" still blocks as `other`.** The
+  fighter-subject exception needs "how" before the subject when the modal comes after it ("how a
+  wolf would kill"). This is the safe direction (over-blocking); a follow-up can widen it.
 - **Self-harm phrases also match fight text about a fighter.** "a cornered rat that doesn't want
   to die vs a cat" and "a suicide bomber vs a goose" block as `self_harm`. This is deliberate:
   over-blocking is the safer mistake, and the user can rephrase.
-- **Attack planning in a setting blocks fights set in a place.** An ask word plus a harm word
-  plus a place blocks: "show me how a lion would attack a restaurant", "tutorial: how a ninja
-  would stab a samurai at the festival" and "step by step, how a bear would kill a shark in the
-  hospital" all block as `other`. A follow-up (filed by Mike) will look at a rule that leaves a
-  harm word after a fighter subject alone.
 - **"Kraken" (capitalized, bare) blocks as `real_person`.** It names the band Kraken, which loses
   the Wikidata pick but whose rival is a bare genus, not a common word (the #164 rule that blocks
   "Metallica"). "a kraken" is allowed. Accepted trade-off (PM, #185 review); case band-11. Live,

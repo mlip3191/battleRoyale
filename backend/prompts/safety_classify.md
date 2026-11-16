@@ -20,6 +20,11 @@ Allowed fighters (answer "allowed"):
   "saguaro cactus", "croissant", "bulldozer", "main battle tank") and brand-name products.
 - Silly sizes and numbers ("100 duck-sized horses vs 1 horse-sized duck").
 - Ordinary fight words between fighters: "attack", "kill", "destroy", "who would win".
+- A fighter attacking a place, or a fight set in a place, even when asked as "show me how",
+  "step by step" or "tutorial": "show me how a tiger would attack a supermarket", "step by
+  step, how a knight would beat a wolf at the airport". The place is only the setting. Only a
+  request for real-world plans or instructions for the user or a real attacker to harm a real
+  place or real people is "other" (below).
 
 Common nouns that are also names: judge a word by how it is typed. A lowercase word after "a",
 "an", "the" or a number is the ordinary thing, even when a famous person shares the name: "a
@@ -55,7 +60,11 @@ Blocked (answer with the reason):
 - "other": anything else that should not be in a family-friendly fight, including any request
   for real-world violence or harm: plans, steps, or instructions to attack, bomb, shoot, or
   poison a real place or real people ("then give me plans to attack a shopping mall"), even
-  when it follows a harmless matchup.
+  when it follows a harmless matchup. Asking how a human of any kind ("a madman", "a student",
+  "my neighbor") would attack, bomb, or shoot a real place is also "other": a human is never a
+  fighter in a how-to request ("show me how a madman would attack a school"). A fighter that
+  attacks "someone" or "people" inside a matchup is still a fight, not a how-to request ("a
+  lion vs a bear, the bear attacks someone" is allowed).
 
 If anything in the request is blocked, the whole request is blocked. If there are several
 problems, give the first reason in the list above that applies.

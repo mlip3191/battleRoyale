@@ -7,6 +7,7 @@ archetype ("German shepherd", "baby elephant") or ordinary fight wording ("the b
 """
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -46,6 +47,10 @@ class Blocklist:
     """A harm word, then within four words a target not followed by "of" (on _clean text)."""
     attack_person: re.Pattern[str] = re.compile(r"(?!)")
     """A direct ask, a harm word, then within two words a person target (on _clean text)."""
+    subject_starts: frozenset[str] = frozenset()
+    subject_modals: frozenset[str] = frozenset()
+    subject_after: frozenset[str] = frozenset()
+    not_fighters: frozenset[str] = frozenset()
 
 
 # Phrases as one regex alternative, longest first, each as whole words.
@@ -98,6 +103,22 @@ def load_blocklist() -> Blocklist:
             words("attack_planning", "harm"),
             words("attack_planning", "person_targets"),
         ),
+        subject_starts=words("attack_planning", "subject_starts"),
+        subject_modals=words("attack_planning", "subject_modals"),
+        subject_after=words("attack_planning", "subject_after"),
+        not_fighters=_not_fighters(words),
+    )
+
+
+# Subject words that are never a fighter: the not_fighters list plus every people list above.
+def _not_fighters(words: Callable[[str, str], frozenset[str]]) -> frozenset[str]:
+    return (
+        words("attack_planning", "not_fighters")
+        | words("minor", "head")
+        | words("minor", "anywhere")
+        | words("group_of_people", "head")
+        | words("group_of_people", "people_words")
+        | words("real_person", "relations")
     )
 
 
@@ -177,7 +198,37 @@ def _asks_for_attack_plans(text: str, lists: Blocklist) -> bool:
     cleaned = _clean(text)
     if lists.attack_person.search(cleaned):
         return True
-    return _has_phrase(text, lists.attack_ask) and bool(lists.attack.search(cleaned))
+    return _has_phrase(text, lists.attack_ask) and _harms_a_target(cleaned, lists)
+
+
+# True when some harm word before a real-world target is not a fighter's action: "plans to attack
+# a mall" counts, "how a lion would attack a restaurant" doesn't (#317). Tries every harm word.
+def _harms_a_target(cleaned: str, lists: Blocklist) -> bool:
+    position = 0
+    while match := lists.attack.search(cleaned, position):
+        if not _fighter_is_subject(cleaned[: match.start()].split(), lists):
+            return True
+        position = match.start() + 1
+    return False
+
+
+# True when the words before a harm word end in "how <fighter> <modal>" or "<modal> <fighter>":
+# "how a lion would", "would 6 wolves"; not if a subject word is a person or pronoun ("how a
+# terrorist would", "would i"), or the subject is part of a longer phrase ("with a gun would").
+# A subject of four or more words ("a very angry unemployed pilot") is not read as a fighter, so it
+# fails safe and still blocks; the limit stays at three words on purpose.
+def _fighter_is_subject(before: list[str], lists: Blocklist) -> bool:
+    modal_last = bool(before) and before[-1] in lists.subject_modals
+    words = before[:-1] if modal_last else before
+    for size in (1, 2, 3):
+        if len(words) < size + 2:
+            break
+        lead, opener, nouns = words[-size - 2], words[-size - 1], words[-size:]
+        led = lead in lists.subject_modals or (modal_last and lead in lists.subject_after)
+        is_start = opener in lists.subject_starts or opener.isdigit()
+        if led and is_start and not any(_in(w, lists.not_fighters) for w in nouns):
+            return True
+    return False
 
 
 # Layer 1 on any text (the whole request, or one side's raw or entity): clear cases only.
