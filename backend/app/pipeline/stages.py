@@ -10,13 +10,14 @@ import asyncio
 import hashlib
 import logging
 from dataclasses import dataclass, field
+from typing import cast
 
 from app.config import get_settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
 from app.media import audio as media_audio
 from app.media import images as media_images
-from app.models.matchup import Matchup
+from app.models.matchup import FighterRequest, Matchup
 from app.models.media import Asset
 from app.models.narration import Script
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
@@ -26,7 +27,8 @@ from app.narration.facts import build_facts
 from app.narration.templates import template_scripts
 from app.pipeline import challenger as next_challenger
 from app.providers.registry import get_provider
-from app.research.sheet_store import resolve_stat_sheet
+from app.research.seed_fighters import find_seed_fighter
+from app.research.sheet_store import resolve_legend, resolve_stat_sheet
 from app.simulation import engine, fair
 from app.simulation.rng import make_seed
 
@@ -55,6 +57,11 @@ NARRATED_SCRIPTS = ("intro", "play_by_play", "outro")
 NOT_FOUND = (
     "We don't have a stat sheet for {name!r} yet. For now, pick one of our ready-made fighters."
 )
+LEGEND_BLOCKED = (
+    "We don't have a stat sheet for {name!r}, and we couldn't find a legend by that name to "
+    'model. Pick one of our ready-made fighters, or a mythical creature like "a griffin".'
+)
+LEGEND_UNAVAILABLE = "We couldn't look up {name!r} right now. Please try again in a minute."
 # Age and sex words used as labels by mock intake; they are not shown in the miss message.
 _LABEL_WORDS = frozenset({"adult", "male", "female", "juvenile", "baby", "young"})
 
@@ -112,19 +119,38 @@ async def lookup_sheet(
         connection.close()
 
 
+# A fighter's sheet: lookup_sheet first, then, for a name off the seed list only, a legend
+# modeled from its article (G09). Raises StageFailed with the reason when neither gives one.
+async def lookup_fighter(fighter: FighterRequest) -> StatSheet:
+    sheet = await lookup_sheet(fighter.entity, fighter.variant, fighter.raw)
+    if sheet is not None:
+        return sheet
+    name = _typed_name(fighter.entity, fighter.variant)
+    if find_seed_fighter(fighter.entity, fighter.variant, fighter.raw) is not None:
+        raise StageFailed(NOT_FOUND.format(name=name))  # a seed fighter's build failed
+    connection = connect()
+    try:
+        apply_migrations(connection)
+        legend = await resolve_legend(connection, get_provider("chat"), fighter.entity)
+    finally:
+        connection.close()
+    if isinstance(legend, StatSheet):
+        return legend
+    if legend is None:
+        raise StageFailed(NOT_FOUND.format(name=name))
+    raise StageFailed((LEGEND_BLOCKED if legend.blocked else LEGEND_UNAVAILABLE).format(name=name))
+
+
 # Step 2: look up both fighters and any size_reference entities, all at the same time.
 async def research(matchup: Matchup) -> Research:
     fighters = matchup.fighters
     references = [f.size_reference for f in fighters]
     found = await asyncio.gather(
-        *(lookup_sheet(f.entity, f.variant, f.raw) for f in fighters),
+        *(lookup_fighter(f) for f in fighters),
         *(lookup_sheet(ref) for ref in references if ref is not None),
     )
-    sheets: list[StatSheet] = []
-    for fighter, sheet in zip(fighters, found[: len(fighters)], strict=True):
-        if sheet is None:
-            raise StageFailed(NOT_FOUND.format(name=_typed_name(fighter.entity, fighter.variant)))
-        sheets.append(sheet)
+    # lookup_fighter raises rather than return None, so the first results are all sheets.
+    sheets = cast(list[StatSheet], list(found[: len(fighters)]))
     found_refs = iter(found[len(fighters) :])
     reference_sheets: list[StatSheet | None] = []
     missing: list[str] = []

@@ -2,7 +2,7 @@
 
 Task G01 (#19). This page decides which fighters we support first, what each stat means, what we do when a number is missing, and which sources we may use. G02, G04, G05, G07, and G09 build on it.
 
-Mythical creatures are not seed fighters; G09 handles them in `data/seed/mythical.yaml`.
+Mythical creatures are not seed fighters; G09 handles them in `data/seed/mythical.yaml`. In a battle, a creature in that file is built from its two analogs. Any other name that isn't a fighter we have is modeled as a legend from its Wikipedia article, in live mode only. The model picks the analogs and abilities, and code checks its quote against the article. If the check fails, the battle stops with a friendly message. The sheet is saved, so later battles reuse it; it has no expiry and no way to clear it yet. Saved legends are never offered as the next challenger or listed in fighter search, because they had no safety check of their own. A seed-list fighter is never modeled as a legend. In mock mode, an unknown name gets "no stat sheet yet".
 
 ## Seed fighters
 

@@ -43,7 +43,9 @@ Blocked (answer with the reason):
 - "self_harm": self-harm or suicide anywhere in the request, including a question or remark
   about the user hurting or killing themselves, or ending their life, added to a matchup.
 - "copyrighted_character": a named fictional character, or a named monster, robot, or vehicle
-  from a film, show, game, book, comic, or toy line.
+  from a film, show, game, book, comic, or toy line, or a named individual from myth or legend
+  (Cerberus, Medusa, the Lernaean Hydra, Smaug). A generic kind of creature is allowed ("a
+  dragon", "a griffin", "a hydra" as a kind).
 - "deity": a named god, goddess, or religious figure.
 - "weapon": a modern firearm, an explosive, or a weapon of mass destruction as a fighter
   (a knight's sword or a legionary's spear is fine).

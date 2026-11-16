@@ -365,7 +365,7 @@ async def test_size_reference_entities_are_looked_up_in_parallel(
 async def test_a_size_reference_without_a_sheet_is_stub_marked_not_fatal(
     store: BattleStore,
 ) -> None:
-    record = await battle(store, matchup("duck", "horse", refs=("unicorn", None)))
+    record = await battle(store, matchup("duck", "horse", refs=("okapi", None)))
     assert record.status == "done"
     research = stage_of(record, "research")
     assert (research.status, research.detail) == ("done", STUB)
@@ -373,9 +373,9 @@ async def test_a_size_reference_without_a_sheet_is_stub_marked_not_fatal(
 
 
 async def test_a_missing_fighter_still_fails_research(store: BattleStore) -> None:
-    record = await battle(store, matchup("unicorn", "horse", refs=(None, "duck")))
+    record = await battle(store, matchup("okapi", "horse", refs=(None, "duck")))
     assert record.status == "failed"
-    assert "unicorn" in (stage_of(record, "research").detail or "")
+    assert "okapi" in (stage_of(record, "research").detail or "")
 
 
 def _fight(
@@ -470,22 +470,22 @@ async def test_a_vague_raw_phrase_still_fails_with_the_plain_message(store: Batt
 
 async def test_the_no_stat_sheet_message_names_the_fighter_as_typed(store: BattleStore) -> None:
     # A plain name, with no variant.
-    record = await battle(store, _fight({"entity": "unicorn"}, {"entity": "duck"}))
+    record = await battle(store, _fight({"entity": "okapi"}, {"entity": "duck"}))
     assert record.status == "failed"
-    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="unicorn")
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="okapi")
     # A label-style variant is not shown.
     record = await battle(
-        store, _fight({"entity": "unicorn", "variant": "adult male"}, {"entity": "duck"})
+        store, _fight({"entity": "okapi", "variant": "adult male"}, {"entity": "duck"})
     )
     assert record.status == "failed"
-    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="unicorn")
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="okapi")
     # If the variant already contains the name, do not double it.
     record = await battle(
-        store, _fight({"entity": "unicorn", "variant": "white unicorn"}, {"entity": "duck"})
+        store, _fight({"entity": "okapi", "variant": "white okapi"}, {"entity": "duck"})
     )
     assert record.status == "failed"
     assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(
-        name="white unicorn"
+        name="white okapi"
     )
 
 

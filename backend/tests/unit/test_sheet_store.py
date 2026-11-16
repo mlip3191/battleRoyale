@@ -81,9 +81,15 @@ def test_no_knowledge_base_still_builds_a_sheet(db: sqlite3.Connection) -> None:
     assert sheet is not None and sheet.fighter_id == "chimpanzee"
 
 
-def test_unknown_and_mythical_names_get_no_sheet(db: sqlite3.Connection) -> None:
-    assert resolve(db, "unicorn") is None
+def test_unknown_names_get_no_sheet(db: sqlite3.Connection) -> None:
+    assert resolve(db, "okapi") is None
     assert resolve(db, "bear", "polar") is None
+
+
+def test_a_creature_in_the_file_gets_its_mythical_sheet_uncached(db: sqlite3.Connection) -> None:
+    sheet = resolve(db, "unicorn")
+    assert sheet is not None and sheet.category == "mythical" and sheet.lore is not None
+    assert db.execute("SELECT COUNT(*) FROM stat_sheets").fetchone()[0] == 0
 
 
 def test_slow_extraction_falls_back_to_facts_and_defaults(

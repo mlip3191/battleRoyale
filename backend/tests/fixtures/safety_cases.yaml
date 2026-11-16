@@ -367,6 +367,25 @@ cases:
     reason: copyrighted_character
     kind: copyrighted_character
     layer: wikidata
+  # Named mythological individuals are named characters (Mike, #322 review); generic kinds
+  # (a dragon, a griffin, a hydra as a kind) stay allowed. Live, the classifier blocks these two
+  # (checked 2026-11-15); the Wikidata layer lets them through.
+  - id: cc-05
+    text: "Cerberus vs a lion"
+    expect: blocked
+    reason: copyrighted_character
+    kind: copyrighted_character
+    layer: classifier
+    mock:
+      classifier: copyrighted_character
+  - id: cc-06
+    text: "Medusa vs a goose"
+    expect: blocked
+    reason: copyrighted_character
+    kind: copyrighted_character
+    layer: classifier
+    mock:
+      classifier: copyrighted_character
 
   # --- Blocked: deities --------------------------------------------------------------------
   - id: dt-01
@@ -583,6 +602,20 @@ cases:
     kind: mythical
   - id: my-04
     text: "a unicorn vs a troll"
+    expect: allowed
+    kind: mythical
+  # Generic kinds the live gate blocked as named characters on 2026-11-15 (#322): kept here so
+  # the live run keeps measuring them until the gate is fixed. Allowed on mocks.
+  - id: my-05
+    text: "a centaur vs a horse"
+    expect: allowed
+    kind: mythical
+  - id: my-06
+    text: "a harpy vs a goose"
+    expect: allowed
+    kind: mythical
+  - id: my-07
+    text: "a sphinx vs a lion"
     expect: allowed
     kind: mythical
 
