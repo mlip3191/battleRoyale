@@ -1,9 +1,9 @@
 """Swarm mode (groups) must tell the same story as the one-by-one engine (issue #76).
 
-Each fight is run twice with the same sheets, once forced through each engine by moving
-SWARM_THRESHOLD. The tolerances are loose enough to hold at these run counts and tight enough to
-catch the old problems: crowds overrated by 0.06-0.22, fights twice as long, a third fewer
-survivors. The full table is `scripts/validate_swarm.py`.
+Each fight is run twice with the same sheets, once forced through each engine (see `both`). The
+tolerances are loose enough to hold at these run counts and tight enough to catch the old
+problems: crowds overrated by 0.06-0.22, fights twice as long, a third fewer survivors. The full
+table is `scripts/validate_swarm.py`.
 """
 
 import random
@@ -16,16 +16,22 @@ from app.simulation.engine import _spread_tracked, run
 from tests.property.sim_helpers import load_sheet, make_sheet, matchup_of
 
 ALWAYS_INDIVIDUAL = 10**9
-ALWAYS_SWARM = 0
 RUNS = 300
 
 
 def both(monkeypatch, sheets, na, nb, runs=RUNS):
+    """One-by-one and swarm results for the same fight, under production settings.
+
+    Swarm is forced through the work rule (SWARM_WORK_BUDGET = 0), not by moving SWARM_THRESHOLD
+    to 0: a threshold of 0 turns off the 3 s step cap, which only applies up to the threshold, so
+    the tests would not run the engine a user gets (QA of swarm mode, Nov 15). A venomous side
+    never takes the work rule (#229), so these fights must have none.
+    """
     results = []
-    budget = c.SWARM_WORK_BUDGET  # read before the loop: the first pass changes it
-    for threshold in (ALWAYS_INDIVIDUAL, ALWAYS_SWARM):
-        monkeypatch.setattr(c, "SWARM_THRESHOLD", threshold)
-        monkeypatch.setattr(c, "SWARM_WORK_BUDGET", float("inf") if threshold else budget)
+    threshold, budget = c.SWARM_THRESHOLD, c.SWARM_WORK_BUDGET  # read before the loop
+    for individual in (True, False):
+        monkeypatch.setattr(c, "SWARM_THRESHOLD", ALWAYS_INDIVIDUAL if individual else threshold)
+        monkeypatch.setattr(c, "SWARM_WORK_BUDGET", budget if individual else 0.0)
         results.append(run(matchup_of(na, nb), sheets, runs=runs, explain=False))
     return results
 
@@ -313,3 +319,40 @@ def test_a_venomous_side_is_kept_out_of_the_work_rule():
     assert not _fight([elephant(), snake], 1, 150)  # on either side
     # The head-count ceiling is unchanged: above 200 it is swarm mode, venom or not.
     assert _fight([snake, elephant()], c.SWARM_THRESHOLD + 1, 1)
+
+
+def test_the_parity_harness_runs_swarm_with_the_production_step_cap(monkeypatch):
+    """`both` must force swarm through the work rule so the 3 s step cap stays on. With the
+    threshold at 0 the cap is off and the harness tests an engine users never get: 200 cats v 1
+    elephant left 52.9 survivors uncapped, 55.5 capped, 55.6 one by one."""
+    pair = [small_cat(), elephant()]
+    assert _fight(pair, 200, 1)  # swarm by the work rule, at the ceiling
+    one, swarm = both(monkeypatch, pair, 200, 1, runs=200)
+    assert c.SWARM_THRESHOLD == 200  # `both` leaves the threshold alone after its run
+    assert swarm.mean_survivors[0] == pytest.approx(one.mean_survivors[0], rel=0.03)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Known gap (#330): above SWARM_THRESHOLD swarm mode drops venom "
+    "(D-44), so a 201st king cobra flips the verdict. Needs Mike: carry doses in swarm mode, or "
+    "keep small-work venomous sides one by one above 200. Remove this mark when fixed.",
+)
+def test_a_venomous_crowd_does_not_flip_at_the_head_count_ceiling():
+    import json
+    from pathlib import Path
+
+    from app.models.stats import StatSheet
+
+    root = Path(__file__).resolve().parents[3] / "data" / "seed" / "fighters"
+
+    def seed(name):
+        data = json.loads((root / f"{name}.json").read_text("utf-8"))
+        return StatSheet.model_validate(data.get("sheet", data.get("stat_sheet", data)))
+
+    pair = [seed("king-cobra"), seed("roman-legionary")]
+    below = run(matchup_of(c.SWARM_THRESHOLD, 50), pair, runs=200, explain=False)
+    above = run(matchup_of(c.SWARM_THRESHOLD + 1, 50), pair, runs=200, explain=False)
+    # Measured at 400 runs: the legion wins 17% against 200 cobras and 96% against 201.
+    for side in (0, 1):
+        assert abs(above.win_prob[side] - below.win_prob[side]) <= 0.10

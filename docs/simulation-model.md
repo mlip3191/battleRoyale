@@ -16,7 +16,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 | Constant | Value | Meaning | Source / status |
 |---|---|---|---|
-| `ENGINE_VERSION` | 9 | Part of the seed; bump whenever results would change. | Bookkeeping |
+| `ENGINE_VERSION` | 10 | Part of the seed; bump whenever results would change. | Bookkeeping |
 | `TICK_S` | 0.1 s | Simulation time step. | Assumption (fine enough for attack rates up to ~10/s; event times only, the attack rate itself is exact) |
 | `MAX_FIGHT_S` | 600 s | A fight this long is a draw. | Design choice (DECISIONS / ARCHITECTURE §9) |
 | `MAX_LOG_EVENTS` | 300 | Cap on the replay log. | `SimulationResult` contract |
