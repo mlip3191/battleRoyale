@@ -5,6 +5,7 @@ purpose and chooses its own mode."""
 import pytest
 
 from app.simulation import engine
+from app.simulation.decide import decide
 from app.simulation.engine import run
 from tests.property.sim_helpers import load_sheet, make_sheet, matchup_of
 
@@ -74,3 +75,44 @@ def test_a_variant_that_would_cross_the_work_budget_stays_in_the_baselines_mode(
     run(matchup_of(150, 1), [small_cat(), elephant()], runs=40, explain=True)
     same_counts = [mode for counts, mode in calls if counts == (150, 1)]
     assert len(same_counts) > 2 and len(set(same_counts)) == 1
+
+
+def eagle():
+    return make_sheet(
+        "eagle", mass_kg=5.0, size_m=0.9, top_speed_mps=30, attack_force_n=300,
+        attacks_per_s=1.0, reach_m=0.3, armor_0_1=0.05, aggression_0_1=1.0,
+    )  # fmt: skip
+
+
+def test_a_variant_far_over_the_work_budget_is_skipped_not_run_one_by_one(monkeypatch):
+    """#341: 50 eagles v 2 elephants is one by one (work about 2,000), but giving the eagles an
+    elephant's mass makes a fight with about 6,000. At the real cutoff the worst real case ran 30 s
+    one by one; here the cutoff is lowered so a stand-in fight shows the same thing."""
+    monkeypatch.setattr(engine.c, "VARIANT_WORK_CUTOFF", 2.0, raising=False)
+    cutoff = 2.0 * engine.c.SWARM_WORK_BUDGET
+    ran = []
+    real = engine._simulate
+
+    def spy(matchup, sh, ks, seed, runs, use_terrain=True, swarm=None):
+        if swarm is False:
+            ran.append(engine.expected_work(engine._central_sides(matchup, sh, ks, use_terrain)))
+        return real(matchup, sh, ks, seed, runs, use_terrain, swarm)
+
+    monkeypatch.setattr(engine, "_simulate", spy)
+    result = run(matchup_of(50, 2), [eagle(), elephant()], runs=40, explain=True)
+    assert len(ran) > 3 and max(ran) <= cutoff  # no one-by-one run is far past the budget
+    assert result.deciding_factor_explainer
+
+
+def test_the_baselines_mode_still_applies_to_every_variant_that_is_run(monkeypatch):
+    monkeypatch.setattr(engine.c, "VARIANT_WORK_CUTOFF", 2.0, raising=False)
+    baseline, variants, numbers = modes_used(monkeypatch, [eagle(), elephant()], 50, 2)
+    assert baseline is False and variants and all(mode is False for mode in variants)
+
+
+def test_nothing_measured_because_every_factor_was_skipped_says_so_without_naming_one():
+    sheets = [eagle(), elephant()]
+    matchup = matchup_of(5, 5)
+    base = engine._simulate(matchup, sheets, (1.0, 1.0), 1, 40, swarm=False)
+    decision = decide(matchup, sheets, base, lambda *args, **kwargs: None)
+    assert decision.explainer == "Not every factor could be tested for a fight this big."

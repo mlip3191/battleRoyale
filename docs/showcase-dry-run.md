@@ -8,15 +8,15 @@ The five showcase battles (PRODUCT_SPEC section 9) run through the engine to fin
 |---|---|---|---|---|---|---|---|---|---|
 | Dragon | 6,000 | 10.9 | 12 | 60,000 | 0.5 | 4.0 | 0.7 | 0.9 | 0.1 |
 
-## Results (1,000 runs each, engine version 11, with the deciding-factor analysis and fair-fight search)
+## Results (1,000 runs each, engine version 12, with the deciding-factor analysis and fair-fight search)
 
 | Battle | Verdict | Sensible? | Time |
 |---|---|---|---|
-| 100 duck-sized horses vs 1 horse-sized duck (open field) | Duck wins 99.8% (about 75 s). A fair fight needs 500 horses | Yes; the explanation credits the scaling (finding 1, fixed) | 2.7 s |
+| 100 duck-sized horses vs 1 horse-sized duck (open field) | Duck wins 100% (about 74 s). A fair fight needs 600 horses | Yes; the explanation credits the scaling (finding 1, fixed) | 2.7 s |
 | Grizzly vs 4 wolves (forest) (battle 2 since #320) | **Wolves 57% / grizzly 43%**, about 29 s, "the wolf came out ahead in spite of its size". The fair fight is 1 grizzly against 4 wolves | Yes: a believable "crowd wears down a tougher fighter" (finding 5) | 0.6 s |
-| Honey badger vs king cobra | Badger wins 94.6%, cobra 5.4%, no draws, about 9 s; the explainer credits its venom resistance. A fair fight needs about 3 cobras | Yes: venom matters now, and the badger mostly shrugs it off (findings 2 and 6) | 0.3 s |
+| Honey badger vs king cobra | Badger wins 94.8%, cobra 5.2%, no draws, about 9 s; the explainer credits its venom resistance. A fair fight needs about 4 cobras | Yes: venom matters now, and the badger mostly shrugs it off (findings 2 and 6) | 0.3 s |
 | Roman legionary vs gorilla (forest) | Gorilla 100% (about 8.5 s), "strength decided it". A fair fight needs 40 legionaries | Yes, but the legionary is weak: its sheet uses a 150 N stab (finding 6) | 0.9 s |
-| A dragon vs a main battle tank (open field) | Tank wins 100% (about 76 s), "size decided it". A fair fight needs about 5 dragons | Possible, but a foregone conclusion (finding 3) | 1.0 s |
+| A dragon vs a main battle tank (open field) | Tank wins 100% (about 78 s), "size decided it". A fair fight needs about 5 dragons | Possible, but a foregone conclusion (finding 3) | 1.0 s |
 
 ## Findings
 

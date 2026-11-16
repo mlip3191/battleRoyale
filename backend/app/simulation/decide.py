@@ -20,7 +20,7 @@ from app.simulation.terrain import modifier
 if TYPE_CHECKING:
     from app.simulation.engine import RunOutcome
 
-Simulate = Callable[..., "list[RunOutcome]"]
+Simulate = Callable[..., "list[RunOutcome] | None"]  # None: variant skipped (#341)
 """simulate(matchup, sheets, use_terrain, runs, scaled=True) -> outcomes.
 
 The seed is fixed by the caller; `scaled=False` drops any size-reference scaling.
@@ -102,6 +102,7 @@ def decide(
     base = base[:n]
     fav = _favorite(base)
     base_won, base_left = _score(base, fav, matchup.fighters[fav].count)
+    skipped: list[str] = []  # factors the caller would not run (#341); never named in the text
     cache: dict[str, tuple[float, float]] = {}  # factor -> (signed effect, size of effect)
 
     def effect(
@@ -117,6 +118,9 @@ def decide(
             # the head counts on purpose); every other variant runs in the baseline's (#301).
             extra = {"own_mode": True} if own_mode else {}
             outcomes = simulate(variant, variant_sheets, terrain, n, scaled, **extra)
+            if outcomes is None:  # too slow to run in the baseline's mode (#341): not measured
+                skipped.append(factor)
+                return 0.0, 0.0
             won, left = _score(outcomes, fav, variant.fighters[fav].count)
             signed = (base_won - won) + c.SURVIVOR_WEIGHT * (base_left - left)
             cache[factor] = (signed, abs(signed))
@@ -153,7 +157,7 @@ def decide(
     # When nothing mattered (or the fight was a stalemate), the factor named below is only a
     # placeholder: the UI and the announcer must rely on the explainer text, not the factor name.
     if not cache:
-        return Decision(StatName.MASS, _explain_even())
+        return Decision(StatName.MASS, _explain_unmeasured() if skipped else _explain_even())
     factor = max(cache, key=lambda k: cache[k][1])
     signed, size = cache[factor]
     stat_names = {s.value for s in StatName}
@@ -223,6 +227,10 @@ def _explain_stalemate() -> str:
 
 def _explain_comfortable(fav_name: str) -> str:
     return f"{fav_name} wins comfortably: no single stat or circumstance was decisive."
+
+
+def _explain_unmeasured() -> str:
+    return "Not every factor could be tested for a fight this big."
 
 
 def _explain_even() -> str:

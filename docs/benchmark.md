@@ -50,6 +50,8 @@ The product target is at least 80% favorite-correct on the obvious cases in the 
 - **The set is small.** With 5 obvious cases held out, one miss moves that score by 20 points.
 - **No swarm or edge-case coverage.** No matchup puts more than 4 fighters on a side apart from the count-case ranges, so the set cannot judge swarm mode or `SWARM_THRESHOLD`. It also has no mirror matches, no draws, no ranged fighters, and never uses the water, urban or mountain terrain. Ten seed fighters (chimpanzee, great white shark, army ant, honey bee, T. rex, triceratops, medieval knight, samurai, pickup truck, saguaro cactus) are not used. A second set for these is a follow-up.
 
-## Engine version 11 (#301)
+## Engine version 12 (#341) and 11 (#301)
 
 The benchmark scores the favorite and the fair count, never the deciding factor. The #301 change (every deciding-factor variant runs in the baseline's swarm mode) moved 1 deciding factor in 261 seed fights and no win share. The seed baseline re-run at version 11 (`--live --sheets seed`, run of 2026-11-15) has the same tuning result as the version before (15/16, cnt-05 is the known limit in D-58) and no verdict changed because of it.
+
+Version 12 (#341) only skips a deciding-factor variant that is far over the work budget, so it changes no win share. The seed baseline re-run at version 12 (`--live --sheets seed`, run of 2026-11-16) has the same headline as version 11: tuning 15/16 (cnt-05 is the known limit in D-58) and held-out 8/9.
