@@ -16,6 +16,7 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.db.connection import connect
+from app.models.matchup import Matchup
 from app.models.simulation import ChallengerSuggestion, SimulationResult
 from app.models.stats import StatSheet
 from app.models.terrain import Terrain
@@ -172,9 +173,16 @@ async def suggest(
     result: SimulationResult,
     terrain: Terrain,
     llm: StructuredLLM | None = None,
+    matchup: Matchup | None = None,
+    reference_sheets: list[StatSheet | None] | None = None,
 ) -> tuple[ChallengerSuggestion | None, bool]:
+    """The next challenger. With `matchup` (and the size-reference sheets), the winner duels the
+    candidates as the user saw it: "6 gray wolves" as six, "a horse-sized duck" at that size (#223).
+    Without them the winner is one plain fighter, as before."""
     side = winner_side(result, sheets)
     winner, defeated = sheets[side], sheets[1 - side]
+    winner_request = matchup.fighters[side] if matchup is not None else None
+    winner_reference = reference_sheets[side] if reference_sheets is not None else None
     candidates = await asyncio.to_thread(load_candidates, {s.fighter_id for s in sheets})
     if not candidates.all:
         return None, True
@@ -187,11 +195,15 @@ async def suggest(
     fallback = not picks
     if fallback:
         picks = candidates.seed[:SHORTLIST]
-    tested = await asyncio.to_thread(fair.test_challengers, winner, picks, terrain)
+    tested = await asyncio.to_thread(
+        fair.test_challengers, winner, picks, terrain, winner_request, winner_reference
+    )
     if not tested and not fallback:  # every model pick failed the tests: try the seed once
         fallback = True
         tried = {s.fighter_id for s in picks}
         picks = [s for s in candidates.seed[:SHORTLIST] if s.fighter_id not in tried]
         if picks:
-            tested = await asyncio.to_thread(fair.test_challengers, winner, picks, terrain)
+            tested = await asyncio.to_thread(
+                fair.test_challengers, winner, picks, terrain, winner_request, winner_reference
+            )
     return (tested[0], fallback) if tested else (None, True)
