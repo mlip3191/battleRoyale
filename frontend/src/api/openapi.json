@@ -760,7 +760,7 @@
           },
           "group_size": {
             "default": 1,
-            "description": "How many fighters acted together (more than 1 for swarm events).",
+            "description": "How many fighters a group event (`actor` None) covers, which can be 1; otherwise 1.",
             "title": "Group Size",
             "type": "integer"
           },
