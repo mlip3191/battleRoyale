@@ -8,7 +8,9 @@ typed as "the" + its name, or as its bare name when that is not a common word ("
 "Lakers" block; "Eagles" and "Bulls" do not: "eagle" and "bull" are animals). ALL CAPS counts
 as matching capitals ("THE BEATLES"). A group that lost the pick to a kind item is remembered
 too, so "the Police" still blocks (the item "police" wins the pick) and "Metallica" blocks (a
-moth genus is not a common word).
+moth genus is not a common word). "the" + a proper name also searches "the " + the name at the
+same time (#316), so a band labelled "The Who" blocks "the Who" even though the search for "who"
+never reaches it.
 A common noun ("a wolverine": an article or count, no capitals) is judged by its first kind item
 when one matched (the animal, not the comic-book character ranked above it). So is a bare name
 typed all in lowercase ("moose", "shredder") whose top pick is a person or a character, under the
@@ -25,7 +27,7 @@ import re
 import sqlite3
 import threading
 from collections.abc import Callable, Collection, Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Protocol
@@ -103,7 +105,8 @@ class NameCheck:
     so (D-51, #186). Whether the kind item matched by label or only by alias is read from
     kind_label at check time, so cached rows need no extra field. lost_group is the name of a
     group that lost the pick to a kind item ("The Police" for the item "police"); common then
-    says whether a real kind (see is_common_kind) shares the name."""
+    says whether a real kind (see is_common_kind) shares the name. It is also a group labelled
+    "The <query>" found only by a "the" search ("The Who", #316), with common always True."""
 
     qid: str | None
     label: str | None
@@ -421,20 +424,75 @@ async def class_reason(
     return reason
 
 
+# True when a typed name starts with the word "the" (any casing): "the Who", "THE WHO".
+def starts_with_the(name: str) -> bool:
+    return re.match(r"the\b", name.strip(), flags=re.IGNORECASE) is not None
+
+
+# The search text for a "the" lookup (#316): "the " + the query. Also its cache key; no plain
+# query starts with "the ", since lookup_query always strips a leading article.
+def the_query(query: str) -> str:
+    return f"the {query}"
+
+
+# The results labelled "The <query>" (ignoring case) among the first PICK_LIMIT results of the
+# "the" search: the band "The Who" for "the who" (#316).
+def _the_labelled(query: str, results: Sequence[Candidate]) -> list[Candidate]:
+    wanted = the_query(query).casefold()
+    return [c for c in results[:PICK_LIMIT] if _plain(c.label.casefold()) == wanted]
+
+
+# No search results (stands in for a "the" search that isn't needed).
+async def _no_results() -> list[Candidate]:
+    return []
+
+
 # Ask Wikidata about one query: the top exact match among the first PICK_LIMIT results and its
 # reason; for a group, the name it matched and whether that is a common word; for a group that
 # lost the pick to a kind item, its name and whether a common-word kind item shares it; and, when
 # the pick is not a kind of thing, the first kind item among all SEARCH_LIMIT results and its
-# reason.
-async def resolve(query: str, lookup: WikidataLookup, class_map: ClassMap) -> NameCheck:
-    results = await lookup.search(query)
-    matches = await _exact_with_classes(query, results, lookup, SEARCH_LIMIT)
+# reason. With the_form (the user typed "the" + a proper name, #316), "the " + query is searched
+# at the same time; when nothing else records a group, a band or team among its top PICK_LIMIT
+# results labelled "The <query>" is kept as lost_group with common set, so only "the" + its name
+# blocks: the search for "who" never reaches the band "The Who", the one for "the who" does.
+async def resolve(
+    query: str, lookup: WikidataLookup, class_map: ClassMap, *, the_form: bool = False
+) -> NameCheck:
+    return (await resolve_both(query, lookup, class_map, the_form=the_form))[1]
+
+
+# resolve's answer without and with the "the" search: (plain, full). They differ only when the
+# "the" search found a group that nothing else recorded; without the_form they are the same.
+async def resolve_both(
+    query: str, lookup: WikidataLookup, class_map: ClassMap, *, the_form: bool = False
+) -> tuple[NameCheck, NameCheck]:
+    plain, the_group = await _resolve_plain(query, lookup, class_map, the_form=the_form)
+    if the_group is None or plain.group or plain.lost_group is not None:
+        return plain, plain
+    return plain, replace(plain, common=True, lost_group=the_group)  # only "the" + its name
+
+
+# The plain answer for a query, plus the name of the first group labelled "The <query>" in the
+# "the" search (None without the_form, or when there is none). Both searches run together and
+# share one class read.
+async def _resolve_plain(
+    query: str, lookup: WikidataLookup, class_map: ClassMap, *, the_form: bool
+) -> tuple[NameCheck, str | None]:
+    results, the_results = await asyncio.gather(
+        lookup.search(query), lookup.search(the_query(query)) if the_form else _no_results()
+    )
+    exact = exact_matches(query, results[:SEARCH_LIMIT])
+    labelled = _the_labelled(query, the_results)
+    qids = list(dict.fromkeys(c.qid for c in [*exact, *labelled]))
+    found = await _classes_of(lookup, qids) if qids else {}
+    matches = [(m, found[m.qid]) for m in exact]
+    the_group = next((c.label for c in labelled if class_map.is_group(found[c.qid])), None)
     head = results[:PICK_LIMIT]
     head_matches = [(m, own) for m, own in matches if m in head]
     picked = top_exact_match(query, head_matches, class_map)
     kind = None if picked and class_map.is_kind(picked[1]) else first_kind_match(matches, class_map)
     if picked is None and kind is None:
-        return NameCheck(None, None, None)
+        return NameCheck(None, None, None), the_group
     reason, kind_reason = await asyncio.gather(
         class_reason(picked[1], lookup, class_map) if picked else _no_reason(),
         class_reason(kind[1], lookup, class_map) if kind else _no_reason(),
@@ -447,7 +505,7 @@ async def resolve(query: str, lookup: WikidataLookup, class_map: ClassMap) -> Na
     lost = None if group else lost_group(query, head_matches, class_map)
     if lost is not None:
         common = any(class_map.is_common_kind(own) for _, own in _usable(head_matches, class_map))
-    return NameCheck(
+    check = NameCheck(
         picked[0].qid if picked else None,
         label,
         reason,
@@ -458,6 +516,7 @@ async def resolve(query: str, lookup: WikidataLookup, class_map: ClassMap) -> Na
         kind_reason,
         lost,
     )
+    return check, the_group
 
 
 # No reason (stands in for a class walk that isn't needed).
@@ -483,7 +542,10 @@ class WikidataCache:
 
     The grouped, grouped_common and grouped_lost_label columns (migration 004) hold
     NameCheck.group, .common and .lost_group, for bands and sports teams alike; the kind_*
-    columns (migration 005) hold the kind item.
+    columns (migration 005) hold the kind item. A "the" lookup (#316: "the Who", which also
+    searches "the who") is stored under the_query(query) with everything both searches found, so
+    a cache hit gives the same answer; its plain answer (the "who" search alone) is stored under
+    the query too, so a "the" row never answers a plain lookup ("Who").
 
     The cache fails open like Wikidata itself: a database or file-system error on read is a miss
     and on write is skipped, each with a warning, so a cache problem never crashes the safety check.
@@ -537,7 +599,7 @@ class WikidataCache:
             return None
         if row is None or row["classes_version"] != classes_version:
             return None
-        matched = row["qid"] or row["kind_qid"]
+        matched = row["qid"] or row["kind_qid"] or row["grouped_lost_label"]
         if not self._fresh(row["checked_at"], MATCH_TTL if matched else NO_MATCH_TTL):
             return None
         return NameCheck(
@@ -688,20 +750,32 @@ def get_lookup() -> WikidataLookup:
 # --- The layer -------------------------------------------------------------------------------
 
 
-# One name's check from the cache or Wikidata; None means no verdict (Wikidata failed).
+# One name's check from the cache or Wikidata; None means no verdict (Wikidata failed). A "the"
+# lookup (the_form, #316) is read from its own cache key, the_query(query), and stores both
+# answers: the full one there and the plain one under the query, so a later "Who" is a hit too.
 async def _check_one(
-    query: str, lookup: WikidataLookup, cache: WikidataCache, class_map: ClassMap
+    query: str,
+    lookup: WikidataLookup,
+    cache: WikidataCache,
+    class_map: ClassMap,
+    *,
+    the_form: bool = False,
 ) -> NameCheck | None:
-    cached = await cache.get(query, class_map.version)
+    key = the_query(query) if the_form else query
+    cached = await cache.get(key, class_map.version)
     if cached is not None:
         return cached
     try:
-        check = await asyncio.wait_for(resolve(query, lookup, class_map), TIMEOUT_S)
+        plain, check = await asyncio.wait_for(
+            resolve_both(query, lookup, class_map, the_form=the_form), TIMEOUT_S
+        )
     except (WikidataUnavailable, TimeoutError) as error:
         detail = f"{type(error).__name__}: {error}" if str(error) else type(error).__name__
         logger.warning("Wikidata check skipped (%s); other safety layers still apply.", detail)
         return None
-    await cache.put(query, check, class_map.version)
+    await cache.put(key, check, class_map.version)
+    if the_form:
+        await cache.put(query, plain, class_map.version)
     return check
 
 
@@ -733,7 +807,8 @@ def kind_beats_name(query: str, check: NameCheck) -> bool:
 # "the Eagles", "Beatles", "the Lakers" and "Lakers" count; "Eagles", "eagles" and "Bulls" do not.
 # A group that lost the pick to a kind item still blocks a name that names it, checked first:
 # "the Police", "Metallica" (its rival is a bare moth genus, not a common word); not "the Grizzly
-# Bear".
+# Bear". A name typed as "the" + a proper name also searches "the " + its query (#316), so "the
+# Who", "the Cure" and "the Animals" block; "Who", "WHO", "the who" and "the animals" do not.
 async def check_names(
     names: Sequence[str],
     *,
@@ -745,6 +820,7 @@ async def check_names(
     proper_by_query: dict[str, bool] = {}
     typed_by_query: dict[str, list[str]] = {}
     lowercase_by_query: dict[str, bool] = {}
+    the_by_query: dict[str, bool] = {}
     for name in names:
         query, proper = lookup_query(name)
         if query:
@@ -752,13 +828,18 @@ async def check_names(
             typed_by_query.setdefault(query, []).append(name)
             lowercase = not _has_capital(name) and name not in model_written
             lowercase_by_query[query] = lowercase_by_query.get(query, True) and lowercase
+            the_form = proper and starts_with_the(name)
+            the_by_query[query] = the_by_query.get(query, False) or the_form
     if not proper_by_query:
         return ALLOWED
     lookup = lookup or get_lookup()
     cache = cache or WikidataCache()
     class_map = class_map or load_class_map()
     checks = await asyncio.gather(
-        *(_check_one(q, lookup, cache, class_map) for q in proper_by_query)
+        *(
+            _check_one(q, lookup, cache, class_map, the_form=the_by_query[q])
+            for q in proper_by_query
+        )
     )
     for (query, proper), check in zip(proper_by_query.items(), checks, strict=True):
         if check is None:
