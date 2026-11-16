@@ -1,14 +1,16 @@
 """G09 (#39): battles use mythical creatures, from the file or modeled from their article."""
 
 import asyncio
+import json
 
 import httpx
 import pytest
 
 from app.db.connection import connect
+from app.db.migrate import apply_migrations
 from app.models.matchup import FighterRequest, Matchup
 from app.models.stats import StatName
-from app.pipeline import stages
+from app.pipeline import challenger, stages
 from app.pipeline.stages import StageFailed
 from app.providers.live.http import ProviderError
 from app.providers.registry import get_provider
@@ -156,3 +158,75 @@ async def test_mock_mode_never_goes_online_for_an_unknown_name() -> None:
     with pytest.raises(StageFailed) as failure:
         await stages.lookup_fighter(FighterRequest(entity="okapi", raw="an okapi"))
     assert str(failure.value) == stages.NOT_FOUND.format(name="okapi")
+
+
+# A legend sheet saved under `fighter_id`, as resolve_legend would save one.
+def save_legend(fighter_id: str, display_name: str) -> None:
+    dragon = sheet_store.build_mythical_sheet(sheet_store.find_creature("dragon"))
+    legend = dragon.model_copy(update={"fighter_id": fighter_id, "display_name": display_name})
+    connection = connect()
+    try:
+        apply_migrations(connection)
+        sheet_store.save_sheet(connection, legend)
+    finally:
+        connection.close()
+
+
+async def test_a_seed_fighter_whose_build_failed_is_never_modeled_as_a_legend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def no_sheet(*_: object) -> None:
+        return None
+
+    async def must_not_run(*_: object) -> None:
+        raise AssertionError("a seed-list fighter reached resolve_legend")
+
+    monkeypatch.setattr(stages, "lookup_sheet", no_sheet)
+    monkeypatch.setattr(stages, "resolve_legend", must_not_run)
+    with pytest.raises(StageFailed) as failure:
+        await stages.lookup_fighter(FighterRequest(entity="pickup truck", raw="a pickup truck"))
+    assert str(failure.value) == stages.NOT_FOUND.format(name="pickup truck")
+
+
+def test_a_cached_legend_never_replaces_a_seed_fighters_sheet() -> None:
+    save_legend("pickup-truck", "Pickup truck")  # e.g. cached before it joined the seed list
+    connection = connect()
+    try:
+        providers = (get_provider("chat"), get_provider("embedder"), get_provider("reranker"))
+        sheet = asyncio.run(sheet_store.resolve_stat_sheet(connection, providers, "pickup truck"))
+    finally:
+        connection.close()
+    assert sheet is not None and sheet.category == "vehicle"
+
+
+def test_cached_legends_are_not_offered_as_challengers_or_listed_in_search() -> None:
+    save_legend("chimera", "Chimera")
+    assert all(s.fighter_id != "chimera" for s in challenger.cached_sheets())
+    connection = connect()
+    try:
+        assert sheet_store.search_fighters(connection, "chimera") == []
+    finally:
+        connection.close()
+
+
+class CountingChat:
+    """Answers every call (slowly, so lookups overlap) and counts the calls."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def complete(self, messages, *, prompt_name, json_schema=None) -> str:
+        self.calls += 1
+        await asyncio.sleep(0.05)
+        return json.dumps(answer())
+
+
+async def test_two_lookups_of_one_new_legend_model_it_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    chat = CountingChat()
+    go_live(monkeypatch, chat)
+    first, second = await asyncio.gather(
+        stages.lookup_fighter(CHIMERA), stages.lookup_fighter(CHIMERA)
+    )
+    assert first == second and chat.calls == 1

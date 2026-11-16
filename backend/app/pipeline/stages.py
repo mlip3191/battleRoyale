@@ -27,6 +27,7 @@ from app.narration.facts import build_facts
 from app.narration.templates import template_scripts
 from app.pipeline import challenger as next_challenger
 from app.providers.registry import get_provider
+from app.research.seed_fighters import find_seed_fighter
 from app.research.sheet_store import resolve_legend, resolve_stat_sheet
 from app.simulation import engine, fair
 from app.simulation.rng import make_seed
@@ -118,13 +119,15 @@ async def lookup_sheet(
         connection.close()
 
 
-# A fighter's sheet: lookup_sheet first, then a legend modeled from its article (G09).
-# Raises StageFailed with the reason when neither gives one.
+# A fighter's sheet: lookup_sheet first, then, for a name off the seed list only, a legend
+# modeled from its article (G09). Raises StageFailed with the reason when neither gives one.
 async def lookup_fighter(fighter: FighterRequest) -> StatSheet:
     sheet = await lookup_sheet(fighter.entity, fighter.variant, fighter.raw)
     if sheet is not None:
         return sheet
     name = _typed_name(fighter.entity, fighter.variant)
+    if find_seed_fighter(fighter.entity, fighter.variant, fighter.raw) is not None:
+        raise StageFailed(NOT_FOUND.format(name=name))  # a seed fighter's build failed
     connection = connect()
     try:
         apply_migrations(connection)

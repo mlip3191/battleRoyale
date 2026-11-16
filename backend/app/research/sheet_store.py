@@ -44,6 +44,8 @@ EXTRACTION_BUDGET_S = 30.0
 # Fetching a legend's article and asking the model get this long, also inside research's budget.
 LEGEND_BUDGET_S = 30.0
 ARTICLE_TIMEOUT_S = 10.0
+# One lock per legend name, so two lookups of the same new legend model it once.
+_LEGEND_LOCKS: dict[str, asyncio.Lock] = {}
 SEARCH_LIMIT = 20
 
 
@@ -95,7 +97,7 @@ async def resolve_stat_sheet(
     if fighter is None or fighter.category == "mythical":
         return None
     cached = cached_sheet(connection, fighter.id)
-    if cached is not None:
+    if cached is not None and cached.category != "mythical":  # never a legend for a seed fighter
         return cached
     profile = profile_from_seed(fighter)
     try:
@@ -134,7 +136,8 @@ def search_fighters(
     names = {f.id: f.display_name for f in load_seed_fighters() if f.category != "mythical"}
     for fighter_id in sorted(cached - names.keys()):
         sheet = cached_sheet(connection, fighter_id)
-        if sheet is not None:
+        # Legends modeled on demand had no safety check of their own, so they aren't listed.
+        if sheet is not None and sheet.category != "mythical":
             names[fighter_id] = sheet.display_name
     matches = [
         FighterMatch(fighter_id=i, display_name=n, cached=i in cached or i in seeded)
@@ -155,6 +158,14 @@ def legend_client() -> httpx.AsyncClient | None:
 # and saved. Otherwise the LoreOutcome says why (blocked, or a service is down), or None in
 # mock mode, where no article can be fetched.
 async def resolve_legend(
+    connection: sqlite3.Connection, chat: ChatLLM, name: str
+) -> StatSheet | LoreOutcome | None:
+    async with _LEGEND_LOCKS.setdefault(fighter_slug(name), asyncio.Lock()):
+        return await _resolve_legend(connection, chat, name)
+
+
+# resolve_legend's work, run while holding that name's lock.
+async def _resolve_legend(
     connection: sqlite3.Connection, chat: ChatLLM, name: str
 ) -> StatSheet | LoreOutcome | None:
     cached = cached_sheet(connection, fighter_slug(name))

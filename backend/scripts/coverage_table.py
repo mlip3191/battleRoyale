@@ -27,7 +27,7 @@ from app.research.seed_fighters import (  # noqa: E402
     find_seed_sheet,
     load_seed_fighters,
 )
-from app.research.sheet_store import legend_client  # noqa: E402
+from app.research.sheet_store import LEGEND_BUDGET_S, legend_client  # noqa: E402
 from app.research.statsheet import profile_from_seed  # noqa: E402
 
 DEFAULT_FIGHTERS = ("toaster", "bulldozer")
@@ -73,11 +73,18 @@ async def legend_sheet(name: str) -> tuple[StatSheet | None, str]:
     client = legend_client()
     if client is None:
         return None, "not a seed fighter or a creature in the file; legends need live mode"
-    async with client:
-        outcome = await lore_for(name, client, get_provider("chat"))
+    try:
+        async with client:
+            lore = lore_for(name, client, get_provider("chat"))
+            outcome = await asyncio.wait_for(lore, LEGEND_BUDGET_S)
+    except TimeoutError:
+        return None, f"ran past the {LEGEND_BUDGET_S:.0f} s legend limit"
     if outcome.creature is None:
         return None, "blocked as nonsense" if outcome.blocked else "a service was unavailable"
-    return build_mythical_sheet(outcome.creature), "modeled as a legend from its article"
+    try:
+        return build_mythical_sheet(outcome.creature), "modeled as a legend from its article"
+    except ValueError as error:
+        return None, f"its sheet could not be built ({error})"
 
 
 # Print one sheet's table, the count per label, and a legend's analogs and quote.

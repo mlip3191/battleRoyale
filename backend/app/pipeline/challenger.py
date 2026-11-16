@@ -91,7 +91,9 @@ def cached_sheets(limit: int = MAX_CACHED, db_path: Path | None = None) -> list[
     except Exception as error:
         logger.warning("challenger: could not read cached sheets (%s)", type(error).__name__)
         return []
-    return [sheet for row in rows if (sheet := _parse_sheet(row["sheet_json"])) is not None]
+    sheets = [sheet for row in rows if (sheet := _parse_sheet(row["sheet_json"])) is not None]
+    # Legends modeled on demand had no safety check of their own, so they're never offered.
+    return [sheet for sheet in sheets if sheet.category != "mythical"]
 
 
 # One saved sheet, or None if it no longer matches the contract.
