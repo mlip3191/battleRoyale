@@ -362,6 +362,8 @@ def test_the_venom_cap_leaves_small_venomous_fights_and_other_crowds_alone():
 
     cobra, legion, wolf_sheet = _seed("king-cobra"), _seed("roman-legionary"), wolf()
     assert not too_big_for_venom(matchup_of(1, 1), [cobra, _seed("grizzly-bear")])
+    # The showcase battle (honey badger v king cobra, 1 v 1, work about 25) is never refused.
+    assert not too_big_for_venom(matchup_of(1, 1), [_seed("honey-badger"), cobra])
     assert not too_big_for_venom(matchup_of(10, 10), [cobra, legion])  # work well under the cap
     assert not too_big_for_venom(matchup_of(200, 50), [wolf_sheet, legion])  # no venom: work rule
     assert too_big_for_venom(matchup_of(50, 50), [cobra, legion])  # venom on the left
