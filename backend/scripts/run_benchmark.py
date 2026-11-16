@@ -25,6 +25,7 @@ from app.db.connection import connect  # noqa: E402
 from app.db.migrate import apply_migrations  # noqa: E402
 from app.providers.registry import ProviderConfigError, get_provider  # noqa: E402
 from app.research.benchmark_sheets import research_sheets  # noqa: E402
+from app.research.trace import trace_stored_battles, traceable_share  # noqa: E402
 from app.simulation import benchmark as bm  # noqa: E402
 
 
@@ -46,6 +47,29 @@ def build_research_sheets(entries: list[bm.Entry]) -> bm.SheetSource:
         return asyncio.run(research_sheets(entries, connection, providers))
     finally:
         connection.close()
+
+
+def add_traceability(report: bm.RunReport, mock: bool) -> None:
+    """Fill the traceability column from G06's check of every stored battle (trace_report.py)."""
+    if mock:
+        report.notes.append(
+            "Traceability (G06) isn't checked in mock mode; it needs stored battles."
+        )
+        return
+    connection = connect()
+    try:
+        apply_migrations(connection)
+        traced = trace_stored_battles(connection)
+    finally:
+        connection.close()
+    report.traceability = traceable_share(traced)
+    clean = sum(t.ok for t in traced)
+    report.notes.append(
+        f"Traceability (G06): {clean} of {len(traced)} stored battles pass "
+        "`scripts/trace_report.py`; run it to see any issues."
+        if traced
+        else "Traceability (G06): no finished battles stored yet, so it shows n/a."
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -83,6 +107,7 @@ def main(argv: list[str] | None = None) -> int:
             label = args.sheets
             runs, output = args.runs or get_settings().sim_runs, args.output or bm.RESULTS_FILE
         report = bm.run_benchmark(sheets, label, tuning, held, runs, args.tuning_only)
+        add_traceability(report, args.mock)
     except bm.BenchmarkError as error:
         print(f"Cannot run the benchmark: {error}", file=sys.stderr)
         return 2
