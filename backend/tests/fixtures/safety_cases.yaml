@@ -721,6 +721,13 @@ cases:
     kind: fight_wording
     mock:
       sides: [["a bear", "bear"], ["a shark", "shark"]]
+  # #344: an ask phrase before a comma is not a "me" fighter.
+  - id: fw-06
+    text: "help me, a lion vs a goose"
+    expect: allowed
+    kind: fight_wording
+    mock:
+      sides: [["a lion", "lion"], ["a goose", "goose"]]
 
   # --- Bare names (no article or count), D-51 (#186) ------------------------------------------
   # A bare name typed all in lowercase is judged by its kind item when the top pick is a person

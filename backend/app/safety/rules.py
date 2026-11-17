@@ -51,6 +51,8 @@ class Blocklist:
     subject_modals: frozenset[str] = frozenset()
     subject_after: frozenset[str] = frozenset()
     not_fighters: frozenset[str] = frozenset()
+    ask_opener: re.Pattern[str] = re.compile(r"(?!)")
+    """An ask phrase and its comma at the start of the text, see strip_ask_opener (#344)."""
 
 
 # Phrases as one regex alternative, longest first, each as whole words.
@@ -107,6 +109,10 @@ def load_blocklist() -> Blocklist:
         subject_modals=words("attack_planning", "subject_modals"),
         subject_after=words("attack_planning", "subject_after"),
         not_fighters=_not_fighters(words),
+        ask_opener=re.compile(
+            rf"^\s*(?:please\s+)?(?:{_alternatives(words('real_person', 'ask_openers'))})\s*,\s*",
+            re.IGNORECASE,
+        ),
     )
 
 
@@ -128,6 +134,13 @@ def _clean(text: str) -> str:
     text = text.lower().replace("-", " ").translate(APOSTROPHES)
     words = " ".join(re.sub(r"[^a-z0-9' ]+", " ", text).split())
     return re.sub(r"\bmy self\b", "myself", words)
+
+
+# The text without an ask phrase and its comma at the start: "help me, a lion vs a goose" -> "a
+# lion vs a goose" (#344). Without the comma it is left alone, so "help me vs a goose" still
+# reads "me" as a fighter, and "help me, me vs a goose" still has its "me" side.
+def strip_ask_opener(text: str, lists: Blocklist) -> str:
+    return lists.ask_opener.sub("", text, count=1)
 
 
 # The text's sides, each cut before its place phrase: "a toddler vs a goose in a pond" -> 2.
@@ -241,7 +254,7 @@ def check_text_rules(text: str) -> SafetyVerdict:
         return blocked("minor", "rules")
     if _names_someone_known(text, lists):
         return blocked("real_person", "rules")
-    for words in sides(text):
+    for words in sides(strip_ask_opener(text, lists)):
         verdict = _check_side(words, lists)
         if not verdict.allowed:
             return verdict

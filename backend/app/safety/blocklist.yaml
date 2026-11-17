@@ -546,6 +546,21 @@ real_person:
     - i
     - us
     - ourselves
+  # An ask phrase that opens the request before a comma ("help me, a lion vs a goose") is not a
+  # fighter: the comma would otherwise make "help me" a side that ends in a self word (#344).
+  # It is cut off only at the very start and only when a comma follows, so "help me vs a goose"
+  # and "help me, me vs a goose" still block.
+  ask_openers:
+    - help me
+    - help us
+    - tell me
+    - tell us
+    - show me
+    - show us
+    - give me
+    - give us
+    - teach me
+    - teach us
   owners:
     - my
     - our
