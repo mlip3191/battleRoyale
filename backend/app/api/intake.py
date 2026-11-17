@@ -12,7 +12,7 @@ from app.db.connection import connect
 from app.db.intake_pending import PendingQuestion, restore_pending, save_pending, take_pending
 from app.db.migrate import apply_migrations
 from app.intake.answer import resolve_answer
-from app.intake.parser import IntakeUnavailable, parse_matchup
+from app.intake.parser import LONG_TEXT_CHARS, IntakeUnavailable, parse_matchup, too_long
 from app.models.matchup import IntakeResult
 from app.providers.base import ChatLLM
 from app.providers.registry import get_intake_chat
@@ -70,7 +70,12 @@ async def within_deadline[T](step: Awaitable[T]) -> T:
 # Read the user's text; when a question is needed, save it and hand back its pending_id.
 @router.post("")
 async def start_intake(body: IntakeRequest, db: Db, chat: Chat) -> IntakeResult:
-    result = await within_deadline(parse_matchup(body.text, chat=chat))
+    try:
+        result = await within_deadline(parse_matchup(body.text, chat=chat))
+    except HTTPException:
+        if len(body.text.strip()) > LONG_TEXT_CHARS:
+            return too_long()  # the same long text would fail again: ask for less (#362)
+        raise
     if result.status != "clarify" or not result.question:
         return result
     pending = PendingQuestion(body.text.strip(), result.question, result.options)

@@ -26,7 +26,14 @@ from app.db.intake_pending import (
 )
 from app.db.migrate import apply_migrations
 from app.intake.answer import START_OVER, merge_answer
-from app.intake.parser import COMMON_KIND_NOTE, INPUT_END, INPUT_START, parse_matchup
+from app.intake.parser import (
+    COMMON_KIND_NOTE,
+    INPUT_END,
+    INPUT_START,
+    LONG_TEXT_CHARS,
+    LONG_TEXT_QUESTION,
+    parse_matchup,
+)
 from app.main import create_app
 from app.providers.base import ChatMessage
 from app.providers.live.chat import LiveChatLLM
@@ -414,6 +421,41 @@ def test_a_slow_model_hits_the_deadline_on_both_routes(
     assert first.status_code == 503 and first.json()["detail"] == UNAVAILABLE_MESSAGE
     answer = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "grizzly bear"})
     assert answer.status_code == 503 and pending_rows(db_path) == 1  # the question is kept
+
+
+# About 490 characters: under the 500 limit, so the model is asked to read it (#362).
+LONG_MATCHUP = "a " + "very " * 94 + "big bear vs a wolf"
+
+
+@pytest.mark.parametrize("trouble", ["outage", "slow"])
+def test_a_long_matchup_that_fails_asks_for_a_shorter_one_not_a_retry(
+    client: TestClient,
+    db_path: Path,
+    chat: ScriptedChat,
+    monkeypatch: pytest.MonkeyPatch,
+    trouble: str,
+) -> None:
+    assert LONG_TEXT_CHARS < len(LONG_MATCHUP) < 500
+    if trouble == "outage":
+        chat.down = True
+    else:
+        monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", 0.05)
+        chat.delay = 1.0
+    response = client.post("/api/intake", json={"text": LONG_MATCHUP})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "clarify" and body["question"] == LONG_TEXT_QUESTION
+    assert body["pending_id"] is None and pending_rows(db_path) == 0
+
+
+def test_a_short_matchup_that_fails_still_says_try_again(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    chat.down = True
+    text = "a grizzly bear vs a gray wolf in a forest " * 4  # just under LONG_TEXT_CHARS
+    assert len(text.strip()) <= LONG_TEXT_CHARS
+    response = client.post("/api/intake", json={"text": text})
+    assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
 
 
 def test_a_restored_question_keeps_its_id_and_age(db_path: Path) -> None:
