@@ -175,5 +175,13 @@ def trace_stored_battles(connection: sqlite3.Connection) -> list[TraceReport]:
 
 
 # The share of battles with no issues (the benchmark's traceability column); None with no battles.
-def traceable_share(reports: list[TraceReport]) -> float | None:
-    return sum(r.ok for r in reports) / len(reports) if reports else None
+# With require_quotes (#370), a battle counts only if every extracted quote was also checked.
+def traceable_share(reports: list[TraceReport], require_quotes: bool = False) -> float | None:
+    if not reports:
+        return None
+    return sum(traceable(r, require_quotes) for r in reports) / len(reports)
+
+
+# A battle with no issues, and in strict mode also no quote left unchecked (#370).
+def traceable(report: TraceReport, require_quotes: bool = False) -> bool:
+    return report.ok and not (require_quotes and report.quotes_unchecked)

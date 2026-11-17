@@ -94,3 +94,80 @@ def test_only_count_cases_have_a_fair_range() -> None:
             assert fair is not None and 1 <= fair[0] <= fair[1], entry["id"]
         else:
             assert fair is None, entry["id"]
+
+
+# --- The edge-case set (#136): the same entry shape, reported separately ------------------------
+
+EDGE = load("edge.yaml")
+EDGE_GROUPS = {"swarm", "showcase", "mirror", "draw", "terrain"}
+MYTHICAL = {
+    c["id"]
+    for c in yaml.safe_load((ROOT / "data" / "seed" / "mythical.yaml").read_text(encoding="utf-8"))[
+        "creatures"
+    ]
+}
+SWARM_LINE = 200  # SWARM_THRESHOLD's head count; pairs sit on both sides of it
+
+
+def test_edge_set_has_10_to_15_entries_in_every_group() -> None:
+    assert 10 <= len(EDGE) <= 15
+    assert {e["group"] for e in EDGE} == EDGE_GROUPS
+
+
+def test_edge_ids_are_unique_and_separate_from_the_main_set() -> None:
+    ids = [e["id"] for e in EDGE]
+    assert len(ids) == len(set(ids)) and all(i.startswith("edge-") for i in ids)
+    assert not set(ids) & {e["id"] for e in ALL}
+
+
+def test_edge_entries_are_complete_and_labeled_assumptions() -> None:
+    for entry in EDGE:
+        assert len(entry["fighters"]) == 2, entry["id"]
+        for fighter in entry["fighters"]:
+            count = fighter["count"]
+            assert isinstance(count, int) and 1 <= count <= 10_000, entry["id"]
+            assert fighter["variant"] is None, entry["id"]  # default variant: plain slug
+            assert set(fighter) <= {"entity", "count", "variant", "size_reference"}, entry["id"]
+        assert entry["terrain"] in set(Terrain), entry["id"]
+        assert entry["expected_winner"] in {"0", "1", "draw"}, entry["id"]
+        assert entry["confidence"] in {"high", "medium"}, entry["id"]
+        assert entry["source"].startswith("assumption: "), entry["id"]
+
+
+def test_edge_fighters_are_seed_fighters_or_file_creatures_with_plain_ids() -> None:
+    seed = set(SLUG_ROW.findall((ROOT / "docs" / "research.md").read_text(encoding="utf-8")))
+    for entry in EDGE:
+        for name in fighters_of(entry):
+            assert re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", name), entry["id"]
+            assert name in seed or name in MYTHICAL, entry["id"]
+        for fighter in entry["fighters"]:
+            ref = fighter.get("size_reference")
+            assert ref is None or ref in seed, entry["id"]
+
+
+def test_at_least_two_matchups_sit_on_both_sides_of_200() -> None:
+    pairs: dict[tuple[str, ...], set[bool]] = {}
+    for entry in EDGE:
+        if entry["group"] == "swarm":
+            key = tuple(sorted(fighters_of(entry)))
+            most = max(f["count"] for f in entry["fighters"])
+            pairs.setdefault(key, set()).add(most > SWARM_LINE)
+    assert sum(sides == {True, False} for sides in pairs.values()) >= 2
+
+
+def test_mirrors_have_the_same_fighter_on_both_sides() -> None:
+    for entry in EDGE:
+        if entry["group"] == "mirror":
+            first, second = entry["fighters"]
+            assert first == second and entry["expected_winner"] == "draw", entry["id"]
+
+
+def test_edge_set_uses_every_seed_fighter_the_main_set_leaves_out() -> None:
+    seed = set(SLUG_ROW.findall((ROOT / "docs" / "research.md").read_text(encoding="utf-8")))
+    unused = seed - set().union(*(fighters_of(e) for e in ALL))
+    assert unused <= set().union(*(fighters_of(e) for e in EDGE))
+
+
+def test_edge_set_covers_the_terrains_the_main_set_never_uses() -> None:
+    main = {e["terrain"] for e in ALL}
+    assert {"water", "mountain", "urban"} - main <= {e["terrain"] for e in EDGE}

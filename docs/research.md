@@ -83,6 +83,8 @@ The rules behind the table:
 2. Otherwise use the most familiar member of that group that is on the seed list.
 3. Use a healthy adult. Where one sex is clearly larger, use that sex, because it is the size most sources report.
 
+Code applies this table, never a model: `DEFAULT_KINDS` in `backend/app/research/seed_fighters.py` copies it, and a test keeps the two identical. A bare kind (or its plural, such as "bears") becomes its default only when nothing more exact was given: an exact name, a kind ("polar bear"), or raw words that name a seed fighter ("6 gray wolves") always win. The battle's assumptions name the pick, for example "Not sure which bear, so we used the grizzly bear." (#168).
+
 ## The seven physical stats
 
 These are sourced or labeled estimates. For each one we use the first of these that exists: a hand-verified seed sheet, a Wikidata fact, a number extracted with a verified quote, a value derived by code (the note names the formula), then the category default.
@@ -234,6 +236,8 @@ The sources approved in DECISIONS D-20. Licenses were checked against each sourc
 | **TreeOfLife-10M taxonomy metadata** (`imageomics/TreeOfLife-10M`, optional) | Common name to scientific name and class, for matching names. The taxonomy CSV only, never the images | CC0 for the compilation; images vary, and we do not use them | Dataset name and link |
 
 **Hugging Face in the ingest (G02).** The seed ingest loads its trait rows through Hugging Face, from the team trait dataset above. The Dataset Viewer lookup in `wikimedia/structured-wikipedia` was tried first, on 2026-11-13, and wasn't dependable enough: for the grizzly bear it answered "the dataset index is loading" after 36 s, then "authentication check timed out" twice, with no rows. Article text still comes from the Wikipedia REST API. To refresh the team dataset, run the seed ingest, then `uv run python -m scripts.build_seed_traits`, upload `data/seed/seed-traits.csv` to the dataset, and put the dataset's new commit id in `HF_TRAITS_REVISION` in `backend/app/research/traits.py`. The ingest reads that fixed version, so the numbers can only change through a reviewed code change. `HF_TOKEN` in `.env` is optional, because the dataset is public.
+
+**Re-parsing stored articles (#380).** The seed ingest skips an article already stored at the same revision, so a parser fix doesn't reach it on its own. After a fix such as #34's check that puts back paragraphs the parser skipped, run `npm run ingest -- --refresh` (or `uv run --directory backend python -m scripts.ingest_seed --refresh --only <ids>`) to parse the stored articles again; storing replaces their passages and vectors. An unknown id in `--only` stops the run before anything is ingested.
 
 **Matching trait rows by scientific name (#290).** The ingest matches PanTHERIA and AnimalTraits rows by the fighter's scientific name. A name pinned as `scientific_name` in `data/seed/fighters.yaml` comes first; Wikidata's taxon name (P225) is the fallback. A Wikidata name that isn't shaped like a species name (a capitalized genus, then a lowercase species, and at most a subspecies) is ignored for matching and logged, so vandalism such as "Spoderman" on the honey bee can't drop its rows. Every species in the team trait dataset has a pinned name; pin one for any new seed fighter whose trait rows should always match.
 
