@@ -238,3 +238,55 @@ def test_the_benchmark_fills_its_traceability_column_from_stored_battles(
     mock = bm.RunReport("mock", [], 0.0, "abc1234", datetime.now())
     run_benchmark.add_traceability(mock, mock=True)
     assert mock.traceability is None and "isn't checked in mock mode" in mock.notes[0]
+
+
+# --- #370: strict mode, so "traceable" means every quote was really checked -----------------
+
+
+# A database holding the clean battle but none of its articles: 5 quotes can't be checked.
+def no_articles(tmp_path: Path) -> Path:
+    path = tmp_path / "no-articles.db"
+    connection = connect(path)
+    apply_migrations(connection)
+    store(connection, clean())
+    connection.close()
+    return path
+
+
+def test_require_quotes_fails_when_a_quote_could_not_be_checked(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = no_articles(tmp_path)
+    assert trace_report.main(["--db", str(path), "--require-quotes"]) == 1
+    printed = capsys.readouterr().out
+    assert "Strict mode (--require-quotes): 5 quotes couldn't be checked, in b-7f3k2q." in printed
+    assert trace_report.main(["--db", str(path)]) == 0  # without the flag: unchanged
+
+
+def test_require_quotes_passes_when_every_quote_was_checked(
+    db: sqlite3.Connection, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    store(db, clean())  # the db fixture stores every quote's article
+    assert trace_report.main(["--db", str(tmp_path / "app.db"), "--require-quotes"]) == 0
+    assert "Strict mode" not in capsys.readouterr().out
+
+
+def test_strict_benchmark_counts_an_uncheckable_battle_as_not_traceable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = no_articles(tmp_path)
+    monkeypatch.setattr(run_benchmark, "connect", lambda: connect(path))
+    relaxed = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
+    run_benchmark.add_traceability(relaxed, mock=False)
+    strict = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
+    run_benchmark.add_traceability(strict, mock=False, require_quotes=True)
+    assert relaxed.traceability == 1.0 and strict.traceability == 0.0
+    assert any("Strict mode (--require-quotes)" in note for note in strict.notes)
+    assert not any("Strict mode" in note for note in relaxed.notes)
+
+
+def test_strict_share_only_counts_fully_checked_battles(db: sqlite3.Connection) -> None:
+    checked = check_battle(clean(), db)
+    unchecked = check_battle(clean())  # no database: its 5 quotes are unchecked
+    assert traceable_share([checked, unchecked]) == 1.0
+    assert traceable_share([checked, unchecked], require_quotes=True) == 0.5
