@@ -69,15 +69,18 @@ def _already_stored(connection: sqlite3.Connection, doc_id: str, document: Sourc
 
 
 # Parse a fighter's article and store its passages, unless that revision is already stored.
+# refresh parses it again anyway, e.g. after a parser fix such as #34's loss check (#380);
+# storing replaces the old passages and their vectors.
 async def _ingest_article(
     connection: sqlite3.Connection,
     parser: DocParser,
     embedder: Embedder,
     fighter: SeedFighter,
     document: SourceDocument,
+    refresh: bool = False,
 ) -> None:
     doc_id = f"{fighter.id}/wikipedia"
-    if _already_stored(connection, doc_id, document):
+    if not refresh and _already_stored(connection, doc_id, document):
         return
     text = await parser.parse(document.body, document.media_type)
     record = DocumentRecord(
@@ -131,6 +134,7 @@ async def ingest_fighter(
     kb_dir: Path,
     summary: IngestSummary,
     traits: TraitTables | None = None,
+    refresh: bool = False,
 ) -> None:
     try:
         article = await fetch_article(client, fighter.article)
@@ -138,7 +142,7 @@ async def ingest_fighter(
             raise SourceError(f"no article titled {fighter.article!r}")
         summary.documents += 1
         save_raw(kb_dir, fighter.id, "wikipedia", article)
-        await _ingest_article(connection, parser, embedder, fighter, article)
+        await _ingest_article(connection, parser, embedder, fighter, article, refresh)
         entity = await fetch_wikidata(client, fighter.article)
         if entity is None:
             logger.info("No Wikidata item for %s; any facts from earlier runs stay.", fighter.id)
@@ -166,6 +170,7 @@ async def ingest_all(
     embedder: Embedder,
     fighters: list[SeedFighter],
     kb_dir: Path,
+    refresh: bool = False,
 ) -> IngestSummary:
     await ensure_vector_table(connection, embedder)
     summary = IngestSummary(fighters=len(fighters))
@@ -180,7 +185,7 @@ async def ingest_all(
     async def one(fighter: SeedFighter) -> None:
         async with limit:
             await ingest_fighter(
-                connection, client, parser, embedder, fighter, kb_dir, summary, traits
+                connection, client, parser, embedder, fighter, kb_dir, summary, traits, refresh
             )
 
     await asyncio.gather(*(one(fighter) for fighter in fighters))
