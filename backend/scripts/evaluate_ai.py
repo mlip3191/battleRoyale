@@ -60,6 +60,8 @@ class IntakeScore:
     exact: dict[str, list[int]] = field(default_factory=lambda: {f: [0, 0] for f in FIELDS})
     """Per field: [right, checked]."""
     full: int = 0
+    errors: int = 0
+    """Phrasings the live model couldn't answer (outages); not scored."""
     misses: list[str] = field(default_factory=list)
 
 
@@ -109,6 +111,8 @@ def intake_markdown(score: IntakeScore, seconds: float) -> str:
     )
     rows += [f"| {f.capitalize()} exact | {share(*score.exact[f])} |" for f in FIELDS]
     rows.append(f"| **Every checked field right** | **{share(score.full, score.scored)}** |")
+    if score.errors:
+        rows.append(f"| Errors (outages, not scored) | {score.errors} |")
     out = [
         f"The live chat model read the {score.scored} A02 phrasings in "
         f"`tests/fixtures/providers/intake_cases.yaml` ({seconds:.0f} s). "
@@ -157,7 +161,14 @@ async def run_intake() -> str:
     cases = yaml.safe_load(INTAKE_CASES.read_text(encoding="utf-8"))
     score, started = IntakeScore(), time.perf_counter()
     for case in cases:
-        result = None if tests_broken_output(case) else await parse_matchup(case["text"], chat=chat)
+        try:
+            result = (
+                None if tests_broken_output(case) else await parse_matchup(case["text"], chat=chat)
+            )
+        except Exception as error:  # noqa: BLE001 - one outage costs one case, not the section
+            score.errors += 1
+            score.misses.append(f"{case['name']}: error ({type(error).__name__})")
+            continue
         score_intake_case(score, case, result)
     return intake_markdown(score, time.perf_counter() - started)
 
@@ -172,21 +183,26 @@ async def run_safety() -> str:
     from app.intake import parser
     from app.providers.live.chat import LiveChatLLM
     from app.providers.registry import service_config
-    from app.safety import wikidata
+    from app.safety import gate, wikidata
 
     settings = get_settings()
     chat = LiveChatLLM(service_config("chat", settings), settings)
     recorder = se.Recorder()
+    cases = se.load_cases()
+    # safety_eval patches the parser and the gate; restore them so later sections see the real ones.
+    originals = (parser.blocked_result, parser.check_parsed_sides, gate.check_names)
     parser.blocked_result = recorder.blocked_result  # type: ignore[assignment]
     parser.check_parsed_sides = recorder.check_parsed_sides  # type: ignore[assignment]
-    cases = se.load_cases()
-    with tempfile.TemporaryDirectory() as tmp:
-        cache = wikidata.WikidataCache(Path(tmp) / "eval.db")
-        async with httpx.AsyncClient(timeout=wikidata.TIMEOUT_S) as client:
-            se.use_live_wikidata(wikidata.LiveWikidataLookup(client), cache)
-            started = time.perf_counter()
-            outcomes = [await se.run_case(case, chat, recorder) for case in cases]
-            seconds = time.perf_counter() - started
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            cache = wikidata.WikidataCache(Path(tmp) / "eval.db")
+            async with httpx.AsyncClient(timeout=wikidata.TIMEOUT_S) as client:
+                se.use_live_wikidata(wikidata.LiveWikidataLookup(client), cache)
+                started = time.perf_counter()
+                outcomes = [await se.run_case(case, chat, recorder) for case in cases]
+                seconds = time.perf_counter() - started
+    finally:
+        parser.blocked_result, parser.check_parsed_sides, gate.check_names = originals  # type: ignore[assignment]
     lines = se.summary(outcomes, seconds)[2:] + ["", *se.injection_pairs(outcomes)]
     misses = [
         f"- {o.case.id} {o.case.text!r}: expected {o.expected}, got {o.got}"
@@ -283,6 +299,7 @@ async def main(argv: list[str] | None = None) -> int:
     if unknown := [s for s in chosen if s not in RUNNERS]:
         print(f"Unknown section(s): {', '.join(unknown)}. Choose from {', '.join(RUNNABLE)}.")
         return 2
+    chosen = [key for key in RUNNABLE if key in chosen]  # always the same order, whatever was typed
     settings = get_settings()
     if settings.provider_mode != "live":
         print("This evaluation measures the live endpoints. Set PROVIDER_MODE=live in .env.")

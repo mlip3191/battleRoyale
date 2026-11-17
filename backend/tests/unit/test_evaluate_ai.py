@@ -78,6 +78,48 @@ async def test_it_refuses_to_run_in_mock_mode(capsys: Any) -> None:
     assert "PROVIDER_MODE=live" in capsys.readouterr().out
 
 
+# Pretend to be in live mode with stand-in sections and a temp output file.
+def live_run(monkeypatch: Any, tmp_path: Any, runners: dict[str, Any], leftover: int = 0) -> Any:
+    import smoke_providers
+
+    output = tmp_path / "evaluation.md"
+    monkeypatch.setattr(ev, "OUTPUT", output)
+    monkeypatch.setattr(ev, "REPO", tmp_path)
+    monkeypatch.setattr(ev, "RUNNERS", runners)
+    monkeypatch.setattr(ev, "get_settings", lambda: SimpleNamespace(provider_mode="live"))
+    monkeypatch.setattr(smoke_providers, "redact", lambda text, _: (text, leftover))
+    return output
+
+
+async def test_a_failed_section_is_reported_and_the_others_are_still_written(
+    monkeypatch: Any, tmp_path: Any, capsys: Any
+) -> None:
+    async def works() -> str:
+        return "intake numbers"
+
+    async def fails() -> str:
+        raise TimeoutError("details that must not be printed")
+
+    runners = {"intake": works, "safety": fails, "retrieval": works}
+    output = live_run(monkeypatch, tmp_path, runners)
+    assert await ev.main(["--sections", "safety,intake"]) == 2
+    sections = ev.read_sections(output.read_text(encoding="utf-8"))
+    assert sections["intake"] == "intake numbers" and sections["safety"] == ev.NOT_RUN
+    out = capsys.readouterr().out
+    assert "safety (TimeoutError)" in out and "must not be printed" not in out
+
+
+async def test_nothing_is_written_when_the_redaction_scan_finds_a_secret(
+    monkeypatch: Any, tmp_path: Any
+) -> None:
+    async def works() -> str:
+        return "numbers"
+
+    output = live_run(monkeypatch, tmp_path, {"intake": works}, leftover=1)
+    assert await ev.main(["--sections", "intake"]) == 3
+    assert not output.exists()
+
+
 async def test_an_unknown_section_is_refused(capsys: Any) -> None:
     assert await ev.main(["--sections", "intake,vibes"]) == 2
     assert "vibes" in capsys.readouterr().out
