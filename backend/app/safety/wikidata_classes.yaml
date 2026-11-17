@@ -3,7 +3,8 @@
 # A name is blocked when its top exact Wikidata match is an instance (P31) or subclass (P279) of
 # one of these classes, directly or up to two P279 levels higher. instance_only classes match
 # only the entity's own P31 (so the class "Roman legionary" is never a real person).
-# individuals_only classes match only an item that is not a kind of thing (see kind_matches).
+# individuals_only classes match only an item that is not a kind of thing (see kind_matches):
+# geographic location and character.
 #
 # Bump classes_version whenever this list changes: cached lookups from an older version are
 # ignored, so the change takes effect at once.
@@ -37,7 +38,10 @@
 # Version 10 (#316): "the" + a proper name also searches "the " + the name, and a band or team
 # labelled "The <name>" in its top 5 results is cached as a group that lost the pick ("the Who",
 # "the Cure", "the Animals" block), which changes how cached rows block.
-classes_version: 10
+# Version 11 (#340): character is individuals_only, so kinds of mythical creature ("a centaur",
+# "a harpy") are allowed while named individuals (Cerberus, Medusa) still block; fictional
+# species blocks kinds from a franchise (Pikachu, Dalek). Cached rows block differently.
+classes_version: 11
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed
@@ -257,8 +261,19 @@ classes:
     reason: real_person
     instance_only: true
     group: team
+  # character is individuals_only (#340, D-38, D-60): a named character is one individual, so a
+  # kind of creature (anything with a P279) that reaches it stays allowed. Live "centaur" and
+  # "harpies" are kinds reaching it through mythological Greek character -> mythical character
+  # (harpies also through fictional creature); Cerberus and Medusa take the same path but have
+  # no P279, so they still block. Kinds from a franchise still block through fictional species
+  # (live Pikachu -> electric-type Pokemon -> Pokemon species -> fictional species; Dalek and
+  # Wookiee through fictional extraterrestrial species). Verified live 2026-11-17.
   - qid: Q95074
     label: character # alias "fictional character"
+    reason: copyrighted_character
+    individuals_only: true
+  - qid: Q21192438
+    label: fictional species
     reason: copyrighted_character
   - qid: Q178885
     label: deity

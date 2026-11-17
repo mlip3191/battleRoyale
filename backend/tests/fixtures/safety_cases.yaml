@@ -621,8 +621,8 @@ cases:
     text: "a unicorn vs a troll"
     expect: allowed
     kind: mythical
-  # Generic kinds the live gate blocked as named characters on 2026-11-15 (#322): kept here so
-  # the live run keeps measuring them until the gate is fixed. Allowed on mocks.
+  # Generic kinds the live gate blocked as named characters on 2026-11-15 (#322): the Wikidata
+  # layer read "character" on kinds too; since #340 it counts only for individuals.
   - id: my-05
     text: "a centaur vs a horse"
     expect: allowed
@@ -633,6 +633,12 @@ cases:
     kind: mythical
   - id: my-07
     text: "a sphinx vs a lion"
+    expect: allowed
+    kind: mythical
+  # #340: on mocks too, "centaur", "harpy" and "harpies" now find the real Wikidata items (kinds
+  # whose classes reach "character"), so my-05, my-06 and this case check the fix.
+  - id: my-08
+    text: "harpies vs 2 centaurs"
     expect: allowed
     kind: mythical
 

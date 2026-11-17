@@ -181,7 +181,7 @@ async def test_injected_text_does_not_turn_a_moose_into_a_person(cache: Wikidata
 def test_geographic_location_blocks_only_individuals() -> None:
     class_map = load_class_map()
     assert class_map.version >= 6
-    assert class_map.individuals_only == {GEOGRAPHIC_LOCATION}
+    assert class_map.individuals_only == {GEOGRAPHIC_LOCATION, CHARACTER}  # character: #340
     assert class_map.reasons[GEOGRAPHIC_LOCATION] == "out_of_scope"
 
 
