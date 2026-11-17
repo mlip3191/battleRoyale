@@ -59,7 +59,11 @@ async def main(live: bool, only: list[str], refresh: bool = False) -> int:
     fighters = load_seed_fighters()
     unknown = sorted(set(only) - {fighter.id for fighter in fighters})
     if unknown:  # a typo must not quietly ingest nothing
-        print(f"Unknown fighter id: {', '.join(unknown)}. Nothing was ingested.", file=sys.stderr)
+        print(
+            f"Unknown fighter id: {', '.join(unknown)}. Nothing was ingested. "
+            "Known ids are in data/seed/fighters.yaml.",
+            file=sys.stderr,
+        )
         return 2
     if only:
         fighters = [fighter for fighter in fighters if fighter.id in only]

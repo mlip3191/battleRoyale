@@ -11,8 +11,10 @@ from pathlib import Path
 import httpx
 import pytest
 
+from app.config import get_settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
+from app.providers.live.http import ProviderError
 from app.providers.mock.text import MockDocParser, MockEmbedder
 from app.research.facts import Fact, store_facts, wikidata_facts
 from app.research.ingest import ingest_all
@@ -482,4 +484,36 @@ async def test_an_unknown_fighter_id_is_reported_and_nothing_runs(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     assert await ingest_seed.main(False, ["grizzly-bear", "bogus"], refresh=True) == 2
-    assert "Unknown fighter id: bogus. Nothing was ingested." in capsys.readouterr().err
+    printed = capsys.readouterr().err
+    assert "Unknown fighter id: bogus. Nothing was ingested." in printed
+    assert "Known ids are in data/seed/fighters.yaml." in printed
+    # Nothing ran: the check comes before the database is even opened (#384 review).
+    assert not (get_settings().data_dir / "app.db").exists()
+
+
+class FailsOnSecondParse(CountingParser):
+    """Parses once, then fails, like a parser outage during a refresh."""
+
+    async def parse(self, data: bytes, mime: str) -> str:
+        text = await super().parse(data, mime)
+        if self.calls > 1:
+            raise ProviderError("Live 'doc_parser' call failed: HTTP 503.")
+        return text
+
+
+async def test_a_failed_refresh_keeps_the_working_article(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    fighters = [fighter("horse", "Horse")]
+    parser = FailsOnSecondParse()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(make_handler([]))) as client:
+        await ingest_all(database, client, parser, MockEmbedder(), fighters, tmp_path)
+        before = rows(database)
+        text = database.execute("SELECT raw_text FROM documents").fetchone()[0]
+        summary = await ingest_all(
+            database, client, parser, MockEmbedder(), fighters, tmp_path, refresh=True
+        )
+    assert parser.calls == 2 and summary.failures  # the refresh failed and says so
+    assert rows(database) == before  # the old article, its chunks and vectors are all kept
+    assert database.execute("SELECT raw_text FROM documents").fetchone()[0] == text
+    assert orphan_vectors(database) == 0
