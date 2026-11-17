@@ -235,6 +235,8 @@ The sources approved in DECISIONS D-20. Licenses were checked against each sourc
 
 **Hugging Face in the ingest (G02).** The seed ingest loads its trait rows through Hugging Face, from the team trait dataset above. The Dataset Viewer lookup in `wikimedia/structured-wikipedia` was tried first, on 2026-11-13, and wasn't dependable enough: for the grizzly bear it answered "the dataset index is loading" after 36 s, then "authentication check timed out" twice, with no rows. Article text still comes from the Wikipedia REST API. To refresh the team dataset, run the seed ingest, then `uv run python -m scripts.build_seed_traits`, upload `data/seed/seed-traits.csv` to the dataset, and put the dataset's new commit id in `HF_TRAITS_REVISION` in `backend/app/research/traits.py`. The ingest reads that fixed version, so the numbers can only change through a reviewed code change. `HF_TOKEN` in `.env` is optional, because the dataset is public.
 
+**Matching trait rows by scientific name (#290).** The ingest matches PanTHERIA and AnimalTraits rows by the fighter's scientific name. A name pinned as `scientific_name` in `data/seed/fighters.yaml` comes first; Wikidata's taxon name (P225) is the fallback. A Wikidata name that isn't shaped like a species name (a capitalized genus, then a lowercase species, and at most a subspecies) is ignored for matching and logged, so vandalism such as "Spoderman" on the honey bee can't drop its rows. Every species in the team trait dataset has a pinned name; pin one for any new seed fighter whose trait rows should always match.
+
 **Not allowed:**
 
 - Forums and fan wikis

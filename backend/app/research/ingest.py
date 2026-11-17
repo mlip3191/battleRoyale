@@ -27,7 +27,7 @@ from app.research.sources import (
     fetch_wikidata,
     save_raw,
 )
-from app.research.traits import TraitTables, load_trait_tables, taxon_name
+from app.research.traits import TraitTables, load_trait_tables, trait_match_name
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +110,7 @@ def _ingest_traits(
     traits: TraitTables,
     summary: IngestSummary,
 ) -> None:
-    name = taxon_name(entity)
+    name = trait_match_name(fighter.id, fighter.scientific_name, entity)
     retrieved_at = datetime.now(UTC).isoformat()
     matched = False
     for source, table in traits.by_source.items():

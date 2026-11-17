@@ -15,6 +15,7 @@ fighters:
     body: living
     habitat: land
     article: Wolf
+    scientific_name: Canis lupus
   - id: african-lion
     display_name: African lion
     variant: Adult male
@@ -22,6 +23,7 @@ fighters:
     body: living
     habitat: land
     article: Lion
+    scientific_name: Panthera leo
   - id: house-cat
     display_name: House cat
     variant: Adult domestic cat
@@ -29,6 +31,7 @@ fighters:
     body: living
     habitat: land
     article: Cat
+    scientific_name: Felis catus
   - id: golden-retriever
     display_name: Golden retriever
     variant: Adult male
@@ -57,6 +60,7 @@ fighters:
     body: living
     habitat: amphibious
     article: Hippopotamus
+    scientific_name: Hippopotamus amphibius
   - id: chimpanzee
     display_name: Chimpanzee
     variant: Adult male, common chimpanzee
@@ -64,6 +68,7 @@ fighters:
     body: living
     habitat: land
     article: Chimpanzee
+    scientific_name: Pan troglodytes
   - id: gorilla
     display_name: Gorilla
     variant: Adult male, western lowland
@@ -78,6 +83,7 @@ fighters:
     body: living
     habitat: land
     article: Honey badger
+    scientific_name: Mellivora capensis
   - id: house-mouse
     display_name: House mouse
     variant: Adult
@@ -85,6 +91,7 @@ fighters:
     body: living
     habitat: land
     article: House mouse
+    scientific_name: Mus musculus
   - id: bald-eagle
     display_name: Bald eagle
     variant: Adult female
@@ -141,6 +148,7 @@ fighters:
     body: living
     habitat: air
     article: Western honey bee
+    scientific_name: Apis mellifera
   - id: tyrannosaurus-rex
     display_name: Tyrannosaurus rex
     variant: Adult
