@@ -154,10 +154,11 @@ async def test_code_trusts_found_true_so_the_prompt_must_refuse_real_animals(
 
 
 async def test_mock_mode_never_goes_online_for_an_unknown_name() -> None:
+    # No legend client in mock mode, so an unknown name gets the all-estimate sheet (#345).
     assert sheet_store.legend_client() is None
-    with pytest.raises(StageFailed) as failure:
-        await stages.lookup_fighter(FighterRequest(entity="okapi", raw="an okapi"))
-    assert str(failure.value) == stages.NOT_FOUND.format(name="okapi")
+    sheet = await stages.lookup_fighter(FighterRequest(entity="okapi", raw="an okapi"))
+    assert sheet.fighter_id == "okapi" and sheet.category == "other"
+    assert all(stat.is_estimate for stat in sheet.stats.values())
 
 
 # A legend sheet saved under `fighter_id`, as resolve_legend would save one.

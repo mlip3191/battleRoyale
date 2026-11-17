@@ -3,8 +3,9 @@
 Each function calls the owning module's public function. A stage that reports `stub=True`
 gets the stage detail "stub" and its output is not saved. No stage in this file is a stub any
 more. Research uses G04's sheet lookup: seed sheet, cached sheet, or a newly built one; a
-size_reference with no sheet is listed in `Research.missing_references` (research then ends
-"fallback" with a plain note).
+size_reference with no sheet is listed in `Research.missing_references`. A fighter with no sheet
+and no legend fights on an all-estimate sheet from code defaults (#345) and is listed in
+`Research.estimated`. Either way research then ends "fallback" with a plain note.
 """
 
 import asyncio
@@ -28,6 +29,7 @@ from app.narration.facts import build_facts
 from app.narration.templates import template_scripts
 from app.pipeline import challenger as next_challenger
 from app.providers.registry import get_provider
+from app.research.estimate_sheet import estimate_sheet
 from app.research.seed_fighters import find_seed_fighter
 from app.research.sheet_store import resolve_legend, resolve_stat_sheet
 from app.simulation import engine, fair
@@ -101,6 +103,8 @@ class Research:
     reference_sheets: list[StatSheet | None]
     missing_references: list[str] = field(default_factory=list)
     """size_reference names with no sheet yet; those sides fight at their normal size."""
+    estimated: list[str] = field(default_factory=list)
+    """Fighters (as typed) with no sheet at all; they fight on all-estimate sheets (#345)."""
 
 
 # Find one fighter's stat sheet (G04): seed sheet, cached sheet, or one built and cached now.
@@ -119,8 +123,9 @@ async def lookup_sheet(
 
 
 # A fighter's sheet: lookup_sheet first, then, for a name off the seed list only, a legend
-# modeled from its article (G09). Raises StageFailed with the reason when neither gives one.
-async def lookup_fighter(fighter: FighterRequest) -> StatSheet:
+# modeled from its article (G09). None when there is neither. Raises StageFailed with the reason
+# when a seed fighter's build failed, a legend is blocked, or the legend lookup is down.
+async def find_fighter(fighter: FighterRequest) -> StatSheet | None:
     sheet = await lookup_sheet(fighter.entity, fighter.variant, fighter.raw)
     if sheet is not None:
         return sheet
@@ -133,11 +138,25 @@ async def lookup_fighter(fighter: FighterRequest) -> StatSheet:
         legend = await resolve_legend(connection, get_provider("chat"), fighter.entity)
     finally:
         connection.close()
-    if isinstance(legend, StatSheet):
+    if legend is None or isinstance(legend, StatSheet):
         return legend
-    if legend is None:
-        raise StageFailed(NOT_FOUND.format(name=name))
     raise StageFailed((LEGEND_BLOCKED if legend.blocked else LEGEND_UNAVAILABLE).format(name=name))
+
+
+# find_fighter's sheet, or an all-estimate sheet from code defaults when there is none (#345).
+# The second value is True for the estimate. A block or failure from find_fighter still raises,
+# so the estimate never gets past a safety block. The estimate is not cached in the sheet store.
+async def lookup_fighter_or_estimate(fighter: FighterRequest) -> tuple[StatSheet, bool]:
+    sheet = await find_fighter(fighter)
+    if sheet is not None:
+        return sheet, False
+    return estimate_sheet(_typed_name(fighter.entity, fighter.variant)), True
+
+
+# A fighter's sheet for a battle: found, or the all-estimate fallback (see the function above).
+async def lookup_fighter(fighter: FighterRequest) -> StatSheet:
+    sheet, _ = await lookup_fighter_or_estimate(fighter)
+    return sheet
 
 
 # Step 2: look up both fighters and any size_reference entities, all at the same time.
@@ -145,11 +164,16 @@ async def research(matchup: Matchup) -> Research:
     fighters = matchup.fighters
     references = [f.size_reference for f in fighters]
     found = await asyncio.gather(
-        *(lookup_fighter(f) for f in fighters),
+        *(lookup_fighter_or_estimate(f) for f in fighters),
         *(lookup_sheet(ref) for ref in references if ref is not None),
     )
-    # lookup_fighter raises rather than return None, so the first results are all sheets.
-    sheets = cast(list[StatSheet], list(found[: len(fighters)]))
+    looked_up = cast(list[tuple[StatSheet, bool]], list(found[: len(fighters)]))
+    sheets = [sheet for sheet, _ in looked_up]
+    estimated = [
+        _typed_name(f.entity, f.variant)
+        for f, (_, is_estimate) in zip(fighters, looked_up, strict=True)
+        if is_estimate
+    ]
     found_refs = iter(found[len(fighters) :])
     reference_sheets: list[StatSheet | None] = []
     missing: list[str] = []
@@ -161,7 +185,7 @@ async def research(matchup: Matchup) -> Research:
         reference_sheets.append(sheet)
         if sheet is None:
             missing.append(ref)
-    return Research(sheets, reference_sheets, missing)
+    return Research(sheets, reference_sheets, missing, estimated)
 
 
 # The matchup the engine sees: a size swap whose reference has no sheet fights at normal size.
