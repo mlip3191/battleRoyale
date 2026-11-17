@@ -6,6 +6,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from pydantic import HttpUrl
 
 from app.db import battles as saved
 from app.db.connection import connect
@@ -435,3 +436,28 @@ def test_strict_mode_says_quote_for_a_count_of_one() -> None:
     one = check_battle(clean())
     one.quotes_unchecked = 1
     assert "1 quote couldn't be checked" in trace_report.render([one], require_quotes=True)
+
+
+# --- #379 re-review: hand-verified quotes in strict mode, and tiny stored values ------------------
+
+
+def test_require_quotes_counts_a_hand_verified_quote_with_no_stored_article(
+    db: sqlite3.Connection, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Every extracted quote's article is stored (the db fixture); this one points elsewhere.
+    source = clean().stat_sheets[0].stats[StatName.MASS].source
+    assert source is not None
+    elsewhere = source.model_copy(update={"url": HttpUrl("https://example.org/not-stored")})
+    store(db, with_stat(0, StatName.MASS, method="hand_verified", source=elsewhere))
+    path = str(tmp_path / "app.db")
+    assert trace_report.main(["--db", path]) == 0  # unchecked, not an issue
+    assert "0 issues" in capsys.readouterr().out
+    assert trace_report.main(["--db", path, "--require-quotes"]) == 1
+    assert "1 quote couldn't be checked" in capsys.readouterr().out
+
+
+def test_a_tiny_extracted_value_must_still_match_to_its_stored_digits() -> None:
+    # 2.5e-06 prints in exponent form; its digits must still be read as 0.0000025 (#379 review).
+    quote = "A female weighs about 2.5 mg."
+    assert value_in_quote(StatName.MASS, sourced(2.5e-06, "kg", quote, method="extracted"))
+    assert not value_in_quote(StatName.MASS, sourced(3.0e-06, "kg", quote, method="extracted"))

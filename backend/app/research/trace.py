@@ -11,6 +11,7 @@ import re
 import sqlite3
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 from pydantic import ValidationError
 
@@ -162,10 +163,12 @@ def _converted_in_note(
 
 
 # The relative tolerance that matches a value to the digits it's stored with: 13.33 allows
-# 13.325-13.335, 389.0 allows 388.5-389.5. Never tighter than EXTRACTED_TOLERANCE.
+# 13.325-13.335, 389.0 allows 388.5-389.5. Never tighter than EXTRACTED_TOLERANCE. Decimal
+# reads exponent forms too, so 2.5e-06 counts as 7 decimal places (#379 review).
 def _stored_precision(value: float) -> float:
-    digits = repr(value).split(".")[1].rstrip("0") if "." in repr(value) else ""
-    half_step = 0.5 * 10 ** -len(digits)
+    exponent = Decimal(repr(value)).normalize().as_tuple().exponent
+    places = max(-exponent, 0) if isinstance(exponent, int) else 0
+    half_step = 0.5 * 10**-places
     return max(half_step / max(abs(value), 1e-9), EXTRACTED_TOLERANCE)
 
 
