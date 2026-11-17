@@ -5,7 +5,8 @@ abilities from the fixed list, and the sentence that justifies them (D-41). It n
 number. Code then checks every choice: the analogs are real fighters we have, the abilities are
 on the list, the quote is in the article word for word, and any number of heads is in the
 quote. Each ability needs a backing word in the quote or is dropped, and a giant analog needs
-the quote to say the creature is big (#391). Anything that fails is blocked as "nonsense"; an outage gives no sheet, never a guess.
+the quote to say the creature is big (#391). Anything that fails is blocked as "nonsense"; an
+outage gives no sheet, never a guess.
 """
 
 import json
