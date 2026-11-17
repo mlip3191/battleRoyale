@@ -17,6 +17,7 @@ from app.pipeline import orchestrator, stages
 from app.pipeline.orchestrator import FALLBACK_DETAILS, FALLBACK_WITH_VALUE, STUB, run_battle
 from app.pipeline.stages import Stubbed
 from app.pipeline.store import STAGES, BattleStore
+from app.providers.mock import MockChatLLM
 from app.simulation import fair
 from tests.conftest import mock_settings
 
@@ -259,12 +260,33 @@ async def test_a_slow_script_writer_saves_template_scripts(
             return ""
 
     monkeypatch.setitem(stages.STAGE_BUDGETS_S, "script", 0.5)
-    monkeypatch.setattr(writer, "get_provider", lambda *_a, **_k: SlowChat())
+    monkeypatch.setattr(writer, "get_script_chat", lambda: SlowChat())
     record = await battle(store)
     script = stage_of(record, "script")
     assert (script.status, script.detail) == ("fallback", FALLBACK_WITH_VALUE["script"])
     assert [s.kind for s in record.scripts] == ["intro", "play_by_play", "outro"]
     assert all(s.fallback for s in record.scripts)
+    assert expected_fair_line(record) in outro_lines(record)
+
+
+async def test_a_slow_outro_keeps_the_intro_the_model_wrote_in_time(
+    store: BattleStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Only the outro is slow (#363): it becomes the template; the intro keeps the model's lines.
+    mock = MockChatLLM()
+
+    class SlowOutro:
+        async def complete(self, messages: Any, *, prompt_name: str, **kwargs: Any) -> str:
+            if prompt_name == "outro":
+                await asyncio.sleep(TOO_LONG)
+            return await mock.complete(messages, prompt_name=prompt_name, **kwargs)
+
+    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "script", 0.5)
+    monkeypatch.setattr(writer, "get_script_chat", lambda: SlowOutro())
+    record = await battle(store)
+    assert stage_of(record, "script").status == "fallback"
+    intro, _, outro = record.scripts
+    assert (intro.fallback, outro.fallback) == (False, True)
     assert expected_fair_line(record) in outro_lines(record)
 
 

@@ -15,7 +15,9 @@ if TYPE_CHECKING:
 class LiveChatLLM:
     """Calls the course chat model; json_schema turns on schema-constrained output.
 
-    timeout_s and retries default to the shared provider settings; intake passes shorter ones."""
+    timeout_s and retries default to the shared provider settings; intake passes shorter ones.
+    thinking=False asks the model to answer without its hidden reasoning step (the script writer
+    uses it: the step was 85-95% of a script reply and took 15-47 s against an 8 s limit, #363)."""
 
     def __init__(
         self,
@@ -25,11 +27,13 @@ class LiveChatLLM:
         *,
         timeout_s: float | None = None,
         retries: int = RETRIES,
+        thinking: bool = True,
     ) -> None:
         self.config = config
         self.timeout_s = settings.provider_timeout_s if timeout_s is None else timeout_s
         self.retries = retries
         self.client = client
+        self.thinking = thinking
 
     # Send the messages and return the reply text.
     async def complete(
@@ -40,6 +44,9 @@ class LiveChatLLM:
         json_schema: dict[str, Any] | None = None,
     ) -> str:
         payload: dict[str, Any] = {"model": self.config.model, "messages": messages}
+        if not self.thinking:
+            # The served model's chat template switch; a template without it ignores the key.
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
         if json_schema is not None:
             payload["response_format"] = {
                 "type": "json_schema",
