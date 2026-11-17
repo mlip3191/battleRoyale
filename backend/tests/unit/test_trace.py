@@ -325,3 +325,36 @@ def test_every_committed_seed_sheet_passes_the_value_check() -> None:
                 if not value_in_quote(name, stat):
                     failing.append(f"{path.stem}/{name.value}")
     assert failing == []
+
+
+# #379 review: the checker accepts exactly the unit spellings extraction accepts.
+@pytest.mark.parametrize(
+    ("stat", "value", "unit", "quote"),
+    [
+        (StatName.MASS, 389.18, "kg", "males weighing up to 858 lbs"),
+        (StatName.SPEED, 13.3333, "m/s", "It can run at 48 kilometres per hour."),
+        (StatName.SPEED, 13.3333, "m/s", "It can run at 48 kilometers per hour."),
+        (StatName.SPEED, 13.4112, "m/s", "It was clocked at 30 MPH."),
+        (StatName.ATTACK_FORCE, 4000.0, "N", "Its bite reaches 4 kN."),
+        (StatName.MASS, 4.0, "kg", "Adults weigh 4-5 kg."),
+        (StatName.MASS, 5.0, "kg", "Adults weigh 4-5 kg."),
+    ],
+)
+def test_extraction_spellings_and_range_ends_pass(
+    stat: StatName, value: float, unit: str, quote: str
+) -> None:
+    assert value_in_quote(stat, sourced(value, unit, quote, method="extracted"))
+
+
+def test_an_extracted_value_must_match_to_its_stored_digits() -> None:
+    quote = "males weighing 389 kilograms (858 lb)"
+    assert value_in_quote(StatName.MASS, sourced(389.0, "kg", quote, method="extracted"))
+    assert not value_in_quote(StatName.MASS, sourced(392.0, "kg", quote, method="extracted"))
+    # A hand-verified value may be rounded by the person who checked it (within 1%).
+    assert value_in_quote(StatName.MASS, sourced(391.0, "kg", quote))
+
+
+def test_a_note_formula_with_wrong_arithmetic_is_flagged() -> None:
+    quote = "It is powerful enough to lift up to 350 kg (770 lb)"
+    wrong = sourced(5000.0, "N", quote, note="350 kgf x 2 = 5000 N.")
+    assert not value_in_quote(StatName.ATTACK_FORCE, wrong)

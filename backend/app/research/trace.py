@@ -9,6 +9,7 @@ commentary comes from the stat sheets or the result. It reports problems; it nev
 
 import re
 import sqlite3
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 from pydantic import ValidationError
@@ -17,8 +18,15 @@ from app.models.battle import BattleRecord
 from app.models.stats import ASSUMABLE_STATS, StatName, StatSheet, StatValue
 from app.narration.facts import build_facts
 from app.narration.writer import unsupported_numbers
-from app.research.evidence_check import number_has_unit_in_quote, numbers_in, quote_in_passage
-from app.research.units import FACTORS, STAT_UNITS
+from app.research.evidence_check import (
+    NUMBER,
+    RANGE_TAIL,
+    normalize_text,
+    number_has_unit_in_quote,
+    numbers_in,
+    quote_in_passage,
+)
+from app.research.units import FACTORS, STAT_UNITS, UnitError, to_stat_unit
 
 ESTIMATE_METHODS = ("category_default", "assumption")
 SOURCED_METHODS = ("extracted", "hand_verified")
@@ -81,9 +89,15 @@ def check_battle(record: BattleRecord, connection: sqlite3.Connection | None = N
 _NOT_IN_QUOTE = (
     "value {stat.value} {stat.unit} isn't a number in its quote, even after unit conversion"
 )
-# How close a converted number must be to the stored value (stored values are rounded).
-VALUE_TOLERANCE = 0.01
+# How close a converted number must be to the stored value. An extracted value must match to
+# the digits it's stored with (13.33 for "48 km/h"), so a tampered 392 can't pass for "389 kg";
+# a hand-verified value may be rounded further by the person who checked it (#379 review).
+EXTRACTED_TOLERANCE = 1e-5
+HAND_VERIFIED_TOLERANCE = 0.01
 FORMULA_RESULT = re.compile(r"=\s*(\d[\d,]*(?:\.\d+)?)")
+# The unit as written after a number (or after the range it starts): "kg", "lbs", "km/h",
+# "MPH", "kN", "kilometres per hour". The same spellings extraction accepts (#379 review).
+WRITTEN_UNIT = re.compile(RANGE_TAIL + r"([A-Za-z][A-Za-z/]*(?:\s+per\s+[A-Za-z]+)?)")
 
 
 # A sourced value must be one of the numbers in its own quote (#369): written with a unit that
@@ -92,38 +106,71 @@ def value_in_quote(name: StatName, stat: StatValue) -> bool:
     assert stat.source is not None  # only sourced values are checked
     quote = stat.source.quote
     numbers = numbers_in(quote)
-    table = FACTORS.get(STAT_UNITS[name])
-    if table is None:  # the 0-1 rubric stats have no unit: the bare number must match
-        return any(_close(n, stat.value) for n in numbers)
-    # The stored symbol too ("N"), since short symbols match case exactly.
-    units = [*table.items(), (STAT_UNITS[name], 1.0)]
-    if any(
-        _close(n * factor, stat.value) and number_has_unit_in_quote(n, unit, quote)
-        for n in numbers
-        for unit, factor in units
-    ):
+    tolerance = (
+        _stored_precision(stat.value) if stat.method == "extracted" else HAND_VERIFIED_TOLERANCE
+    )
+    if FACTORS.get(STAT_UNITS[name]) is None:  # the 0-1 rubric stats: the bare number
+        return any(_close(n, stat.value, tolerance) for n in numbers)
+    with_units = list(_numbers_with_units(name, quote))
+    if any(_close(value, stat.value, tolerance) for value in with_units):
         return True
     # A table row: the units sit in the column headers, so the quote has none for this stat,
     # and the bare number counts (the duck, wolf and grizzly rows).
-    no_units = not any(number_has_unit_in_quote(n, u, quote) for n in numbers for u, _ in units)
-    if no_units and any(_close(n, stat.value) for n in numbers):
+    if not with_units and any(_close(n, stat.value, tolerance) for n in numbers):
         return True
-    return _converted_in_note(stat, numbers)
+    return _converted_in_note(name, stat, numbers, tolerance)
 
 
-# A converted figure: the note's formula starts from a number in the quote and ends with
-# "= <the stored value>", e.g. "350 kgf x 9.80665 m/s^2 = 3432 N" for the elephant's trunk.
-def _converted_in_note(stat: StatValue, quoted: list[float]) -> bool:
+# Every number in the quote that has a unit for this stat written right after it, converted
+# to the stored unit the way extraction converts it (to_stat_unit).
+def _numbers_with_units(name: StatName, quote: str) -> Iterator[float]:
+    text = normalize_text(quote)
+    for found in NUMBER.finditer(text):
+        number = float(found.group().replace(",", ""))
+        written = WRITTEN_UNIT.match(text, found.end())
+        if written is None:
+            continue
+        phrase = written.group(1)
+        for unit in dict.fromkeys(
+            [phrase, phrase.split()[0]]
+        ):  # "kilometres per hour", then "kilometres"
+            try:
+                converted = to_stat_unit(number, unit, name)
+            except UnitError:
+                continue
+            if number_has_unit_in_quote(number, unit, quote):
+                yield converted
+                break
+
+
+# A converted figure: the note's formula turns a number from the quote into the stored value
+# with a known factor, e.g. "350 kgf x 9.80665 m/s^2 = 3432 N" for the elephant's trunk. The
+# arithmetic is checked: quoted number x factor must give the result (#379 review).
+def _converted_in_note(
+    name: StatName, stat: StatValue, quoted: list[float], tolerance: float
+) -> bool:
     note = stat.note or ""
     results = [float(m.group(1).replace(",", "")) for m in FORMULA_RESULT.finditer(note)]
-    if not any(_close(r, stat.value) for r in results):
-        return False
-    before = note.split("=", 1)[0]
-    return any(_close(n, q) for n in numbers_in(before) for q in quoted)
+    factors = set(FACTORS[STAT_UNITS[name]].values())
+    # The formula must start from a quoted number, and that number x a known factor must give it.
+    starts = [q for q in quoted for n in numbers_in(note.split("=", 1)[0]) if _close(n, q, 1e-9)]
+    return any(
+        _close(result, stat.value, tolerance)
+        and any(_close(q * f, result, HAND_VERIFIED_TOLERANCE) for q in starts for f in factors)
+        for result in results
+    )
 
 
-def _close(number: float, value: float) -> bool:
-    return abs(number - value) <= VALUE_TOLERANCE * max(abs(value), 1e-9)
+# The relative tolerance that matches a value to the digits it's stored with: 13.33 allows
+# 13.325-13.335, 389.0 allows 388.5-389.5. Never tighter than EXTRACTED_TOLERANCE.
+def _stored_precision(value: float) -> float:
+    digits = repr(value).split(".")[1].rstrip("0") if "." in repr(value) else ""
+    half_step = 0.5 * 10 ** -len(digits)
+    return max(half_step / max(abs(value), 1e-9), EXTRACTED_TOLERANCE)
+
+
+def _close(number: float, value: float, tolerance: float) -> bool:
+    return abs(number - value) <= tolerance * max(abs(value), 1e-9)
 
 
 # The rules a single stat must follow, as plain-English problems (empty = traceable).
