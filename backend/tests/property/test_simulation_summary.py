@@ -301,3 +301,20 @@ def test_weight_that_helps_the_lighter_side_says_the_lighter_side():
     assert text == (
         "Size decided it, in the lighter side's favor: Light (40 kg) against Heavy (400 kg)."
     )
+
+
+def test_a_crowd_against_a_slightly_bigger_foe_does_not_claim_more_attackers_fit():
+    # (2.0 / 1.6) ** 2 = 1.56: max_engagers still lets only one attacker in (#390 review).
+    small, big = make_sheet("small", size_m=1.6), make_sheet("big", size_m=2.0)
+    text = _explained(StatName.SIZE, True, matchup_of(6, 1), [small, big])
+    assert text == (
+        "Size decided it, in the smaller side's favor: 6 Small (1.6 m) against 1 Big (2 m). "
+        "A bigger body is an easier target."
+    )
+
+
+def test_a_size_reference_keeps_the_plain_sentence():
+    # A scaled fighter's sheet size isn't the size it fought at, so "smaller" could be wrong.
+    small, big = make_sheet("small", size_m=1.0), make_sheet("big", size_m=2.4)
+    text = _explained(StatName.SIZE, True, matchup_of(1, 1, ref_0="horse"), [small, big])
+    assert text == "Size decided it: Small (1 m) against Big (2.4 m)."

@@ -318,8 +318,10 @@ def _explain(
     vo = fmt(sheets[foe].stats[key].value)
     pair = f"{fav_name} ({vf}{unit}) against {foe_name} ({vo}{unit})"
     smaller = sheets[fav].stats[key].value < sheets[foe].stats[key].value
-    if helped and smaller and key in (StatName.SIZE, StatName.MASS):
-        return _explain_smaller_side(key, counts, pair, vf, vo, unit, fav_name, foe_name)
+    # A size reference rescales a fighter, so its sheet size may not be the size it fought at.
+    scaled = any(f.size_reference for f in matchup.fighters)
+    if helped and smaller and not scaled and key in (StatName.SIZE, StatName.MASS):
+        return _explain_smaller_side(key, matchup, sheets, fav)
     if helped:
         text = f"{label} decided it: {pair}."
     else:
@@ -330,21 +332,24 @@ def _explain(
 
 
 def _explain_smaller_side(
-    key: StatName,
-    counts: tuple[int, int],
-    pair: str,
-    vf: str,
-    vo: str,
-    unit: str,
-    fav_name: str,
-    foe_name: str,
+    key: StatName, matchup: Matchup, sheets: list[StatSheet], fav: int
 ) -> str:
     """Size helped the smaller (or lighter) favorite: say so, so it can't read backwards (#365)."""
+    foe = 1 - fav
+    unit = _STAT_TEXT[key][2]
+    values = (sheets[fav].stats[key].value, sheets[foe].stats[key].value)
+    counts = (matchup.fighters[fav].count, matchup.fighters[foe].count)
+    crowd = max(counts) > 1  # head counts show why a crowd of small fighters benefits
+    sides = [
+        f"{f'{n} ' if crowd else ''}{sheets[i].display_name} ({fmt(v)}{unit})"
+        for i, n, v in ((fav, counts[0], values[0]), (foe, counts[1], values[1]))
+    ]
+    pair = f"{sides[0]} against {sides[1]}"
     if key == StatName.MASS:  # weight is mostly health in the model: no honest one-line "how"
         return f"Size decided it, in the lighter side's favor: {pair}."
-    if max(counts) > 1:  # head counts show why a crowd of small fighters benefits
-        pair = f"{counts[0]} {fav_name} ({vf}{unit}) against {counts[1]} {foe_name} ({vo}{unit})"
-    # hit_chance: bigger targets are hit more easily; max_engagers: more attackers fit around them.
+    # hit_chance: a bigger target is hit more easily. max_engagers: a second attacker fits only
+    # when (bigger size / smaller size) ** 2 is at least 2 (#390 review).
+    fits = counts[0] > 1 and (values[1] / values[0]) ** 2 >= 2
     how = "A bigger body is an easier target"
-    how += ", and more attackers fit around it at once." if counts[0] > 1 else "."
+    how += ", and more attackers fit around it at once." if fits else "."
     return f"Size decided it, in the smaller side's favor: {pair}. {how}"
