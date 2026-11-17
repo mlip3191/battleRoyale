@@ -48,7 +48,41 @@ The product target is at least 80% favorite-correct on the obvious cases in the 
 - **Count ranges are assumptions, not measurements.** No source measures how many house cats equal a wolf. The ranges come from rough size ratios and are deliberately wide (for example `cnt-04` spans 20 to 300), so they catch gross errors in the engine, not small ones. A pass here is weak evidence.
 - **Fighters without hand-verified sheets.** Only 15 fighters get hand-verified sheets (G05). Matchups using the others can only be scored with research sheets or skipped.
 - **The set is small.** With 5 obvious cases held out, one miss moves that score by 20 points.
-- **No swarm or edge-case coverage.** No matchup puts more than 4 fighters on a side apart from the count-case ranges, so the set cannot judge swarm mode or `SWARM_THRESHOLD`. It also has no mirror matches, no draws, no ranged fighters, and never uses the water, urban or mountain terrain. Ten seed fighters (chimpanzee, great white shark, army ant, honey bee, T. rex, triceratops, medieval knight, samurai, pickup truck, saguaro cactus) are not used. A second set for these is a follow-up.
+- **No swarm or edge-case coverage.** No matchup puts more than 4 fighters on a side apart from the count-case ranges, so the set cannot judge swarm mode or `SWARM_THRESHOLD`. It also has no mirror matches, no draws, no ranged fighters, and never uses the water, urban or mountain terrain. Ten seed fighters (chimpanzee, great white shark, army ant, honey bee, T. rex, triceratops, medieval knight, samurai, pickup truck, saguaro cactus) are not used. The edge-case set below covers these.
+
+## Edge-case set
+
+`data/benchmark/edge.yaml` (#136) holds 15 cases the main set can't judge. It uses the same entry format, with three differences:
+
+- `group` is `swarm`, `showcase`, `mirror`, `draw` or `terrain`, and `id` starts with `edge-`.
+- `source` is always `assumption: <one-line reason>`. These answers are judgment calls, never sourced facts.
+- A fighter may carry `size_reference` (the showcase's duck-sized horses), and the showcase dragon comes from `data/seed/mythical.yaml`. Legends have no right answer, so the main set leaves them out; this one checks only that the showcase battle behaves as planned.
+
+| Group | Cases | What it checks |
+|---|---|---|
+| `swarm` | army ants (150, 300) vs a house cat; honey bees (150, 300) vs a chimpanzee | the same matchup on both sides of 200 per side |
+| `showcase` | the five PRODUCT_SPEC §9 battles | the demo still behaves as planned |
+| `mirror` | samurai vs samurai; gray wolf vs gray wolf | no side bias |
+| `draw` | saguaro cactus vs toaster | a fight nobody can win |
+| `terrain` | water, mountain, urban | the terrains the main set never uses |
+
+Together they use all ten seed fighters the main set leaves out.
+
+**Pass rules, written before the first run:**
+
+1. **Swarm, showcase, terrain:** the same favorite rule as the main set (rule 1). All are `medium`, so rule 2's 0.7 floor doesn't apply.
+2. **Mirror:** the first side's win probability is within 0.1 of 0.5 (|p − 0.5| ≤ 0.1). `expected_winner` is `draw` only to mark it; the outcome itself doesn't have to be a draw.
+3. **Draw:** a draw is the most likely outcome, with a draw probability of at least 0.5.
+4. **Swarm pairs** (`a` is about 150 per side, `b` about 300): both pick the expected favorite, and the bigger swarm never does worse. The swarm side's win probability in `b` is at least its value in `a` minus 0.03 (more fighters never hurt, #108).
+5. **Swarm against one-by-one (D-45):** when the runner can run one count both ways, the two win probabilities agree within ±0.03. That needs a runner option (F07, Felipe), so until then rule 4 stands in for it.
+
+The edge-case results are reported in their own table, never mixed into the main set's scores or its 80% target.
+
+**Known weaknesses of this set:**
+
+- Every answer is an assumption, so a miss means "look at this", not "the engine is wrong".
+- Since D-50, swarm mode is chosen by a fight's estimated work, not by head count. So 150 against 300 crosses the old 200 line but may not switch the engine's mode on its own. Rule 5 is the direct check.
+- The draw case depends on the toaster and the cactus both being unable to hurt each other. If either gets a real attack, it stops being a draw case.
 
 ## Engine version 12 (#341) and 11 (#301)
 
