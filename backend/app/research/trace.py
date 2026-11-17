@@ -132,9 +132,8 @@ def _numbers_with_units(name: StatName, quote: str) -> Iterator[float]:
         if written is None:
             continue
         phrase = written.group(1)
-        for unit in dict.fromkeys(
-            [phrase, phrase.split()[0]]
-        ):  # "kilometres per hour", then "kilometres"
+        # Try the whole phrase first ("kilometres per hour"), then its first word ("kilometres").
+        for unit in dict.fromkeys([phrase, phrase.split()[0]]):
             try:
                 converted = to_stat_unit(number, unit, name)
             except UnitError:

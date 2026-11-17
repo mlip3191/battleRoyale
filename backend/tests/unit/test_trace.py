@@ -17,6 +17,7 @@ from app.models.stats import StatName, StatSheet, StatValue
 from app.research.trace import (
     check_battle,
     trace_stored_battles,
+    traceable,
     traceable_share,
     value_in_quote,
 )
@@ -461,3 +462,11 @@ def test_a_tiny_extracted_value_must_still_match_to_its_stored_digits() -> None:
     quote = "A female weighs about 2.5 mg."
     assert value_in_quote(StatName.MASS, sourced(2.5e-06, "kg", quote, method="extracted"))
     assert not value_in_quote(StatName.MASS, sourced(3.0e-06, "kg", quote, method="extracted"))
+
+
+def test_a_hand_verified_quote_counts_as_unchecked_without_a_database() -> None:
+    # The fixture's five quotes are all extracted; this pins the hand-verified path (#379 review).
+    report = check_battle(with_stat(0, StatName.MASS, method="hand_verified"))
+    assert report.ok and report.quotes_unchecked == 5
+    assert traceable(report) is True
+    assert traceable(report, require_quotes=True) is False
