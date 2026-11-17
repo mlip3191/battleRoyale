@@ -121,3 +121,18 @@ def test_the_mock_chat_finds_nothing_so_mock_mode_blocks() -> None:
     from app.providers.mock.text import MockChatLLM
 
     assert run(MockChatLLM()) == NONSENSE
+
+
+@pytest.mark.parametrize(
+    ("heads", "quote", "ok"),
+    [
+        (3, "Some versions describe three heads: a lion, a goat and a snake.", True),
+        (9, "The nine-headed serpent lived in the lake.", True),
+        (3, "It had 3 heads.", True),
+        (3, "This is one of three versions of the story; it had heads like a lion.", False),
+        (4, "Some versions describe three heads.", False),
+        (3, "It lived past three headlands to the north.", False),
+    ],
+)
+def test_the_number_must_name_the_heads(heads: int, quote: str, ok: bool) -> None:
+    assert heads_in_quote(heads, quote) is ok
