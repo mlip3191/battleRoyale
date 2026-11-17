@@ -94,17 +94,23 @@ def live_run(monkeypatch: Any, tmp_path: Any, runners: dict[str, Any], leftover:
 async def test_a_failed_section_is_reported_and_the_others_are_still_written(
     monkeypatch: Any, tmp_path: Any, capsys: Any
 ) -> None:
+    order: list[str] = []
+
     async def works() -> str:
+        order.append("intake")
         return "intake numbers"
 
     async def fails() -> str:
+        order.append("safety")
         raise TimeoutError("details that must not be printed")
 
     runners = {"intake": works, "safety": fails, "retrieval": works}
     output = live_run(monkeypatch, tmp_path, runners)
     assert await ev.main(["--sections", "safety,intake"]) == 2
+    assert order == ["intake", "safety"]  # the fixed order, whatever was typed
     sections = ev.read_sections(output.read_text(encoding="utf-8"))
-    assert sections["intake"] == "intake numbers" and sections["safety"] == ev.NOT_RUN
+    assert sections["intake"].endswith("intake numbers") and sections["safety"] == ev.NOT_RUN
+    assert sections["intake"].startswith("_Measured ")  # each section carries its own date
     out = capsys.readouterr().out
     assert "safety (TimeoutError)" in out and "must not be printed" not in out
 
@@ -118,6 +124,38 @@ async def test_nothing_is_written_when_the_redaction_scan_finds_a_secret(
     output = live_run(monkeypatch, tmp_path, {"intake": works}, leftover=1)
     assert await ev.main(["--sections", "intake"]) == 3
     assert not output.exists()
+
+
+def test_a_name_with_its_variant_counts_as_the_expected_entity() -> None:
+    case = {
+        "name": "grizzly vs wolves",
+        "replies": [{}],
+        "expect": {"status": "ok", "fighters": [{"entity": "grizzly bear"}, {"entity": "wolf"}]},
+    }
+    bear = SimpleNamespace(entity="bear", variant="grizzly", count=1)
+    wolf = SimpleNamespace(entity="wolf", variant=None, count=6)
+    got = SimpleNamespace(
+        status="ok",
+        matchup=SimpleNamespace(terrain=SimpleNamespace(value="forest"), fighters=[bear, wolf]),
+    )
+    score = ev.IntakeScore()
+    ev.score_intake_case(score, case, got)
+    assert score.exact["entity"] == [2, 2] and score.full == 1
+
+
+def test_a_wrong_status_is_one_miss_not_a_miss_per_field() -> None:
+    score = ev.IntakeScore()
+    ev.score_intake_case(score, CASE, result("clarify"))
+    assert score.exact == {"entity": [0, 0], "count": [0, 0], "terrain": [0, 0]}
+    assert len(score.misses) == 1
+
+
+def test_two_readings_differ_when_the_terrain_does() -> None:
+    sides = (("wolf", 3), ("moose", 1))
+    forest = result("ok", "forest", sides)
+    arena = result("ok", "arena", sides)
+    assert ev.reading(forest) == ev.reading(result("ok", "forest", sides))
+    assert ev.reading(forest) != ev.reading(arena)
 
 
 async def test_an_unknown_section_is_refused(capsys: Any) -> None:
