@@ -509,6 +509,35 @@ async def test_outro_missing_a_required_placeholder_is_rejected() -> None:
     assert outro.fallback is True
 
 
+# Live, the model often wrote the winner's name instead of {winner}, and a retry that said only
+# "winner" didn't fix it (#363): the retry shows the placeholder in braces, as it must be written.
+async def test_the_retry_shows_a_missing_placeholder_in_braces() -> None:
+    sample = SAMPLES[GRIZZLY]
+    lines = sample.replies["outro"]["lines"]
+    bad = {
+        "lines": [
+            {**line, "text": line["text"].replace("{winner}", "the grizzly")} for line in lines
+        ]
+    }
+    chat = _chat_with(sample, "outro", bad, sample.replies["outro"])
+    _, _, outro = await _write(sample, chat)
+    assert outro.fallback is False
+    retry = [m for name, m, _ in chat.calls if name == "outro"][1][-1]["content"]
+    assert "{winner}" in retry and "curly braces" in retry
+
+
+# Live, a rejected play-by-play counted the moments ("Third strike!"); the retry says why such a
+# number is out, not only which words were (#363).
+async def test_a_number_retry_says_not_to_count_or_number_moments() -> None:
+    sample = SAMPLES[GRIZZLY]
+    bad = _with_line(sample, "play_by_play", 1, "Seventeenth strike for the bear!")
+    chat = _chat_with(sample, "play_by_play", bad, sample.replies["play_by_play"])
+    _, pbp, _ = await _write(sample, chat)
+    assert pbp.fallback is False
+    retry = [m for name, m, _ in chat.calls if name == "play_by_play"][1][-1]["content"]
+    assert "Seventeenth" in retry and "count" in retry and "fact list" in retry
+
+
 async def test_draw_outro_uses_draw_pct_and_has_no_winner() -> None:
     sample = SAMPLES[GRIZZLY]
     draw = sample.result.model_copy(update={"outcome": "draw"})

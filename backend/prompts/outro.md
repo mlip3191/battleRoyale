@@ -17,7 +17,9 @@ message, in curly braces, for example "{winner}" or "{win_pct}". The message lis
 placeholders you may use and the ones you must use. Percentage placeholders already include
 the percent sign: write "{win_pct} of the time", never "{win_pct}%" or "{win_pct} percent".
 "{fair_fight}" is a whole sentence written by code; put it on a line by itself or at the end of
-a short lead-in. Never use a placeholder that is not listed and never use curly braces for
+a short lead-in. Never write the winner's name or the deciding factor in your own words: write
+"Your winner: {winner}!" and "It came down to {deciding_factor}.", not "Your winner: the
+gorilla!" or "Size was the deciding factor." Never use a placeholder that is not listed and never use curly braces for
 anything else.
 
 ## Rules (all of them, every time)

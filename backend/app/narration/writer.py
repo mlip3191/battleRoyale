@@ -241,9 +241,15 @@ def read_reply(kind: Kind, reply: object, facts: NarrationFacts, log_len: int) -
         raw = [item.get("text", "") for item in items if isinstance(item, dict)]
         used = {name for text in raw if isinstance(text, str) for name in PLACEHOLDER.findall(text)}
         groups = required_placeholders(facts)
-        missing = [" or ".join(group) for group in groups if not used & set(group)]
+        missing = [
+            " or ".join(f"{{{name}}}" for name in group)
+            for group in groups
+            if not used & set(group)
+        ]
         if missing:
-            raise ScriptRejected(f"the outro must use these placeholders: {', '.join(missing)}")
+            raise ScriptRejected(
+                f"the outro must use these placeholders: {', '.join(missing)}. {PLACEHOLDER_HINT}"
+            )
     script = Script(kind=kind, lines=lines, fallback=False)
     problems = check_script(script, facts, log_len)
     if problems:
@@ -324,6 +330,23 @@ def reply_schema(kind: Kind, log_len: int) -> dict[str, Any]:
     }
 
 
+# How to fix a rejected reply, for the retry. Live, without its thinking step, the model kept
+# counting moments ("Third strike!") or naming the winner itself after a bare "rejected" (#363).
+PLACEHOLDER_HINT = (
+    "Write each one exactly like that, in curly braces; never write the winner's name or the "
+    "deciding factor in your own words."
+)
+NUMBER_HINT = (
+    "Only numbers from the fact list are allowed, written the same way. Don't count or number "
+    "the moments, and don't convert or round a number.\n"
+)
+
+
+# The extra advice for a retry, chosen by what the checks rejected.
+def _retry_hint(reason: str) -> str:
+    return NUMBER_HINT if "numbers not in the fact list" in reason else ""
+
+
 # Ask for one script, regenerating once if the reply is invalid; the template on any failure.
 async def write_one(
     kind: Kind,
@@ -353,7 +376,7 @@ async def write_one(
                 {"role": "assistant", "content": str(reply)},
                 {
                     "role": "user",
-                    "content": f"That reply was rejected: {reason}\n"
+                    "content": f"That reply was rejected: {reason}\n{_retry_hint(reason)}"
                     "Write it again, following every rule. Reply with JSON only.",
                 },
             ]
