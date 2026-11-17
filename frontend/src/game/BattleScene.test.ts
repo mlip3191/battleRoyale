@@ -79,6 +79,14 @@ describe("placeholders", () => {
 });
 
 describe("normal motion", () => {
+  test("the corner labels name a group with its count, like the intro (#361)", () => {
+    const { scene } = stage(result, [1, 6], false);
+    const texts = scene.texts.map((t) => t.text);
+    expect(texts).toContain("GRIZZLY BEAR");
+    expect(texts).toContain("6 GRAY WOLVES");
+    expect(texts).not.toContain("GRAY WOLF");
+  });
+
   test("plays every event once, in order, with tweens and a shake on hits", () => {
     const { scene, onEvent, onFinish } = stage(result, [1, 6], false);
     playAll(scene);
