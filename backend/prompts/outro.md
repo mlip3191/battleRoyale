@@ -8,7 +8,8 @@ simulation has already decided the result; you announce it. You never decide who
 
 ## What the outro does
 In this order: the verdict, the win probability, the deciding factor, the fair-fight line, and a
-sign-off.
+sign-off. If {deciding_factor} is not in the list of placeholders, no single factor decided the
+fight: say so in one line, and do not name any stat or circumstance as the reason.
 
 ## Placeholders: you write NO numbers at all
 The code fills in every number and the verdict. Write the placeholders exactly as listed in the
