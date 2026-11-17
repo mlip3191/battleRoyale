@@ -361,10 +361,13 @@ def test_seed_sheet_lookup_uses_a_unique_match_from_the_raw_phrase() -> None:
     ):
         sheet = find_seed_sheet(entity, raw=raw)
         assert sheet is not None and sheet.fighter_id == fighter_id
-    # Vague raw has no unique sheet: "grizzly" is not in the phrase.
-    assert find_seed_sheet("bear", raw="a bear") is None
+    # Vague raw has no unique sheet ("grizzly" is not in the phrase), so the default-kind
+    # table picks it (#168): a bare "bear" is the grizzly bear.
+    vague = find_seed_sheet("bear", raw="a bear")
+    assert vague is not None and vague.fighter_id == "grizzly-bear"
     assert find_seed_sheet("unicorn", raw="a fluffy unicorn") is None
-    assert find_seed_sheet("bear", raw="../fighters") is None
+    # A path-like raw never reads outside the sheets folder (a name with no default, #168).
+    assert find_seed_sheet("lizard", raw="../fighters") is None
     assert find_seed_sheet("", raw="a grizzly bear") is None
 
 
@@ -380,13 +383,16 @@ def test_seed_sheet_lookup_accepts_grey_and_plural_names() -> None:
     # Plural entity finds the singular sheet when one exists.
     sheet = find_seed_sheet("ducks")
     assert sheet is not None and sheet.fighter_id == "duck"
-    # Bare "wolves" must not grab gray-wolf.
-    assert find_seed_sheet("wolves") is None
-    assert find_seed_sheet("wolves", raw="wolves") is None
+    # Bare "wolves" gets gray-wolf from the written default-kind table (#168), not by a guess.
+    for sheet in (find_seed_sheet("wolves"), find_seed_sheet("wolves", raw="wolves")):
+        assert sheet is not None and sheet.fighter_id == "gray-wolf"
     # Names that should still miss still miss.
     assert find_seed_sheet("bear", "polar") is None
-    assert find_seed_sheet("bear") is None
-    assert find_seed_sheet("bear", raw="a bear") is None
+    assert find_seed_sheet("lizard") is None  # no default kind (#168: "bear" has one now)
+    assert find_seed_sheet("lizard", raw="a lizard") is None
     # Slugs stay [a-z0-9-]; aliases do not loosen the path check.
     assert find_seed_sheet("../fighters", "grey") is None
-    assert find_seed_sheet("wolves", raw="../fighters") is None
+    # The default comes from the fixed table, so a path-like raw still can't reach other files.
+    sheet = find_seed_sheet("wolves", raw="../fighters")
+    assert sheet is not None and sheet.fighter_id == "gray-wolf"
+    assert find_seed_sheet("lizard", raw="../fighters") is None

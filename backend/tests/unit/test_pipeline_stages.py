@@ -475,10 +475,13 @@ async def test_live_style_raw_phrase_finds_the_seed_sheets(store: BattleStore) -
 
 
 async def test_a_vague_raw_phrase_still_fails_with_the_plain_message(store: BattleStore) -> None:
-    record = await battle(store, _fight({"entity": "bear", "raw": "a bear"}, {"entity": "duck"}))
+    # A vague kind with no default ("bear" has one since #168: the grizzly bear).
+    record = await battle(
+        store, _fight({"entity": "lizard", "raw": "a lizard"}, {"entity": "duck"})
+    )
     assert record.status == "failed"
     detail = stage_of(record, "research").detail or ""
-    assert detail == stages.NOT_FOUND.format(name="bear")
+    assert detail == stages.NOT_FOUND.format(name="lizard")
 
 
 async def test_the_no_stat_sheet_message_names_the_fighter_as_typed(store: BattleStore) -> None:
