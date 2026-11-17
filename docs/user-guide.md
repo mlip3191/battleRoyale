@@ -232,7 +232,6 @@ The show is PG: knockouts and retreats, no blood or gore.
 | Problem | Fix |
 |---|---|
 | **Windows: "running scripts is disabled on this system"** when you type `npm` | Type `npm.cmd` instead of `npm`, for example `npm.cmd run setup` and `npm.cmd start`. There's no need to change any Windows security settings. |
-| **Windows: `npm start` stops with "Failed to spawn: uvicorn" and "An Application Control policy has blocked this file"** | Windows blocked one of the app's newly installed programs. Start the app this way instead: run `npm run build`, then `uv run --directory backend python -m uvicorn app.main:app --port 8000`, and open http://localhost:8000 as usual. There's no need to change any Windows security settings. |
 | **"'node' (or 'uv') is not recognized" / "command not found"** | Close the terminal and open a new one after installing, so it finds the new programs. If it still fails, install that program again (step 1). |
 | **The page says "We couldn't reach the studio"**, or the browser says it can't connect to localhost:8000 | The app isn't running. Check that the `npm start` window is still open and shows "Application startup complete". If you closed it, run `npm start` again, then refresh the page (F5, or Cmd+R on Mac). |
 | **"This fight was called off"** with "We don't have a stat sheet for … yet" | The app doesn't know that fighter yet. Pick one of the 15 fighters listed in [Type a matchup](#type-a-matchup), or click an example matchup. |
