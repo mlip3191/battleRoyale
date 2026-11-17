@@ -42,9 +42,9 @@ The product target is at least 80% favorite-correct on the obvious cases in the 
 
 ## Traceability
 
-The run's traceability column comes from G06's checker (`scripts/trace_report.py`, #40): the share of stored battles with no broken link between a number and its source. The note under it says how many extracted quotes were checked against stored articles, and how many couldn't be checked because their article isn't stored on the machine running the benchmark.
+The run's traceability column comes from G06's checker (`scripts/trace_report.py`, #40): the share of stored battles with no broken link between a number and its source. The note under it says how many quotes (extracted and, since #369, hand-verified) were checked against stored articles, and how many couldn't be checked because their article isn't stored on the machine running the benchmark.
 
-**Strict mode** (`--require-quotes`, #370), on both `trace_report.py` and `run_benchmark.py`: a battle counts as traceable only if it has no issues and every extracted quote was checked, so 100% means every quote was really verified. `trace_report.py --require-quotes` also exits 1 when any quote couldn't be checked. It's off by default.
+**Strict mode** (`--require-quotes`, #370), on both `trace_report.py` and `run_benchmark.py`: a battle counts as traceable only if it has no issues and every quote was checked, so 100% means every quote was really verified. Since #369 this includes the seed sheets' hand-verified quotes, so strict mode fails on a machine whose knowledge base doesn't store their articles; run `npm run ingest` (or `--refresh`) first. `trace_report.py --require-quotes` also exits 1 when any quote couldn't be checked. It's off by default.
 
 ## Known weaknesses
 
