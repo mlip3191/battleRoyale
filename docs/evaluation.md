@@ -2,12 +2,14 @@
 
 Does the GenAI actually work? Numbers from the real course endpoints, made by `backend/scripts/evaluate_ai.py`. Hosts and keys are never written here.
 
-Last run: 2026-11-17 with the code in commit `eca18b0` (measured: 1. Extraction accuracy, 3. Coverage on new fighters, 4. Intake accuracy).
+Last run: 2026-11-17 with the code in commit `009ad5c` (measured: 7. Cost and speed).
 
 ## Summary
 
 <!-- section:summary -->
-_Not measured yet._
+_Written 2026-11-17 from the sections below; the benchmark (section 6) is added once F07 (#43) lands._
+
+Measured on the live course endpoints on Nov 16–17, 2026. The parts that keep the app safe and find evidence work well. The safety gate caught 66 of the 68 requests it should block and wrongly blocked 2 of 52 allowed ones (both mythical creatures, #340), and every one of 7 prompt-injection attempts behaved like its clean version. Retrieval found the right passage in the top 5 for 14 of 15 cases. Reading matchups is good but not perfect: 85% of 105 readings got every field right, and 71% of phrasings were read the same way three times running. Extracting numbers is the weak link. Of 51 hand-verified stats rebuilt from research alone, 37% landed within 25% and 35% fell back to labeled estimates. But no number the pipeline kept failed its quote check: it errs toward a labeled estimate rather than an invented figure. A showcase battle reaches its verdict in under 2 s (median 0.3 s), and a repeat battle is answered from the cache at once (5 of 5). The full show takes about 8 s, set by the script writer's 8 s deadline, which it currently always overruns before the template script takes over (#363).
 <!-- /section -->
 
 ## 1. Extraction accuracy
@@ -197,11 +199,45 @@ _Not measured yet._
 ## 7. Cost and speed
 
 <!-- section:cost -->
-_Not measured yet._
+_Measured 2026-11-17 with the code in commit `009ad5c`._
+
+The 5 showcase battles ran twice through the real pipeline in this process (84 s): a fresh run, then a repeat that the repeat-battle cache should answer. Times start when the battle starts; intake (reading the typed matchup, about 8 s a reading in section 4) comes before that and isn't included. Calls are course endpoint requests, retries included.
+
+| Battle | Run | Status | Verdict | Full show | chat | structured |
+|---|---|---|---|---|---|---|
+| 100 duck-sized horses vs 1 horse-sized duck | fresh | done | 1.5 s | 9.9 s | 3 | 1 |
+| Grizzly bear vs 4 gray wolves | fresh | done | 0.4 s | 8.4 s | 3 | 1 |
+| Honey badger vs king cobra | fresh | done | 0.2 s | 8.2 s | 3 | 1 |
+| Roman legionary vs gorilla | fresh | done | 0.2 s | 8.7 s | 3 | 1 |
+| Dragon vs main battle tank | fresh | done | 0.3 s | 8.5 s | 3 | 1 |
+| 100 duck-sized horses vs 1 horse-sized duck | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
+| Grizzly bear vs 4 gray wolves | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
+| Honey badger vs king cobra | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
+| Roman legionary vs gorilla | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
+| Dragon vs main battle tank | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
+
+| Measure | Fresh | Repeat |
+|---|---|---|
+| Median time to verdict | 0.3 s | 0.0 s |
+| 90th percentile time to verdict | 1.5 s | 0.0 s |
+| Median time to full show | 8.5 s | 8.1 s |
+| 90th percentile time to full show | 9.9 s | 8.1 s |
+| Calls per battle: chat | 3.0 | |
+| Calls per battle: structured | 1.0 | |
+| Repeat battles answered from the cache | | 5 of 5 |
 <!-- /section -->
 
 ## What this means and limitations
 
 <!-- section:limitations -->
-_Not measured yet._
+- **Estimates.** When research can't source a stat, code fills a category default, labeled as an estimate. Rebuilt from research alone, 35% of hand-verified stats came back as estimates. New animals got 2–4 of 7 physical stats from sources, machines mostly derived or estimated, and a vending machine entirely estimates.
+- **Behavioral assumptions.** Aggression, group tactics and armor come from a rubric, not measurements (D-32). Mythical creatures assume every stat by design.
+- **Two-sided matchups only.** Every battle is exactly two sides, each one kind of fighter in any number.
+- **Dependence on the course endpoints.** Every AI number here comes from the course's models as they behaved on Nov 16–17. They can change without notice, and they aren't fully repeatable: the same phrasing was read differently across runs (71% stable), and live reranking occasionally swaps near-tied passages (one rank changed between runs; hit@5 stayed 14/15).
+- **Extraction ignores the fighter's variant.** Research doesn't use sex, age or which speed, so some "more than 25% off" values compare different things (the lion's mass, the bald eagle's dive speed). The extraction table also counts derived values, so one wrong input can spread, such as a crocodile bite force computed from a wrong mass.
+- **New fighters.** The app can't fight animals or objects off the 30-fighter seed list until #345 lands. Section 3 measures what research could do for them.
+- **Mythical stand-ins.** Hippogriff built on a horse is sensible. The cockatrice built on a T. rex with fire breath doesn't fit the legend (#391).
+- **Safety misses.** Two mythical creatures are falsely blocked (#340), "T. rex" was falsely blocked (#378), and four blocked requests got the wrong reason.
+- **Cost and speed were measured on the showcase battles.** Their fighters have ready-made seed sheets, so those battles make no research calls; a new fighter adds research (about 21 s a fighter in section 1). Images are cached per fighter, so a fighter's first battle makes about 6 image calls and later ones none. Times are from one Mac; slower laptops were up to about 4x slower in the Simulate stage (D-63).
+- **Small samples, one run each.** 15 retrieval cases, 35 phrasings, 15 fighters, 10 new fighters. Treat the percentages as indicative, not precise.
 <!-- /section -->
