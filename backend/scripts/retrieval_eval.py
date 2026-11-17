@@ -12,7 +12,9 @@ import argparse
 import asyncio
 import sys
 import time
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 import httpx
 import yaml
@@ -32,26 +34,46 @@ TARGET = 0.8
 DOWNLOAD_TIMEOUT_S = 15.0
 
 
+# The retrieval cases (fighter_id, stat, phrase), as written in the fixture.
+def load_cases() -> list[dict[str, Any]]:
+    return list(yaml.safe_load(CASES.read_text(encoding="utf-8"))["cases"])
+
+
+# The 1-based rank of the first passage that contains the phrase, or None for a miss. The one
+# match rule for hit@5, shared with scripts/evaluate_ai.py (#389).
+def rank_of(phrase: str, passages: Sequence[Any]) -> int | None:
+    wanted = normalize_text(phrase)
+    return next((i for i, p in enumerate(passages, 1) if wanted in normalize_text(p.text)), None)
+
+
+# Each case with its rank among the passages evidence_for returns (None for a miss).
+async def case_ranks(
+    connection: Any, embedder: Any, reranker: Any, cases: Sequence[dict[str, Any]]
+) -> list[tuple[dict[str, Any], int | None]]:
+    ranked = []
+    for case in cases:
+        stat = StatName(case["stat"])
+        found = await evidence_for(connection, embedder, reranker, case["fighter_id"], stat)
+        ranked.append((case, rank_of(case["phrase"], found)))
+    return ranked
+
+
 # Print one row per case and the hit@5 score; True when it meets the target.
 async def score() -> bool:
-    cases = yaml.safe_load(CASES.read_text(encoding="utf-8"))["cases"]
+    cases = load_cases()
     embedder, reranker = get_provider("embedder"), get_provider("reranker")
     connection = connect()
-    hits = 0
     try:
         apply_migrations(connection)
-        print("| fighter | stat | phrase | hit | rank |\n|---|---|---|---|---|")
-        for case in cases:
-            stat = StatName(case["stat"])
-            found = await evidence_for(connection, embedder, reranker, case["fighter_id"], stat)
-            phrase = normalize_text(case["phrase"])
-            ranks = [i for i, p in enumerate(found, 1) if phrase in normalize_text(p.text)]
-            hits += bool(ranks)
-            rank = str(ranks[0]) if ranks else "-"
-            mark = "yes" if ranks else "**no**"
-            print(f"| {case['fighter_id']} | {stat} | {case['phrase']} | {mark} | {rank} |")
+        ranked = await case_ranks(connection, embedder, reranker, cases)
     finally:
         connection.close()
+    print("| fighter | stat | phrase | hit | rank |\n|---|---|---|---|---|")
+    for case, rank in ranked:
+        mark = "yes" if rank else "**no**"
+        stat = StatName(case["stat"])
+        print(f"| {case['fighter_id']} | {stat} | {case['phrase']} | {mark} | {rank or '-'} |")
+    hits = sum(rank is not None for _, rank in ranked)
     share = hits / len(cases)
     print(f"\nhit@5: {hits}/{len(cases)} = {share:.0%} (target {TARGET:.0%})")
     return share >= TARGET
