@@ -29,6 +29,8 @@ Each of the 15 hand-verified seed fighters was built again by the research pipel
 
 Extraction answers rejected by code: 2, of which 0 failed the quote check (the number wasn't in the quote, or the quote wasn't in the passage). A rejected answer leaves the stat to a later level, so it shows up above as an estimate, never as a made-up number.
 
+Research does not use the fighter's variant (sex, age, or which speed), so some "more than 25% off" values compare different things, for example the lion's mass or the bald eagle's dive speed.
+
 More than 25% off:
 - African lion mass_kg: research 126, hand-verified 174.9
 - African lion top_speed_mps: research 20.5833, hand-verified 16.39

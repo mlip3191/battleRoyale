@@ -130,6 +130,10 @@ def extraction_markdown(result: Extraction, seconds: float) -> str:
         f"{result.quote_rejected} failed the quote check (the number wasn't in the quote, or the "
         "quote wasn't in the passage). A rejected answer leaves the stat to a later level, so it "
         "shows up above as an estimate, never as a made-up number.",
+        "",
+        "Research does not use the fighter's variant (sex, age, or which speed), so some \"more "
+        "than 25% off\" values compare different things, for example the lion's mass or the bald "
+        "eagle's dive speed.",
     ]
     if result.wrong:
         out += ["", "More than 25% off:", *[f"- {line}" for line in result.wrong]]
