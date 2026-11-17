@@ -1,0 +1,159 @@
+# Edge-case set for the benchmark (#136). See docs/benchmark.md, "Edge-case set".
+# Every expected result here is a judgment call, labeled "assumption: <reason>", never a
+# sourced fact. Pass rules were written before any run, and this set is reported separately.
+
+matchups:
+# --- Swarms on both sides of 200 per side: the same matchup at ~150 and ~300 -------------------
+- id: edge-swarm-01a
+  group: swarm
+  fighters:
+    - {entity: army-ant, count: 150, variant: null}
+    - {entity: house-cat, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "1"
+  confidence: medium
+  source: "assumption: 150 ant bites barely hurt a cat that can swat or flee"
+
+- id: edge-swarm-01b
+  group: swarm
+  fighters:
+    - {entity: army-ant, count: 300, variant: null}
+    - {entity: house-cat, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "1"
+  confidence: medium
+  source: "assumption: twice the ants is still far too little mass to stop a cat; the ants' win share should rise, not fall"
+
+- id: edge-swarm-02a
+  group: swarm
+  fighters:
+    - {entity: honey-bee, count: 150, variant: null}
+    - {entity: chimpanzee, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: medium
+  source: "assumption: 150 stings hurt but don't stop an adult chimpanzee"
+
+- id: edge-swarm-02b
+  group: swarm
+  fighters:
+    - {entity: honey-bee, count: 300, variant: null}
+    - {entity: chimpanzee, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: medium
+  source: "assumption: 300 stings are still well short of a lethal dose for a 40-60 kg ape; the bees' share should rise"
+
+# --- The five showcase battles (PRODUCT_SPEC section 9) ----------------------------------------
+- id: edge-show-01
+  group: showcase
+  fighters:
+    - {entity: horse, count: 100, variant: null, size_reference: duck}
+    - {entity: duck, count: 1, variant: null, size_reference: horse}
+  terrain: arena
+  expected_winner: "1"
+  confidence: medium
+  source: "assumption: a duck the size of a horse outweighs and out-reaches a crowd of duck-sized horses"
+
+- id: edge-show-02
+  group: showcase
+  fighters:
+    - {entity: grizzly-bear, count: 1, variant: null}
+    - {entity: gray-wolf, count: 4, variant: null}
+  terrain: forest
+  expected_winner: "1"
+  confidence: medium
+  source: "assumption: chosen as the closest fight in #47; four wolves should be slight favorites"
+
+- id: edge-show-03
+  group: showcase
+  fighters:
+    - {entity: honey-badger, count: 1, variant: null}
+    - {entity: king-cobra, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "0"
+  confidence: medium
+  source: "assumption: the badger's thick loose skin and persistence usually beat a snake's bite"
+
+- id: edge-show-04
+  group: showcase
+  fighters:
+    - {entity: roman-legionary, count: 1, variant: null}
+    - {entity: gorilla, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "1"
+  confidence: medium
+  source: "assumption: a gorilla is several times stronger than one man, even an armed one"
+
+- id: edge-show-05
+  group: showcase
+  fighters:
+    - {entity: dragon, count: 1, variant: null}
+    - {entity: main-battle-tank, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "1"
+  confidence: medium
+  source: "assumption: a legend modeled on a crocodile scaled to elephant mass can't pierce 70 t of armor (D-40: legends and machines play by the same rules)"
+
+# --- Mirrors: the same fighter on both sides ----------------------------------------------------
+- id: edge-mirror-01
+  group: mirror
+  fighters:
+    - {entity: samurai, count: 1, variant: null}
+    - {entity: samurai, count: 1, variant: null}
+  terrain: urban
+  expected_winner: "draw"
+  confidence: medium
+  source: "assumption: identical fighters should split the wins close to 50/50"
+
+- id: edge-mirror-02
+  group: mirror
+  fighters:
+    - {entity: gray-wolf, count: 1, variant: null}
+    - {entity: gray-wolf, count: 1, variant: null}
+  terrain: forest
+  expected_winner: "draw"
+  confidence: medium
+  source: "assumption: identical fighters should split the wins close to 50/50"
+
+# --- A draw: neither side can really hurt the other ---------------------------------------------
+- id: edge-draw-01
+  group: draw
+  fighters:
+    - {entity: saguaro-cactus, count: 1, variant: null}
+    - {entity: toaster, count: 1, variant: null}
+  terrain: arena
+  expected_winner: "draw"
+  confidence: medium
+  source: "assumption: a cactus can't move and a toaster can't attack, so nobody wins"
+
+# --- Terrains the main set never uses -----------------------------------------------------------
+- id: edge-terrain-01
+  group: terrain
+  fighters:
+    - {entity: great-white-shark, count: 1, variant: null}
+    - {entity: saltwater-crocodile, count: 1, variant: null}
+  terrain: water
+  expected_winner: "0"
+  confidence: medium
+  source: "assumption: in open water the shark is faster and heavier than the crocodile"
+
+- id: edge-terrain-02
+  group: terrain
+  fighters:
+    - {entity: tyrannosaurus-rex, count: 1, variant: null}
+    - {entity: triceratops, count: 1, variant: null}
+  terrain: mountain
+  expected_winner: "0"
+  confidence: medium
+  source: "assumption: the bigger predator with the stronger bite is the favorite, but horns keep it close"
+
+- id: edge-terrain-03
+  group: terrain
+  fighters:
+    - {entity: pickup-truck, count: 1, variant: null}
+    - {entity: medieval-knight, count: 1, variant: null}
+  terrain: urban
+  expected_winner: "0"
+  confidence: medium
+  source: "assumption: a two-tonne truck rams harder than any knight can strike"
