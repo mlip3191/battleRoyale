@@ -25,7 +25,7 @@ from app.db.connection import connect  # noqa: E402
 from app.db.migrate import apply_migrations  # noqa: E402
 from app.providers.registry import ProviderConfigError, get_provider  # noqa: E402
 from app.research.benchmark_sheets import research_sheets  # noqa: E402
-from app.research.trace import trace_stored_battles, traceable_share  # noqa: E402
+from app.research.trace import trace_stored_battles, traceable, traceable_share  # noqa: E402
 from app.simulation import benchmark as bm  # noqa: E402
 
 
@@ -64,11 +64,12 @@ def add_traceability(report: bm.RunReport, mock: bool, require_quotes: bool = Fa
     finally:
         connection.close()
     report.traceability = traceable_share(traced, require_quotes)
-    clean = sum(t.ok for t in traced)
+    clean = sum(traceable(t, require_quotes) for t in traced)  # the same rule as the share
     checked = sum(t.quotes_checked for t in traced)
     unchecked = sum(t.quotes_unchecked for t in traced)
+    passing = "have no issues and every quote checked" if require_quotes else "have no issues"
     report.notes.append(
-        f"Traceability (G06): {clean} of {len(traced)} stored battles have no issues; "
+        f"Traceability (G06): {clean} of {len(traced)} stored battles {passing}; "
         f"{checked} extracted quotes were checked against stored articles and "
         f"{unchecked} could not be checked here. Run `scripts/trace_report.py` for details."
         if traced

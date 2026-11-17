@@ -281,6 +281,9 @@ def test_strict_benchmark_counts_an_uncheckable_battle_as_not_traceable(
     strict = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
     run_benchmark.add_traceability(strict, mock=False, require_quotes=True)
     assert relaxed.traceability == 1.0 and strict.traceability == 0.0
+    # The count in the note follows the same rule as the percentage (#377 QA review).
+    assert "1 of 1 stored battles have no issues;" in relaxed.notes[0]
+    assert "0 of 1 stored battles have no issues and every quote checked;" in strict.notes[0]
     assert any("Strict mode (--require-quotes)" in note for note in strict.notes)
     assert not any("Strict mode" in note for note in relaxed.notes)
 
