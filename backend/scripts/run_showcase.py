@@ -33,14 +33,14 @@ SHOWCASE: list[tuple[str, dict[str, Any]]] = [
         },
     ),
     (
-        "Grizzly bear vs 6 gray wolves",
+        "Grizzly bear vs 4 gray wolves",
         {
             "fighters": [
                 {"entity": "grizzly bear", "count": 1, "raw": "a grizzly bear"},
-                {"entity": "gray wolf", "count": 6, "raw": "6 gray wolves"},
+                {"entity": "gray wolf", "count": 4, "raw": "4 gray wolves"},
             ],
             "terrain": "forest",
-            "raw_text": "a grizzly bear vs 6 gray wolves in a forest",
+            "raw_text": "a grizzly bear vs 4 gray wolves in a forest",
         },
     ),
     (

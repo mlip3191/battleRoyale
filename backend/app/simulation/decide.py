@@ -20,7 +20,7 @@ from app.simulation.terrain import modifier
 if TYPE_CHECKING:
     from app.simulation.engine import RunOutcome
 
-Simulate = Callable[..., "list[RunOutcome]"]
+Simulate = Callable[..., "list[RunOutcome] | None"]  # None: variant skipped (#341)
 """simulate(matchup, sheets, use_terrain, runs, scaled=True) -> outcomes.
 
 The seed is fixed by the caller; `scaled=False` drops any size-reference scaling.
@@ -102,6 +102,7 @@ def decide(
     base = base[:n]
     fav = _favorite(base)
     base_won, base_left = _score(base, fav, matchup.fighters[fav].count)
+    skipped: set[str] = set()  # factors the caller would not run (#341); never named in the text
     cache: dict[str, tuple[float, float]] = {}  # factor -> (signed effect, size of effect)
 
     def effect(
@@ -110,9 +111,16 @@ def decide(
         variant_sheets: list[StatSheet],
         terrain: bool,
         scaled: bool = True,
+        own_mode: bool = False,
     ) -> tuple[float, float]:
         if factor not in cache:
-            outcomes = simulate(variant, variant_sheets, terrain, n, scaled)
+            # own_mode: the variant chooses its swarm mode itself (only "numbers", which changes
+            # the head counts on purpose); every other variant runs in the baseline's (#301).
+            extra = {"own_mode": True} if own_mode else {}
+            outcomes = simulate(variant, variant_sheets, terrain, n, scaled, **extra)
+            if outcomes is None:  # too slow to run in the baseline's mode (#341): not measured
+                skipped.add(factor)
+                return 0.0, 0.0
             won, left = _score(outcomes, fav, variant.fighters[fav].count)
             signed = (base_won - won) + c.SURVIVOR_WEIGHT * (base_left - left)
             cache[factor] = (signed, abs(signed))
@@ -128,7 +136,7 @@ def decide(
         even = matchup.model_copy(deep=True)
         for f in even.fighters:
             f.count = min(counts)
-        effect("numbers", even, sheets, True)
+        effect("numbers", even, sheets, True, own_mode=True)
 
     if scales != (1.0, 1.0):
         # A size reference ('horse-sized duck') matters on its own: drop the scaling and re-run.
@@ -149,7 +157,7 @@ def decide(
     # When nothing mattered (or the fight was a stalemate), the factor named below is only a
     # placeholder: the UI and the announcer must rely on the explainer text, not the factor name.
     if not cache:
-        return Decision(StatName.MASS, _explain_even())
+        return Decision(StatName.MASS, _explain_unmeasured() if skipped else _explain_even())
     factor = max(cache, key=lambda k: cache[k][1])
     signed, size = cache[factor]
     stat_names = {s.value for s in StatName}
@@ -164,6 +172,8 @@ def decide(
     if len(base) - wins[0] - wins[1] > max(wins) and not draws_from_venom:
         return Decision(shown, _explain_stalemate())  # most runs were draws: nobody "won"
     if size < c.MIN_EFFECT:
+        if skipped:  # an unmeasured factor may be the one that mattered (#341)
+            return Decision(shown, _explain_unmeasured())
         if base_won >= 0.9:
             return Decision(shown, _explain_comfortable(sheets[fav].display_name))
         return Decision(shown, _explain_even())
@@ -219,6 +229,24 @@ def _explain_stalemate() -> str:
 
 def _explain_comfortable(fav_name: str) -> str:
     return f"{fav_name} wins comfortably: no single stat or circumstance was decisive."
+
+
+def names_a_factor(explainer: str) -> bool:
+    """Whether an explainer says one factor decided the fight (#351).
+
+    False for the stalemate, no-contest, unmeasured, comfortable and too-close texts, so the
+    announcer never names a factor the results page says did not decide it.
+    """
+    undecided = (_explain_stalemate(), _explain_unmeasured(), _explain_even())
+    return not (
+        explainer in undecided
+        or explainer.startswith("No contest:")
+        or explainer.endswith("no single stat or circumstance was decisive.")
+    )
+
+
+def _explain_unmeasured() -> str:
+    return "Not every factor could be tested for a fight this big."
 
 
 def _explain_even() -> str:

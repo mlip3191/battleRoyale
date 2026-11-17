@@ -177,7 +177,12 @@ export function layoutStage(
 // The end banner for a winning side: "GRIZZLY BEAR WINS!" for one fighter, "6 GRAY WOLVES WIN!" for a
 // group, so it matches the verdict's "6 gray wolves" instead of naming a single wolf.
 export function winnerBanner(layout: Pick<SideLayout, "name" | "count">) {
-  if (layout.count <= 1) return `${layout.name.toUpperCase()} WINS!`;
-  const group = `${layout.count.toLocaleString("en-US")} ${pluralOf(layout.name)}`;
-  return `${group.toUpperCase()} WIN!`;
+  return `${sideTitle(layout)} ${layout.count <= 1 ? "WINS" : "WIN"}!`;
+}
+
+// A side's name on the stage: "GRIZZLY BEAR" for one fighter, "6 GRAY WOLVES" for a group, so the
+// corner label matches the intro and the end banner (#361).
+export function sideTitle(layout: Pick<SideLayout, "name" | "count">) {
+  if (layout.count <= 1) return layout.name.toUpperCase();
+  return `${layout.count.toLocaleString("en-US")} ${pluralOf(layout.name)}`.toUpperCase();
 }

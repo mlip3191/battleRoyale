@@ -84,5 +84,5 @@ def test_the_export_command_uses_double_quotes_for_titles_with_spaces(
     assert run_showcase.main([]) == 0
     out = capsys.readouterr().out
     assert (
-        '"b-1=Grizzly bear vs 6 gray wolves"' in out and "'" not in out.split("export_showcase")[1]
+        '"b-1=Grizzly bear vs 4 gray wolves"' in out and "'" not in out.split("export_showcase")[1]
     )

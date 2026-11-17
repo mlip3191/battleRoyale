@@ -37,7 +37,7 @@ class FightEvent(Contract):
     target: int | None = None
     """Index of the fighter on the other side that was targeted, if any."""
     group_size: int = 1
-    """How many fighters acted together (more than 1 for swarm events)."""
+    """How many fighters a group event (`actor` None) covers, which can be 1; otherwise 1."""
     damage: float | None = None
     """Damage dealt, when the event is a hit."""
     text_hint: str

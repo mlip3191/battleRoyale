@@ -475,7 +475,4 @@ def run_benchmark(
         commit=current_commit(),
         started=started,
         tuning_only=tuning_only,
-        notes=[
-            "Traceability (G06) is not wired in yet; it shows n/a until research/trace.py lands."
-        ],
     )

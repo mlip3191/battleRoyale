@@ -325,14 +325,17 @@ def outro_script(facts: NarrationFacts) -> Script:
                 names,
             ),
         ]
-    lines.append(
-        safe_line(
-            "announcer",
-            f"The deciding factor: {factor}.",
-            "The deciding factor: the science.",
-            facts,
+    if facts.factor_decided:
+        lines.append(
+            safe_line(
+                "announcer",
+                f"The deciding factor: {factor}.",
+                "The deciding factor: the science.",
+                facts,
+            )
         )
-    )
+    else:  # the results page says no single factor decided it (#351)
+        lines.append(line("announcer", "No single factor decided this one."))
     lines.append(fair_fight_line(facts, names))
     lines.append(line("announcer", "That's all from the arena. Good night, everybody!"))
     return Script(kind="outro", lines=lines, fallback=True)

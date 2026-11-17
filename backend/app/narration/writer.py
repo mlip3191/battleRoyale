@@ -100,11 +100,12 @@ def outro_placeholders(facts: NarrationFacts) -> dict[str, str]:
         "blue_win_pct": f"{facts.win_pct[1]}%",
         "draw_pct": f"{facts.draw_pct}%",
         "runs": f"{facts.runs:,}",
-        "deciding_factor": FACTOR_WORDS.get(
-            facts.deciding_factor, facts.deciding_factor.replace("_", " ")
-        ),
         "fair_fight": fair_fight_line(facts, names).text,
     }
+    if facts.factor_decided:  # otherwise no placeholder, so the model cannot name one (#351)
+        values["deciding_factor"] = FACTOR_WORDS.get(
+            facts.deciding_factor, facts.deciding_factor.replace("_", " ")
+        )
     if facts.outcome in ("win_0", "win_1"):
         side = int(facts.outcome[-1])
         values["winner"] = names[side]
@@ -125,7 +126,8 @@ def required_placeholders(facts: NarrationFacts) -> list[tuple[str, ...]]:
         verdict = [("winner",), ("win_pct",)]
     elif facts.outcome == "draw":
         verdict = [("draw_pct",)]
-    return [*verdict, ("deciding_factor",), ("fair_fight", "fair_count")]
+    factor = [("deciding_factor",)] if facts.factor_decided else []
+    return [*verdict, *factor, ("fair_fight", "fair_count")]
 
 
 # Put code's values into the model's placeholders; any unknown name makes the reply invalid.

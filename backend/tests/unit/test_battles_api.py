@@ -108,14 +108,13 @@ def test_battle_reaches_done_with_a_verdict(client: TestClient) -> None:
     assert 0.0 <= record.challenger.tested_win_prob <= 1.0
 
 
-def test_every_stub_stage_says_stub(client: TestClient) -> None:
+def test_no_stage_says_stub(client: TestClient) -> None:
     record = wait_until_finished(client, start(client, matchup_body("horse", "duck")))
     for name in STAGES:
-        detail = final_stage(record, name).detail
-        if name != "intake":  # intake is the only stub left
-            assert detail != STUB, name
-        else:
-            assert detail == STUB, name
+        assert final_stage(record, name).detail != STUB, name
+    # Intake ran before the battle was created, so it ends plain "done".
+    intake = final_stage(record, "intake")
+    assert (intake.status, intake.detail) == ("done", None)
 
 
 # Each stage went running -> done exactly once; research and simulate came first, in order.
@@ -142,11 +141,11 @@ async def test_stages_move_pending_running_done(store: BattleStore) -> None:
 
 
 def test_unknown_fighter_fails_the_battle_with_a_reason(client: TestClient) -> None:
-    record = wait_until_finished(client, start(client, matchup_body("grizzly bear", "unicorn")))
+    record = wait_until_finished(client, start(client, matchup_body("grizzly bear", "okapi")))
     assert record.status == "failed"
     research = final_stage(record, "research")
     assert research.status == "failed"
-    assert research.detail and "unicorn" in research.detail
+    assert research.detail and "okapi" in research.detail
     assert record.result is None
     assert final_stage(record, "simulate").status == "pending"
 
@@ -249,14 +248,25 @@ def test_event_stream_sends_every_stage_change_then_end(client: TestClient) -> N
     events = parse_sse(response.text)
     names = [name for name, _ in events]
     assert names == ["stage"] * (2 * len(STAGES)) + ["end"]
-    assert_each_stage_ran([StageStatus.model_validate_json(data) for _, data in events[:-1]])
+    changes = [StageStatus.model_validate_json(data) for _, data in events[:-1]]
+    assert_each_stage_ran(changes)
     assert json.loads(events[-1][1]) == {"status": "done"}
     # Polling after the stream ends returns the same final record.
-    assert wait_until_finished(client, battle_id).status == "done"
+    record = wait_until_finished(client, battle_id)
+    assert record.status == "done"
+    assert_stream_matches_record(changes, record)
+
+
+# The last streamed change for each stage has the record's final status and detail, and the
+# stream covered every stage in the record.
+def assert_stream_matches_record(changes: list[StageStatus], record: BattleRecord) -> None:
+    last = {change.stage: (change.status, change.detail) for change in changes}
+    final = {stage.stage: (stage.status, stage.detail) for stage in record.stages}
+    assert last == final
 
 
 def test_event_stream_ends_for_a_failed_battle(client: TestClient) -> None:
-    battle_id = start(client, matchup_body("unicorn", "gray wolf"))
+    battle_id = start(client, matchup_body("okapi", "gray wolf"))
     events = parse_sse(read_events(client, battle_id).text)
     assert events[-1] == ("end", json.dumps({"status": "failed"}))
     last_change = StageStatus.model_validate_json(events[-2][1])
@@ -351,10 +361,13 @@ def test_seed_sheet_lookup_uses_a_unique_match_from_the_raw_phrase() -> None:
     ):
         sheet = find_seed_sheet(entity, raw=raw)
         assert sheet is not None and sheet.fighter_id == fighter_id
-    # Vague raw has no unique sheet: "grizzly" is not in the phrase.
-    assert find_seed_sheet("bear", raw="a bear") is None
+    # Vague raw has no unique sheet ("grizzly" is not in the phrase), so the default-kind
+    # table picks it (#168): a bare "bear" is the grizzly bear.
+    vague = find_seed_sheet("bear", raw="a bear")
+    assert vague is not None and vague.fighter_id == "grizzly-bear"
     assert find_seed_sheet("unicorn", raw="a fluffy unicorn") is None
-    assert find_seed_sheet("bear", raw="../fighters") is None
+    # A path-like raw never reads outside the sheets folder (a name with no default, #168).
+    assert find_seed_sheet("lizard", raw="../fighters") is None
     assert find_seed_sheet("", raw="a grizzly bear") is None
 
 
@@ -370,13 +383,16 @@ def test_seed_sheet_lookup_accepts_grey_and_plural_names() -> None:
     # Plural entity finds the singular sheet when one exists.
     sheet = find_seed_sheet("ducks")
     assert sheet is not None and sheet.fighter_id == "duck"
-    # Bare "wolves" must not grab gray-wolf.
-    assert find_seed_sheet("wolves") is None
-    assert find_seed_sheet("wolves", raw="wolves") is None
+    # Bare "wolves" gets gray-wolf from the written default-kind table (#168), not by a guess.
+    for sheet in (find_seed_sheet("wolves"), find_seed_sheet("wolves", raw="wolves")):
+        assert sheet is not None and sheet.fighter_id == "gray-wolf"
     # Names that should still miss still miss.
     assert find_seed_sheet("bear", "polar") is None
-    assert find_seed_sheet("bear") is None
-    assert find_seed_sheet("bear", raw="a bear") is None
+    assert find_seed_sheet("lizard") is None  # no default kind (#168: "bear" has one now)
+    assert find_seed_sheet("lizard", raw="a lizard") is None
     # Slugs stay [a-z0-9-]; aliases do not loosen the path check.
     assert find_seed_sheet("../fighters", "grey") is None
-    assert find_seed_sheet("wolves", raw="../fighters") is None
+    # The default comes from the fixed table, so a path-like raw still can't reach other files.
+    sheet = find_seed_sheet("wolves", raw="../fighters")
+    assert sheet is not None and sheet.fighter_id == "gray-wolf"
+    assert find_seed_sheet("lizard", raw="../fighters") is None

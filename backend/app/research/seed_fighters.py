@@ -24,6 +24,8 @@ class SeedFighter:
     body: str
     habitat: str
     article: str
+    # Pinned so a vandalized or changed Wikidata name can't break the trait match (#290).
+    scientific_name: str | None = None
 
 
 # Read the seed list.
@@ -43,7 +45,43 @@ _ALIASES = {
     "grey": "gray",
     "wolves": "wolf",
     "ducks": "duck",
+    "mice": "mouse",  # irregular plurals of default kinds (#168 review)
+    "cacti": "cactus",
 }
+
+
+# When a user names a kind without saying which one, code picks the most familiar seed fighter
+# of that kind (#168). This copies the "Default variants" table in docs/research.md, and a test
+# keeps the two identical, so the choice is a written rule, never a model's guess.
+DEFAULT_KINDS: dict[str, str] = {
+    "bear": "grizzly-bear",
+    "shark": "great-white-shark",
+    "wolf": "gray-wolf",
+    "eagle": "bald-eagle",
+    "cat": "house-cat",
+    "dog": "golden-retriever",
+    "elephant": "african-elephant",
+    "crocodile": "saltwater-crocodile",
+    "snake": "king-cobra",
+    "bee": "honey-bee",
+    "ant": "army-ant",
+    "mouse": "house-mouse",
+    "tank": "main-battle-tank",
+    "truck": "pickup-truck",
+    "cactus": "saguaro-cactus",
+}
+
+
+# The default fighter's id for a bare kind ("bear", "bears", "wolves"), or None. Only when no
+# kind was given: "polar bear", or "bear" with a variant, is never replaced by a default.
+def default_kind(entity: str, variant: str | None = None) -> str | None:
+    if (variant or "").strip():
+        return None
+    slug = _canonical_slug(entity)
+    if slug in DEFAULT_KINDS:
+        return DEFAULT_KINDS[slug]
+    singular = slug[:-1] if slug.endswith("s") else None  # "bears", "sharks"
+    return DEFAULT_KINDS.get(singular) if singular else None
 
 
 def _canonical_slug(name: str) -> str:
@@ -77,7 +115,11 @@ def find_seed_sheet(
         sheet = _sheet_at(_canonical_slug(name), sheets_dir)
         if sheet is not None:
             return sheet
-    return _sheet_from_raw(entity, raw, sheets_dir)
+    sheet = _sheet_from_raw(entity, raw, sheets_dir)
+    if sheet is not None:
+        return sheet
+    default = default_kind(entity, variant)
+    return None if default is None else _sheet_at(default, sheets_dir)
 
 
 def _sheet_at(slug: str, sheets_dir: Path) -> StatSheet | None:
@@ -136,5 +178,29 @@ def find_seed_fighter(
         found = by_name.get(_canonical_slug(name))
         if found is not None:
             return found
-    slug = _unique_raw_match(entity, raw, list(fighters))
-    return None if slug is None else fighters[slug]
+    slug = _unique_raw_match(entity, raw, list(fighters)) or default_kind(entity, variant)
+    return None if slug is None else fighters.get(slug)
+
+
+# Names that keep their capital in the middle of a sentence ("the African elephant").
+_PROPER_WORDS = {"African", "Roman"}
+
+
+# The default fighter research will use for a bare kind, or None when the request names a
+# fighter more exactly (an exact name, a variant, or raw text such as "6 gray wolves").
+def picked_default(
+    entity: str, variant: str | None = None, raw: str | None = None
+) -> SeedFighter | None:
+    slug = default_kind(entity, variant)
+    if slug is None:
+        return None
+    fighters = {f.id: f for f in load_seed_fighters()}
+    if _canonical_slug(entity) in fighters or _unique_raw_match(entity, raw, list(fighters)):
+        return None
+    return fighters.get(slug)
+
+
+# A display name as it reads mid-sentence: "Grizzly bear" -> "grizzly bear".
+def spoken_name(display_name: str) -> str:
+    first = display_name.split(" ", 1)[0]
+    return display_name if first in _PROPER_WORDS else display_name[:1].lower() + display_name[1:]

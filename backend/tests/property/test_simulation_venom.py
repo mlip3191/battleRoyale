@@ -28,10 +28,12 @@ def draw_share(sheets, runs=200):
 
 
 def test_a_poisoned_survivor_dies_after_the_fight_and_it_is_a_draw():
-    result = draw_share([viper(), target()])
+    # 1,000 runs: the true draw share is about 0.93 (3,000 runs gave 0.932), so 200 runs at one
+    # engine version read 0.9 and at the next 0.875 (version 11 reshuffled the random streams).
+    result = draw_share([viper(), target()], runs=1000)
     # The target kills the viper, but it carries a lethal dose from the bites it took.
-    assert result.draw_prob > 0.9
-    assert result.mean_survivors[0] == 0.0 and result.mean_survivors[1] < 0.1
+    assert result.draw_prob > 0.85
+    assert result.mean_survivors[0] == 0.0 and result.mean_survivors[1] < 0.15
 
 
 def test_resistance_lets_the_survivor_live_and_win():

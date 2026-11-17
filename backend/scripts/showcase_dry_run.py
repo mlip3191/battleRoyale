@@ -73,8 +73,8 @@ def battles() -> list[Battle]:
             [duck, horse],
         ),
         Battle(
-            "Grizzly vs 6 wolves (forest)",
-            matchup_of(1, 6, terrain=Terrain.FOREST),
+            "Grizzly vs 4 wolves (forest)",
+            matchup_of(1, 4, terrain=Terrain.FOREST),
             [bear, wolf],
         ),
         Battle(

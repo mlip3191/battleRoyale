@@ -22,8 +22,17 @@ Choose:
    that best supports your choices. Start and end on whole words. Keep it under 300
    characters. If you give a number of heads, the quote must state it.
 
-If the article isn't about a legendary or mythical creature type, or nothing in it supports a
-choice, answer found false and leave the other fields null or empty. Saying "not found" is
+Only a generic **kind** of legendary creature counts: a dragon, a griffin, a unicorn, a hydra as
+a kind of monster. Answer found false, and leave the other fields null or empty, when the
+article is about any of these instead:
+- a real animal, breed, or species, even a rare or extinct one (for example a pug, a moose, an
+  okapi, a dodo);
+- a real person, a group of people, a god or goddess, or any deity;
+- a named individual character, from myth or from fiction (for example Cerberus, Medusa,
+  Smaug, the Minotaur of Crete): one particular creature with its own name, not a
+  kind of creature;
+- anything that isn't a creature (a place, an object, a film, a band, a list of meanings).
+Also answer found false when nothing in the article supports a choice. Saying "not found" is
 always better than a guess.
 
 Reply with JSON only, matching the schema:

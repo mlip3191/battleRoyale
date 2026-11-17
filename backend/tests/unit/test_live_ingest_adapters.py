@@ -262,11 +262,14 @@ async def test_a_cut_off_piece_is_retried_as_two_smaller_pieces() -> None:
         content = json.loads(request.content)["messages"][0]["content"]
         piece = content.split("<document>\n")[1].split("\n</document>")[0]
         sizes.append(len(piece))
-        return chat_reply("part", "length" if len(piece) > 2_000 else "stop")
+        if len(piece) > 2_000:
+            return chat_reply("part", "length")
+        return chat_reply(clean_reply(piece.replace("</p>", "\n")))  # a faithful conversion
 
     page = ("<p>" + "x" * 90 + "</p>") * 30  # about 2,900 characters, one piece
-    assert await parser_with(handler).parse(page.encode(), "text/html") == "part\npart"
-    assert sizes[0] == len(page) and all(size <= 2_000 for size in sizes[1:])
+    text = await parser_with(handler).parse(page.encode(), "text/html")
+    assert sizes[0] == len(page) and len(sizes) == 3 and all(size <= 2_000 for size in sizes[1:])
+    assert text.count("x" * 90) == 30 and "part" not in text  # each paragraph once, none lost
 
 
 async def test_a_small_piece_that_loops_uses_the_pages_own_text_and_logs(
@@ -289,3 +292,106 @@ async def test_parser_rejects_a_document_type_it_cannot_read() -> None:
 
     with pytest.raises(ProviderError, match="application/pdf"):
         await parser_with(handler).parse(b"%PDF", "application/pdf")
+
+
+SIZE = "The largest populations are coastal males, which weigh 389 kilograms (858 lb)."
+LEAD = "The grizzly bear is a population or subspecies of the brown bear in North America."
+COLOR = "Grizzly bear fur is typically brown with darker legs and blond-tipped fur."
+
+
+def answering(reply: str) -> Handler:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        return chat_reply(reply)
+
+    return handler
+
+
+async def test_a_paragraph_the_model_skips_is_added_back_from_the_page(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    page = f"<p>{LEAD}</p><p>{SIZE}</p><table><tr><td>{COLOR}</td></tr></table>".encode()
+    with caplog.at_level(logging.WARNING, logger="app.providers.live.doc_parser"):
+        text = await parser_with(answering(COLOR)).parse(page, "text/html")  # skips two
+    assert LEAD in text and SIZE in text and COLOR in text
+    assert text.count(COLOR) == 1  # what the model kept isn't added twice
+    assert "skipped 2 paragraph" in caplog.text
+
+
+async def test_a_reply_that_kept_everything_is_unchanged_even_with_new_spacing() -> None:
+    page = f"<p>{LEAD}</p><p>{SIZE}</p>".encode()
+    reply = f"{LEAD}\n\n{SIZE.replace(' (858 lb)', '  ( 858 lb )')}"
+    assert await parser_with(answering(reply)).parse(page, "text/html") == reply
+
+
+# --- #176: a piece too big for the model's window is split and retried, like a cut-off reply --
+
+# The live parser's own wording for an oversized prompt (vLLM's), checked on 2026-11-16.
+OVERFLOW = {
+    "error": {
+        "message": "This model's maximum context length is 8192 tokens. However, your prompt "
+        "contains at least 8193 input tokens, which exceeds this limit even without any output "
+        "tokens. Please reduce the length of the input prompt. (parameter=input_tokens, "
+        "value=8193)",
+        "type": "BadRequestError",
+        "param": "input_tokens",
+        "code": 400,
+    }
+}
+
+
+async def test_a_context_overflow_400_is_split_and_retried() -> None:
+    sizes: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        content = json.loads(request.content)["messages"][0]["content"]
+        piece = content.split("<document>\n")[1].split("\n</document>")[0]
+        sizes.append(len(piece))
+        if len(piece) > 2_000:
+            return httpx.Response(400, json=OVERFLOW)
+        return chat_reply(clean_reply(piece.replace("</p>", "\n")))  # a faithful conversion
+
+    page = ("<p>" + "x" * 90 + "</p>") * 30  # about 2,900 characters, one piece
+    text = await parser_with(handler).parse(page.encode(), "text/html")
+    assert sizes[0] == len(page) and len(sizes) == 3 and all(size <= 2_000 for size in sizes[1:])
+    assert text.count("x" * 90) == 30  # the document succeeds, every paragraph once
+
+
+async def test_another_400_is_not_split_or_retried() -> None:
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        calls.append(request.url.path)
+        return httpx.Response(400, json={"error": {"message": "temperature must be >= 0"}})
+
+    page = ("<p>" + "x" * 90 + "</p>") * 30
+    with pytest.raises(ProviderError, match="HTTP 400"):
+        await parser_with(handler).parse(page.encode(), "text/html")
+    assert len(calls) == 1
+
+
+async def test_a_small_piece_that_still_overflows_uses_the_pages_own_text() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        return httpx.Response(400, json=OVERFLOW)
+
+    text = await parser_with(handler).parse(b"<p>Weighs 500 kg</p>", "text/html")
+    assert text == "Weighs 500 kg"  # the same MIN_PIECE_CHARS floor as a cut-off reply
+
+
+async def test_the_error_body_never_reaches_the_message() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "decoy/parser"}]})
+        return httpx.Response(400, json={"error": {"message": "secret-looking detail"}})
+
+    with pytest.raises(ProviderError) as raised:
+        await parser_with(handler).parse(b"<p>Weighs 500 kg</p>", "text/html")
+    assert "secret-looking" not in str(raised.value)
+    assert raised.value.status == 400 and "secret-looking" in raised.value.detail

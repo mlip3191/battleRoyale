@@ -86,22 +86,39 @@ def check_side_rules(fighters: Sequence[Side]) -> SafetyVerdict:
     return ALLOWED
 
 
-# Names for the Wikidata check: each side's raw text, plus its entity when that names something
-# else. The model writes entities in lowercase, so when the entity uses only words the user
-# typed, the user's own casing decides ("a tiny napoleon" -> "a napoleon", a common noun); an
-# entity with new words ("the short emperor" -> "napoleon") is looked up as a name. The variant
-# is never looked up: in "a dog named Napoleon" the fighter is the dog.
+# The entity as a name to look up. The model writes entities in lowercase, so its casing says
+# nothing: when every entity word was typed by the user (singular or plural), the name is "a" plus
+# those words as the user typed them, and the user's casing decides ("moose" from "a moose
+# <<<...>>>" is "a moose", a common noun; from "a Moose" it is "a Moose"). Otherwise it is the
+# bare entity, read as a proper name ("napoleon" from "the short emperor").
+def entity_name(entity: str, raw: str) -> str:
+    typed = {singular_word(w.lower()): w for w in re.findall(r"[A-Za-z0-9']+", raw)}
+    words = [singular_word(w) for w in re.findall(r"[a-z0-9']+", entity.lower())]
+    if words and all(w in typed for w in words):
+        return "a " + " ".join(typed[w] for w in words)
+    return entity
+
+
+# Names for the Wikidata check: each side's raw text, plus its entity (see entity_name) when that
+# names something else. The variant is never looked up: in "a dog named Napoleon" the fighter is
+# the dog.
 def wikidata_names(fighters: Sequence[Side]) -> list[str]:
     names: list[str] = []
     for fighter in fighters:
         names.append(fighter.raw)
-        raw_query, raw_proper = lookup_query(fighter.raw)
-        if fighter.entity and lookup_query(fighter.entity)[0] != raw_query:
-            # An entity built only from words the user typed in lowercase stays a common noun.
-            only_typed = _words(fighter.entity) <= _words(fighter.raw)
-            common = only_typed and not raw_proper
-            names.append(f"a {fighter.entity}" if common else fighter.entity)
+        if not fighter.entity:
+            continue
+        name = entity_name(fighter.entity, fighter.raw)
+        if lookup_query(name)[0] != lookup_query(fighter.raw)[0]:
+            names.append(name)
     return names
+
+
+# The names in wikidata_names that the model wrote and the user never typed (an entity looked up
+# bare, see entity_name). Their lowercase says nothing, so they never count as a bare lowercase
+# name under D-51 (#186): "napoleon" from "the short emperor" stays a proper name.
+def model_written_names(fighters: Sequence[Side]) -> list[str]:
+    return [f.entity for f in fighters if f.entity and entity_name(f.entity, f.raw) == f.entity]
 
 
 # Run safety checks at the same time; if one raises, cancel the rest before re-raising.
@@ -115,6 +132,18 @@ async def _run_together(*checks: Awaitable[SafetyVerdict]) -> list[SafetyVerdict
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
         raise
+
+
+# The Wikidata name check on the sides' names, telling it which ones the model wrote.
+async def _check_side_names(
+    fighters: Sequence[Side], lookup: WikidataLookup | None, cache: WikidataCache | None
+) -> SafetyVerdict:
+    return await check_names(
+        wikidata_names(fighters),
+        lookup=lookup,
+        cache=cache,
+        model_written=model_written_names(fighters),
+    )
 
 
 # The first block in order (classifier before Wikidata), else ALLOWED.
@@ -136,7 +165,7 @@ async def check_parsed_sides(
     verdict = check_side_rules(fighters)
     if not verdict.allowed:
         return verdict
-    checks = [check_names(wikidata_names(fighters), lookup=wikidata_lookup, cache=wikidata_cache)]
+    checks = [_check_side_names(fighters, wikidata_lookup, wikidata_cache)]
     if adds_new_words(fighters, text):
         checks.insert(0, classify_text(describe_sides(fighters), chat=chat))
     return _first_block(await _run_together(*checks))
@@ -159,6 +188,6 @@ async def check_matchup(
     verdicts = await _run_together(
         classify_text(matchup.raw_text, chat=chat),
         classify_text(describe_sides(matchup.fighters), chat=chat),
-        check_names(wikidata_names(matchup.fighters), lookup=wikidata_lookup, cache=wikidata_cache),
+        _check_side_names(matchup.fighters, wikidata_lookup, wikidata_cache),
     )
     return _first_block(verdicts)

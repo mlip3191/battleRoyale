@@ -1,5 +1,7 @@
 """The ingest pipeline and Wikidata facts, with no network or live services."""
 
+import csv
+import dataclasses
 import json
 import logging
 import sqlite3
@@ -9,13 +11,23 @@ from pathlib import Path
 import httpx
 import pytest
 
+from app.config import get_settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
+from app.providers.live.http import ProviderError
 from app.providers.mock.text import MockDocParser, MockEmbedder
 from app.research.facts import Fact, store_facts, wikidata_facts
 from app.research.ingest import ingest_all
-from app.research.seed_fighters import SeedFighter
-from app.research.traits import animaltraits_facts, pantheria_facts, taxon_name
+from app.research.seed_fighters import SeedFighter, load_seed_fighters
+from app.research.traits import (
+    animaltraits_facts,
+    pantheria_facts,
+    plausible_species_name,
+    taxon_name,
+)
+from scripts import ingest_seed
+
+SEED_TRAITS = Path(__file__).parents[3] / "data" / "seed" / "seed-traits.csv"
 
 UNIT = "http://www.wikidata.org/entity/"
 ENTITY = {
@@ -351,3 +363,157 @@ async def test_datasets_download_once_and_a_rerun_changes_nothing(
         await ingest_all(database, client, CountingParser(), MockEmbedder(), fighters, tmp_path)
     assert rows(database) == before
     assert sum("PanTHERIA" in path for path in calls) == 1
+
+
+# --- #290: a vandalized Wikidata scientific name can't drop a fighter's trait rows ---------
+
+
+def with_taxon(name: str) -> dict:
+    taxon = {"rank": "normal", "mainsnak": {"datavalue": {"value": name}}}
+    return {**ENTITY, "claims": {**ENTITY["claims"], "P225": [taxon]}}
+
+
+async def ingest_horse(
+    database: sqlite3.Connection, tmp_path: Path, entity: dict, pinned: str | None = None
+):
+    horse = dataclasses.replace(fighter("horse", "Horse"), scientific_name=pinned)
+    handler = make_handler([], entity=entity)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        return await ingest_all(
+            database, client, CountingParser(), MockEmbedder(), [horse], tmp_path
+        )
+
+
+def trait_rows(database: sqlite3.Connection) -> int:
+    return database.execute(
+        "SELECT COUNT(*) FROM facts WHERE source IN ('pantheria', 'animaltraits')"
+    ).fetchone()[0]
+
+
+async def test_a_vandalized_name_is_ignored_and_logged_not_matched(
+    database: sqlite3.Connection, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO, logger="app.research.traits")
+    summary = await ingest_horse(database, tmp_path, with_taxon("Spoderman"))
+    assert summary.unmatched == ["horse (no scientific name)"]
+    assert trait_rows(database) == 0
+    assert "Ignored Wikidata scientific name 'Spoderman' for horse" in caplog.text
+
+
+async def test_a_pinned_name_wins_over_a_vandalized_or_different_wikidata_name(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    summary = await ingest_horse(
+        database, tmp_path, with_taxon("Spoderman"), pinned="Equus caballus"
+    )
+    assert summary.unmatched == [] and trait_rows(database) == 3
+
+
+async def test_a_pinned_name_wins_over_a_plausible_but_different_wikidata_name(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    summary = await ingest_horse(
+        database, tmp_path, with_taxon("Equus ferus caballus"), pinned="Equus caballus"
+    )
+    assert summary.unmatched == [] and trait_rows(database) == 3
+
+
+def test_only_a_genus_and_species_name_is_plausible() -> None:
+    assert plausible_species_name("Apis mellifera")
+    assert plausible_species_name("Ursus arctos horribilis")  # a subspecies is fine
+    for name in ("Spoderman", "Gorilla", "apis mellifera", "Apis Mellifera", "Apis mellifera 2"):
+        assert not plausible_species_name(name), name
+
+
+def test_the_team_dataset_species_have_pinned_names() -> None:
+    pinned = {f.id: f.scientific_name for f in load_seed_fighters() if f.scientific_name}
+    team = {row["scientific_name"] for row in csv.DictReader(open(SEED_TRAITS, encoding="utf-8"))}
+    assert set(pinned.values()) >= team, f"not pinned: {sorted(team - set(pinned.values()))}"
+    assert pinned["honey-bee"] == "Apis mellifera"
+    assert all(plausible_species_name(name) for name in pinned.values())
+
+
+# --- #380: --refresh re-parses articles already stored at the same revision -----------------
+
+
+class ChangingParser(CountingParser):
+    """Returns slightly different text on every call, as a fixed parser would after a fix."""
+
+    async def parse(self, data: bytes, mime: str) -> str:
+        text = await super().parse(data, mime)
+        return f"{text} Parse number {self.calls}."
+
+
+def orphan_vectors(connection: sqlite3.Connection) -> int:
+    return connection.execute(
+        "SELECT COUNT(*) FROM chunks_vec WHERE chunk_id NOT IN (SELECT chunk_id FROM chunks)"
+    ).fetchone()[0]
+
+
+async def test_refresh_reparses_a_stored_revision_and_leaves_no_orphans(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    fighters = [fighter("horse", "Horse")]
+    parser = ChangingParser()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(make_handler([]))) as client:
+        await ingest_all(database, client, parser, MockEmbedder(), fighters, tmp_path)
+        await ingest_all(database, client, parser, MockEmbedder(), fighters, tmp_path)
+        assert parser.calls == 1  # without refresh the stored revision is skipped
+        await ingest_all(database, client, parser, MockEmbedder(), fighters, tmp_path, refresh=True)
+    assert parser.calls == 2
+    stored = database.execute("SELECT raw_text FROM documents").fetchall()
+    assert len(stored) == 1 and stored[0][0].endswith("Parse number 2.")  # replaced, not added
+    assert orphan_vectors(database) == 0
+
+
+async def test_refresh_with_only_touches_just_those_fighters(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    horse, duck = fighter("horse", "Horse"), fighter("duck", "Duck")
+    parser = ChangingParser()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(make_handler([]))) as client:
+        await ingest_all(database, client, parser, MockEmbedder(), [horse, duck], tmp_path)
+        assert parser.calls == 2
+        await ingest_all(database, client, parser, MockEmbedder(), [duck], tmp_path, refresh=True)
+    assert parser.calls == 3
+    texts = dict(database.execute("SELECT fighter_id, raw_text FROM documents").fetchall())
+    assert texts["duck"].endswith("Parse number 3.") and not texts["horse"].endswith("3.")
+
+
+async def test_an_unknown_fighter_id_is_reported_and_nothing_runs(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert await ingest_seed.main(False, ["grizzly-bear", "bogus"], refresh=True) == 2
+    printed = capsys.readouterr().err
+    assert "Unknown fighter id: bogus. Nothing was ingested." in printed
+    assert "Known ids are in data/seed/fighters.yaml." in printed
+    # Nothing ran: the check comes before the database is even opened (#384 review).
+    assert not (get_settings().data_dir / "app.db").exists()
+
+
+class FailsOnSecondParse(CountingParser):
+    """Parses once, then fails, like a parser outage during a refresh."""
+
+    async def parse(self, data: bytes, mime: str) -> str:
+        text = await super().parse(data, mime)
+        if self.calls > 1:
+            raise ProviderError("Live 'doc_parser' call failed: HTTP 503.")
+        return text
+
+
+async def test_a_failed_refresh_keeps_the_working_article(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    fighters = [fighter("horse", "Horse")]
+    parser = FailsOnSecondParse()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(make_handler([]))) as client:
+        await ingest_all(database, client, parser, MockEmbedder(), fighters, tmp_path)
+        before = rows(database)
+        text = database.execute("SELECT raw_text FROM documents").fetchone()[0]
+        summary = await ingest_all(
+            database, client, parser, MockEmbedder(), fighters, tmp_path, refresh=True
+        )
+    assert parser.calls == 2 and summary.failures  # the refresh failed and says so
+    assert rows(database) == before  # the old article, its chunks and vectors are all kept
+    assert database.execute("SELECT raw_text FROM documents").fetchone()[0] == text
+    assert orphan_vectors(database) == 0

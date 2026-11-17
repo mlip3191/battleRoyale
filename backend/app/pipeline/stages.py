@@ -2,21 +2,23 @@
 
 Each function calls the owning module's public function. A stage that reports `stub=True`
 gets the stage detail "stub" and its output is not saved. No stage in this file is a stub any
-more (intake's "stub" detail comes from the orchestrator). Research uses G04's sheet lookup:
-seed sheet, cached sheet, or a newly built one.
+more. Research uses G04's sheet lookup: seed sheet, cached sheet, or a newly built one; a
+size_reference with no sheet is listed in `Research.missing_references` (research then ends
+"fallback" with a plain note).
 """
 
 import asyncio
 import hashlib
 import logging
 from dataclasses import dataclass, field
+from typing import cast
 
 from app.config import get_settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
 from app.media import audio as media_audio
 from app.media import images as media_images
-from app.models.matchup import Matchup
+from app.models.matchup import FighterRequest, Matchup
 from app.models.media import Asset
 from app.models.narration import Script
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
@@ -26,7 +28,8 @@ from app.narration.facts import build_facts
 from app.narration.templates import template_scripts
 from app.pipeline import challenger as next_challenger
 from app.providers.registry import get_provider
-from app.research.sheet_store import resolve_stat_sheet
+from app.research.seed_fighters import find_seed_fighter
+from app.research.sheet_store import resolve_legend, resolve_stat_sheet
 from app.simulation import engine, fair
 from app.simulation.rng import make_seed
 
@@ -36,7 +39,9 @@ logger = logging.getLogger(__name__)
 # the new-fighter budget). The orchestrator reads it on every call, so tests can shrink it.
 STAGE_BUDGETS_S: dict[str, float] = {
     "research": 45.0,
-    "simulate": 3.0,
+    # 15 s, not 3 s (D-63, #359): 1,000 runs plus the deciding-factor analysis took up to 6.9 s
+    # for showcase battle 1 on a Windows laptop, and the limit keeps about 2x headroom.
+    "simulate": 15.0,
     "summary": 5.0,
     "challenger": 10.0,
     "script": 10.0,
@@ -55,6 +60,11 @@ NARRATED_SCRIPTS = ("intro", "play_by_play", "outro")
 NOT_FOUND = (
     "We don't have a stat sheet for {name!r} yet. For now, pick one of our ready-made fighters."
 )
+LEGEND_BLOCKED = (
+    "We don't have a stat sheet for {name!r}, and we couldn't find a legend by that name to "
+    'model. Pick one of our ready-made fighters, or a mythical creature like "a griffin".'
+)
+LEGEND_UNAVAILABLE = "We couldn't look up {name!r} right now. Please try again in a minute."
 # Age and sex words used as labels by mock intake; they are not shown in the miss message.
 _LABEL_WORDS = frozenset({"adult", "male", "female", "juvenile", "baby", "young"})
 
@@ -92,10 +102,6 @@ class Research:
     missing_references: list[str] = field(default_factory=list)
     """size_reference names with no sheet yet; those sides fight at their normal size."""
 
-    @property
-    def stub(self) -> bool:
-        return bool(self.missing_references)
-
 
 # Find one fighter's stat sheet (G04): seed sheet, cached sheet, or one built and cached now.
 # variant and raw are tried as described in find_seed_sheet; size references have no
@@ -112,19 +118,38 @@ async def lookup_sheet(
         connection.close()
 
 
+# A fighter's sheet: lookup_sheet first, then, for a name off the seed list only, a legend
+# modeled from its article (G09). Raises StageFailed with the reason when neither gives one.
+async def lookup_fighter(fighter: FighterRequest) -> StatSheet:
+    sheet = await lookup_sheet(fighter.entity, fighter.variant, fighter.raw)
+    if sheet is not None:
+        return sheet
+    name = _typed_name(fighter.entity, fighter.variant)
+    if find_seed_fighter(fighter.entity, fighter.variant, fighter.raw) is not None:
+        raise StageFailed(NOT_FOUND.format(name=name))  # a seed fighter's build failed
+    connection = connect()
+    try:
+        apply_migrations(connection)
+        legend = await resolve_legend(connection, get_provider("chat"), fighter.entity)
+    finally:
+        connection.close()
+    if isinstance(legend, StatSheet):
+        return legend
+    if legend is None:
+        raise StageFailed(NOT_FOUND.format(name=name))
+    raise StageFailed((LEGEND_BLOCKED if legend.blocked else LEGEND_UNAVAILABLE).format(name=name))
+
+
 # Step 2: look up both fighters and any size_reference entities, all at the same time.
 async def research(matchup: Matchup) -> Research:
     fighters = matchup.fighters
     references = [f.size_reference for f in fighters]
     found = await asyncio.gather(
-        *(lookup_sheet(f.entity, f.variant, f.raw) for f in fighters),
+        *(lookup_fighter(f) for f in fighters),
         *(lookup_sheet(ref) for ref in references if ref is not None),
     )
-    sheets: list[StatSheet] = []
-    for fighter, sheet in zip(fighters, found[: len(fighters)], strict=True):
-        if sheet is None:
-            raise StageFailed(NOT_FOUND.format(name=_typed_name(fighter.entity, fighter.variant)))
-        sheets.append(sheet)
+    # lookup_fighter raises rather than return None, so the first results are all sheets.
+    sheets = cast(list[StatSheet], list(found[: len(fighters)]))
     found_refs = iter(found[len(fighters) :])
     reference_sheets: list[StatSheet | None] = []
     missing: list[str] = []
@@ -171,9 +196,15 @@ def cache_key(matchup: Matchup, found: Research) -> str:
 # Functions run via to_thread must stay pure and never write to the store: a thread that
 # ran past its budget keeps running in the background after the stage has moved on.
 async def simulate(matchup: Matchup, found: Research) -> SimulationResult:
+    engine_matchup = simulation_matchup(matchup, found)
+    if engine.too_big_for_venom(engine_matchup, found.sheets, found.reference_sheets):
+        # A venomous crowd below the swarm ceiling runs one by one for 20 to 30 s (#330, D-61).
+        # Answer "too big to simulate quickly" now (the orchestrator maps a TimeoutError to that
+        # message) instead of burning a thread after the stage has already given up.
+        raise TimeoutError("venomous fight too big to run one by one")
     return await asyncio.to_thread(
         engine.run,
-        simulation_matchup(matchup, found),
+        engine_matchup,
         found.sheets,
         reference_sheets=found.reference_sheets,
     )
@@ -196,7 +227,14 @@ async def summary(matchup: Matchup, found: Research, result: SimulationResult) -
 async def challenger(
     matchup: Matchup, found: Research, result: SimulationResult
 ) -> Stubbed[ChallengerSuggestion | None]:
-    pick, fallback = await next_challenger.suggest(found.sheets, result, matchup.terrain)
+    # The engine's own matchup, so the winner duels as the battle was fought (count and size).
+    pick, fallback = await next_challenger.suggest(
+        found.sheets,
+        result,
+        matchup.terrain,
+        matchup=simulation_matchup(matchup, found),
+        reference_sheets=found.reference_sheets,
+    )
     return Stubbed(pick, fallback=fallback)
 
 

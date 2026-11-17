@@ -1,8 +1,24 @@
 {
-  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). 'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
+  "_note": "Mock Wikidata for PROVIDER_MODE=mock (safety/wikidata.py). Item IDs Q9000xx are made-up test entities; the class IDs they lead to are the ones in app/safety/wikidata_classes.yaml. Real IDs (the Moon, Roman legionary, Canadian goose, German Shepherd, Bengal tiger) mirror live Wikidata on 2026-11-10, with the class walk cut short (parents listed with no P279). The dragon, grizzly bear, bulldozer, Beatles, Thor, Eagles and nuclear bomb entries copy the shape of the live search on 2026-11-10 (a magazine or band ranked before the creature or machine; a music track and the asteroid '8749 Beatles' after the band; the male given name 'Thor' before the god and a genus; the band 'Eagles' before the Philadelphia Eagles, which match through their 'Eagles' alias) with made-up item IDs, except the Philadelphia Eagles (real ID, #310). 'wolves' and 'sharks' are made up: a band that matches only through an alias; in 'wolves' it comes before a football club with the live Wolverhampton Wanderers' three team classes (#310), so the club is picked. Abraham Lincoln, Mickey Mouse, Optimus Prime, Anubis, Mars, Mount Everest and Sahara (for tests/fixtures/safety_cases.yaml) are made-up item IDs with a short class walk to the blocked class. Wolverine, vending machine and Lightning McQueen (A04 part 3b) use real IDs and the live search order of 2026-11-10 (the wolverine taxon is result 6, after the comic-book character, games and Michigan; vending machine is a subclass of shop -> workplace -> geographic location), with the class walk cut short. Lakers, Bulls, bull and Jeep (D-59) use real IDs and the live search order of 2026-11-14 (the Lakers and Chicago Bulls match through their 'Lakers' and 'Bulls' aliases; 'bull' the family name ranks before the animal; 'Jeep' the given name before the car brand), with the class walk cut short. 'police', 'doors' and 'metallica' copy the shape of the live search on 2026-11-14 (the band 'The Police' or 'The Doors' plus a kind item with a P279 matched by label or alias; the band 'Metallica' plus a moth genus that is a bare taxon) with made-up item IDs (Q9003xx). 'heat' is made up in the same shape (the kind item 'heat' with a P279, then the basketball team 'Miami Heat' matching through its 'Heat' alias; Q90033x): a sports team that loses the pick to a kind item. Moose, shredder, hulk and the napoleon pastry (#186, D-51) are made-up item IDs copying the shape of the live search: a person 'Moose' before the animal labelled 'moose'; the character 'Shredder' before kinds that match only through the alias 'shredder' ('paper shredder', 'grater'); the character 'Hulk' before a ship type labelled 'hulk'; 'Napoleon' before the pastry 'mille-feuille' (alias 'napoleon'). 'kraken' (#185) uses real IDs and the live search order of 2026-11-15 (the band Kraken, the Kraken cryptocurrency exchange, a film, a genus that is a bare taxon, then a website), with the class walk cut short: the band loses the pick but still blocks capitalized 'Kraken'. 'chicago bulls', 'philadelphia eagles', 'wolf' and 'yankees' (#310) use real IDs and the live search order of 2026-11-15, with the class walk cut short: the Chicago Bulls basketball team before a defunct American football team of the same name; the Philadelphia Eagles before an article on their history; five other items before the grey wolf (result 6, with the family name 'Wolf' first); and for 'yankees' the item 'Americans' first, the New York Yankees second (through their 'Yankees' alias), then the United States, and the kinds 'Yankee' and 'Northerners' (both alias 'Yankees'), so the team loses the pick to a kind item and its alias has no 'The' of its own (the 'heat' shape; docs/safety.md, known limits). 'who', 'the who', 'the cure', 'the animals', 'the strokes' and 'the cars' (#316) use real IDs and the live search order of 2026-11-15 ('who': all 10 results; the others: the first 5), with the class walk cut short: 'who' has the World Health Organization first (through its 'WHO' alias), a single 'Who' (result 8) and a film 'WHO' (result 9), and no band; each 'the' search has the band labelled 'The ...' first (musical group or rock band), with the other items labelled 'The ...' after it (an album, single, film, game or musical work). 'cure', 'animals', 'strokes' and 'cars' use 'default'.'search' maps a lowercased name to wbsearchentities-style results ('match' = the text that matched); 'default' is the reply for any other name (no match). 'entities' holds P31 (instance of) and P279 (subclass of).",
   "search": {
     "default": [],
-    "napoleon": [{ "id": "Q900001", "label": "Napoleon" }],
+    "napoleon": [
+      { "id": "Q900001", "label": "Napoleon" },
+      { "id": "Q900003", "label": "mille-feuille", "match": "napoleon" }
+    ],
+    "moose": [
+      { "id": "Q900270", "label": "Moose" },
+      { "id": "Q900271", "label": "moose" }
+    ],
+    "shredder": [
+      { "id": "Q900280", "label": "Shredder" },
+      { "id": "Q900281", "label": "paper shredder", "match": "shredder" },
+      { "id": "Q900282", "label": "grater", "match": "shredder" }
+    ],
+    "hulk": [
+      { "id": "Q900290", "label": "Hulk" },
+      { "id": "Q900291", "label": "hulk" }
+    ],
     "emperor": [{ "id": "Q900002", "label": "Emperor Testius", "match": "Emperor" }],
     "robo-tron": [{ "id": "Q900010", "label": "Robo-Tron" }],
     "zeus": [{ "id": "Q900020", "label": "Zeus" }],
@@ -12,9 +28,15 @@
       { "id": "Q900050", "label": "Mercury" },
       { "id": "Q900051", "label": "Mercury" }
     ],
-    "dragon": [{ "id": "Q900060", "label": "dragon" }],
+    "dragon": [
+      { "id": "Q900062", "label": "Dragon" },
+      { "id": "Q900060", "label": "dragon" }
+    ],
     "toaster": [{ "id": "Q900070", "label": "toaster" }],
-    "bulldozer": [{ "id": "Q900071", "label": "bulldozer" }],
+    "bulldozer": [
+      { "id": "Q900074", "label": "Bulldozer" },
+      { "id": "Q900071", "label": "bulldozer" }
+    ],
     "roman legionary": [{ "id": "Q17346959", "label": "Roman legionary" }],
     "canadian goose": [
       { "id": "Q7322356", "label": "Ribes oxyacanthoides", "match": "Canadian gooseberry" }
@@ -26,11 +48,202 @@
       { "id": "Q900091", "label": "boxer" }
     ],
     "tesla": [{ "id": "Q900100", "label": "Testa Tesla", "match": "Tesla" }],
-    "testor blipworth": [{ "id": "Q900110", "label": "Testor Blipworth" }]
+    "testor blipworth": [{ "id": "Q900110", "label": "Testor Blipworth" }],
+    "grizzly bear": [
+      { "id": "Q900120", "label": "Grizzly Bear" },
+      { "id": "Q900121", "label": "brown bear", "match": "grizzly bear" }
+    ],
+    "beatles": [
+      { "id": "Q900130", "label": "The Beatles", "match": "Beatles" },
+      { "id": "Q900131", "label": "Beatles" },
+      { "id": "Q900132", "label": "8749 Beatles", "match": "Beatles" }
+    ],
+    "nuclear bomb": [{ "id": "Q900140", "label": "nuclear bomb" }],
+    "thor": [
+      { "id": "Q900150", "label": "Thor" },
+      { "id": "Q900151", "label": "Thor" },
+      { "id": "Q900152", "label": "Thor" }
+    ],
+    "eagles": [
+      { "id": "Q900160", "label": "Eagles" },
+      { "id": "Q219714", "label": "Philadelphia Eagles", "match": "Eagles" }
+    ],
+    "philadelphia eagles": [
+      { "id": "Q219714", "label": "Philadelphia Eagles" },
+      {
+        "id": "Q5870207",
+        "label": "history of the Philadelphia Eagles",
+        "match": "Philadelphia Eagles history"
+      }
+    ],
+    "eagle": [
+      { "id": "Q900163", "label": "Eagle" },
+      { "id": "Q900164", "label": "eagle" }
+    ],
+    "rolling stones": [
+      { "id": "Q900190", "label": "The Rolling Stones", "match": "Rolling Stones" },
+      { "id": "Q900191", "label": "19383 Rolling Stones", "match": "Rolling Stones" }
+    ],
+    "rolling stone": [{ "id": "Q900192", "label": "Rolling Stone" }],
+    "wolves": [
+      { "id": "Q900170", "label": "Testwolf Pack", "match": "Wolves" },
+      { "id": "Q900171", "label": "Wolverhampton Testers", "match": "Wolves" }
+    ],
+    "wolf": [
+      { "id": "Q16093204", "label": "Wolf" },
+      { "id": "Q2588576", "label": "Wolf" },
+      { "id": "Q2589157", "label": "Wolfgang" },
+      { "id": "Q8029793", "label": "Wolf" },
+      { "id": "Q254", "label": "Wolfgang Amadeus Mozart" },
+      { "id": "Q18498", "label": "grey wolf", "match": "wolf" }
+    ],
+    "sharks": [{ "id": "Q900180", "label": "The Sharkz Crew", "match": "Sharks" }],
+    "abraham lincoln": [{ "id": "Q900200", "label": "Abraham Lincoln" }],
+    "mickey mouse": [{ "id": "Q900210", "label": "Mickey Mouse" }],
+    "optimus prime": [{ "id": "Q900220", "label": "Optimus Prime" }],
+    "anubis": [{ "id": "Q900230", "label": "Anubis" }],
+    "mars": [{ "id": "Q900240", "label": "Mars" }],
+    "mount everest": [{ "id": "Q900250", "label": "Mount Everest" }],
+    "sahara": [{ "id": "Q900260", "label": "Sahara" }],
+    "lightning mcqueen": [{ "id": "Q864418", "label": "Lightning McQueen" }],
+    "wolverine": [
+      { "id": "Q186422", "label": "Wolverine" },
+      { "id": "Q108479474", "label": "Wolverine" },
+      { "id": "Q8030537", "label": "Wolverine" },
+      { "id": "Q112110379", "label": "Wolverine" },
+      { "id": "Q1166", "label": "Michigan", "match": "Wolverine State" },
+      { "id": "Q14334", "label": "wolverine" }
+    ],
+    "vending machine": [
+      { "id": "Q211584", "label": "vending machine" },
+      { "id": "Q121063999", "label": "Vending machine" }
+    ],
+    "lakers": [
+      { "id": "Q121783", "label": "Los Angeles Lakers", "match": "Lakers" },
+      { "id": "Q2342499", "label": "Celtics-Lakers rivalry", "match": "Lakers-Celtics rivalry" }
+    ],
+    "los angeles lakers": [{ "id": "Q121783", "label": "Los Angeles Lakers" }],
+    "chicago bulls": [
+      { "id": "Q128109", "label": "Chicago Bulls" },
+      { "id": "Q5095520", "label": "Chicago Bulls" },
+      {
+        "id": "Q56670521",
+        "label": "Game 4 of 1988 NBA Playoffs Eastern Conference First Round, Chicago Bulls at Cleveland Cavaliers",
+        "match": "Chicago Bulls at Cleveland Cavaliers, May 5, 1988"
+      }
+    ],
+    "yankees": [
+      { "id": "Q846570", "label": "Americans", "match": "Yankees" },
+      { "id": "Q213417", "label": "New York Yankees", "match": "Yankees" },
+      { "id": "Q30", "label": "United States", "match": "Yankees" },
+      { "id": "Q692062", "label": "Yankee", "match": "Yankees" },
+      { "id": "Q100885106", "label": "Northerners", "match": "Yankees" }
+    ],
+    "bulls": [
+      { "id": "Q128109", "label": "Chicago Bulls", "match": "Bulls" },
+      { "id": "Q37555751", "label": "Bulls" },
+      { "id": "Q1378158", "label": "Bulls" },
+      { "id": "Q2928116", "label": "South Florida Bulls", "match": "Bulls" },
+      { "id": "Q324", "label": "Uranus", "match": "Bulls-eye planet" }
+    ],
+    "bull": [
+      { "id": "Q13570075", "label": "Bull" },
+      { "id": "Q15716527", "label": "Bulletin of the Seismological Society of America" },
+      { "id": "Q2720088", "label": "Bulletin of Mathematical Biology" },
+      { "id": "Q693690", "label": "bull" }
+    ],
+    "jeep": [
+      { "id": "Q21148055", "label": "Jeep" },
+      { "id": "Q30113", "label": "Jeep" }
+    ],
+    "police": [
+      { "id": "Q900300", "label": "The Police", "match": "Police" },
+      { "id": "Q900301", "label": "police" }
+    ],
+    "doors": [
+      { "id": "Q900310", "label": "The Doors", "match": "Doors" },
+      { "id": "Q900311", "label": "doorway", "match": "doors" }
+    ],
+    "metallica": [
+      { "id": "Q900320", "label": "Metallica" },
+      { "id": "Q900321", "label": "Metallica" }
+    ],
+    "heat": [
+      { "id": "Q900331", "label": "heat" },
+      { "id": "Q900330", "label": "Miami Heat", "match": "Heat" }
+    ],
+    "kraken": [
+      { "id": "Q6435931", "label": "Kraken" },
+      { "id": "Q22906202", "label": "Kraken" },
+      { "id": "Q134983890", "label": "Kraken" },
+      { "id": "Q25344562", "label": "Kraken" },
+      { "id": "Q124988973", "label": "Kraken" }
+    ],
+    "who": [
+      { "id": "Q7817", "label": "World Health Organization", "match": "WHO" },
+      { "id": "Q49001", "label": "Whoopi Goldberg" },
+      { "id": "Q36463449", "label": "Who's Who in Animated Cartoon" },
+      { "id": "Q7997549", "label": "whole blood" },
+      { "id": "Q2567271", "label": "Who's Who" },
+      { "id": "Q5924723", "label": "Who's Who in France" },
+      { "id": "Q59294700", "label": "record group", "match": "whole collection" },
+      { "id": "Q127869935", "label": "Who" },
+      { "id": "Q140169908", "label": "WHO" },
+      { "id": "Q2068526", "label": "whole genome sequencing" }
+    ],
+    "the who": [
+      { "id": "Q93346", "label": "The Who" },
+      { "id": "Q1757594", "label": "The Whole Story" },
+      { "id": "Q18155816", "label": "The Whole Truth" },
+      { "id": "Q61910937", "label": "The whole city" },
+      { "id": "Q3990010", "label": "The Whole World's Dancing" }
+    ],
+    "the cure": [
+      { "id": "Q484427", "label": "The Cure" },
+      { "id": "Q29426937", "label": "The Cure" },
+      { "id": "Q98546106", "label": "The Cure" },
+      { "id": "Q139852871", "label": "The Cure" },
+      { "id": "Q122313910", "label": "THE CURE" }
+    ],
+    "the animals": [
+      { "id": "Q131422", "label": "The Animals" },
+      { "id": "Q3299752", "label": "The Animals" },
+      { "id": "Q3446204", "label": "The Animals" },
+      { "id": "Q1469127", "label": "The Animals of Farthing Wood" },
+      { "id": "Q16828621", "label": "The Animals" }
+    ],
+    "the strokes": [
+      { "id": "Q211583", "label": "The Strokes" },
+      { "id": "Q111670467", "label": "Someday", "match": "The Strokes: Someday" },
+      { "id": "Q1329804", "label": "The Strokes discography" },
+      { "id": "Q124011391", "label": "The Strokes at Barclays Center, Brooklyn" },
+      {
+        "id": "Q99311651",
+        "label": "The Strokes concert performed during Montreux Jazz Festival the 2006-07-14"
+      }
+    ],
+    "the cars": [
+      { "id": "Q858388", "label": "The Cars" },
+      { "id": "Q1188848", "label": "The Cars" },
+      { "id": "Q4353192", "label": "The Carsey-Werner Company" },
+      { "id": "Q926678", "label": "The Cars That Ate Paris" },
+      { "id": "Q1763448", "label": "Greatest Hits", "match": "The Cars - Greatest Hits" }
+    ]
   },
   "entities": {
     "Q900001": { "P31": ["Q5"] },
     "Q900002": { "P31": ["Q5"] },
+    "Q900003": { "P279": ["Q900004"] },
+    "Q900004": { "P279": [] },
+    "Q900270": { "P31": ["Q5"] },
+    "Q900271": { "P31": ["Q16521"] },
+    "Q900280": { "P31": ["Q900011"] },
+    "Q900281": { "P279": ["Q900283"] },
+    "Q900282": { "P279": ["Q900283"] },
+    "Q900283": { "P279": [] },
+    "Q900290": { "P31": ["Q900011"] },
+    "Q900291": { "P279": ["Q900292"] },
+    "Q900292": { "P279": [] },
     "Q900010": { "P31": ["Q900011"] },
     "Q900011": { "P279": ["Q95074"] },
     "Q900020": { "P31": ["Q900021"] },
@@ -46,8 +259,12 @@
     "Q900042": { "P279": ["Q6999"] },
     "Q900050": { "P31": ["Q900041"] },
     "Q900051": { "P31": ["Q900021"] },
-    "Q900060": { "P279": ["Q900061"] },
+    "Q900060": { "P31": ["Q24334299"], "P279": ["Q900061"] },
     "Q900061": { "P279": [] },
+    "Q24334299": { "P279": [] },
+    "Q900062": { "P31": ["Q41298", "Q57904379"] },
+    "Q41298": { "P279": [] },
+    "Q57904379": { "P279": [] },
     "Q900070": { "P279": ["Q900072"] },
     "Q900071": { "P279": ["Q900073"] },
     "Q900072": { "P279": [] },
@@ -65,6 +282,153 @@
     "Q900092": { "P279": [] },
     "Q900093": { "P279": [] },
     "Q900100": { "P31": ["Q5"] },
-    "Q900110": { "P31": ["Q5"] }
+    "Q900110": { "P31": ["Q5"] },
+    "Q900120": { "P31": ["Q215380"] },
+    "Q900121": { "P31": ["Q16521"], "P279": ["Q900122"] },
+    "Q900122": { "P279": [] },
+    "Q900130": { "P31": ["Q215380"] },
+    "Q900131": { "P31": ["Q55850593"] },
+    "Q55850593": { "P279": [] },
+    "Q900140": { "P279": ["Q12802", "Q49394"] },
+    "Q900074": { "P31": ["Q215380"] },
+    "Q900132": { "P31": ["Q3863"] },
+    "Q3863": { "P279": [] },
+    "Q900150": { "P31": ["Q12308941"] },
+    "Q12308941": { "P279": [] },
+    "Q900151": { "P31": ["Q900021"] },
+    "Q900152": { "P31": ["Q16521"] },
+    "Q900160": { "P31": ["Q215380"] },
+    "Q219714": { "P31": ["Q17156793"] },
+    "Q17156793": { "P279": [] },
+    "Q900170": { "P31": ["Q641066"] },
+    "Q900171": { "P31": ["Q476028", "Q103229495", "Q20639856"] },
+    "Q476028": { "P279": [] },
+    "Q103229495": { "P279": [] },
+    "Q20639856": { "P279": [] },
+    "Q16093204": { "P31": ["Q101352", "Q98775491", "Q333021", "Q612090"] },
+    "Q98775491": { "P279": [] },
+    "Q333021": { "P279": [] },
+    "Q612090": { "P279": [] },
+    "Q2588576": { "P31": ["Q12308941"] },
+    "Q8029793": { "P31": ["Q482994"] },
+    "Q482994": { "P279": [] },
+    "Q18498": { "P31": ["Q16521", "Q19067"], "P279": ["Q25324"] },
+    "Q19067": { "P279": [] },
+    "Q25324": { "P279": [] },
+    "Q900163": { "P31": ["Q101352"] },
+    "Q900164": { "P31": ["Q55983715"] },
+    "Q101352": { "P279": [] },
+    "Q55983715": { "P279": [] },
+    "Q900180": { "P31": ["Q56816954"] },
+    "Q900190": { "P31": ["Q215380", "Q127334927"] },
+    "Q900191": { "P31": ["Q3863"] },
+    "Q900192": { "P31": ["Q41298"] },
+    "Q900200": { "P31": ["Q5"] },
+    "Q900210": { "P31": ["Q900011"] },
+    "Q900220": { "P31": ["Q900011"] },
+    "Q900230": { "P31": ["Q900021"] },
+    "Q900240": { "P31": ["Q634"] },
+    "Q900250": { "P31": ["Q900251"] },
+    "Q900251": { "P279": ["Q271669"] },
+    "Q900260": { "P31": ["Q900261"] },
+    "Q900261": { "P279": ["Q271669"] },
+    "Q864418": { "P31": ["Q15711870"] },
+    "Q15711870": { "P279": ["Q95074"] },
+    "Q186422": { "P31": ["Q1114461", "Q15711870"] },
+    "Q1114461": { "P279": ["Q95074"] },
+    "Q108479474": { "P31": ["Q7889"] },
+    "Q8030537": { "P31": ["Q7889"] },
+    "Q7889": { "P279": [] },
+    "Q112110379": { "P31": ["Q1114461"] },
+    "Q1166": { "P31": ["Q35657"] },
+    "Q35657": { "P279": [] },
+    "Q14334": { "P31": ["Q16521"] },
+    "Q211584": { "P31": ["Q386147"], "P279": ["Q2267569", "Q213441", "Q2476603"] },
+    "Q386147": { "P279": [] },
+    "Q2267569": { "P279": ["Q11019"] },
+    "Q2476603": { "P279": [] },
+    "Q213441": { "P279": ["Q628858"] },
+    "Q628858": { "P279": ["Q2221906"] },
+    "Q11019": { "P279": [] },
+    "Q2221906": { "P279": [] },
+    "Q121063999": { "P31": ["Q43305660"] },
+    "Q43305660": { "P279": [] },
+    "Q121783": { "P31": ["Q13393265"] },
+    "Q128109": { "P31": ["Q13393265"] },
+    "Q13393265": { "P279": [] },
+    "Q5095520": { "P31": ["Q17156793"] },
+    "Q846570": { "P31": ["Q33829", "Q231002", "Q42138"] },
+    "Q33829": { "P279": [] },
+    "Q231002": { "P279": [] },
+    "Q42138": { "P279": [] },
+    "Q213417": { "P31": ["Q13027888"] },
+    "Q13027888": { "P279": [] },
+    "Q30": { "P31": ["Q3624078", "Q1489259", "Q6256", "Q99541706", "Q1520223", "Q5035794"] },
+    "Q3624078": { "P279": [] },
+    "Q1489259": { "P279": [] },
+    "Q6256": { "P279": [] },
+    "Q99541706": { "P279": [] },
+    "Q1520223": { "P279": [] },
+    "Q5035794": { "P279": [] },
+    "Q692062": { "P31": ["Q1371427"], "P279": ["Q846570"] },
+    "Q1371427": { "P279": [] },
+    "Q100885106": { "P31": ["Q33829"], "P279": ["Q846570"] },
+    "Q37555751": { "P31": ["Q101352"] },
+    "Q1378158": { "P31": ["Q43009164"] },
+    "Q2928116": { "P31": ["Q2367225"] },
+    "Q2367225": { "P279": [] },
+    "Q13570075": { "P31": ["Q101352"] },
+    "Q693690": { "P31": ["Q55983715"], "P279": ["Q830"] },
+    "Q830": { "P279": [] },
+    "Q21148055": { "P31": ["Q202444"] },
+    "Q202444": { "P279": [] },
+    "Q30113": { "P31": ["Q4830453", "Q6881511", "Q786820", "Q10429667"] },
+    "Q4830453": { "P279": [] },
+    "Q6881511": { "P279": [] },
+    "Q786820": { "P279": [] },
+    "Q10429667": { "P279": [] },
+    "Q900300": { "P31": ["Q215380"] },
+    "Q900301": { "P279": ["Q900302"] },
+    "Q900302": { "P279": [] },
+    "Q900310": { "P31": ["Q215380"] },
+    "Q900311": { "P279": ["Q900312"] },
+    "Q900312": { "P279": [] },
+    "Q900320": { "P31": ["Q215380"] },
+    "Q900321": { "P31": ["Q16521"] },
+    "Q900330": { "P31": ["Q13393265"] },
+    "Q900331": { "P279": ["Q900332"] },
+    "Q900332": { "P279": [] },
+    "Q6435931": { "P31": ["Q215380"] },
+    "Q22906202": { "P31": ["Q20107444", "Q25401607"] },
+    "Q20107444": { "P279": [] },
+    "Q25401607": { "P279": [] },
+    "Q134983890": { "P31": ["Q11424"] },
+    "Q11424": { "P279": [] },
+    "Q25344562": { "P31": ["Q16521"] },
+    "Q124988973": { "P31": ["Q35127"] },
+    "Q35127": { "P279": [] },
+    "Q7817": { "P31": ["Q15925165", "Q45400320", "Q484652", "Q96888669"] },
+    "Q15925165": { "P279": [] },
+    "Q45400320": { "P279": [] },
+    "Q484652": { "P279": [] },
+    "Q96888669": { "P279": [] },
+    "Q127869935": { "P31": ["Q134556"] },
+    "Q134556": { "P279": [] },
+    "Q140169908": { "P31": ["Q11424"] },
+    "Q93346": { "P31": ["Q215380"] },
+    "Q484427": { "P31": ["Q215380"] },
+    "Q29426937": { "P31": ["Q134556"] },
+    "Q98546106": { "P31": ["Q7302866"] },
+    "Q7302866": { "P279": [] },
+    "Q139852871": { "P31": ["Q105543609", "Q55850593"] },
+    "Q105543609": { "P279": [] },
+    "Q122313910": { "P31": ["Q7889"] },
+    "Q131422": { "P31": ["Q215380"] },
+    "Q3299752": { "P31": ["Q482994"] },
+    "Q3446204": { "P31": ["Q482994"] },
+    "Q16828621": { "P31": ["Q11424"] },
+    "Q211583": { "P31": ["Q5741069"] },
+    "Q858388": { "P31": ["Q5741069"] },
+    "Q1188848": { "P31": ["Q482994"] }
   }
 }

@@ -3,32 +3,260 @@
 # A name is blocked when its top exact Wikidata match is an instance (P31) or subclass (P279) of
 # one of these classes, directly or up to two P279 levels higher. instance_only classes match
 # only the entity's own P31 (so the class "Roman legionary" is never a real person).
+# individuals_only classes match only an item that is not a kind of thing (see kind_matches).
 #
 # Bump classes_version whenever this list changes: cached lookups from an older version are
 # ignored, so the change takes effect at once.
 #
-# Each Q-ID was verified live 2026-11-10 against wbgetentities; label is the live English label.
+# Each Q-ID was verified live 2026-11-10 against wbgetentities or Special:EntityData; label is
+# the live English label.
 #
-# Not listed yet: weapons of mass destruction and religious figures. The rules and classifier
-# layers already cover them; Wikidata classes for them can be added in A04 part 3.
-classes_version: 2
+# Religious figures need no class of their own: they are humans (Q5), so real_person covers them.
+#
+# Version 3 (A04 part 3a): demote_matches, bands as real_person, weapons of mass destruction.
+# Version 4 (A04 part 3a fixes): kind_matches, band subtypes, given-name variants; bands yield
+# only to a kind item, and the cache stores whether the pick was a band.
+# Version 5 (A04 part 3a fix round 2): the cache also stores whether a band's name is a common
+# word, which changes how cached band picks block.
+# Version 6 (A04 part 3a fix round 3): a band that lost the pick to a kind item is cached too
+# ("the Police", "Metallica" block), and only common_word kinds or items with a P279 make a bare
+# band name a common word.
+# Version 7 (A04 part 3b): geographic location is individuals_only (live "vending machine" is a
+# subclass of shop -> workplace -> geographic location), and the cache also stores the first
+# kind item for common nouns ("a wolverine": the animal, not the comic-book character).
+# Version 8 (A04 part 3b, D-59): sports teams join bands as groups (group: band / group: team);
+# a team may match through its alias ("Lakers"), the cached label is that name, a group is any
+# item whose P31 includes a group class, and the common-word check reads the top 10 results
+# (live "wolf": the grey wolf is result 6, so bare "Wolves" is the animals). A group that lost
+# the pick to a kind item (version 6) may be a team too.
+# Version 9 (#186, D-51, merged with D-59 and the #164 group fixes): a bare name typed in
+# lowercase ("moose", "shredder") is judged by its kind item when the top pick is a person or a
+# character (groups keep the group rule; a group that lost the pick still blocks first), which
+# changes how cached rows block. Both branches had bumped to 8 separately, so the merge bumps
+# again: rows cached under either version 8 are ignored.
+# Version 10 (#316): "the" + a proper name also searches "the " + the name, and a band or team
+# labelled "The <name>" in its top 5 results is cached as a group that lost the pick ("the Who",
+# "the Cure", "the Animals" block), which changes how cached rows block.
+classes_version: 10
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed
-# over for the Moon. Verified live 2026-11-10 against wbgetentities (labels as returned).
+# over for the Moon, "Thor" the male given name for the god. Verified live 2026-11-10 against
+# wbgetentities (labels as returned).
 skip_matches:
   - qid: Q101352
     label: family name
+  - qid: Q29042997
+    label: double family name
   - qid: Q202444
     label: given name
+  - qid: Q12308941
+    label: male given name
+  - qid: Q11879590
+    label: female given name
+  - qid: Q3409032
+    label: unisex given name
   - qid: Q4167410
     label: Wikimedia disambiguation page
+  - qid: Q22808320
+    label: Wikimedia human name disambiguation page
+
+# Kind items: an exact match is a kind (a type of thing, not one individual) when it has a P279
+# (subclass of) value or its P31 includes one of these classes. A band is passed over only when a
+# kind item is among the exact matches ("Grizzly Bear" the band for the grizzly bear), never for
+# another individual ("the Beatles" the band beats the asteroid "8749 Beatles"). A band that lost
+# the pick this way still blocks a name that names it (see the band classes below). common_word:
+# true marks kinds that are everyday words; with any item that has a P279, they make a band's bare
+# name a common word ("Grizzly Bear" is the animal). A bare taxon does not: "Metallica" is the band,
+# not the moth genus. Verified live 2026-11-10 against wbgetentities (labels as returned).
+kind_matches:
+  - qid: Q16521
+    label: taxon
+  - qid: Q55983715
+    label: organisms known by a particular common name # the live "raven"
+    common_word: true
+
+# Creative works that share a name with a fighter. When picking the top exact match, an item whose
+# P31 is only these classes (or band classes, see "band: true" below) is passed over if another
+# usable exact match is left: "Dragon" the magazine for the dragon. A creative work is used only
+# if nothing else fits. Verified live 2026-11-10 against Special:EntityData (labels as returned).
+demote_matches:
+  - qid: Q41298
+    label: magazine
+  - qid: Q57904379
+    label: tabletop role-playing game periodical # the live "Dragon" magazine has this too
+  - qid: Q1002697
+    label: periodical
+  - qid: Q571
+    label: book
+  - qid: Q7725634
+    label: literary work
+  - qid: Q47461344
+    label: written work
+  - qid: Q13442814
+    label: scholarly article
+  - qid: Q11424
+    label: film
+  - qid: Q24862
+    label: short film
+  - qid: Q506240
+    label: television film
+  - qid: Q5398426
+    label: television series
+  - qid: Q7889
+    label: video game
+  - qid: Q482994
+    label: album
+  - qid: Q108352648
+    label: album release
+  - qid: Q169930
+    label: extended play
+  - qid: Q134556
+    label: single
+  - qid: Q7366
+    label: song
+  - qid: Q55850593
+    label: music track with vocals # the live "Beatles" track item
+  - qid: Q2188189
+    label: musical work
 
 classes:
   - qid: Q5
     label: human
     reason: real_person
     instance_only: true
+  # Bands and sports teams are groups of real people (D-38, D-59); group classes must have
+  # reason real_person. Group classes (group: band or group: team) count only on the item's own
+  # P31, are demoted like creative works but yield only to a kind item (see kind_matches), and
+  # block only when typed as "the" + the group's name ("the Eagles", "the Lakers"), or as the
+  # bare name when its singular is not a kind item ("Beatles" and "Lakers" block; "Eagles",
+  # "eagles", "Bulls" and "a grizzly bear" do not). Capitals must match the name, or the name
+  # must be ALL CAPS ("THE BEATLES"). A band's name is its label; a team's may also be the alias
+  # that matched ("Lakers" for "Los Angeles Lakers"). A group that lost the pick to a
+  # common-word kind item blocks only as its full name with its own "The" ("the Police"; not
+  # "the Grizzly Bear"). Other organizations, companies and brands stay allowed (a Jeep).
+  # Subtypes are listed because only the item's own P31 counts. Bands verified live 2026-11-10
+  # against wbgetentities.
+  - qid: Q215380
+    label: musical group
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q127334927
+    label: band
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q5741069
+    label: rock band
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q25391823
+    label: punk band
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q56816954
+    label: heavy metal band
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q2491498
+    label: pop band
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q216337
+    label: boy band
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q641066
+    label: girl group
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q120544
+    label: vocal group
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q19351429
+    label: a cappella group
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q19464263
+    label: rap group # alias "hip hop group"
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q9212979
+    label: musical duo
+    reason: real_person
+    instance_only: true
+    group: band
+  - qid: Q281643
+    label: musical trio
+    reason: real_person
+    instance_only: true
+    group: band
+  # Sports teams (D-59). Verified live 2026-11-14 against wbgetentities: the Los Angeles Lakers
+  # (Q121783) and Chicago Bulls (Q128109) are instances of basketball team, the Philadelphia
+  # Eagles (Q219714) of American football team, the Durham Bulls (Q2581129) of baseball team,
+  # Wolverhampton Wanderers (Q19500) of association football club, men's association football
+  # team and professional sports team, and the rugby "Bulls" (Q1378158) of rugby union club.
+  - qid: Q12973014
+    label: sports team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q20639856
+    label: professional sports team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q13393265
+    label: basketball team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q476028
+    label: association football club
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q103229495
+    label: men's association football team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q17270000
+    label: football club
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q17156793
+    label: American football team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q4498974
+    label: ice hockey team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q13027888
+    label: baseball team
+    reason: real_person
+    instance_only: true
+    group: team
+  - qid: Q43009164
+    label: rugby union club
+    reason: real_person
+    instance_only: true
+    group: team
   - qid: Q95074
     label: character # alias "fictional character"
     reason: copyrighted_character
@@ -44,6 +272,13 @@ classes:
   - qid: Q911807
     label: explosive
     reason: weapon
+  # Live "nuclear bomb", "chemical weapon" and "biological weapon" are direct subclasses of this.
+  - qid: Q49394
+    label: weapon of mass destruction
+    reason: weapon
+  - qid: Q12802
+    label: nuclear weapon
+    reason: weapon
   - qid: Q6999
     label: astronomical object
     reason: out_of_scope
@@ -58,9 +293,15 @@ classes:
   - qid: Q523
     label: star
     reason: out_of_scope
+  # individuals_only: blocks only an item that is not a kind of thing (no P279, no kind P31).
+  # Individual places reach it (live Paris, London, Antarctica, Times Square, the Mississippi
+  # River); kinds of objects can too, through Wikidata's "place of business" classes (live
+  # "vending machine" -> shop -> workplace -> geographic location), and must stay allowed. Kinds
+  # of landforms ("a mountain", "a desert") still block through landform below.
   - qid: Q2221906
     label: geographic location
     reason: out_of_scope
+    individuals_only: true
   - qid: Q271669
     label: landform
     reason: out_of_scope

@@ -11,12 +11,13 @@ simulate failing fails the battle; any later stage failing ends "fallback" and t
 goes on. The battle is "done" if and only if simulate succeeded, and it never stays "running".
 Repeat battles: after research, a finished battle with the same cache key (`stages.cache_key`)
 lends its verdict, plus its fair fight and challenger when it has them; each copied stage ends
-"done" with detail "cached", and one it lacks runs fresh.
+"done" with detail "cached", and one it lacks runs fresh. Stub output is not saved to the
+record. Research finds sheets through G04's `resolve_stat_sheet` (variant plus entity first).
+A size_reference with no sheet ends research "fallback" with a plain note; that side fights
+at its normal size and the battle goes on.
 
-TODO, remaining A05 pieces (issue #36):
-- when the owning module lands, swap research's seed-sheet lookup for G04 get_stat_sheet
-  (with the all-estimate fallback sheet and banner). Stub output is not saved to the record.
-- seed-sheet lookup ignores `variant`; match variants once variant sheets exist.
+TODO (issue #345): when no fighter sheet is found, use the all-estimate fallback sheet and
+banner instead of failing research.
 """
 
 import asyncio
@@ -25,15 +26,20 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from app.models.battle import BattleRecord
-from app.models.matchup import Matchup
+from app.models.matchup import FighterRequest, Matchup
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
 from app.pipeline import stages
 from app.pipeline.stages import Research, StageFailed, Stubbed
 from app.pipeline.store import BattleStore
+from app.research.mythical import find_creature
+from app.research.seed_fighters import find_seed_fighter
+from app.research.sheet_store import LEGEND_BUDGET_S
 
 logger = logging.getLogger(__name__)
 
 STUB = "stub"
+# Added to the research line when a fighter may be a new legend (#324), from its time limit.
+LEGEND_NOTE = f" (a legend can take up to {int(LEGEND_BUDGET_S)} s)"
 CACHED = "cached"  # detail for a stage copied from an earlier, identical battle
 SIMULATE_FAILED = "The simulation hit a snag, so there's no verdict this time. Please try again."
 RESEARCH_FAILED = "We couldn't look up these fighters this time. Please try again."
@@ -62,6 +68,9 @@ FALLBACK_WITH_VALUE = {
 }
 # For a stage with a saved stand-in value but no note of its own above.
 FALLBACK_WITH_VALUE_GENERIC = "A quick stand-in was used for this step this time."
+# Research note when a size_reference has no sheet yet; {names} are the quoted references.
+MISSING_REFERENCE = "No size reference for {names} yet, so that side fights at its normal size."
+MISSING_REFERENCES = "No size reference for {names} yet, so both sides fight at their normal size."
 
 # Running battles; holding a reference keeps a task from being garbage-collected mid-fight.
 _tasks: set[asyncio.Task[None]] = set()
@@ -86,15 +95,20 @@ async def run_battle(battle_id: str, store: BattleStore) -> None:
     matchup = record.matchup
     stage, simulated, reason = "intake", False, UNEXPECTED
     try:
-        # Intake already happened (POST /api/intake) before this battle was created.
-        await store.set_stage(battle_id, "intake", "running", STUB)
-        await store.set_stage(battle_id, "intake", "done", STUB)
+        # Intake really ran before this battle was created (POST /api/intake and the safety
+        # gate), so the stage is recorded as done here.
+        await store.set_stage(battle_id, "intake", "running")
+        await store.set_stage(battle_id, "intake", "done")
 
         stage = "research"
         await store.set_stage(battle_id, stage, "running", _looking_up(matchup))
         found = await _required(stage, lambda: stages.research(matchup), RESEARCH_FAILED)
         await store.update(battle_id, stat_sheets=found.sheets)
-        await store.set_stage(battle_id, stage, "done", STUB if found.stub else None)
+        if found.missing_references:
+            note = _missing_reference_note(found.missing_references)
+            await store.set_stage(battle_id, stage, "fallback", note)
+        else:
+            await store.set_stage(battle_id, stage, "done")
 
         # Same matchup, same sheets, same engine: reuse a finished battle's verdict.
         key = stages.cache_key(matchup, found)
@@ -281,6 +295,22 @@ async def _settle_unfinished(battle_id: str, store: BattleStore, reason: str) ->
             await store.set_stage(battle_id, change.stage, "fallback", reason)
 
 
+# The research note naming each size_reference with no sheet, e.g. 'a school bus'.
+def _missing_reference_note(names: list[str]) -> str:
+    joined = " or ".join(repr(name) for name in dict.fromkeys(names))  # at most two sides
+    template = MISSING_REFERENCE if len(names) == 1 else MISSING_REFERENCES
+    return template.format(names=joined)
+
+
 # A short note shown while research runs.
 def _looking_up(matchup: Matchup) -> str:
-    return "Looking up " + " and ".join(f.entity for f in matchup.fighters)
+    names = "Looking up " + " and ".join(f.entity for f in matchup.fighters)
+    return names + LEGEND_NOTE if any(_may_be_a_new_legend(f) for f in matchup.fighters) else names
+
+
+# A fighter that's neither a seed fighter nor a creature in mythical.yaml may be a legend that
+# has to be fetched and modeled, which can take most of research's time (#324).
+def _may_be_a_new_legend(fighter: FighterRequest) -> bool:
+    if find_creature(fighter.entity) is not None:
+        return False
+    return find_seed_fighter(fighter.entity, fighter.variant, fighter.raw) is None

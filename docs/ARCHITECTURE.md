@@ -125,7 +125,7 @@ Stages run in the orchestrator (`pipeline/`). Each stage records `pending | runn
 |---|---|---|---|
 | 1 Intake | about 7 s typical, 25 s limit (D-52) | same | the parser asks the model at most twice (each call waits up to 15 s per step, with one retry); an outage or the 25 s limit returns a 503 "try again in a moment"; unusable replies ask the user to rephrase |
 | 2 Research | ≤ 0.5 s | ≤ 45 s | fall back to seed sheet or all-estimate sheet with a banner; size-reference entities are researched too |
-| 3 Simulate (1,000 runs) | ≤ 3 s | — | must not fail; it is pure code |
+| 3 Simulate (1,000 runs) | ≤ 15 s limit; about 1.5–6.9 s on a laptop for a showcase fight (D-63) | — | must not fail; it is pure code |
 | 4–5 Scripts | ≤ 10 s | — | template-based fallback script |
 | 5 Audio + music | ≤ 60 s | — | captions only / no music |
 | 6 Images | ≤ 60 s (cached per fighter) | — | placeholder shapes in the fighter's color |
@@ -230,7 +230,7 @@ class FightEvent(BaseModel):
     side: Literal[0, 1]
     actor: int | None = None               # index within side, or None for group events
     target: int | None = None
-    group_size: int = 1                    # >1 for aggregated swarm events
+    group_size: int = 1                    # fighters a group event (actor None) covers; can be 1
     damage: float | None = None
     text_hint: str                         # short neutral description for narration, e.g. "bite lands"
 
@@ -312,7 +312,7 @@ Unit conversion lives in code (`research/units.py`). The model returns the unit 
 | `GET /api/health` | — | `{status, provider_mode, providers: {name: up/down/mock}}` | M06 |
 | `POST /api/intake` | `{text}` | `IntakeResult` | A02 |
 | `POST /api/intake/{pending_id}/answer` | `{answer}` | `IntakeResult` | D08 |
-| `POST /api/battles` | `Matchup` | `202 BattleCreated` `{battle_id}` | A05 |
+| `POST /api/battles` | `Matchup` | `202 BattleCreated` `{battle_id}`; `403 IntakeResult` when the safety gate blocks it (the same reply as intake); `503` when the safety check is unavailable (no battle starts) | A05 |
 | `GET /api/battles/{id}` | — | `BattleRecord` (partial while running) | A05 |
 | `GET /api/battles?showcase=true` | — | `list[ShowcaseBattle]` `[{battle_id, title}]` for the five saved showcase battles | G08 |
 | `GET /api/battles/{id}/events` | — | Server-Sent Events: `StageStatus` updates; poll fallback every 1 s | A05 |
