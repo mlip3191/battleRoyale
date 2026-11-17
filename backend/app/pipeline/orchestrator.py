@@ -33,12 +33,13 @@ from app.pipeline.stages import Research, StageFailed, Stubbed
 from app.pipeline.store import BattleStore
 from app.research.mythical import find_creature
 from app.research.seed_fighters import find_seed_fighter
+from app.research.sheet_store import LEGEND_BUDGET_S
 
 logger = logging.getLogger(__name__)
 
 STUB = "stub"
-# Added to the research line when a fighter may be a new legend (#324); matches LEGEND_BUDGET_S.
-LEGEND_NOTE = " (a legend can take up to 30 s)"
+# Added to the research line when a fighter may be a new legend (#324), from its time limit.
+LEGEND_NOTE = f" (a legend can take up to {int(LEGEND_BUDGET_S)} s)"
 CACHED = "cached"  # detail for a stage copied from an earlier, identical battle
 SIMULATE_FAILED = "The simulation hit a snag, so there's no verdict this time. Please try again."
 RESEARCH_FAILED = "We couldn't look up these fighters this time. Please try again."

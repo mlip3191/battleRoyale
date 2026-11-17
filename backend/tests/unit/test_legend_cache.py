@@ -102,18 +102,17 @@ async def test_a_refused_name_is_not_looked_up_again_for_a_while(
             await stages.lookup_fighter(HYDRA)
         assert str(failure.value) == stages.LEGEND_BLOCKED.format(name="hydra")
     assert chat.calls == 1  # the two retries answered from memory
-    later = sheet_store.time.monotonic() + sheet_store.REFUSAL_MEMORY_S + 1
-    monkeypatch.setattr(sheet_store.time, "monotonic", lambda: later)
+    # Backdate the refusal rather than patching the clock, which asyncio's timers also use.
+    expired = sheet_store.time.monotonic() - sheet_store.REFUSAL_MEMORY_S - 1
+    monkeypatch.setitem(sheet_store._REFUSED, "hydra", expired)
     with pytest.raises(StageFailed):
         await stages.lookup_fighter(HYDRA)
     assert chat.calls == 2  # after the window it asks again
 
 
 def test_recording_a_refusal_drops_expired_ones(monkeypatch: pytest.MonkeyPatch) -> None:
-    now = [1000.0]
-    monkeypatch.setattr(sheet_store.time, "monotonic", lambda: now[0])
-    sheet_store.remember_refusal("old-name")
-    now[0] += sheet_store.REFUSAL_MEMORY_S + 1
+    expired = sheet_store.time.monotonic() - sheet_store.REFUSAL_MEMORY_S - 1
+    monkeypatch.setitem(sheet_store._REFUSED, "old-name", expired)  # backdated, not a fake clock
     sheet_store.remember_refusal("new-name")
     assert set(sheet_store._REFUSED) == {"new-name"}  # the expired one was pruned
 
@@ -132,6 +131,20 @@ async def test_an_outage_is_not_remembered(monkeypatch: pytest.MonkeyPatch) -> N
             await stages.lookup_fighter(HYDRA)
         assert str(failure.value) == stages.LEGEND_UNAVAILABLE.format(name="hydra")
     assert len(fetches) == 2  # the retry tried Wikipedia again
+
+
+async def test_a_mythology_page_about_a_deity_is_refused(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The safety gate judges the typed name, so a safe-looking name's "(mythology)" page could
+    # be about a god or a named individual; the model must answer found: false, and code
+    # turns that into the same friendly refusal (#373 review).
+    chat = ScriptedChat(answer(found=False, body_analog=None, quote=""))
+    seen: list[str] = []
+    go_live(monkeypatch, chat)
+    serve(monkeypatch, {"Hydra_(mythology)"}, seen)
+    with pytest.raises(StageFailed) as failure:
+        await stages.lookup_fighter(HYDRA)
+    assert str(failure.value) == stages.LEGEND_BLOCKED.format(name="hydra")
+    assert seen == ["Hydra_(mythology)"] and chat.calls == 1
 
 
 # --- 3. "(mythology)" first --------------------------------------------------------------------
@@ -189,13 +202,15 @@ async def test_new_legend_lookups_run_at_most_two_at_a_time(
 async def test_waiting_for_a_slot_counts_toward_the_time_limit(
     monkeypatch: pytest.MonkeyPatch, db: sqlite3.Connection
 ) -> None:
-    monkeypatch.setattr(sheet_store, "LEGEND_BUDGET_S", 0.15)
-    chat = ScriptedChat(answer(), pause=0.1)
+    monkeypatch.setattr(sheet_store, "LEGEND_BUDGET_S", 0.45)
+    chat = ScriptedChat(answer(), pause=0.3)
     go_live(monkeypatch, chat)
     names = ["hydra", "basilisk-x", "wyvern-x", "kraken-x", "roc-x", "griffon-x"]
     outcomes = await asyncio.gather(*(sheet_store.resolve_legend(db, chat, n) for n in names))
     assert any(o is lore.UNAVAILABLE for o in outcomes)  # the end of the queue gave up in time
-    assert chat.calls < len(names)  # and never started its model call
+    # Two slots and 0.3 s calls in a 0.45 s budget: the second pair starts at 0.3 s, a third pair
+    # would need 0.6 s, so exactly 4 calls start and the last 2 never do (0.15 s margin each way).
+    assert chat.calls == 4
 
 
 # --- 5. The progress line ----------------------------------------------------------------------
