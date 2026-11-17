@@ -317,11 +317,12 @@ def _explain(
     vf = fmt(sheets[fav].stats[key].value)
     vo = fmt(sheets[foe].stats[key].value)
     pair = f"{fav_name} ({vf}{unit}) against {foe_name} ({vo}{unit})"
-    smaller = sheets[fav].stats[key].value < sheets[foe].stats[key].value
-    # A size reference rescales a fighter, so its sheet size may not be the size it fought at.
-    scaled = any(f.size_reference for f in matchup.fighters)
-    if helped and smaller and not scaled and key in (StatName.SIZE, StatName.MASS):
-        return _explain_smaller_side(key, matchup, sheets, fav)
+    if helped and key in (StatName.SIZE, StatName.MASS):
+        smaller = sheets[fav].stats[key].value < sheets[foe].stats[key].value
+        # A size reference rescales a fighter, so its sheet size may not be the size it fought at.
+        scaled = any(f.size_reference for f in matchup.fighters)
+        if smaller and not scaled:
+            return _explain_smaller_side(key, matchup, sheets, fav)
     if helped:
         text = f"{label} decided it: {pair}."
     else:
@@ -347,8 +348,8 @@ def _explain_smaller_side(
     pair = f"{sides[0]} against {sides[1]}"
     if key == StatName.MASS:  # weight is mostly health in the model: no honest one-line "how"
         return f"Size decided it, in the lighter side's favor: {pair}."
-    # hit_chance: a bigger target is hit more easily. max_engagers: a second attacker fits only
-    # when (bigger size / smaller size) ** 2 is at least 2 (#390 review).
+    # hit_chance: a bigger target is hit more easily. max_engagers (melee): a second attacker
+    # fits only when (bigger size / smaller size) ** 2 is at least 2 (#390 review).
     fits = counts[0] > 1 and (values[1] / values[0]) ** 2 >= 2
     how = "A bigger body is an easier target"
     how += ", and more attackers fit around it at once." if fits else "."
