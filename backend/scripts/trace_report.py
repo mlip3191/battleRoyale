@@ -39,8 +39,9 @@ def render(reports: list[TraceReport], require_quotes: bool = False) -> str:
     for report in reports:
         lines.append(report.summary())
         lines += [f"  - {issue.where}: {issue.problem}" for issue in report.issues]
-    share = traceable_share(reports)
-    clean = sum(r.ok for r in reports)
+    # In strict mode the footer uses the same rule as the exit code and the benchmark (#377 review).
+    share = traceable_share(reports, require_quotes)
+    clean = sum(traceable(r, require_quotes) for r in reports)
     lines.append(f"\nTraceable: {clean} of {len(reports)} battles ({round((share or 0) * 100)}%).")
     # What the share rests on: a quote whose article isn't stored here can't fail (#353 review).
     checked = sum(r.quotes_checked for r in reports)
@@ -51,8 +52,9 @@ def render(reports: list[TraceReport], require_quotes: bool = False) -> str:
     )
     if require_quotes and unchecked:
         names = ", ".join(r.battle_id for r in reports if r.quotes_unchecked)
+        noun = "quote" if unchecked == 1 else "quotes"
         lines.append(
-            f"Strict mode (--require-quotes): {unchecked} quotes couldn't be checked, in {names}. "
+            f"Strict mode (--require-quotes): {unchecked} {noun} couldn't be checked, in {names}. "
             "Store their articles (npm run ingest) and run again."
         )
     return "\n".join(lines)

@@ -260,6 +260,7 @@ def test_require_quotes_fails_when_a_quote_could_not_be_checked(
     assert trace_report.main(["--db", str(path), "--require-quotes"]) == 1
     printed = capsys.readouterr().out
     assert "Strict mode (--require-quotes): 5 quotes couldn't be checked, in b-7f3k2q." in printed
+    assert "Traceable: 0 of 1 battles (0%)." in printed  # the footer agrees with the exit code
     assert trace_report.main(["--db", str(path)]) == 0  # without the flag: unchanged
 
 
@@ -293,3 +294,24 @@ def test_strict_share_only_counts_fully_checked_battles(db: sqlite3.Connection) 
     unchecked = check_battle(clean())  # no database: its 5 quotes are unchecked
     assert traceable_share([checked, unchecked]) == 1.0
     assert traceable_share([checked, unchecked], require_quotes=True) == 0.5
+
+
+def test_strict_mode_on_an_empty_database_has_nothing_to_check(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # No finished battles means nothing was claimed, so strict mode doesn't fail; the
+    # benchmark shows n/a rather than a percentage (#377 review: pinned on purpose).
+    empty = tmp_path / "empty.db"
+    apply_migrations(connect(empty))
+    assert trace_report.main(["--db", str(empty), "--require-quotes"]) == 0
+    assert "No finished battles stored yet" in capsys.readouterr().out
+    monkeypatch.setattr(run_benchmark, "connect", lambda: connect(empty))
+    report = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
+    run_benchmark.add_traceability(report, mock=False, require_quotes=True)
+    assert report.traceability is None
+
+
+def test_strict_mode_says_quote_for_a_count_of_one() -> None:
+    one = check_battle(clean())
+    one.quotes_unchecked = 1
+    assert "1 quote couldn't be checked" in trace_report.render([one], require_quotes=True)
