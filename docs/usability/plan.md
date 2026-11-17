@@ -2,21 +2,24 @@
 
 We're testing the app with 3–5 people from outside the team (friends, family, classmates not in our group). The goal is to find out where a first-time user gets stuck, confused, or bored, and to turn each problem into an issue before the feature freeze (end of Sun Nov 22).
 
-- **Length:** about 15 minutes per session.
+- **Who can test:** adults only (18+), or a parent's written consent for anyone younger.
+- **Length:** about 15 minutes per session. Each task gets about 3 minutes; after that, mark it "gave up" and move on.
 - **Who runs it:** one teammate as the facilitator. The facilitator reads the script, watches, and takes notes. They don't help unless the tester is stuck for more than a minute.
-- **Where:** in person at the facilitator's computer, or over a video call. On a call, the facilitator shares their screen and clicks where the tester tells them to.
-- **Mode:** live mode (`npm run env:setup` done, `npm start`). Task 3 needs live mode, because mock mode never asks a clarifying question. If live mode is down, run in mock mode, skip task 3, and note it.
+- **Where:** in person at the facilitator's computer if you can. On a video call, give the tester remote control of your screen; if you drive the mouse for them, they can't discover hovering for a quote, Mute, or Skip, and the sound depends on the call. Run at least some sessions in person. Don't record video calls.
+- **Mode:** live mode (`npm run env:setup` done, `npm start`). Task 3 needs live mode, because mock mode never asks a clarifying question. If live mode is down, run in mock mode, skip task 3, and note it; for tasks 4 and 5, use one of the four showcase battles on the home page. A facilitator setting up live mode for the first time can follow [docs/onboarding.md](../onboarding.md).
 - **No personal data:** don't record names, ages, emails, faces, or voices. Testers are "T1" to "T5" in the notes. Don't take screen recordings with the tester's face or voice.
 
 ## Before each session (2 minutes)
 
-1. Start the app and open http://localhost:8000 in a fresh browser window.
-2. Check that the home page loads and the studio status is OK.
-3. Have a notes sheet ready (below), one per tester.
+1. Run `npm run doctor`, then start the app and open http://localhost:8000 in a fresh browser window.
+2. Play one example battle through to the verdict. This catches a live-mode outage or a called-off fighter before the tester arrives.
+3. Open a fresh browser window for the tester, and have a notes sheet ready (below), one per tester.
 
 ## Script (read this out)
 
-> Thanks for helping. This is a web app our class team built. You name two fighters, and it works out who would win using real animal facts, then shows the fight as a cheesy sports broadcast.
+> Thanks for helping. Is it OK if I take notes and use what you say, without your name? You can stop any time.
+>
+> This is a web app our class team built. You name two fighters, and it works out who would win using real animal facts, then shows the fight as a cheesy sports broadcast.
 >
 > We're testing the app, not you. There are no wrong answers. If something is confusing, that's exactly what we want to find.
 >
@@ -24,15 +27,18 @@ We're testing the app with 3–5 people from outside the team (friends, family, 
 
 ## The five tasks
 
-Read each task out, then watch. Don't point at the screen or name the button.
+Read each task out, then watch. Don't point at the screen or name the button. Give each task about 3 minutes, then mark it "gave up" and go on. You may press "Skip to verdict" for them only from the second battle on, once they've seen one broadcast.
+
+- **Called off:** if a battle ends with "This fight was called off" (for example, an animal with no ready-made stat sheet), that's a **product** finding, not the tester's fault. Mark the task "called off", note what they typed, and move on.
+- **Off-limits fighters:** don't suggest real people or other off-limits fighters. If a tester tries one, the safety check refuses it: note how the refusal landed, and don't coach.
 
 | # | Say this | It's done when | Watch for |
 |---|---|---|---|
-| 1 | "Start a battle using one of the examples on the page." | A battle starts from an example chip. | Do they see the examples? Do they know they have to confirm on tonight's card? |
-| 2 | "Now type a matchup of your own: any two animals you like." | Their own battle starts, or they get a clear message about why not. | Do refusals or "no stat sheet" messages make sense to them? Do they know what to type? |
-| 3 | "Type: *a bear vs 6 gray wolves in a forest*, and follow what it asks." | They answer the quick question and the battle starts. | Do they understand why it's asking? Do they use a button or type? |
-| 4 | "After the fight, find out where one of the numbers came from." | They find a stat's source or tag (source, estimate, derived, assumption). | Do they find the results page and sources? Do the tags mean anything to them? |
-| 5 | "Start the next challenger battle." | The next challenger fight starts. | Do they find the next challenger section? Is "Fight them!" clear? |
+| 1 | "Get a fight going without making up your own." | A battle starts from an example chip. | Do they see the examples? Do they know they have to confirm on tonight's card? |
+| 2 | "Now type a matchup of your own: any two animals you like." | Their own battle starts, or they get a clear message about why not. A "called off" battle counts as done; log it as a product finding. | Do refusals or "no stat sheet" messages make sense to them? Do they know what to type? |
+| 3 | "Type this in, then carry on until a fight starts: *a bear vs 6 gray wolves in a forest*." | They answer the quick question and the battle starts (or it's called off: log that as a product finding). | Do they understand why it's asking? Do they use a button or type? |
+| 4 | "After the fight, find out where one of the numbers came from." | They find a sourced stat's link and quote, or a stat's tag (estimate, derived, assumption). | Do they find the results page and sources? Do the tags mean anything to them? |
+| 5 | "Keep the show going: set up another fight from where you are." | The next challenger fight starts. No challenger card (a draw or no contest)? Note it and skip task 5. | Do they find the next challenger section? Is "Fight them!" clear? |
 
 While they watch the broadcast, note whether they skip, mute, or wait it out, and anything that makes them laugh.
 
@@ -49,16 +55,16 @@ While they watch the broadcast, note whether they skip, mute, or wait it out, an
 ```text
 Tester: T_     Date: ___     Mode: live / mock     In person / call
 
-Task 1 (example):      done / done with help / gave up    time: ___
+Task 1 (example):      done / done with help / gave up / called off    time: ___
   notes:
-Task 2 (own matchup):  done / done with help / gave up    time: ___
+Task 2 (own matchup):  done / done with help / gave up / called off    time: ___
   what they typed (no personal details):
   notes:
-Task 3 (question):     done / done with help / gave up / skipped (mock)
+Task 3 (question):     done / done with help / gave up / called off / skipped (mock)
   notes:
 Task 4 (a source):     done / done with help / gave up
   notes:
-Task 5 (challenger):   done / done with help / gave up
+Task 5 (challenger):   done / done with help / gave up / skipped (no card)
   notes:
 Broadcast: watched / skipped / muted     laughed at:
 
@@ -73,12 +79,12 @@ Q5 missing:
 
 | Severity | Meaning |
 |---|---|
-| High | The tester couldn't finish a task, or was misled (for example, read a number wrong). |
-| Medium | They finished, but only after real confusion or a long hunt. |
+| High | The tester gave up on a task, or was misled (for example, read a number wrong). |
+| Medium | They finished only with help, or after real confusion or a long hunt. |
 | Low | Small friction, a wording issue, or a nice-to-have idea. |
 
 ## After the sessions
 
-1. Write each problem in [findings.md](findings.md): what happened, how many testers hit it, severity, and a suggested fix. No names or personal data.
+1. Write each problem in [findings.md](findings.md): which task, what happened, how many testers hit it ("x of N"), severity, and a suggested fix. No names or personal data.
 2. File one issue per finding with `/new-issue` (`type: bug` or `type: feature`, label `usability`).
-3. Send Mike the top 3 that should be fixed before the freeze.
+3. Send Mike the top 3 that should be fixed before the freeze, by the evening of Sat Nov 21. Rank by severity, then by testers affected, then by whether the fix is size S or M and can land by Nov 22.
