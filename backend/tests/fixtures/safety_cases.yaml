@@ -548,6 +548,14 @@ cases:
     kind: animal
     mock:
       sides: [["a T. rex", "tyrannosaurus rex"], ["an African elephant", "african elephant"]]
+  # #378: live, "stegosaurus" also finds a Dungeons & Dragons monster; the extinct animal is a
+  # fossil taxon, which counts as a kind, so the common noun is judged as the animal.
+  - id: an-t-rex-stego
+    text: "a T. rex vs a stegosaurus"
+    expect: allowed
+    kind: animal
+    mock:
+      sides: [["a T. rex", "tyrannosaurus rex"], ["a stegosaurus", "stegosaurus"]]
   - id: an-09
     # Bare lowercase plurals are ordinary animals (D-51, D-59), even when a team or band shares the name.
     text: "wolves vs bears"
