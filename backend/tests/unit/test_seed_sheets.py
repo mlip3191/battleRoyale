@@ -100,10 +100,16 @@ class TestSeedSheet:
     def test_derived_attack_force_comes_from_the_code_fit(self, path: Path) -> None:
         sheet = load_sheet(path)
         force = sheet.stats[StatName.ATTACK_FORCE]
-        if path.stem == "honey-badger":  # its bite is the one computed by app.research.bite_force
+        # These bites are the ones computed by app.research.bite_force. The gorilla's is the fit
+        # too (#260): its published figure is a molar bite, not a fighting (canine) bite.
+        if path.stem in ("honey-badger", "gorilla"):
             assert force.method == "derived"
             expected = average_carnivore_bite_n(sheet.stats[StatName.MASS].value)
             assert force.value == pytest.approx(expected, abs=0.5)
+        if path.stem == "gorilla":  # PM ruling on #260: range +/-25%, low confidence
+            assert force.low == pytest.approx(0.75 * force.value, abs=0.5)
+            assert force.high == pytest.approx(1.25 * force.value, abs=0.5)
+            assert force.confidence == "low" and force.source is None
 
     def test_at_most_two_physical_estimates(self, path: Path) -> None:
         sheet = load_sheet(path)
