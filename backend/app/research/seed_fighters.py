@@ -45,6 +45,8 @@ _ALIASES = {
     "grey": "gray",
     "wolves": "wolf",
     "ducks": "duck",
+    "mice": "mouse",  # irregular plurals of default kinds (#168 review)
+    "cacti": "cactus",
 }
 
 

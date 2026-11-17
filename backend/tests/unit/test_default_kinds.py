@@ -37,6 +37,10 @@ def test_wolves_and_other_plurals_use_the_table() -> None:
     assert default_kind("wolves") == "gray-wolf"
     assert default_kind("sharks") == "great-white-shark"
     assert default_kind("cats") == "house-cat"
+    assert default_kind("mice") == "house-mouse"  # irregular plurals
+    assert default_kind("cacti") == "saguaro-cactus"
+    found = find_seed_fighter("mice", None, "50 mice")
+    assert found is not None and found.id == "house-mouse"
 
 
 def test_an_exact_name_or_a_given_kind_is_never_changed() -> None:
