@@ -22,6 +22,7 @@ from app.providers.registry import (
     ServiceConfig,
     get_intake_chat,
     get_provider,
+    get_script_chat,
     service_config,
 )
 from tests.conftest import mock_settings
@@ -222,6 +223,29 @@ def test_intake_chat_has_a_shorter_timeout_and_fewer_retries() -> None:
     assert (intake.timeout_s, intake.retries) == (15.0, 1)
     assert (shared.timeout_s, shared.retries) == (30.0, 2)
     assert isinstance(get_intake_chat(mock_settings()), MockChatLLM)
+
+
+# The course chat model "thinks" before it answers: 85–95% of a script reply's tokens, 15–47 s a
+# script against an 8 s limit. The script chat turns that off; the shared chat keeps it (#363).
+async def test_script_chat_turns_the_models_thinking_off() -> None:
+    sent: list[dict[str, Any]] = []
+
+    def record(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+
+    settings = live_settings()
+    client = httpx.AsyncClient(transport=httpx.MockTransport(record))
+    messages: list[base.ChatMessage] = [{"role": "user", "content": "hi"}]
+    script = get_script_chat(settings)
+    assert isinstance(script, LiveChatLLM)
+    script.client = client
+    shared = LiveChatLLM(service_config("chat", settings), settings, client=client)
+    assert await script.complete(messages, prompt_name="outro") == "ok"
+    assert await shared.complete(messages, prompt_name="outro") == "ok"
+    assert sent[0]["chat_template_kwargs"] == {"enable_thinking": False}
+    assert "chat_template_kwargs" not in sent[1]
+    assert isinstance(get_script_chat(mock_settings()), MockChatLLM)
 
 
 async def test_intake_chat_gives_up_after_one_retry_when_the_model_is_slow(

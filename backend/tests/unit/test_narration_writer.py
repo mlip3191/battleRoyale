@@ -1,7 +1,9 @@
 """The LLM announcer writer: checked scripts, the number guard, one retry, and template fallback."""
 
+import asyncio
 import json
 import socket
+import time
 from collections.abc import Iterator
 from typing import Any
 
@@ -271,11 +273,43 @@ async def test_each_script_falls_back_on_its_own() -> None:
     assert (intro.fallback, pbp.fallback, outro.fallback) == (False, False, True)
 
 
+# A live model slower than the deadline on one script (#363): that script is the template, and
+# the two that finished in time keep the model's lines.
+async def test_a_script_past_the_deadline_falls_back_alone() -> None:
+    sample = SAMPLES[GRIZZLY]
+    chat = sample_chat(sample)
+    fast = chat.complete
+
+    async def slow_outro(messages: Any, *, prompt_name: str, json_schema: Any = None) -> str:
+        if prompt_name == "outro":
+            await asyncio.sleep(5)
+        return await fast(messages, prompt_name=prompt_name, json_schema=json_schema)
+
+    chat.complete = slow_outro  # type: ignore[method-assign]
+    started = time.perf_counter()
+    intro, pbp, outro = await write_scripts(
+        sample.sheets, sample.result, sample.fair, chat=chat, counts=sample.counts, deadline_s=0.2
+    )
+    assert time.perf_counter() - started < 2
+    assert (intro.fallback, pbp.fallback, outro.fallback) == (False, False, True)
+    assert outro == _templates(sample)[2]
+
+
+# With no chat passed in, the writer uses the script chat (thinking off, #363).
+async def test_the_writer_uses_the_script_chat_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    sample = SAMPLES[GRIZZLY]
+    chat = sample_chat(sample)
+    monkeypatch.setattr(writer, "get_script_chat", lambda: chat)
+    scripts = await write_scripts(sample.sheets, sample.result, sample.fair, counts=sample.counts)
+    assert not any(s.fallback for s in scripts)
+    assert [chat.count(p) for p in PROMPTS] == [1, 1, 1]
+
+
 async def test_no_provider_at_all_returns_templates(monkeypatch: pytest.MonkeyPatch) -> None:
-    def broken(name: str) -> None:
+    def broken() -> None:
         raise RuntimeError("Live 'chat' provider needs settings")
 
-    monkeypatch.setattr(writer, "get_provider", broken)
+    monkeypatch.setattr(writer, "get_script_chat", broken)
     sample = SAMPLES[GRIZZLY]
     scripts = await write_scripts(sample.sheets, sample.result, sample.fair, counts=sample.counts)
     assert scripts == _templates(sample)
