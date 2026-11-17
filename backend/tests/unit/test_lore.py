@@ -131,6 +131,7 @@ def test_the_mock_chat_finds_nothing_so_mock_mode_blocks() -> None:
         (3, "It had 3 heads.", True),
         (3, "This is one of three versions of the story; it had heads like a lion.", False),
         (4, "Some versions describe three heads.", False),
+        (3, "It lived past three headlands to the north.", False),
     ],
 )
 def test_the_number_must_name_the_heads(heads: int, quote: str, ok: bool) -> None:

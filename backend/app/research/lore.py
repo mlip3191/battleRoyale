@@ -141,7 +141,7 @@ def heads_in_quote(heads: int, quote: str) -> bool:
     # The number must name the heads ("three heads", "nine-headed", "3 heads"), so a stray
     # "three" elsewhere ("one of three versions") doesn't count.
     names = [str(heads), *(w for w, n in HEAD_WORDS.items() if n == heads)]
-    pattern = rf"\b(?:{'|'.join(names)})[\s-]+head"
+    pattern = rf"\b(?:{'|'.join(names)})[\s-]+head(?:s|ed)?\b"  # not "three headlands"
     return re.search(pattern, quote, flags=re.IGNORECASE) is not None
 
 
