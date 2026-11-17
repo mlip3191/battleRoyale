@@ -16,6 +16,13 @@ QUESTION_FILLER = {
     *("are", "about", "talking", "the", "and", "one", "mean", "for", "this", "that", "should"),
 }
 AND_WORD = re.compile(r"\band\b", re.I)
+# With one side typed, these say the question asks for an opponent ("Who should a bear fight?"),
+# so the answer is the other side, not a kind of that fighter (#360). Live models word kind
+# questions loosely too ("Which species of bear would you like to fight?"), so a fight word only
+# counts when the question names no kind.
+OPPONENT_WORDS = re.compile(r"\b(?:who|whom|against|opponents?|vs|versus)\b", re.I)
+FIGHT_WORDS = re.compile(r"\b(?:fight|fighting|face|battle|take on)\b", re.I)
+KIND_WORDS = re.compile(r"\b(?:type|kind|species|breed|sort|variety)\b", re.I)
 START_OVER = (
     "Sorry, we still couldn't set up that matchup. Please start again and name two fighters, "
     'like "a grizzly bear vs a gray wolf".'
@@ -33,8 +40,10 @@ def merge_answer(
         return original
     if len(typed_sides(answer)) >= 2:
         return answer  # the answer is a whole matchup, e.g. a suggested "a vs b" option
-    if len(typed_sides(original)) < 2:
+    one_side = len(typed_sides(original)) < 2
+    if one_side and (_asks_for_opponent(question) or not _offered(answer, options or [])):
         return f"{original} vs {answer}"  # the opponent was missing
+    # One side typed and asked "Which bear?": the offered answer names that fighter (#360).
     if AND_WORD.search(answer):
         return f"{original} ({answer})"  # "grizzly bear and wolf" names both sides; don't splice
     *lead, last = answer.split(" ")
@@ -52,7 +61,14 @@ def merge_answer(
         lead = _drop_repeated_words(lead, original[: matches[0].start()].split())
         if lead:
             return word.sub(lambda match: " ".join([*lead, match.group(0)]), original, count=1)
-    return f"{original} ({answer})"
+    return f"{original} vs {answer}" if one_side else f"{original} ({answer})"
+
+
+# True if the question asks who to fight, not which kind of the typed fighter (#360).
+def _asks_for_opponent(question: str) -> bool:
+    if OPPONENT_WORDS.search(question):
+        return True
+    return bool(FIGHT_WORDS.search(question)) and not KIND_WORDS.search(question)
 
 
 # True if the answer is one of the offered options ("a Grizzly" matches "Grizzly"); typed
