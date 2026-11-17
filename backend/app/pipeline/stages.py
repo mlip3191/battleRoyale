@@ -39,9 +39,9 @@ logger = logging.getLogger(__name__)
 # the new-fighter budget). The orchestrator reads it on every call, so tests can shrink it.
 STAGE_BUDGETS_S: dict[str, float] = {
     "research": 45.0,
-    # 8 s, not 3 s (D-63, #359): 1,000 runs plus the deciding-factor analysis take 3.5-3.7 s on
-    # a slower Windows laptop for showcase battle 1, and the limit keeps about 2x headroom.
-    "simulate": 8.0,
+    # 15 s, not 3 s (D-63, #359): 1,000 runs plus the deciding-factor analysis took up to 6.9 s
+    # for showcase battle 1 on a Windows laptop, and the limit keeps about 2x headroom.
+    "simulate": 15.0,
     "summary": 5.0,
     "challenger": 10.0,
     "script": 10.0,
