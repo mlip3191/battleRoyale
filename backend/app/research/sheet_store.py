@@ -11,6 +11,8 @@ gets None.
 import asyncio
 import logging
 import sqlite3
+import time
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 import httpx
@@ -21,7 +23,7 @@ from app.models.api import FighterMatch
 from app.models.stats import StatSheet
 from app.providers.base import ChatLLM, Embedder, Reranker
 from app.research.extract import build_sheet_with_evidence
-from app.research.lore import UNAVAILABLE, LoreOutcome, lore_for
+from app.research.lore import NONSENSE, UNAVAILABLE, LoreOutcome, lore_for
 from app.research.mythical import build_mythical_sheet, find_creature
 from app.research.seed_fighters import (
     SEED_SHEETS_DIR,
@@ -46,6 +48,15 @@ LEGEND_BUDGET_S = 30.0
 ARTICLE_TIMEOUT_S = 10.0
 # One lock per legend name, so two lookups of the same new legend model it once.
 _LEGEND_LOCKS: dict[str, asyncio.Lock] = {}
+# A refused name (found: false, or a quote or analog that failed code's check) isn't looked up
+# again for this long, so a retry answers at once instead of costing another 10 to 26 s
+# model call (#324). Outages are never remembered.
+REFUSAL_MEMORY_S = 600.0
+_REFUSED: dict[str, float] = {}  # legend slug -> when it was refused (time.monotonic)
+# At most this many new legends are fetched and modeled at once, so many unknown names can't
+# flood Wikipedia and the chat model (#324). Waiting for a slot counts toward LEGEND_BUDGET_S.
+MAX_LEGEND_LOOKUPS = 2
+_SLOTS: tuple[asyncio.AbstractEventLoop, asyncio.Semaphore] | None = None
 SEARCH_LIMIT = 20
 
 
@@ -168,19 +179,26 @@ async def resolve_legend(
 async def _resolve_legend(
     connection: sqlite3.Connection, chat: ChatLLM, name: str
 ) -> StatSheet | LoreOutcome | None:
-    cached = cached_sheet(connection, fighter_slug(name))
+    slug = fighter_slug(name)
+    cached = cached_sheet(connection, slug)
     if cached is not None and cached.category == "mythical":
         return cached
+    if recently_refused(slug):
+        return NONSENSE
     client = legend_client()
     if client is None:
         return None
     try:
         async with client:
-            outcome = await asyncio.wait_for(lore_for(name, client, chat), LEGEND_BUDGET_S)
+            outcome = await asyncio.wait_for(
+                _in_a_slot(lambda: lore_for(name, client, chat)), LEGEND_BUDGET_S
+            )
     except TimeoutError:
         logger.warning("Modeling the legend %r ran out of time.", name)
         return UNAVAILABLE
     if outcome.creature is None:
+        if outcome.blocked:
+            remember_refusal(slug)
         return outcome
     try:
         sheet = build_mythical_sheet(outcome.creature)
@@ -189,3 +207,70 @@ async def _resolve_legend(
         return UNAVAILABLE
     save_sheet(connection, sheet)
     return sheet
+
+
+# True when the model refused this legend within the last REFUSAL_MEMORY_S.
+def recently_refused(slug: str) -> bool:
+    refused_at = _REFUSED.get(slug)
+    if refused_at is None:
+        return False
+    if time.monotonic() - refused_at < REFUSAL_MEMORY_S:
+        return True
+    del _REFUSED[slug]
+    return False
+
+
+# Remember a refusal, dropping any that have expired so the memory never grows without bound.
+def remember_refusal(slug: str) -> None:
+    now = time.monotonic()
+    for old in [name for name, at in _REFUSED.items() if now - at >= REFUSAL_MEMORY_S]:
+        del _REFUSED[old]
+    _REFUSED[slug] = now
+
+
+# Forget every remembered refusal (tests start clean; a restart does the same in the app).
+def forget_refusals() -> None:
+    _REFUSED.clear()
+
+
+# This event loop's lookup limit (a semaphore belongs to one loop, and tests start new ones).
+def _lookup_slots() -> asyncio.Semaphore:
+    global _SLOTS
+    loop = asyncio.get_running_loop()
+    if _SLOTS is None or _SLOTS[0] is not loop:
+        _SLOTS = (loop, asyncio.Semaphore(MAX_LEGEND_LOOKUPS))
+    return _SLOTS[1]
+
+
+# Run one legend lookup once a slot is free. It takes a function, not a coroutine, so a lookup
+# that times out while still waiting never leaves an unstarted coroutine behind.
+async def _in_a_slot(start: Callable[[], Awaitable[LoreOutcome]]) -> LoreOutcome:
+    async with _lookup_slots():
+        return await start()
+
+
+# The legends cached by earlier battles (not the 12 in mythical.yaml): (id, name, versions).
+def cached_legends(connection: sqlite3.Connection) -> list[tuple[str, str, int]]:
+    # The name comes from each legend's newest saved version (the highest rowid).
+    rows = connection.execute(
+        "SELECT s.fighter_id, json_extract(s.sheet_json, '$.display_name'), c.versions "
+        "FROM stat_sheets AS s JOIN ("
+        "  SELECT fighter_id, MAX(rowid) AS newest, COUNT(*) AS versions FROM stat_sheets"
+        "  WHERE json_extract(sheet_json, '$.category') = 'mythical' GROUP BY fighter_id"
+        ") AS c ON s.rowid = c.newest ORDER BY s.fighter_id"
+    ).fetchall()
+    return [(fighter_id, name, count) for fighter_id, name, count in rows]
+
+
+# Remove a cached legend so the next battle models it again; returns how many rows went.
+# Never touches a seed fighter or a creature in mythical.yaml, which aren't cached legends.
+def forget_legend(connection: sqlite3.Connection, name: str) -> int:
+    if find_creature(name) is not None or find_seed_fighter(name) is not None:
+        raise ValueError(f"{name!r} is a seed fighter or in mythical.yaml, not a cached legend")
+    removed = connection.execute(
+        "DELETE FROM stat_sheets WHERE fighter_id = ? "
+        "AND json_extract(sheet_json, '$.category') = 'mythical'",
+        (fighter_slug(name),),
+    ).rowcount
+    connection.commit()
+    return removed

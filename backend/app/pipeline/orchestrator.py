@@ -26,15 +26,20 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from app.models.battle import BattleRecord
-from app.models.matchup import Matchup
+from app.models.matchup import FighterRequest, Matchup
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
 from app.pipeline import stages
 from app.pipeline.stages import Research, StageFailed, Stubbed
 from app.pipeline.store import BattleStore
+from app.research.mythical import find_creature
+from app.research.seed_fighters import find_seed_fighter
+from app.research.sheet_store import LEGEND_BUDGET_S
 
 logger = logging.getLogger(__name__)
 
 STUB = "stub"
+# Added to the research line when a fighter may be a new legend (#324), from its time limit.
+LEGEND_NOTE = f" (a legend can take up to {int(LEGEND_BUDGET_S)} s)"
 CACHED = "cached"  # detail for a stage copied from an earlier, identical battle
 SIMULATE_FAILED = "The simulation hit a snag, so there's no verdict this time. Please try again."
 RESEARCH_FAILED = "We couldn't look up these fighters this time. Please try again."
@@ -299,4 +304,13 @@ def _missing_reference_note(names: list[str]) -> str:
 
 # A short note shown while research runs.
 def _looking_up(matchup: Matchup) -> str:
-    return "Looking up " + " and ".join(f.entity for f in matchup.fighters)
+    names = "Looking up " + " and ".join(f.entity for f in matchup.fighters)
+    return names + LEGEND_NOTE if any(_may_be_a_new_legend(f) for f in matchup.fighters) else names
+
+
+# A fighter that's neither a seed fighter nor a creature in mythical.yaml may be a legend that
+# has to be fetched and modeled, which can take most of research's time (#324).
+def _may_be_a_new_legend(fighter: FighterRequest) -> bool:
+    if find_creature(fighter.entity) is not None:
+        return False
+    return find_seed_fighter(fighter.entity, fighter.variant, fighter.raw) is None

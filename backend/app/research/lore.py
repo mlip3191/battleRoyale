@@ -24,7 +24,7 @@ from app.providers.base import ChatLLM, ChatMessage
 from app.research.evidence_check import normalize_text, number_in_quote, quote_in_passage
 from app.research.mythical import Creature
 from app.research.seed_fighters import fighter_slug, load_seed_fighters
-from app.research.sources import SourceError, fetch_article
+from app.research.sources import SourceDocument, SourceError, fetch_article
 from app.safety.media_names import safe_media_name
 
 logger = logging.getLogger(__name__)
@@ -175,10 +175,21 @@ def verified_lore(
         return None
 
 
+# The legend's article: "<Name> (mythology)" first, because a bare name such as "Hydra" can land
+# on a disambiguation page (#324); the bare name when there's no such article.
+async def fetch_legend_article(client: httpx.AsyncClient, name: str) -> SourceDocument | None:
+    bare = name.strip()
+    for title in (f"{bare[:1].upper()}{bare[1:]} (mythology)", bare):
+        article = await fetch_article(client, title)
+        if article is not None:
+            return article
+    return None
+
+
 # The creature for a legend not in mythical.yaml, a block, or nothing when a service is down.
 async def lore_for(name: str, client: httpx.AsyncClient, chat: ChatLLM) -> LoreOutcome:
     try:
-        article = await fetch_article(client, name)
+        article = await fetch_legend_article(client, name)
     except (SourceError, httpx.HTTPError) as error:
         logger.warning("Could not fetch the article for %r (%s).", name, error)
         return UNAVAILABLE
