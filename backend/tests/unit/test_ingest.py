@@ -23,6 +23,7 @@ from app.research.traits import (
     plausible_species_name,
     taxon_name,
 )
+from scripts import ingest_seed
 
 SEED_TRAITS = Path(__file__).parents[3] / "data" / "seed" / "seed-traits.csv"
 
@@ -428,3 +429,57 @@ def test_the_team_dataset_species_have_pinned_names() -> None:
     assert set(pinned.values()) >= team, f"not pinned: {sorted(team - set(pinned.values()))}"
     assert pinned["honey-bee"] == "Apis mellifera"
     assert all(plausible_species_name(name) for name in pinned.values())
+
+
+# --- #380: --refresh re-parses articles already stored at the same revision -----------------
+
+
+class ChangingParser(CountingParser):
+    """Returns slightly different text on every call, as a fixed parser would after a fix."""
+
+    async def parse(self, data: bytes, mime: str) -> str:
+        text = await super().parse(data, mime)
+        return f"{text} Parse number {self.calls}."
+
+
+def orphan_vectors(connection: sqlite3.Connection) -> int:
+    return connection.execute(
+        "SELECT COUNT(*) FROM chunks_vec WHERE chunk_id NOT IN (SELECT chunk_id FROM chunks)"
+    ).fetchone()[0]
+
+
+async def test_refresh_reparses_a_stored_revision_and_leaves_no_orphans(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    fighters = [fighter("horse", "Horse")]
+    parser = ChangingParser()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(make_handler([]))) as client:
+        await ingest_all(database, client, parser, MockEmbedder(), fighters, tmp_path)
+        await ingest_all(database, client, parser, MockEmbedder(), fighters, tmp_path)
+        assert parser.calls == 1  # without refresh the stored revision is skipped
+        await ingest_all(database, client, parser, MockEmbedder(), fighters, tmp_path, refresh=True)
+    assert parser.calls == 2
+    stored = database.execute("SELECT raw_text FROM documents").fetchall()
+    assert len(stored) == 1 and stored[0][0].endswith("Parse number 2.")  # replaced, not added
+    assert orphan_vectors(database) == 0
+
+
+async def test_refresh_with_only_touches_just_those_fighters(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    horse, duck = fighter("horse", "Horse"), fighter("duck", "Duck")
+    parser = ChangingParser()
+    async with httpx.AsyncClient(transport=httpx.MockTransport(make_handler([]))) as client:
+        await ingest_all(database, client, parser, MockEmbedder(), [horse, duck], tmp_path)
+        assert parser.calls == 2
+        await ingest_all(database, client, parser, MockEmbedder(), [duck], tmp_path, refresh=True)
+    assert parser.calls == 3
+    texts = dict(database.execute("SELECT fighter_id, raw_text FROM documents").fetchall())
+    assert texts["duck"].endswith("Parse number 3.") and not texts["horse"].endswith("3.")
+
+
+async def test_an_unknown_fighter_id_is_reported_and_nothing_runs(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert await ingest_seed.main(False, ["grizzly-bear", "bogus"], refresh=True) == 2
+    assert "Unknown fighter id: bogus. Nothing was ingested." in capsys.readouterr().err

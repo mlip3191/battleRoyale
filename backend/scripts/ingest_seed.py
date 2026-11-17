@@ -4,9 +4,13 @@ From the backend folder:
   uv run python -m scripts.ingest_seed            # uses PROVIDER_MODE from .env
   uv run python -m scripts.ingest_seed --live     # forces the live course services
   uv run python -m scripts.ingest_seed --only horse duck
+  uv run python -m scripts.ingest_seed --refresh                   # re-parse every article
+  uv run python -m scripts.ingest_seed --refresh --only grizzly-bear
 
-Re-running skips articles already stored at the same revision. A mock run and a live run use
-different vector sizes, so switching between them rebuilds the stored passages.
+Re-running skips articles already stored at the same revision. --refresh parses them again
+anyway, replacing their stored passages: use it after a parser fix, such as #34's check that
+puts back paragraphs the parser skipped (#380). A mock run and a live run use different vector
+sizes, so switching between them rebuilds the stored passages.
 """
 
 import argparse
@@ -48,11 +52,15 @@ def print_summary(summary: IngestSummary, seconds: float) -> None:
 
 
 # Run the ingest with the configured providers.
-async def main(live: bool, only: list[str]) -> int:
+async def main(live: bool, only: list[str], refresh: bool = False) -> int:
     settings = get_settings()
     if live:
         settings = settings.model_copy(update={"provider_mode": "live"})
     fighters = load_seed_fighters()
+    unknown = sorted(set(only) - {fighter.id for fighter in fighters})
+    if unknown:  # a typo must not quietly ingest nothing
+        print(f"Unknown fighter id: {', '.join(unknown)}. Nothing was ingested.", file=sys.stderr)
+        return 2
     if only:
         fighters = [fighter for fighter in fighters if fighter.id in only]
     connection = connect(settings.data_dir / "app.db")
@@ -66,6 +74,7 @@ async def main(live: bool, only: list[str]) -> int:
             get_provider("embedder", settings),
             fighters,
             settings.data_dir / "kb",
+            refresh=refresh,
         )
     connection.close()
     print_summary(summary, time.perf_counter() - started)
@@ -76,5 +85,8 @@ if __name__ == "__main__":
     arguments = argparse.ArgumentParser(description=__doc__)
     arguments.add_argument("--live", action="store_true", help="use the live course services")
     arguments.add_argument("--only", nargs="*", default=[], help="fighter ids to ingest")
+    arguments.add_argument(
+        "--refresh", action="store_true", help="re-parse articles even if already stored"
+    )
     options = arguments.parse_args()
-    sys.exit(asyncio.run(main(options.live, options.only)))
+    sys.exit(asyncio.run(main(options.live, options.only, options.refresh)))
