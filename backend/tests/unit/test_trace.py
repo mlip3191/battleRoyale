@@ -162,7 +162,7 @@ def test_trace_report_checks_every_stored_battle_and_exits_1_on_an_issue(
     assert "b-7f3k2q: 0 issues" in printed and "b-broken: 1 issue " in printed
     assert "outro line 0: numbers not in the inputs: '9,999'" in printed
     assert "Traceable: 1 of 2 battles (50%)." in printed
-    assert "Extracted quotes checked against stored articles: 10; not checkable here: 0." in printed
+    assert "Quotes checked against stored articles: 10; not checkable here: 0." in printed
 
 
 def test_a_stored_record_that_no_longer_loads_is_one_issue(db: sqlite3.Connection) -> None:
@@ -204,11 +204,11 @@ def test_100_percent_with_no_stored_articles_says_no_quote_was_checked(
     assert trace_report.main(["--db", str(path)]) == 0
     printed = capsys.readouterr().out
     assert "Traceable: 1 of 1 battles (100%)." in printed
-    assert "Extracted quotes checked against stored articles: 0; not checkable here: 5." in printed
+    assert "Quotes checked against stored articles: 0; not checkable here: 5." in printed
     monkeypatch.setattr(run_benchmark, "connect", lambda: connect(path))
     report = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
     run_benchmark.add_traceability(report, mock=False)
-    assert "0 extracted quotes were checked" in report.notes[0]
+    assert "0 quotes were checked" in report.notes[0]
     assert "5 could not be checked here" in report.notes[0]
     connection.close()
 
@@ -237,7 +237,7 @@ def test_the_benchmark_fills_its_traceability_column_from_stored_battles(
     assert report.traceability == 1.0
     assert "traceability 100%" in bm.render_run(report)
     assert (
-        "5 extracted quotes were checked against stored articles and 0 could not be checked"
+        "5 quotes were checked against stored articles and 0 could not be checked"
         in (report.notes[0])
     )
     mock = bm.RunReport("mock", [], 0.0, "abc1234", datetime.now())
@@ -358,3 +358,80 @@ def test_a_note_formula_with_wrong_arithmetic_is_flagged() -> None:
     quote = "It is powerful enough to lift up to 350 kg (770 lb)"
     wrong = sourced(5000.0, "N", quote, note="350 kgf x 2 = 5000 N.")
     assert not value_in_quote(StatName.ATTACK_FORCE, wrong)
+
+
+# --- #370: strict mode, so "traceable" means every quote was really checked -----------------
+
+
+# A database holding the clean battle but none of its articles: 5 quotes can't be checked.
+def no_articles(tmp_path: Path) -> Path:
+    path = tmp_path / "no-articles.db"
+    connection = connect(path)
+    apply_migrations(connection)
+    store(connection, clean())
+    connection.close()
+    return path
+
+
+def test_require_quotes_fails_when_a_quote_could_not_be_checked(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = no_articles(tmp_path)
+    assert trace_report.main(["--db", str(path), "--require-quotes"]) == 1
+    printed = capsys.readouterr().out
+    assert "Strict mode (--require-quotes): 5 quotes couldn't be checked, in b-7f3k2q." in printed
+    assert "Traceable: 0 of 1 battles (0%)." in printed  # the footer agrees with the exit code
+    assert trace_report.main(["--db", str(path)]) == 0  # without the flag: unchanged
+
+
+def test_require_quotes_passes_when_every_quote_was_checked(
+    db: sqlite3.Connection, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    store(db, clean())  # the db fixture stores every quote's article
+    assert trace_report.main(["--db", str(tmp_path / "app.db"), "--require-quotes"]) == 0
+    assert "Strict mode" not in capsys.readouterr().out
+
+
+def test_strict_benchmark_counts_an_uncheckable_battle_as_not_traceable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = no_articles(tmp_path)
+    monkeypatch.setattr(run_benchmark, "connect", lambda: connect(path))
+    relaxed = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
+    run_benchmark.add_traceability(relaxed, mock=False)
+    strict = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
+    run_benchmark.add_traceability(strict, mock=False, require_quotes=True)
+    assert relaxed.traceability == 1.0 and strict.traceability == 0.0
+    # The count in the note follows the same rule as the percentage (#377 QA review).
+    assert "1 of 1 stored battles have no issues;" in relaxed.notes[0]
+    assert "0 of 1 stored battles have no issues and every quote checked;" in strict.notes[0]
+    assert any("Strict mode (--require-quotes)" in note for note in strict.notes)
+    assert not any("Strict mode" in note for note in relaxed.notes)
+
+
+def test_strict_share_only_counts_fully_checked_battles(db: sqlite3.Connection) -> None:
+    checked = check_battle(clean(), db)
+    unchecked = check_battle(clean())  # no database: its 5 quotes are unchecked
+    assert traceable_share([checked, unchecked]) == 1.0
+    assert traceable_share([checked, unchecked], require_quotes=True) == 0.5
+
+
+def test_strict_mode_on_an_empty_database_has_nothing_to_check(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # No finished battles means nothing was claimed, so strict mode doesn't fail; the
+    # benchmark shows n/a rather than a percentage (#377 review: pinned on purpose).
+    empty = tmp_path / "empty.db"
+    apply_migrations(connect(empty))
+    assert trace_report.main(["--db", str(empty), "--require-quotes"]) == 0
+    assert "No finished battles stored yet" in capsys.readouterr().out
+    monkeypatch.setattr(run_benchmark, "connect", lambda: connect(empty))
+    report = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
+    run_benchmark.add_traceability(report, mock=False, require_quotes=True)
+    assert report.traceability is None
+
+
+def test_strict_mode_says_quote_for_a_count_of_one() -> None:
+    one = check_battle(clean())
+    one.quotes_unchecked = 1
+    assert "1 quote couldn't be checked" in trace_report.render([one], require_quotes=True)

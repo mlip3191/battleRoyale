@@ -48,7 +48,7 @@ class TraceReport:
     issues: list[TraceIssue] = field(default_factory=list)
     stats_checked: int = 0
     quotes_checked: int = 0
-    # Extracted quotes whose article isn't in this database (a fresh clone has none stored).
+    # Quotes whose article isn't in this database (a fresh clone has none stored).
     quotes_unchecked: int = 0
     lines_checked: int = 0
 
@@ -67,7 +67,7 @@ class TraceReport:
         )
 
 
-# Check one saved battle. Without a database connection, extracted quotes are counted as
+# Check one saved battle. Without a database connection, quotes are counted as
 # unchecked rather than flagged, because there is no stored article to compare them with.
 def check_battle(record: BattleRecord, connection: sqlite3.Connection | None = None) -> TraceReport:
     report = TraceReport(record.battle_id)
@@ -211,7 +211,7 @@ def _source_problems(stat: StatValue) -> list[str]:
     return problems
 
 
-# An extracted quote must still appear word for word in the stored article it cites.
+# An extracted or hand-verified quote must appear word for word in the stored article it cites.
 def _check_quote(
     report: TraceReport, where: str, stat: StatValue, connection: sqlite3.Connection | None
 ) -> None:
@@ -276,5 +276,13 @@ def trace_stored_battles(connection: sqlite3.Connection) -> list[TraceReport]:
 
 
 # The share of battles with no issues (the benchmark's traceability column); None with no battles.
-def traceable_share(reports: list[TraceReport]) -> float | None:
-    return sum(r.ok for r in reports) / len(reports) if reports else None
+# With require_quotes (#370), a battle counts only if every quote was also checked.
+def traceable_share(reports: list[TraceReport], require_quotes: bool = False) -> float | None:
+    if not reports:
+        return None
+    return sum(traceable(r, require_quotes) for r in reports) / len(reports)
+
+
+# A battle with no issues, and in strict mode also no quote left unchecked (#370).
+def traceable(report: TraceReport, require_quotes: bool = False) -> bool:
+    return report.ok and not (require_quotes and report.quotes_unchecked)
