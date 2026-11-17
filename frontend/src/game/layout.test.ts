@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import type { Asset } from "../api/client.ts";
 import done from "../fixtures/battle-record-done.json";
 import {
+  sideTitle,
   MAX_SPRITES_PER_SIDE,
   SIDE_COLORS,
   STAGE,
@@ -192,6 +193,16 @@ describe("winnerBanner", () => {
   test("a crowd's count gets thousands separators", () => {
     expect(winnerBanner({ name: "fire ant", count: 1000 })).toBe(
       "1,000 FIRE ANTS WIN!",
+    );
+  });
+});
+
+describe("sideTitle", () => {
+  test("one fighter shows its name; a group shows its count and plural (#361)", () => {
+    expect(sideTitle({ name: "grizzly bear", count: 1 })).toBe("GRIZZLY BEAR");
+    expect(sideTitle({ name: "gray wolf", count: 6 })).toBe("6 GRAY WOLVES");
+    expect(sideTitle({ name: "fire ant", count: 1000 })).toBe(
+      "1,000 FIRE ANTS",
     );
   });
 });

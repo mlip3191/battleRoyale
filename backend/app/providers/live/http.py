@@ -17,6 +17,17 @@ RETRY_STATUSES = {429, 500, 502, 503, 504}
 class ProviderError(RuntimeError):
     """A live call failed; the message names the provider and status, never the URL or key."""
 
+    # `status` and `detail` (the start of the error reply) let code tell one failure from
+    # another (#176). The detail is never put in the message, so it isn't logged or shown.
+    def __init__(self, message: str, status: int | None = None, detail: str = "") -> None:
+        super().__init__(message)
+        self.status = status
+        self.detail = detail
+
+
+# How much of an error reply ProviderError keeps for code to check.
+DETAIL_CHARS = 1_000
+
 
 # POST JSON and return the parsed reply, retrying transient failures.
 async def post_json(
@@ -98,6 +109,8 @@ async def _request_json(
     )
     owned = client is None
     client = client or httpx.AsyncClient(timeout=timeout_s)
+    status: int | None = None
+    detail = ""
     try:
         for attempt in range(retries + 1):
             started = time.perf_counter()
@@ -113,11 +126,12 @@ async def _request_json(
                 if response.status_code < 400:
                     return response.json()
                 problem = f"HTTP {response.status_code}"
+                status, detail = response.status_code, response.text[:DETAIL_CHARS]
                 if response.status_code not in RETRY_STATUSES:
                     break
             if attempt < retries:
                 await asyncio.sleep(BACKOFF_S * 2**attempt)
-        raise ProviderError(f"Live '{provider}' call to {path} failed: {problem}.")
+        raise ProviderError(f"Live '{provider}' call to {path} failed: {problem}.", status, detail)
     finally:
         if owned:
             await client.aclose()

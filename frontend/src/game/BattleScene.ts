@@ -8,6 +8,7 @@ import {
   STAGE,
   badgeText,
   visibleSlots,
+  sideTitle,
   winnerBanner,
   type SideLayout,
 } from "./layout.ts";
@@ -298,7 +299,7 @@ export function createBattleScene(P: typeof Phaser) {
       );
       const nameX = side === 0 ? 24 : STAGE.width - 24;
       this.add
-        .text(nameX, 20, layout.name.toUpperCase(), {
+        .text(nameX, 20, sideTitle(layout), {
           fontFamily: TEXT_FONT,
           fontSize: "22px",
           color: side === 0 ? "#9ec0ff" : "#ffb3bd",

@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from app.models.simulation import FairFight, SimulationResult
 from app.models.stats import SAFE_NAME, StatSheet
 from app.narration.number_guard import AllowedNumbers
+from app.simulation.decide import names_a_factor
 
 MAX_NAME_LEN = 60
 
@@ -109,6 +110,7 @@ class NarrationFacts:
     draw_pct: int
     outcome: str
     deciding_factor: str
+    factor_decided: bool  # False: the explainer says no single factor decided it (#351)
     mean_duration_s: float
     mean_survivors: tuple[float, float]
     fair_ran: bool
@@ -248,6 +250,7 @@ def build_facts(
         draw_pct=pct(result.draw_prob),
         outcome=result.outcome,
         deciding_factor=str(result.deciding_factor),
+        factor_decided=names_a_factor(result.deciding_factor_explainer),
         mean_duration_s=result.mean_duration_s,
         mean_survivors=result.mean_survivors,
         fair_ran=fair_fight is not None,
@@ -268,6 +271,8 @@ def fact_lines(facts: NarrationFacts) -> list[str]:
         for s in f.stats:
             lines.append(f"  {f.display_name} {STAT_WORDS.get(s.name, s.name)}: {_stat_text(s)}")
     factor = FACTOR_WORDS.get(facts.deciding_factor, facts.deciding_factor.replace("_", " "))
+    if not facts.factor_decided:
+        factor = "none (no single factor decided it)"
     lines.append(
         f"result: {_outcome_text(facts.outcome, names)}; "
         f"{names[0]} wins {facts.win_pct[0]}%, {names[1]} wins {facts.win_pct[1]}%, "
