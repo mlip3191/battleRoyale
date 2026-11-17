@@ -30,7 +30,7 @@ from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.models.terrain import Terrain
 from app.providers.base import ChatLLM, ChatMessage
 from app.providers.registry import get_intake_chat
-from app.research.seed_fighters import picked_default, spoken_name
+from app.research.seed_fighters import DEFAULT_KINDS, picked_default, spoken_name
 from app.safety import (
     SafetyUnavailable,
     SafetyVerdict,
@@ -354,7 +354,8 @@ def default_kind_notes(fighters: list[FighterRequest]) -> list[str]:
     for fighter in fighters:
         pick = picked_default(fighter.entity, fighter.variant, fighter.raw)
         if pick is not None:
-            kind = fighter.entity.strip()
+            # The table's own word, so "bears" reads "Not sure which bear".
+            kind = next(word for word, slug in DEFAULT_KINDS.items() if slug == pick.id)
             notes.append(DEFAULT_KIND_NOTE.format(kind=kind, pick=spoken_name(pick.display_name)))
     return notes
 

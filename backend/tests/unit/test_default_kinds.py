@@ -15,6 +15,7 @@ from app.research.seed_fighters import (
     find_seed_sheet,
     load_seed_fighters,
     picked_default,
+    spoken_name,
 )
 
 RESEARCH_DOC = Path(__file__).parents[3] / "docs" / "research.md"
@@ -68,6 +69,35 @@ def test_the_note_names_the_pick() -> None:
         "Not sure which bear, so we used the grizzly bear.",
         "Not sure which elephant, so we used the African elephant.",
     ]
+
+
+def test_a_plural_note_uses_the_singular_kind() -> None:
+    assert default_kind_notes([request("bears")]) == [
+        "Not sure which bear, so we used the grizzly bear."
+    ]
+
+
+# Spelled out so a new default with a proper name ("Komodo", "Bengal") can't be lowercased
+# unnoticed: update _PROPER_WORDS and this list together.
+def test_every_default_reads_sensibly_in_the_note() -> None:
+    picks = {f.id: spoken_name(f.display_name) for f in load_seed_fighters()}
+    assert {kind: picks[slug] for kind, slug in DEFAULT_KINDS.items()} == {
+        "bear": "grizzly bear",
+        "shark": "great white shark",
+        "wolf": "gray wolf",
+        "eagle": "bald eagle",
+        "cat": "house cat",
+        "dog": "golden retriever",
+        "elephant": "African elephant",
+        "crocodile": "saltwater crocodile",
+        "snake": "king cobra",
+        "bee": "honey bee",
+        "ant": "army ant",
+        "mouse": "house mouse",
+        "tank": "main battle tank",
+        "truck": "pickup truck",
+        "cactus": "saguaro cactus",
+    }
 
 
 def test_no_note_when_the_raw_text_already_names_the_kind() -> None:
