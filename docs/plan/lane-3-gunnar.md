@@ -154,7 +154,7 @@ Add a test that every file validates and that no hand_verified value lacks a sou
 ## G06 · Traceability checker · S (1)
 
 **Goal:** Prove the promise "every stat on screen links to its source."
-**Hermes task (DECISIONS D-02):** build this one with the course's Hermes Agent (port 9000) instead of Claude Code, with Mike pairing. Treat it as a comparison: note in docs/build-log.md how long it took, what went well or badly, and how it compared with Claude Code, with screenshots. Same branch, PR, and review rules apply.
+**Built with Claude Code (DECISIONS D-62):** this was planned as the one Hermes Agent task (D-02). D-62 dropped that, so there is no Hermes run or comparison.
 **Prompt for Claude Code:**
 ```text
 Task G06 from docs/plan/lane-3-gunnar.md. Build backend/app/research/trace.py and a test.
@@ -166,7 +166,7 @@ Add backend/scripts/trace_report.py that runs the check on every stored battle a
 - [ ] One test each shows `check_battle` flags: a non-estimate without URL or quote; an extracted quote no longer present in the stored document; an estimate or assumption with the wrong method; a script number not present in the inputs
 - [ ] The clean fixture battle passes with a "0 issues" report
 - [ ] `trace_report.py` runs on all stored battles and is called by F07's runner
-- [ ] The Hermes comparison (time taken, what worked, what didn't, screenshots) is recorded in `docs/build-log.md`
+- [ ] ~~The Hermes comparison (time taken, what worked, what didn't, screenshots) is recorded in `docs/build-log.md`~~ Dropped by D-62.
 
 ---
 

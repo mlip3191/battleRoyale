@@ -123,3 +123,9 @@ Dates are Mountain Time.
   - **D-57:** weapons on built stat sheets are a stopgap until G09 or intake supplies real ones (recorded in #269).
   - **The board:** the "PR linked → In review" automation was turned on (#172).
 - **Screenshots (Nov 14, mocks, `main` at cb41095):** [the parsed fight card](media/ms1-tonights-card.jpg) and [the verdict on the Battle page](media/ms1-verdict.jpg).
+
+## G06 traceability checker and the Hermes comparison (D-02)
+
+- **Not done as planned.** D-02 says G06 is the one task built with the course's Hermes Agent, with Mike pairing, as a comparison with Claude Code. On Nov 16 Gunnar chose to build it with Claude Code instead, so F07's traceability column wasn't held up (code complete is Nov 25). The PR for #40 asks Mike whether to keep D-02 by running the same G06 prompt through Hermes for the comparison alone, or to record the change as a decision.
+- **Claude Code's side, for a later comparison:** one working session on Nov 16. It built `research/trace.py` (`check_battle`), `scripts/trace_report.py`, the benchmark's traceability column and 11 tests on fixtures. What helped: the checks reuse the narration number guard and the quote matcher, so the checker and the pipeline can't disagree. What didn't: the first test draft had three mistakes (a wrong stat name and two fixture assumptions), caught by running the tests before committing.
+- **First run on stored battles (Nov 16):** the 4 showcase battles all pass with 0 issues. Their sheets are hand-verified seed sheets and a mythical sheet, so no extracted quotes were checked against stored articles; the tests cover that check.
