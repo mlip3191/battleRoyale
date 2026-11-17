@@ -1,11 +1,13 @@
 """G06 (#40): prove the promise "every stat on screen links to its source" for a saved battle.
 
 `check_battle` re-checks a finished BattleRecord after the fact, the way a reviewer would:
-every sourced stat has its link and quote, every extracted quote is still in the stored article,
+every sourced stat has its link and quote, every extracted or hand-verified quote is still in
+the stored article and holds the stat's value (after unit conversion, #369),
 every estimate uses an estimate method where the rules allow it, and every number in the
 commentary comes from the stat sheets or the result. It reports problems; it never fixes them.
 """
 
+import re
 import sqlite3
 from dataclasses import dataclass, field
 
@@ -15,7 +17,8 @@ from app.models.battle import BattleRecord
 from app.models.stats import ASSUMABLE_STATS, StatName, StatSheet, StatValue
 from app.narration.facts import build_facts
 from app.narration.writer import unsupported_numbers
-from app.research.evidence_check import quote_in_passage
+from app.research.evidence_check import number_has_unit_in_quote, numbers_in, quote_in_passage
+from app.research.units import FACTORS, STAT_UNITS
 
 ESTIMATE_METHODS = ("category_default", "assumption")
 SOURCED_METHODS = ("extracted", "hand_verified")
@@ -66,10 +69,61 @@ def check_battle(record: BattleRecord, connection: sqlite3.Connection | None = N
             where = f"{sheet.display_name} / {name.value}"
             for problem in stat_problems(sheet, name, stat):
                 report.issues.append(TraceIssue(where, problem))
-            if stat.method == "extracted" and stat.source is not None and stat.source.quote.strip():
+            if stat.method in SOURCED_METHODS and stat.source and stat.source.quote.strip():
+                # Hand-verified quotes are re-checked too (#369), not only extracted ones.
                 _check_quote(report, where, stat, connection)
+                if not value_in_quote(name, stat):
+                    report.issues.append(TraceIssue(where, _NOT_IN_QUOTE.format(stat=stat)))
     _check_scripts(report, record)
     return report
+
+
+_NOT_IN_QUOTE = (
+    "value {stat.value} {stat.unit} isn't a number in its quote, even after unit conversion"
+)
+# How close a converted number must be to the stored value (stored values are rounded).
+VALUE_TOLERANCE = 0.01
+FORMULA_RESULT = re.compile(r"=\s*(\d[\d,]*(?:\.\d+)?)")
+
+
+# A sourced value must be one of the numbers in its own quote (#369): written with a unit that
+# converts to the stored value, or one of two documented patterns, each checked narrowly.
+def value_in_quote(name: StatName, stat: StatValue) -> bool:
+    assert stat.source is not None  # only sourced values are checked
+    quote = stat.source.quote
+    numbers = numbers_in(quote)
+    table = FACTORS.get(STAT_UNITS[name])
+    if table is None:  # the 0-1 rubric stats have no unit: the bare number must match
+        return any(_close(n, stat.value) for n in numbers)
+    # The stored symbol too ("N"), since short symbols match case exactly.
+    units = [*table.items(), (STAT_UNITS[name], 1.0)]
+    if any(
+        _close(n * factor, stat.value) and number_has_unit_in_quote(n, unit, quote)
+        for n in numbers
+        for unit, factor in units
+    ):
+        return True
+    # A table row: the units sit in the column headers, so the quote has none for this stat,
+    # and the bare number counts (the duck, wolf and grizzly rows).
+    no_units = not any(number_has_unit_in_quote(n, u, quote) for n in numbers for u, _ in units)
+    if no_units and any(_close(n, stat.value) for n in numbers):
+        return True
+    return _converted_in_note(stat, numbers)
+
+
+# A converted figure: the note's formula starts from a number in the quote and ends with
+# "= <the stored value>", e.g. "350 kgf x 9.80665 m/s^2 = 3432 N" for the elephant's trunk.
+def _converted_in_note(stat: StatValue, quoted: list[float]) -> bool:
+    note = stat.note or ""
+    results = [float(m.group(1).replace(",", "")) for m in FORMULA_RESULT.finditer(note)]
+    if not any(_close(r, stat.value) for r in results):
+        return False
+    before = note.split("=", 1)[0]
+    return any(_close(n, q) for n in numbers_in(before) for q in quoted)
+
+
+def _close(number: float, value: float) -> bool:
+    return abs(number - value) <= VALUE_TOLERANCE * max(abs(value), 1e-9)
 
 
 # The rules a single stat must follow, as plain-English problems (empty = traceable).
