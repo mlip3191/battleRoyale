@@ -62,7 +62,9 @@ def cost_markdown(runs: list[BattleRun], seconds: float) -> str:
         f"process ({seconds:.0f} s): a fresh run, then a repeat that the repeat-battle cache "
         "should answer. Times start when the battle starts; intake (reading the typed matchup, "
         "about 8 s a reading in section 4) comes before that and isn't included. Calls are "
-        "course endpoint requests, retries included.",
+        "course endpoint calls, each counted once however many times it was retried. Images, "
+        "voice and music came from the local media cache (no live voice or music service is "
+        "wired up yet), so their calls and time aren't in these numbers.",
         "",
         *rows,
         "",
@@ -97,7 +99,7 @@ async def run_cost() -> str:
 
     # A database of its own: the repeat-battle cache only reads saved battles, and this keeps
     # them out of the app's own database.
-    scratch = tempfile.TemporaryDirectory()
+    scratch = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)  # Windows may hold the file
     store = BattleStore(db_path=Path(scratch.name) / "eval_battles.db")
     verdict_at: dict[str, float] = {}
     original_update = store.update
