@@ -125,7 +125,7 @@ Stages run in the orchestrator (`pipeline/`). Each stage records `pending | runn
 |---|---|---|---|
 | 1 Intake | about 7 s typical, 25 s limit (D-52) | same | the parser asks the model at most twice (each call waits up to 15 s per step, with one retry); an outage or the 25 s limit returns a 503 "try again in a moment"; unusable replies ask the user to rephrase |
 | 2 Research | ≤ 0.5 s | ≤ 45 s | fall back to seed sheet or all-estimate sheet with a banner; size-reference entities are researched too |
-| 3 Simulate (1,000 runs) | ≤ 3 s | — | must not fail; it is pure code |
+| 3 Simulate (1,000 runs) | ≤ 15 s limit; about 1.5–6.9 s on a laptop for a showcase fight (D-63) | — | must not fail; it is pure code |
 | 4–5 Scripts | ≤ 10 s | — | template-based fallback script |
 | 5 Audio + music | ≤ 60 s | — | captions only / no music |
 | 6 Images | ≤ 60 s (cached per fighter) | — | placeholder shapes in the fighter's color |
