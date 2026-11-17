@@ -48,8 +48,9 @@ LEGEND_BUDGET_S = 30.0
 ARTICLE_TIMEOUT_S = 10.0
 # One lock per legend name, so two lookups of the same new legend model it once.
 _LEGEND_LOCKS: dict[str, asyncio.Lock] = {}
-# A name the model refused isn't looked up again for this long, so a retry answers at once
-# instead of costing another 10 to 26 s model call (#324). Outages are never remembered.
+# A refused name (found: false, or a quote or analog that failed code's check) isn't looked up
+# again for this long, so a retry answers at once instead of costing another 10 to 26 s
+# model call (#324). Outages are never remembered.
 REFUSAL_MEMORY_S = 600.0
 _REFUSED: dict[str, float] = {}  # legend slug -> when it was refused (time.monotonic)
 # At most this many new legends are fetched and modeled at once, so many unknown names can't
@@ -250,10 +251,13 @@ async def _in_a_slot(start: Callable[[], Awaitable[LoreOutcome]]) -> LoreOutcome
 
 # The legends cached by earlier battles (not the 12 in mythical.yaml): (id, name, versions).
 def cached_legends(connection: sqlite3.Connection) -> list[tuple[str, str, int]]:
+    # The name comes from each legend's newest saved version (the highest rowid).
     rows = connection.execute(
-        "SELECT fighter_id, json_extract(sheet_json, '$.display_name'), COUNT(*) "
-        "FROM stat_sheets WHERE json_extract(sheet_json, '$.category') = 'mythical' "
-        "GROUP BY fighter_id ORDER BY fighter_id"
+        "SELECT s.fighter_id, json_extract(s.sheet_json, '$.display_name'), c.versions "
+        "FROM stat_sheets AS s JOIN ("
+        "  SELECT fighter_id, MAX(rowid) AS newest, COUNT(*) AS versions FROM stat_sheets"
+        "  WHERE json_extract(sheet_json, '$.category') = 'mythical' GROUP BY fighter_id"
+        ") AS c ON s.rowid = c.newest ORDER BY s.fighter_id"
     ).fetchall()
     return [(fighter_id, name, count) for fighter_id, name, count in rows]
 

@@ -58,6 +58,15 @@ def test_a_cached_legend_can_be_listed_and_forgotten(db: sqlite3.Connection) -> 
     assert forget_legend(db, "hydra") == 0  # nothing left to forget
 
 
+def test_the_list_shows_each_legends_newest_name(db: sqlite3.Connection) -> None:
+    save_legend("hydra", "Hydra")
+    first = cached_sheet(db, "hydra")
+    assert first is not None
+    remodeled = first.model_copy(update={"display_name": "Lernaean hydra", "sheet_hash": "f" * 64})
+    sheet_store.save_sheet(db, remodeled)  # a re-modeled version, saved later
+    assert cached_legends(db) == [("hydra", "Lernaean hydra", 2)]
+
+
 def test_seed_fighters_and_file_creatures_are_never_forgotten(db: sqlite3.Connection) -> None:
     for name in ("dragon", "gray wolf"):
         with pytest.raises(ValueError, match="not a cached legend"):
@@ -199,17 +208,36 @@ async def test_new_legend_lookups_run_at_most_two_at_a_time(
     assert chat.calls == 5 and chat.most == sheet_store.MAX_LEGEND_LOOKUPS == 2
 
 
+async def test_a_lookup_that_never_gets_a_slot_times_out_without_a_model_call(
+    monkeypatch: pytest.MonkeyPatch, db: sqlite3.Connection
+) -> None:
+    # Deterministic: the test holds both slots itself, so the lookup can only wait (#373 review).
+    monkeypatch.setattr(sheet_store, "LEGEND_BUDGET_S", 0.05)
+    chat = ScriptedChat(answer())
+    go_live(monkeypatch, chat)
+    slots = sheet_store._lookup_slots()
+    for _ in range(sheet_store.MAX_LEGEND_LOOKUPS):
+        await slots.acquire()
+    try:
+        assert await sheet_store.resolve_legend(db, chat, "hydra") is lore.UNAVAILABLE
+    finally:
+        for _ in range(sheet_store.MAX_LEGEND_LOOKUPS):
+            slots.release()
+    assert chat.calls == 0
+
+
 async def test_waiting_for_a_slot_counts_toward_the_time_limit(
     monkeypatch: pytest.MonkeyPatch, db: sqlite3.Connection
 ) -> None:
     monkeypatch.setattr(sheet_store, "LEGEND_BUDGET_S", 0.45)
     chat = ScriptedChat(answer(), pause=0.3)
     go_live(monkeypatch, chat)
-    names = ["hydra", "basilisk-x", "wyvern-x", "kraken-x", "roc-x", "griffon-x"]
+    names = ["hydra", "basilisk-x", "wyvern-x", "kraken-x"]
     outcomes = await asyncio.gather(*(sheet_store.resolve_legend(db, chat, n) for n in names))
-    assert any(o is lore.UNAVAILABLE for o in outcomes)  # the end of the queue gave up in time
-    # Two slots and 0.3 s calls in a 0.45 s budget: the second pair starts at 0.3 s, a third pair
-    # would need 0.6 s, so exactly 4 calls start and the last 2 never do (0.15 s margin each way).
+    # Two slots and 0.3 s calls in a 0.45 s budget: the first pair finishes at 0.3 s, and the
+    # second pair, which waited 0.3 s, runs out of time at 0.45 s mid-call. With only four names
+    # there's no third pair left to race for a freed slot, so the count is exact.
+    assert [o is lore.UNAVAILABLE for o in outcomes] == [False, False, True, True]
     assert chat.calls == 4
 
 
