@@ -264,3 +264,40 @@ def test_a_favorite_that_wins_against_the_ground_is_not_said_to_be_helped_by_it(
     # the cat is side 0 here, so the water favors side 1 (the shark) and not the favorite
     text = _explain("terrain", matchup, [cat, shark], 0, False)
     assert text.startswith("Cat came out ahead in spite of the ground")
+
+
+# --- #365: size that helps the smaller side says so, and how ------------------------------------
+
+
+def test_size_that_helps_a_smaller_crowd_says_the_smaller_side_and_how():
+    wolf = make_sheet("gray wolf", size_m=1.6)
+    bear = make_sheet("grizzly bear", size_m=2.4)
+    matchup = matchup_of(6, 1)  # the favorite (side 0) is the smaller side, and a crowd
+    text = _explained(StatName.SIZE, True, matchup, [wolf, bear])
+    assert text.startswith("Size decided it, in the smaller side's favor:")
+    assert "6 Gray wolf (1.6 m) against 1 Grizzly bear (2.4 m)" in text
+    assert "easier target" in text and "fit around it" in text
+    assert sorted(numbers_in(text, [wolf, bear])) == [1.0, 1.6, 2.4, 6.0]
+
+
+def test_size_that_helps_a_lone_smaller_fighter_skips_the_crowd_reason():
+    small, big = make_sheet("small", size_m=1.0), make_sheet("big", size_m=2.4)
+    text = _explained(StatName.SIZE, True, matchup_of(1, 1), [small, big])
+    assert text == (
+        "Size decided it, in the smaller side's favor: Small (1 m) against Big (2.4 m). "
+        "A bigger body is an easier target."
+    )
+
+
+def test_size_that_helps_the_bigger_side_keeps_the_plain_sentence():
+    big, small = make_sheet("big", size_m=2.4), make_sheet("small", size_m=1.0)
+    text = _explained(StatName.SIZE, True, matchup_of(1, 6), [big, small])
+    assert text == "Size decided it: Big (2.4 m) against Small (1 m)."
+
+
+def test_weight_that_helps_the_lighter_side_says_the_lighter_side():
+    light, heavy = make_sheet("light", mass_kg=40), make_sheet("heavy", mass_kg=400)
+    text = _explained(StatName.MASS, True, matchup_of(1, 1), [light, heavy])
+    assert text == (
+        "Size decided it, in the lighter side's favor: Light (40 kg) against Heavy (400 kg)."
+    )
