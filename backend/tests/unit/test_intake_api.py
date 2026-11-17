@@ -162,7 +162,9 @@ def test_still_vague_after_the_answer_adds_an_assumption_and_is_ok(
     pending_id = ask_which_bear(client)
     body = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "the big one"}).json()
     assert body["status"] == "ok"
-    assert COMMON_KIND_NOTE in body["matchup"]["assumptions"]
+    # #168: the note names the fighter code picks for a bare kind, instead of a vague promise.
+    assert "Not sure which bear, so we used the grizzly bear." in body["matchup"]["assumptions"]
+    assert COMMON_KIND_NOTE not in body["matchup"]["assumptions"]
     assert body["matchup"]["fighters"][0]["entity"] == "bear"
     # A second question is never asked: no question, no new pending row, one re-parse only.
     assert body["question"] is None and body["options"] == [] and body["pending_id"] is None

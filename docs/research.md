@@ -83,6 +83,8 @@ The rules behind the table:
 2. Otherwise use the most familiar member of that group that is on the seed list.
 3. Use a healthy adult. Where one sex is clearly larger, use that sex, because it is the size most sources report.
 
+Code applies this table, never a model: `DEFAULT_KINDS` in `backend/app/research/seed_fighters.py` copies it, and a test keeps the two identical. A bare kind (or its plural, such as "bears") becomes its default only when nothing more exact was given: an exact name, a kind ("polar bear"), or raw words that name a seed fighter ("6 gray wolves") always win. The battle's assumptions name the pick, for example "Not sure which bear, so we used the grizzly bear." (#168).
+
 ## The seven physical stats
 
 These are sourced or labeled estimates. For each one we use the first of these that exists: a hand-verified seed sheet, a Wikidata fact, a number extracted with a verified quote, a value derived by code (the note names the formula), then the category default.

@@ -30,6 +30,7 @@ from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.models.terrain import Terrain
 from app.providers.base import ChatLLM, ChatMessage
 from app.providers.registry import get_intake_chat
+from app.research.seed_fighters import picked_default, spoken_name
 from app.safety import (
     SafetyUnavailable,
     SafetyVerdict,
@@ -58,6 +59,8 @@ NUMBER_WORDS = (
 
 REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it another way?"
 COMMON_KIND_NOTE = "Still not sure which kind you meant, so we'll use the most common one."
+# Names the fighter code picked for a bare kind (#168), from the same table research uses.
+DEFAULT_KIND_NOTE = "Not sure which {kind}, so we used the {pick}."
 EXAMPLE_OPTIONS = [
     "a grizzly bear vs 6 gray wolves",
     "a dozen house cats vs a golden retriever",
@@ -344,6 +347,18 @@ async def parse_matchup(
     return result
 
 
+# One note per bare kind that research will replace with its default fighter (#168), e.g.
+# "Not sure which bear, so we used the grizzly bear."
+def default_kind_notes(fighters: list[FighterRequest]) -> list[str]:
+    notes = []
+    for fighter in fighters:
+        pick = picked_default(fighter.entity, fighter.variant, fighter.raw)
+        if pick is not None:
+            kind = fighter.entity.strip()
+            notes.append(DEFAULT_KIND_NOTE.format(kind=kind, pick=spoken_name(pick.display_name)))
+    return notes
+
+
 # The model's reading -> IntakeResult (ok or clarify), with every number decided by code.
 # ask=False accepts a still-vague fighter with a note instead of asking again.
 def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -> IntakeResult:
@@ -363,9 +378,11 @@ def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -
     notes = _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
     if terrain_note:
         notes.append(terrain_note)
-    if parsed.needs_clarification:
-        notes.append(COMMON_KIND_NOTE)
     fighters = [request for request, _ in built]
+    picks = default_kind_notes(fighters)
+    notes += picks
+    if parsed.needs_clarification and not picks:
+        notes.append(COMMON_KIND_NOTE)
     matchup = Matchup(
         fighters=fighters, terrain=terrain, raw_text=text, assumptions=list(dict.fromkeys(notes))
     )

@@ -72,7 +72,9 @@ def test_variant_and_raw_find_seed_list_fighters() -> None:
     assert found is not None and found.id == "golden-retriever"
     found = find_seed_fighter("bee", raw="a swarm of honey bees")
     assert found is not None and found.id == "honey-bee"
-    assert find_seed_fighter("bear", raw="a bear") is None
+    vague = find_seed_fighter("bear", raw="a bear")  # the default-kind table's pick (#168)
+    assert vague is not None and vague.id == "grizzly-bear"
+    assert find_seed_fighter("lizard", raw="a lizard") is None  # no default: normal research
 
 
 def test_no_knowledge_base_still_builds_a_sheet(db: sqlite3.Connection) -> None:
