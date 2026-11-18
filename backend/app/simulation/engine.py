@@ -160,14 +160,11 @@ def expected_work(sides: list[Template]) -> float:
 def use_swarm(sides: list[Template]) -> bool:
     """Swarm mode for big groups (the ceiling) or for fights with too much work (D-50).
 
-    Swarm mode does not carry venom doses (D-44), so a fight with a venomous side is never sent
-    there by the work rule: it stays one by one and keeps its venom (#229). Above the head-count
-    ceiling it is still swarm mode, as before.
+    Swarm mode carries venom as an expected dose per target (#332), so a venomous fight is sent
+    there by the work rule like any other.
     """
     if max(side.count for side in sides) > c.SWARM_THRESHOLD:
         return True
-    if any(side.venomous for side in sides):
-        return False
     return expected_work(sides) > c.SWARM_WORK_BUDGET
 
 
@@ -620,6 +617,23 @@ def _spread_tracked(
     return kills, n_left, (kept, reserve)
 
 
+def _poisoned_share(mean_bites: float, dose: float) -> float:
+    """Chance a survivor carries a lethal dose, when bites land on targets at random (#332).
+
+    One-by-one fights add `dose` per landed bite and a fighter dies of venom at 1.0, so it needs
+    `ceil(1 / dose)` bites. Bites per target are about Poisson with the mean bites each engaged
+    target took (hits spread over the targets in reach, as in the swarm loop).
+    """
+    if dose <= 0 or mean_bites <= 0:
+        return 0.0
+    need = math.ceil(1.0 / dose - 1e-9)
+    term = total = math.exp(-mean_bites)
+    for k in range(1, need):
+        term *= mean_bites / k
+        total += term
+    return max(0.0, 1.0 - total)
+
+
 def _run_swarm(
     sides: list[Template],
     rng: random.Random,
@@ -638,6 +652,29 @@ def _run_swarm(
     bonus = [group_bonus(sides[0]), group_bonus(sides[1])]
     start_hp = [sides[s].max_hp * sides[s].count for s in (0, 1)]
     retreating: int | None = None
+    # Venom (#332): bites each engaged target has taken on average, per victim side, and the dose
+    # one bite adds. A wiped-out side leaves poisoned survivors who die after the fight (D-44).
+    bites = [0.0, 0.0]
+    dose = [venom_dose(sides[0], sides[1]), venom_dose(sides[1], sides[0])]
+
+    def finish_swarm(t_end: float, winner: int | None = None) -> RunOutcome:
+        """Wrap up; a side wiped out leaves survivors that venom still kills."""
+        end = t_end
+        for v in (0, 1):  # v is the victim side
+            if n[1 - v] == 0 and n[v] > 0 and dose[1 - v] > 0 and winner is None:
+                doomed = rng.binomialvariate(n[v], _poisoned_share(bites[v], dose[1 - v]))
+                if doomed:
+                    end = min(t_end + c.VENOM_ONSET_S, c.MAX_FIGHT_S)
+                    n[v] -= doomed
+                    if record_events:
+                        log(
+                            FightEvent(
+                                t=end, type=EventType.KO, side=v, group_size=doomed,
+                                text_hint="succumb to venom" if doomed > 1 else "succumbs to venom",
+                            )
+                        )  # fmt: skip
+        return _outcome(n, end, events, record_events, winner=winner)
+
     t = _tick_up(min(starts))
     # The step cap is for the fights the work rule sends to swarm mode (D-50), which are small in
     # head count but long. Fights over the head-count threshold were validated without it and
@@ -676,9 +713,9 @@ def _run_swarm(
                         )
                     )
                 n[s] = 0
-                return _outcome(n, stopped_at, events, record_events)
+                return finish_swarm(stopped_at)
         if n[0] == 0 or n[1] == 0:
-            return _outcome(n, t, events, record_events)
+            return finish_swarm(t)
         if t >= c.MAX_FIGHT_S:
             break  # the closing step only checks for a machine stop; no fighting past the limit
         # The sides act in random order each step, so equal swarms do not always wipe each
@@ -711,6 +748,8 @@ def _run_swarm(
                     )
                 )
             g = n[foe] if me.ranged else min(n[foe], engaged)
+            if dose[s] > 0:
+                bites[foe] += hits / g  # spread over the targets in reach
             kills, n[foe], hurt[foe] = _spread_tracked(
                 hits, dmg[s], n[foe], hurt[foe], sides[foe].max_hp, g, rng
             )
@@ -756,7 +795,7 @@ def _run_swarm(
                                 text_hint="escape",
                             )
                         )
-                    return _outcome(n, t, events, record_events, winner=s)
+                    return finish_swarm(t, winner=s)
             if spike[foe] > 0 and n[foe] > 0:
                 # Spines: the targets hurt whoever hit them.
                 if record_events:
@@ -785,7 +824,7 @@ def _run_swarm(
                             )
                         )
         if n[0] == 0 or n[1] == 0:
-            return _outcome(n, t, events, record_events)
+            return finish_swarm(t)
         t_next = _tick_up(t + dt)
         if t_next > c.MAX_FIGHT_S > t:
             # Steps grow late in the fight and can jump past the limit. Take one last step exactly
