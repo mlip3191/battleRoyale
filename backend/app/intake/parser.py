@@ -44,6 +44,10 @@ from app.text import pluralize
 PROMPT_NAME = "intake_parse"
 PROMPT_PATH = Path(__file__).parents[2] / "prompts" / f"{PROMPT_NAME}.md"
 MAX_TEXT_CHARS = 500
+# Past this length, a read that fails or times out asks for a shorter matchup (#362).
+# 200 is a heuristic, not a measured limit: about twice a wordy one-sentence matchup.
+LONG_TEXT_CHARS = 200
+LONG_TEXT_QUESTION = "That's a long one! Can you sum up the matchup in one sentence?"
 MAX_VARIANT_CHARS = 60
 MAX_MODEL_ASSUMPTIONS = 3
 MAX_NOTE_CHARS = 200
@@ -311,6 +315,11 @@ async def parse_and_classify(
         await asyncio.gather(parse, safety, return_exceptions=True)
 
 
+# The question for a matchup too long to read: sum it up in one sentence.
+def too_long() -> IntakeResult:
+    return clarify(LONG_TEXT_QUESTION, [])
+
+
 # Free text -> IntakeResult (ok, clarify with one question, or blocked). Never raises for bad
 # input; raises IntakeUnavailable when the chat provider or the safety classifier is down (an
 # outage, not the user's wording; safety fails closed). Safety (A04): code rules run on the text
@@ -328,7 +337,7 @@ async def parse_matchup(
     if not text:
         return clarify("Who's fighting? Name two sides.", EXAMPLE_OPTIONS)
     if len(text) > MAX_TEXT_CHARS:
-        return clarify("That's a long one! Can you sum up the matchup in one sentence?", [])
+        return too_long()
     rules = check_text_rules(text)
     if not rules.allowed:
         return blocked_result(rules)

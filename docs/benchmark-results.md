@@ -12,6 +12,121 @@ Three cases fail in the baseline and are recorded as known limits, not fixed (Mi
 
 None of the three is an "obvious" case, so the 80% held-out "obvious" target is unaffected.
 
+## Run 2026-11-17 19:08 — sheets: research
+
+Commit `e1d7a24` · runtime 7.1 s · traceability 89%
+
+| Set | Pass rate |
+|---|---|
+| Tuning | 18/20 (90%) |
+| Held-out (never used to change constants) | 7/10 (70%) |
+
+| Group | Tuning | Held-out |
+|---|---|---|
+| obvious | 10/10 (100%) | 4/5 (80%) |
+| documented | 5/7 (71%) | 2/3 (67%) |
+| count | 3/3 (100%) | 1/2 (50%) |
+
+_Traceability (G06): 8 of 9 stored battles have no issues; 7 quotes were checked against stored articles and 45 could not be checked here. Run `scripts/trace_report.py` for details._
+
+### Tuning set
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
+|---|---|---|---|---|---|---|
+| cnt-02 | count | side 1 | side 1 | 0.0 / 100.0 | 5 | pass — fair count 5 inside expected 3-10 |
+| cnt-03 | count | side 1 | side 1 | 2.3 / 97.7 | 8 | pass — fair count 8 inside expected 8-40 |
+| cnt-05 | count | side 1 | side 1 | 0.3 / 99.7 | 4 | pass — fair count 4 inside expected 2-8 |
+| doc-01 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| doc-02 | documented | side 1 | side 0 | 73.3 / 26.7 | — | FAIL — expected side 1, got side 0 |
+| doc-03 | documented | side 1 | side 1 | 11.9 / 88.1 | — | pass — favorite matches |
+| doc-06 | documented | side 0 | side 1 | 11.9 / 88.1 | — | FAIL — expected side 0, got side 1 |
+| doc-07 | documented | side 0 | side 0 | 75.8 / 24.2 | — | pass — favorite matches |
+| doc-08 | documented | side 1 | side 1 | 48.3 / 51.7 | — | pass — favorite matches |
+| doc-09 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-02 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-03 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-04 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-06 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-07 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-08 | obvious | side 1 | side 1 | 0.7 / 99.3 | — | pass — favorite matches |
+| obv-11 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-12 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-14 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-15 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+
+### Held-out set
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
+|---|---|---|---|---|---|---|
+| cnt-01 | count | side 1 | side 1 | 1.0 / 99.0 | 6 | pass — fair count 6 inside expected 3-12 |
+| cnt-04 | count | side 1 | side 1 | 0.0 / 100.0 | 2048 | FAIL — fair count 2048 outside expected 20-300 |
+| doc-04 | documented | side 0 | side 0 | 96.9 / 3.1 | — | pass — favorite matches |
+| doc-05 | documented | side 0 | side 1 | 3.5 / 96.5 | — | FAIL — expected side 0, got side 1 |
+| doc-10 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-01 | obvious | side 1 | side 1 | 1.2 / 98.8 | — | pass — favorite matches |
+| obv-05 | obvious | side 0 | side 0 | 99.6 / 0.4 | — | pass — favorite matches |
+| obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
+| obv-13 | obvious | side 1 | side 1 | 33.4 / 66.6 | — | FAIL — right favorite but only 66.6% (high confidence needs 70%) |
+
+## Run 2026-11-17 18:50 — sheets: research
+
+Commit `e1d7a24` · runtime 6.5 s · traceability n/a
+
+| Set | Pass rate |
+|---|---|
+| Tuning | 17/20 (85%) |
+| Held-out (never used to change constants) | 9/10 (90%) |
+
+| Group | Tuning | Held-out |
+|---|---|---|
+| obvious | 10/10 (100%) | 4/5 (80%) |
+| documented | 4/7 (57%) | 3/3 (100%) |
+| count | 3/3 (100%) | 2/2 (100%) |
+
+_Traceability (G06): no finished battles stored yet, so it shows n/a._
+
+### Tuning set
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
+|---|---|---|---|---|---|---|
+| cnt-02 | count | side 1 | side 1 | 0.0 / 100.0 | 5 | pass — fair count 5 inside expected 3-10 |
+| cnt-03 | count | side 1 | side 1 | 2.3 / 97.7 | 8 | pass — fair count 8 inside expected 8-40 |
+| cnt-05 | count | side 1 | side 1 | 0.6 / 99.4 | 5 | pass — fair count 5 inside expected 2-8 |
+| doc-01 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| doc-02 | documented | side 1 | side 0 | 77.9 / 22.1 | — | FAIL — expected side 1, got side 0 |
+| doc-03 | documented | side 1 | side 1 | 11.9 / 88.1 | — | pass — favorite matches |
+| doc-06 | documented | side 0 | side 1 | 22.7 / 77.3 | — | FAIL — expected side 0, got side 1 |
+| doc-07 | documented | side 0 | side 0 | 75.1 / 24.9 | — | pass — favorite matches |
+| doc-08 | documented | side 1 | side 0 | 51.0 / 49.0 | — | FAIL — expected side 1, got side 0 |
+| doc-09 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-02 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-03 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-04 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-06 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-07 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-08 | obvious | side 1 | side 1 | 0.7 / 99.3 | — | pass — favorite matches |
+| obv-11 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-12 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-14 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-15 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+
+### Held-out set
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
+|---|---|---|---|---|---|---|
+| cnt-01 | count | side 1 | side 1 | 1.0 / 99.0 | 6 | pass — fair count 6 inside expected 3-12 |
+| cnt-04 | count | side 1 | side 1 | 0.0 / 100.0 | 120 | pass — fair count 120 inside expected 20-300 |
+| doc-04 | documented | side 0 | side 0 | 97.5 / 2.5 | — | pass — favorite matches |
+| doc-05 | documented | side 0 | side 0 | 74.3 / 25.7 | — | pass — favorite matches |
+| doc-10 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-01 | obvious | side 1 | side 1 | 1.2 / 98.8 | — | pass — favorite matches |
+| obv-05 | obvious | side 0 | side 0 | 98.6 / 1.4 | — | pass — favorite matches |
+| obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
+| obv-13 | obvious | side 1 | side 1 | 33.5 / 66.5 | — | FAIL — right favorite but only 66.5% (high confidence needs 70%) |
+
+
 ## Run 2026-11-16 09:09 — sheets: seed
 
 Commit `924b575` · runtime 4.5 s · traceability n/a
@@ -77,6 +192,8 @@ _Traceability (G06) is not wired in yet; it shows n/a until research/trace.py la
 | obv-10 | obvious | side 1 | side 1 | 0.1 / 99.9 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
 
+
+
 ## Run 2026-11-15 19:10 — sheets: seed
 
 Commit `1c10d1a` · runtime 4.5 s · traceability n/a
@@ -141,6 +258,8 @@ _Traceability (G06) is not wired in yet; it shows n/a until research/trace.py la
 | obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
 | obv-10 | obvious | side 1 | side 1 | 0.1 / 99.9 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+
+
 
 
 ## Run 2026-11-14 13:21 — sheets: seed
