@@ -4,7 +4,9 @@ The chat model reads the creature's Wikipedia article and picks real fighters as
 abilities from the fixed list, and the sentence that justifies them (D-41). It never sets a
 number. Code then checks every choice: the analogs are real fighters we have, the abilities are
 on the list, the quote is in the article word for word, and any number of heads is in the
-quote. Anything that fails is blocked as "nonsense"; an outage gives no sheet, never a guess.
+quote. Each ability needs a backing word in the quote or is dropped, and a giant analog needs
+the quote to say the creature is big (#391). Anything that fails is blocked as "nonsense"; an
+outage gives no sheet, never a guess.
 """
 
 import json
@@ -37,6 +39,28 @@ MAX_QUOTE_CHARS = 300
 HEAD_WORDS = {
     "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
 }  # fmt: skip
+
+# Words in the quote that back each power (#391); a power without one is dropped.
+POWER_WORDS = {
+    "flight": r"fl(?:y|ies|ying|ight|ew)|wings?|winged|soar(?:s|ing)?",
+    "breath_weapon": r"breath\w*|breathes?|fire|flames?|fiery|spits?|spews?",
+    "regeneration": r"regenerat\w*|regrow\w*|heal\w*|reviv\w*|resurrect\w*|reborn|rebirth|"
+    r"back to life|ashes",
+    "extra_heads": r"heads|\w+-headed",
+}
+# Fighters of a tonne or more (fixed here: mock-mode builder sheets hold placeholder masses).
+# A legend may only be this big when its quote says so (#391).
+GIANT_ANALOGS = {
+    "African elephant",
+    "Hippopotamus",
+    "Tyrannosaurus rex",
+    "Triceratops",
+    "Great white shark",
+    "Main battle tank",
+    "Bulldozer",
+    "Pickup truck",
+}
+BIG_WORDS = r"big|large|huge|giant\w*|enormous|massive|colossal|monstrous|immense"
 
 
 class LoreReply(BaseModel):
@@ -145,6 +169,20 @@ def heads_in_quote(heads: int, quote: str) -> bool:
     return re.search(pattern, quote, flags=re.IGNORECASE) is not None
 
 
+# True when one of `words` (a regex alternation) appears in the quote as a whole word.
+def _says(words: str, quote: str) -> bool:
+    return re.search(rf"\b(?:{words})\b", quote, flags=re.IGNORECASE) is not None
+
+
+# The powers the quote backs: a known power without a backing word is dropped (and logged);
+# an unknown one is kept so the fixed-list check still blocks it.
+def backed_powers(abilities: list[str], quote: str) -> list[str]:
+    kept = [a for a in abilities if a not in POWER_WORDS or _says(POWER_WORDS[a], quote)]
+    if dropped := [a for a in abilities if a not in kept]:
+        logger.warning("Dropped lore powers the quote doesn't back: %s.", ", ".join(dropped))
+    return kept
+
+
 # The model's reply as a lore profile, or None when code can't verify every choice.
 def verified_lore(
     reply: LoreReply, text: str, source: dict[str, str | datetime]
@@ -162,12 +200,15 @@ def verified_lore(
     if reply.heads is not None and not heads_in_quote(reply.heads, quote):
         logger.warning("Rejected lore: the number of heads isn't in the quote.")
         return None
+    if (size or body) in GIANT_ANALOGS and not _says(BIG_WORDS, quote):
+        logger.warning("Rejected lore: a giant analog, but the quote never says it's big.")
+        return None
     try:
         return LoreProfile.model_validate(
             {
                 "body_analog": body,
                 "size_analog": size,
-                "abilities": reply.abilities,
+                "abilities": backed_powers(reply.abilities, quote),
                 "heads": reply.heads,
                 "source": {**source, "quote": quote},
             }

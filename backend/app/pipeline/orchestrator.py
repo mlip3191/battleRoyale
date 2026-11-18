@@ -14,10 +14,10 @@ lends its verdict, plus its fair fight and challenger when it has them; each cop
 "done" with detail "cached", and one it lacks runs fresh. Stub output is not saved to the
 record. Research finds sheets through G04's `resolve_stat_sheet` (variant plus entity first).
 A size_reference with no sheet ends research "fallback" with a plain note; that side fights
-at its normal size and the battle goes on.
-
-TODO (issue #345): when no fighter sheet is found, use the all-estimate fallback sheet and
-banner instead of failing research.
+at its normal size and the battle goes on. A fighter with no sheet and no legend fights on an
+all-estimate sheet from code defaults (#345): research ends "fallback" with a note naming it,
+and the battle goes on. A blocked legend, an unavailable legend lookup, or a seed fighter whose
+build failed still fails research.
 """
 
 import asyncio
@@ -71,6 +71,9 @@ FALLBACK_WITH_VALUE_GENERIC = "A quick stand-in was used for this step this time
 # Research note when a size_reference has no sheet yet; {names} are the quoted references.
 MISSING_REFERENCE = "No size reference for {names} yet, so that side fights at its normal size."
 MISSING_REFERENCES = "No size reference for {names} yet, so both sides fight at their normal size."
+# Research note when a fighter has no sheet and fights on code estimates (#345).
+ESTIMATED_FIGHTER = "We have no stat sheet for {names}, so its stats are estimates."
+ESTIMATED_FIGHTERS = "We have no stat sheet for {names}, so their stats are estimates."
 
 # Running battles; holding a reference keeps a task from being garbage-collected mid-fight.
 _tasks: set[asyncio.Task[None]] = set()
@@ -104,9 +107,8 @@ async def run_battle(battle_id: str, store: BattleStore) -> None:
         await store.set_stage(battle_id, stage, "running", _looking_up(matchup))
         found = await _required(stage, lambda: stages.research(matchup), RESEARCH_FAILED)
         await store.update(battle_id, stat_sheets=found.sheets)
-        if found.missing_references:
-            note = _missing_reference_note(found.missing_references)
-            await store.set_stage(battle_id, stage, "fallback", note)
+        if found.estimated or found.missing_references:
+            await store.set_stage(battle_id, stage, "fallback", _research_note(found))
         else:
             await store.set_stage(battle_id, stage, "done")
 
@@ -293,6 +295,23 @@ async def _settle_unfinished(battle_id: str, store: BattleStore, reason: str) ->
     for change in record.stages if record else []:
         if change.status in ("pending", "running"):
             await store.set_stage(battle_id, change.stage, "fallback", reason)
+
+
+# The research "fallback" note: estimated fighters first, then missing size references.
+def _research_note(found: Research) -> str:
+    notes = []
+    if found.estimated:
+        notes.append(_estimated_note(found.estimated))
+    if found.missing_references:
+        notes.append(_missing_reference_note(found.missing_references))
+    return " ".join(notes)
+
+
+# The research note naming each fighter that fights on estimates, e.g. 'wolverine'.
+def _estimated_note(names: list[str]) -> str:
+    unique = list(dict.fromkeys(names))  # at most two sides; the same name twice is one sheet
+    template = ESTIMATED_FIGHTER if len(unique) == 1 else ESTIMATED_FIGHTERS
+    return template.format(names=" and ".join(repr(name) for name in unique))
 
 
 # The research note naming each size_reference with no sheet, e.g. 'a school bus'.
