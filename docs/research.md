@@ -89,7 +89,7 @@ Code applies this table, never a model: `DEFAULT_KINDS` in `backend/app/research
 
 Two details of the lookup (#415):
 
-- **The user's own words count.** Only articles, numbers, group words ("a pack of") and size words ("big", "small") may stand around a bare kind. "A bear", "6 bears" and "a big bear" get the grizzly and the note; "a polar bear" gets no default and no "Not sure which" note, even when the model reads it as the entity "bear" with no variant. It is then an unknown fighter, like any other name that is not on the seed list.
+- **The user's own words count.** Only articles, numbers, group words ("a pack of") and size words ("big", "small") may stand around a bare kind. "A bear", "6 bears" and "a big bear" get the grizzly and the note; "a polar bear" gets no default and no "Not sure which" note, even when the model reads it as the entity "bear" with no variant. It is then an unknown fighter, like any other name that is not on the seed list. Intake keeps the user's word as the variant (`named_kind_words`: "polar" for "a polar bear"), so the fighter reads "polar bear", not a bare "bear", in the estimate sheet and the battle text.
 - **Common names reach their seed fighter.** Besides the spellings in `_ALIASES` (grey, wolves, ducks, mice, cacti), `_NAME_ALIASES` maps a whole common name: hippo and hippos to `hippopotamus`; cobra and cobras to `king-cobra`; t-rex, t rex, T. Rex, trex and tyrannosaurus to `tyrannosaurus-rex`. These are matched as the whole name, so the full "king cobra" still works. Add a name there when a user's usual word is not the seed fighter's name or id.
 
 ## The seven physical stats

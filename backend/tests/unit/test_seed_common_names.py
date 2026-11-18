@@ -2,12 +2,14 @@
 
 import pytest
 
-from app.intake.parser import default_kind_notes
+from app.intake.parser import default_kind_notes, read_matchup
+from app.intake.schema import ParsedMatchup
 from app.models.matchup import FighterRequest
 from app.research.seed_fighters import (
     default_kind,
     find_seed_fighter,
     find_seed_sheet,
+    named_kind_words,
     picked_default,
 )
 
@@ -92,3 +94,52 @@ def test_the_raw_text_rule_keeps_the_earlier_cases_working() -> None:
     assert picked_default("wolf", None, "6 gray wolves") is None  # already named
     found = find_seed_fighter("wolf", None, "6 gray wolves")
     assert found is not None and found.id == "gray-wolf"
+
+
+@pytest.mark.parametrize(
+    ("entity", "raw", "expected"),
+    [
+        ("bear", "a polar bear", "polar"),
+        ("bear", "2 polar bears", "polar"),
+        ("bear", "a Kodiak bear", "kodiak"),
+        ("bear", "a bear", None),
+        ("bear", "6 bears", None),
+        ("bear", "a fierce bear", None),
+        ("bear", "../fighters", None),
+    ],
+)
+def test_the_named_kind_around_a_bare_entity_is_kept_in_the_users_words(
+    entity: str, raw: str, expected: str | None
+) -> None:
+    assert named_kind_words(entity, raw) == expected
+
+
+def test_intake_keeps_the_polar_in_a_polar_bear_so_the_fighter_reads_polar_bear() -> None:
+    parsed = ParsedMatchup.model_validate(
+        {
+            "fighters": [
+                {"entity": "bear", "raw": "a polar bear"},
+                {"entity": "gray wolf", "raw": "a gray wolf"},
+            ]
+        }
+    )
+    result = read_matchup("a polar bear vs a gray wolf", parsed)
+    assert result.matchup is not None
+    bear = result.matchup.fighters[0]
+    assert (bear.entity, bear.variant) == ("bear", "polar")
+    assert not any("Not sure which bear" in n for n in result.matchup.assumptions)
+
+
+def test_intake_leaves_a_plain_bear_and_a_given_variant_alone() -> None:
+    parsed = ParsedMatchup.model_validate(
+        {
+            "fighters": [
+                {"entity": "bear", "raw": "a bear"},
+                {"entity": "bear", "variant": "grizzly", "raw": "a grizzly bear"},
+            ]
+        }
+    )
+    result = read_matchup("a bear vs a grizzly bear", parsed)
+    assert result.matchup is not None
+    plain, given = result.matchup.fighters
+    assert plain.variant is None and given.variant == "grizzly"

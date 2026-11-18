@@ -132,6 +132,22 @@ def _raw_names_a_kind(entity: str, raw: str | None) -> bool:
     return False
 
 
+# The kind the user named around a bare entity, in their own spelling: "polar" for the entity
+# "bear" and the phrase "2 polar bears", or None when the phrase names no kind (#415). Intake
+# keeps it as the variant, so the fighter reads "polar bear" instead of a bare "bear".
+def named_kind_words(entity: str, raw: str | None) -> str | None:
+    if not _raw_names_a_kind(entity, raw):
+        return None
+    entity_words = {w for part in _canonical_slug(entity).split("-") for w in (part, part + "s")}
+    kept = []
+    for word in re.findall(r"[A-Za-z]+", raw or ""):
+        low = _canonical_slug(word)
+        plural_of_entity = low.endswith("s") and low[:-1] in entity_words
+        if low and low not in _FILLER_WORDS and low not in entity_words and not plural_of_entity:
+            kept.append(word.lower())
+    return " ".join(kept) or None
+
+
 def _canonical_slug(name: str) -> str:
     """Slug a name, then map known alternate spellings to the sheet's word."""
     whole = fighter_slug(name)

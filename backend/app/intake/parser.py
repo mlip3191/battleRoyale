@@ -30,7 +30,7 @@ from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.models.terrain import Terrain
 from app.providers.base import ChatLLM, ChatMessage
 from app.providers.registry import get_intake_chat
-from app.research.seed_fighters import DEFAULT_KINDS, picked_default, spoken_name
+from app.research.seed_fighters import DEFAULT_KINDS, named_kind_words, picked_default, spoken_name
 from app.safety import (
     SafetyUnavailable,
     SafetyVerdict,
@@ -281,6 +281,10 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
         notes.append(clamp_note)
     variant = (fighter.variant or "").strip()[:MAX_VARIANT_CHARS]
     variant = None if not variant or has_number(variant) else variant  # number rule
+    if variant is None and entity in DEFAULT_KINDS:
+        # The model dropped a named kind ("a polar bear" read as "bear"): keep the user's word.
+        named = named_kind_words(entity, fighter.raw)
+        variant = named[:MAX_VARIANT_CHARS] if named and not has_number(named) else None
     request = FighterRequest(
         entity=entity,
         count=count,
