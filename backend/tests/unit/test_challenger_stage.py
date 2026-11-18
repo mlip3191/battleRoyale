@@ -74,9 +74,9 @@ def spy_on_tests(monkeypatch: pytest.MonkeyPatch) -> list[list[str]]:
     tested: list[list[str]] = []
     real = fair.test_challengers
 
-    def spy(winner: StatSheet, candidates: list[StatSheet], terrain: Terrain) -> Any:
+    def spy(winner: StatSheet, candidates: list[StatSheet], terrain: Terrain, *rest: Any) -> Any:
         tested.append([c.fighter_id for c in candidates])
-        return real(winner, candidates, terrain)
+        return real(winner, candidates, terrain, *rest)
 
     monkeypatch.setattr(fair, "test_challengers", spy)
     return tested
@@ -167,9 +167,9 @@ async def test_model_picks_that_all_fail_the_tests_retry_once_with_the_seed(
     real = fair.test_challengers
 
     # The model's own pick fails the tests; the seed retry runs for real.
-    def spy(winner: StatSheet, candidates: list[StatSheet], terrain: Terrain) -> Any:
+    def spy(winner: StatSheet, candidates: list[StatSheet], terrain: Terrain, *rest: Any) -> Any:
         tested.append([c.fighter_id for c in candidates])
-        return [] if len(tested) == 1 else real(winner, candidates, terrain)
+        return [] if len(tested) == 1 else real(winner, candidates, terrain, *rest)
 
     monkeypatch.setattr(fair, "test_challengers", spy)
     fake = FakeDecider(lambda _: {last: 1.0})
@@ -294,3 +294,44 @@ async def test_a_battle_whose_model_fails_ends_the_stage_fallback(
     note = FALLBACK_WITH_VALUE["challenger"] if found_one else FALLBACK_DETAILS["challenger"]
     assert (stage.status, stage.detail) == ("fallback", note)
     assert (final.challenger is not None) == found_one
+
+
+# --- The winner duels as the user saw it: its count and size reference (#223) -----------------
+
+
+async def test_the_stage_duels_the_winner_at_its_real_count(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    matchup = fight("6 grizzly bears", "gray wolf")
+    matchup.fighters[0].entity, matchup.fighters[0].count = "grizzly bear", 6
+    found = await stages.research(matchup)
+    result = await stages.simulate(matchup, found)
+    seen: list[Any] = []
+    real = fair.test_challengers
+
+    def spy(winner: StatSheet, candidates: list[StatSheet], terrain: Terrain, *rest: Any) -> Any:
+        seen.append(rest)
+        return real(winner, candidates, terrain, *rest)
+
+    monkeypatch.setattr(fair, "test_challengers", spy)
+    side = challenger.winner_side(result, found.sheets)
+    await stages.challenger(matchup, found, result)
+    request, reference = seen[0]
+    assert request is not None and request.count == matchup.fighters[side].count
+    assert reference is None  # no size reference in this matchup
+
+
+async def test_without_a_matchup_the_winner_is_one_plain_fighter(
+    sheets_and_result: tuple[list[StatSheet], SimulationResult], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sheets, result = sheets_and_result
+    seen: list[Any] = []
+    real = fair.test_challengers
+
+    def spy(winner: StatSheet, candidates: list[StatSheet], terrain: Terrain, *rest: Any) -> Any:
+        seen.append(rest)
+        return real(winner, candidates, terrain, *rest)
+
+    monkeypatch.setattr(fair, "test_challengers", spy)
+    await challenger.suggest(sheets, result, Terrain.OPEN_FIELD)
+    assert seen[0] == (None, None)  # the default call is unchanged (no matchup passed)

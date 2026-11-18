@@ -5,7 +5,9 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-ENGINE_VERSION = 9
+# 12: a variant far over the work budget is skipped (#341); 11: variants use the baseline's swarm
+# mode (#301); 10: #229
+ENGINE_VERSION = 12
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1
@@ -59,6 +61,16 @@ SWARM_THRESHOLD = 200
 # Chosen so the one-by-one engine stays within the 3 s Simulate budget (assumption, calibrated
 # against measured timings in docs/swarm-validation.md).
 SWARM_WORK_BUDGET = 2000.0
+# #341: a deciding-factor variant of a one-by-one fight is skipped (not measured) when its own
+# estimated work is above this many times SWARM_WORK_BUDGET (assumption, see simulation-model.md).
+VARIANT_WORK_CUTOFF = 4.0
+# #330 (D-61): a venomous fight stays one by one up to SWARM_THRESHOLD to keep its venom, so the
+# work rule cannot rescue it, and it can take 20 to 30 s. The Simulate stage refuses a one-by-one
+# fight with a venomous side whose estimated work is above this ("too big to simulate quickly").
+# Measured on the author's laptop (1,000 runs with the analysis): work 360 took 3.0 s, 880 took
+# 3.6 s, 1,900 took 6 s, 3,800 took 11 s, 7,600 took 20 s. CI runners are 2 to 3 times slower, so
+# this is the point where a laptop is near the 3 s budget (assumption). No effect on results.
+VENOM_WORK_MAX = 1000.0
 # Shortest swarm step. Swarm fights act in coarse steps, not per-fighter events.
 SWARM_STEP_S = 0.5
 # Steps lengthen as a fight goes on: at least this share of the elapsed time (assumption:

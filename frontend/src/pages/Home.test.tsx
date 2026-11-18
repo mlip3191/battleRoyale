@@ -13,7 +13,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import okResult from "../fixtures/intake-result.json";
 import * as client from "../api/client.ts";
 import { SHOWCASE } from "../api/fixtures.ts";
-import Home, { EXAMPLES } from "./Home.tsx";
+import Home, { EXAMPLES, PLACEHOLDER } from "./Home.tsx";
 
 vi.mock("../api/client.ts", async (original) => ({
   ...(await original<typeof import("../api/client.ts")>()),
@@ -189,16 +189,30 @@ test("example chips fill the box", () => {
 // Hand-copied: keep in sync with that folder's file names when a seed sheet is added or removed.
 const SEED_FIGHTERS = [
   /\bafrican elephants?\b/,
+  /\bafrican lions?\b/,
+  /\bbald eagles?\b/,
+  /\bbulldozers?\b/,
   /\bducks?\b/,
   /\bgorillas?\b/,
   /\bgray (wolf|wolves)\b/,
   /\bgrizzly bears?\b/,
   /\bhoney badgers?\b/,
   /\bhorses?\b/,
+  /\bhouse cats?\b/,
+  /\bking cobras?\b/,
   /\bmain battle tanks?\b/,
+  /\broman legionar(y|ies)\b/,
   /\bsaltwater crocodiles?\b/,
 ];
 const seedIn = (side: string) => SEED_FIGHTERS.filter((f) => f.test(side));
+
+test("the box's placeholder names seed fighters on both sides (#361)", () => {
+  const sides = PLACEHOLDER.split(" vs ");
+  expect(sides).toHaveLength(2);
+  // "horse-sized" only sets the duck's size; the fighter is the duck.
+  for (const side of sides)
+    expect(seedIn(side.replace(/\S+-sized /, "")), side).toHaveLength(1);
+});
 
 test("the six example chips use only seed fighters, with no size swaps (#205)", () => {
   expect(EXAMPLES).toHaveLength(6);

@@ -18,18 +18,24 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import REPO_ROOT, get_settings  # noqa: E402
 from app.research.seed_fighters import load_seed_fighters  # noqa: E402
-from app.research.traits import load_original_tables, taxon_name, team_csv, team_rows  # noqa: E402
+from app.research.traits import (  # noqa: E402
+    load_original_tables,
+    team_csv,
+    team_rows,
+    trait_match_name,
+)
 
 OUT_PATH = REPO_ROOT / "data" / "seed" / "seed-traits.csv"
 
 
-# Each seed fighter's scientific name, from its saved Wikidata entity (None if not saved).
+# Each seed fighter's scientific name: its pinned name in fighters.yaml, else its saved Wikidata
+# entity's (None if neither, or if Wikidata's isn't shaped like a species name, #290).
 def scientific_names(kb_dir: Path) -> dict[str, str | None]:
     names: dict[str, str | None] = {}
     for fighter in load_seed_fighters():
         path = kb_dir / fighter.id / "wikidata.json"
         entity = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
-        names[fighter.id] = taxon_name(entity)
+        names[fighter.id] = trait_match_name(fighter.id, fighter.scientific_name, entity)
     return names
 
 

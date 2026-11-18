@@ -17,6 +17,7 @@ from app.pipeline import orchestrator, stages
 from app.pipeline.orchestrator import FALLBACK_DETAILS, FALLBACK_WITH_VALUE, STUB, run_battle
 from app.pipeline.stages import Stubbed
 from app.pipeline.store import STAGES, BattleStore
+from app.providers.mock import MockChatLLM
 from app.simulation import fair
 from tests.conftest import mock_settings
 
@@ -259,12 +260,33 @@ async def test_a_slow_script_writer_saves_template_scripts(
             return ""
 
     monkeypatch.setitem(stages.STAGE_BUDGETS_S, "script", 0.5)
-    monkeypatch.setattr(writer, "get_provider", lambda *_a, **_k: SlowChat())
+    monkeypatch.setattr(writer, "get_script_chat", lambda: SlowChat())
     record = await battle(store)
     script = stage_of(record, "script")
     assert (script.status, script.detail) == ("fallback", FALLBACK_WITH_VALUE["script"])
     assert [s.kind for s in record.scripts] == ["intro", "play_by_play", "outro"]
     assert all(s.fallback for s in record.scripts)
+    assert expected_fair_line(record) in outro_lines(record)
+
+
+async def test_a_slow_outro_keeps_the_intro_the_model_wrote_in_time(
+    store: BattleStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Only the outro is slow (#363): it becomes the template; the intro keeps the model's lines.
+    mock = MockChatLLM()
+
+    class SlowOutro:
+        async def complete(self, messages: Any, *, prompt_name: str, **kwargs: Any) -> str:
+            if prompt_name == "outro":
+                await asyncio.sleep(TOO_LONG)
+            return await mock.complete(messages, prompt_name=prompt_name, **kwargs)
+
+    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "script", 0.5)
+    monkeypatch.setattr(writer, "get_script_chat", lambda: SlowOutro())
+    record = await battle(store)
+    assert stage_of(record, "script").status == "fallback"
+    intro, _, outro = record.scripts
+    assert (intro.fallback, outro.fallback) == (False, True)
     assert expected_fair_line(record) in outro_lines(record)
 
 
@@ -318,6 +340,26 @@ async def test_simulate_past_its_budget_says_the_fight_is_too_big(
     assert all(stage_of(record, s).status == "pending" for s in OPTIONAL)
 
 
+async def test_a_big_venomous_fight_is_refused_before_the_engine_runs(
+    store: BattleStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#330 (D-61): 200 king cobras v 50 legionaries run one by one for about 20 s, so the
+    Simulate stage answers "too big to simulate quickly" at once and never starts the engine."""
+
+    def engine_must_not_run(*_: Any, **__: Any) -> Any:
+        raise AssertionError("the engine ran a fight that is too big")
+
+    monkeypatch.setattr(stages.engine, "run", engine_must_not_run)
+    fight = _fight(
+        {"entity": "king cobra", "count": 200}, {"entity": "roman legionary", "count": 50}
+    )
+    record = await battle(store, fight)
+    assert record.status == "failed"
+    simulate = stage_of(record, "simulate")
+    assert (simulate.status, simulate.detail) == ("failed", orchestrator.SIMULATE_TOO_SLOW)
+    assert record.result is None
+
+
 async def test_size_reference_entities_are_looked_up_in_parallel(
     store: BattleStore, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -342,20 +384,33 @@ async def test_size_reference_entities_are_looked_up_in_parallel(
     assert [s.fighter_id for s in record.stat_sheets] == ["duck", "horse"]
 
 
-async def test_a_size_reference_without_a_sheet_is_stub_marked_not_fatal(
+async def test_a_size_reference_without_a_sheet_ends_research_fallback_not_fatal(
     store: BattleStore,
 ) -> None:
-    record = await battle(store, matchup("duck", "horse", refs=("unicorn", None)))
+    record = await battle(store, matchup("duck", "horse", refs=("a school bus", None)))
     assert record.status == "done"
     research = stage_of(record, "research")
-    assert (research.status, research.detail) == ("done", STUB)
+    note = "No size reference for 'a school bus' yet, so that side fights at its normal size."
+    assert (research.status, research.detail) == ("fallback", note)
     assert record.result is not None
+    assert stage_of(record, "simulate").status == "done"
+
+
+async def test_two_missing_size_references_share_one_note(store: BattleStore) -> None:
+    record = await battle(store, matchup("duck", "horse", refs=("okapi", "a school bus")))
+    assert record.status == "done" and record.result is not None
+    research = stage_of(record, "research")
+    assert (research.status, research.detail) == (
+        "fallback",
+        "No size reference for 'okapi' or 'a school bus' yet, "
+        "so both sides fight at their normal size.",
+    )
 
 
 async def test_a_missing_fighter_still_fails_research(store: BattleStore) -> None:
-    record = await battle(store, matchup("unicorn", "horse", refs=(None, "duck")))
+    record = await battle(store, matchup("okapi", "horse", refs=(None, "duck")))
     assert record.status == "failed"
-    assert "unicorn" in (stage_of(record, "research").detail or "")
+    assert "okapi" in (stage_of(record, "research").detail or "")
 
 
 def _fight(
@@ -442,30 +497,33 @@ async def test_live_style_raw_phrase_finds_the_seed_sheets(store: BattleStore) -
 
 
 async def test_a_vague_raw_phrase_still_fails_with_the_plain_message(store: BattleStore) -> None:
-    record = await battle(store, _fight({"entity": "bear", "raw": "a bear"}, {"entity": "duck"}))
+    # A vague kind with no default ("bear" has one since #168: the grizzly bear).
+    record = await battle(
+        store, _fight({"entity": "lizard", "raw": "a lizard"}, {"entity": "duck"})
+    )
     assert record.status == "failed"
     detail = stage_of(record, "research").detail or ""
-    assert detail == stages.NOT_FOUND.format(name="bear")
+    assert detail == stages.NOT_FOUND.format(name="lizard")
 
 
 async def test_the_no_stat_sheet_message_names_the_fighter_as_typed(store: BattleStore) -> None:
     # A plain name, with no variant.
-    record = await battle(store, _fight({"entity": "unicorn"}, {"entity": "duck"}))
+    record = await battle(store, _fight({"entity": "okapi"}, {"entity": "duck"}))
     assert record.status == "failed"
-    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="unicorn")
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="okapi")
     # A label-style variant is not shown.
     record = await battle(
-        store, _fight({"entity": "unicorn", "variant": "adult male"}, {"entity": "duck"})
+        store, _fight({"entity": "okapi", "variant": "adult male"}, {"entity": "duck"})
     )
     assert record.status == "failed"
-    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="unicorn")
+    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="okapi")
     # If the variant already contains the name, do not double it.
     record = await battle(
-        store, _fight({"entity": "unicorn", "variant": "white unicorn"}, {"entity": "duck"})
+        store, _fight({"entity": "okapi", "variant": "white okapi"}, {"entity": "duck"})
     )
     assert record.status == "failed"
     assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(
-        name="white unicorn"
+        name="white okapi"
     )
 
 
@@ -480,9 +538,11 @@ async def test_the_fair_fight_comes_from_the_real_search(store: BattleStore) -> 
     assert record.fair_fight == expected
 
 
-async def test_every_stub_stage_says_stub_and_saves_nothing(store: BattleStore) -> None:
+async def test_no_stage_says_stub_and_every_output_is_saved(store: BattleStore) -> None:
     record = await battle(store)
-    assert stage_of(record, "intake").detail == STUB  # the only stub left
+    intake = stage_of(record, "intake")
+    assert (intake.status, intake.detail) == ("done", None)  # intake ran before the battle
+    assert STUB not in {s.detail for s in record.stages}
     for name in ("research", "simulate", "summary", "challenger", "audio", "music", "images"):
         assert stage_of(record, name).detail is None, name
     assert (stage_of(record, "script").status, stage_of(record, "script").detail) == MOCK_SCRIPT

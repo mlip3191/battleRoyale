@@ -37,6 +37,16 @@ def _force_mock_settings(tmp_path: Path) -> Iterator[None]:
     use_settings(mock_settings())
 
 
+# Legend refusals are remembered in memory for 10 minutes (#324); each test starts with none.
+@pytest.fixture(autouse=True)
+def _forget_legend_refusals() -> Iterator[None]:
+    from app.research.sheet_store import forget_refusals
+
+    forget_refusals()
+    yield
+    forget_refusals()
+
+
 # Fresh mock settings for a single test, with optional overrides.
 @pytest.fixture
 def settings() -> Settings:

@@ -40,7 +40,7 @@ The **code is complete on Wednesday, November 25, 2026** (DECISIONS D-05). The s
 ## Notes that will feed the deck (start now, keep in the repo)
 
 These cost minutes now and save hours on Nov 25:
-- **Build stack:** every PR's "Built with" field (AI tool + model). Mike also records the Hermes Agent comparison from G06 in `docs/build-log.md`.
+- **Build stack:** every PR's "Built with" field (AI tool + model). Hermes Agent isn't used, so there is no comparison (D-62).
 - **Build process:** `docs/build-log.md` — three lines at each milestone (what works, what changed from the plan, a screenshot link).
 - **Bug testing:** closed issues labeled `type: bug` and `usability`; `docs/usability/findings.md`.
 - **Evaluation and limitations:** `docs/evaluation.md`, `docs/benchmark-results.md`, `docs/simulation-model.md` (where every constant comes from).

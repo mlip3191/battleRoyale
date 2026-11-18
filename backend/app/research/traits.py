@@ -4,6 +4,7 @@ import asyncio
 import csv
 import io
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -66,6 +67,30 @@ def taxon_name(entity: dict[str, Any]) -> str | None:
         if isinstance(value, str) and value.strip():
             return value.strip()
     return None
+
+
+# A genus and a species, plus at most a subspecies: "Apis mellifera", "Ursus arctos horribilis".
+# A lone capitalized word ("Spoderman") is never used to match, even though a genus looks alike.
+PLAUSIBLE_SPECIES = re.compile(r"[A-Z][a-z]+(?: [a-z][a-z-]*[a-z]){1,2}")
+
+
+# True when the name has the shape of a scientific species name.
+def plausible_species_name(name: str) -> bool:
+    return PLAUSIBLE_SPECIES.fullmatch(name) is not None
+
+
+# The name to match trait rows by: the seed list's pinned name first, then Wikidata's, which is
+# ignored (and logged) when it isn't shaped like a species name, e.g. vandalism such as "Spoderman".
+def trait_match_name(fighter_id: str, pinned: str | None, entity: dict[str, Any]) -> str | None:
+    if pinned:
+        return pinned
+    name = taxon_name(entity)
+    if name and not plausible_species_name(name):
+        logger.info(
+            "Ignored Wikidata scientific name %r for %s: not a species name.", name, fighter_id
+        )
+        return None
+    return name
 
 
 # One row per mammal species; -999 means the value was not recorded.

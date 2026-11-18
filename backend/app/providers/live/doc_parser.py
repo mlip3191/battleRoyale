@@ -42,10 +42,31 @@ INLINE_TAGS = re.compile(r"</?(a|span|abbr)>", re.IGNORECASE)
 INLINE_REPLY_TAGS = re.compile(r"</?(a|span|abbr|b|i|em|strong|u|small|sub)\s*>", re.IGNORECASE)
 ANY_TAG = re.compile(r"</?[a-zA-Z][a-zA-Z0-9]*\s*/?>")
 CLOSING_TAG = re.compile(r"</\s*document\s*>", re.IGNORECASE)
+# Block-level tags end a paragraph, for the check that the model kept every paragraph.
+BLOCK_TAGS = re.compile(
+    r"</?(?:p|li|tr|td|th|h[1-6]|div|dd|dt|figcaption|caption|table|ul|ol|br)\b[^>]*>",
+    re.IGNORECASE,
+)
+NOT_ALPHANUMERIC = re.compile(r"[^0-9a-z]+")
+# Shorter paragraphs (table cells, captions, labels) aren't checked; they rarely hold a figure.
+MIN_CHECKED_CHARS = 40
 
 
 class CutOffReply(ProviderError):
     """The parser ran out of room before finishing, so its reply is incomplete."""
+
+
+class PieceTooBig(CutOffReply):
+    """The piece didn't fit the model's window (#176); split and retried like a cut-off reply."""
+
+
+# The parser's 400 for a prompt over its token window (vLLM's wording, seen live on 2026-11-16).
+CONTEXT_OVERFLOW = re.compile(r"maximum context length|context_length_exceeded", re.IGNORECASE)
+
+
+# True when a failed call means the piece was too big for the model, not some other bad request.
+def is_context_overflow(error: ProviderError) -> bool:
+    return error.status == 400 and CONTEXT_OVERFLOW.search(error.detail) is not None
 
 
 # Remove what holds no article text, and write exponents as ^ so 10<sup>6</sup> can't become 106.
@@ -70,6 +91,28 @@ def split_pieces(text: str, limit: int = PIECE_CHARS) -> list[str]:
         pieces.append(text[:cut])
         text = text[cut:]
     return [*pieces, text] if text else pieces
+
+
+# The piece's own paragraphs, tags removed: the page's exact words, for the loss check.
+def piece_paragraphs(piece: str) -> list[str]:
+    parts = (clean_reply(part) for part in BLOCK_TAGS.split(piece))
+    return [" ".join(part.split()) for part in parts if len(part.strip()) >= MIN_CHECKED_CHARS]
+
+
+# The model sometimes skips whole paragraphs without saying so (#34): add any missing one back
+# from the page's own text, word for word, so no sentence or number is lost. They go after the
+# reply, not back in their place: retrieval searches passages, so order on the page doesn't matter.
+def restore_dropped(piece: str, reply: str) -> str:
+    kept = NOT_ALPHANUMERIC.sub("", reply.lower())
+    missing = [
+        paragraph
+        for paragraph in piece_paragraphs(piece)
+        if NOT_ALPHANUMERIC.sub("", paragraph.lower()) not in kept
+    ]
+    if not missing:
+        return reply
+    logger.warning("Parser skipped %d paragraph(s); added them back from the page.", len(missing))
+    return "\n\n".join([reply, *missing])
 
 
 class LiveDocParser:
@@ -97,12 +140,14 @@ class LiveDocParser:
     # uses the page's own text with its tags removed, so no words or numbers are lost or invented.
     async def _parse_or_split(self, piece: str) -> str:
         try:
-            return await self._parse_piece(piece)
-        except CutOffReply:
+            return restore_dropped(piece, await self._parse_piece(piece))
+        except CutOffReply as error:
+            # Only this except path reaches the split below (a success returns), so `why` is set.
+            why = "was too big for" if isinstance(error, PieceTooBig) else "looped on"
             if len(piece) <= MIN_PIECE_CHARS:
-                logger.warning("Parser looped on a %d-character piece; used its text.", len(piece))
+                logger.warning("Parser %s a %d-character piece; used its text.", why, len(piece))
                 return clean_reply(piece)
-        logger.info("Parser reply cut off; splitting a %d-character piece.", len(piece))
+        logger.info("Parser %s a %d-character piece; splitting it.", why, len(piece))
         halves = split_pieces(piece, limit=len(piece) // 2 + 1)
         return "\n".join([await self._parse_or_split(half) for half in halves])
 
@@ -110,20 +155,25 @@ class LiveDocParser:
     async def _parse_piece(self, piece: str) -> str:
         document = CLOSING_TAG.sub("", piece)  # the page cannot close the data block
         content = f"{self._instruction}\n\n<document>\n{document}\n</document>"
-        reply = await post_json(
-            provider="doc_parser",
-            base_url=self.config.base_url,
-            path="/v1/chat/completions",
-            api_key=self.config.api_key.get_secret_value(),
-            payload={
-                "model": await self._model_name(),
-                "messages": [{"role": "user", "content": content}],
-                "temperature": 0,
-                "max_tokens": MAX_TOKENS,
-            },
-            timeout_s=PARSE_TIMEOUT_S,
-            client=self.client,
-        )
+        try:
+            reply = await post_json(
+                provider="doc_parser",
+                base_url=self.config.base_url,
+                path="/v1/chat/completions",
+                api_key=self.config.api_key.get_secret_value(),
+                payload={
+                    "model": await self._model_name(),
+                    "messages": [{"role": "user", "content": content}],
+                    "temperature": 0,
+                    "max_tokens": MAX_TOKENS,
+                },
+                timeout_s=PARSE_TIMEOUT_S,
+                client=self.client,
+            )
+        except ProviderError as error:
+            if is_context_overflow(error):  # too big for the window: split it, as for a cut-off
+                raise PieceTooBig("Live 'doc_parser' piece was too big for the model.") from error
+            raise
         try:
             choice = reply["choices"][0]
             text = choice["message"]["content"]

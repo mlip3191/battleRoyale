@@ -25,6 +25,7 @@ from app.db.connection import connect  # noqa: E402
 from app.db.migrate import apply_migrations  # noqa: E402
 from app.providers.registry import ProviderConfigError, get_provider  # noqa: E402
 from app.research.benchmark_sheets import research_sheets  # noqa: E402
+from app.research.trace import trace_stored_battles, traceable, traceable_share  # noqa: E402
 from app.simulation import benchmark as bm  # noqa: E402
 
 
@@ -48,6 +49,39 @@ def build_research_sheets(entries: list[bm.Entry]) -> bm.SheetSource:
         connection.close()
 
 
+def add_traceability(report: bm.RunReport, mock: bool, require_quotes: bool = False) -> None:
+    """Fill the traceability column from G06's check of every stored battle (trace_report.py).
+    With require_quotes (#370), a battle with an uncheckable quote doesn't count as traceable."""
+    if mock:
+        report.notes.append(
+            "Traceability (G06) isn't checked in mock mode; it needs stored battles."
+        )
+        return
+    connection = connect()
+    try:
+        apply_migrations(connection)
+        traced = trace_stored_battles(connection)
+    finally:
+        connection.close()
+    report.traceability = traceable_share(traced, require_quotes)
+    clean = sum(traceable(t, require_quotes) for t in traced)  # the same rule as the share
+    checked = sum(t.quotes_checked for t in traced)
+    unchecked = sum(t.quotes_unchecked for t in traced)
+    passing = "have no issues and every quote checked" if require_quotes else "have no issues"
+    report.notes.append(
+        f"Traceability (G06): {clean} of {len(traced)} stored battles {passing}; "
+        f"{checked} quotes were checked against stored articles and "
+        f"{unchecked} could not be checked here. Run `scripts/trace_report.py` for details."
+        if traced
+        else "Traceability (G06): no finished battles stored yet, so it shows n/a."
+    )
+    if require_quotes and unchecked:
+        report.notes.append(
+            "Strict mode (--require-quotes): battles with a quote that couldn't be checked "
+            "don't count as traceable."
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
@@ -60,6 +94,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--matchups", type=Path, default=None)
     parser.add_argument("--heldout", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=None, help="results file to update")
+    parser.add_argument(
+        "--require-quotes",
+        action="store_true",
+        help="traceability counts a battle only if every quote was checked (#370)",
+    )
     parser.add_argument(
         "--tuning-only", action="store_true",
         help="do not run or show the held-out set (use while changing constants)",
@@ -83,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
             label = args.sheets
             runs, output = args.runs or get_settings().sim_runs, args.output or bm.RESULTS_FILE
         report = bm.run_benchmark(sheets, label, tuning, held, runs, args.tuning_only)
+        add_traceability(report, args.mock, args.require_quotes)
     except bm.BenchmarkError as error:
         print(f"Cannot run the benchmark: {error}", file=sys.stderr)
         return 2

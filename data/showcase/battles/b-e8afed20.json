@@ -1,0 +1,1262 @@
+{
+  "battle_id": "b-e8afed20",
+  "created_at": "2026-11-16T19:05:10.631511Z",
+  "matchup": {
+    "fighters": [
+      {
+        "entity": "dragon",
+        "count": 1,
+        "variant": null,
+        "size_reference": null,
+        "raw": "a dragon"
+      },
+      {
+        "entity": "main battle tank",
+        "count": 1,
+        "variant": null,
+        "size_reference": null,
+        "raw": "a main battle tank"
+      }
+    ],
+    "terrain": "open_field",
+    "raw_text": "a dragon vs a main battle tank in an open field",
+    "assumptions": []
+  },
+  "stat_sheets": [
+    {
+      "fighter_id": "dragon",
+      "display_name": "Dragon",
+      "media_name": "dragon",
+      "category": "mythical",
+      "body": "living",
+      "habitat": "amphibious",
+      "weapons": [
+        "teeth"
+      ],
+      "lore": {
+        "body_analog": "saltwater crocodile",
+        "size_analog": "African elephant",
+        "abilities": [
+          "flight",
+          "breath_weapon"
+        ],
+        "heads": null,
+        "source": {
+          "title": "European dragon",
+          "url": "https://en.wikipedia.org/w/index.php?title=European_dragon&oldid=1382680884",
+          "quote": "In and after the Early Middle Ages, the European dragon is typically depicted as a large, fire-breathing, scaly, horned, lizard-like creature; the creature also has leathery, bat-like wings, and a long, muscular prehensile tail.",
+          "retrieved_at": "2026-11-13T00:00:00Z",
+          "license": "CC BY-SA 4.0"
+        }
+      },
+      "stats": {
+        "mass_kg": {
+          "value": 6000.0,
+          "unit": "kg",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 3000.0,
+          "high": 9000.0,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules)."
+        },
+        "size_m": {
+          "value": 8.92139,
+          "unit": "m",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 4.460695,
+          "high": 13.382085,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules: k = 7.79, this stat x k^0.333)."
+        },
+        "top_speed_mps": {
+          "value": 5.47721,
+          "unit": "m/s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 2.738605,
+          "high": 8.215815,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules: k = 7.79, this stat x k^0.167). Flight doesn't change it: the scaled body speed is used."
+        },
+        "attack_force_n": {
+          "value": 64514.1,
+          "unit": "N",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 32257.05,
+          "high": 96771.15,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules: k = 7.79, this stat x k^0.667)."
+        },
+        "attacks_per_s": {
+          "value": 1.0,
+          "unit": "1/s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.5,
+          "high": 1.5,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass; size doesn't change this stat."
+        },
+        "reach_m": {
+          "value": 2.24026,
+          "unit": "m",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 1.12013,
+          "high": 3.36039,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass (square-cube rules: k = 7.79, this stat x k^0.333)."
+        },
+        "armor_0_1": {
+          "value": 0.6,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.3,
+          "high": 0.9,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass; size doesn't change this stat."
+        },
+        "endurance_s": {
+          "value": 120.0,
+          "unit": "s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 60.0,
+          "high": 180.0,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass; size doesn't change this stat."
+        },
+        "aggression_0_1": {
+          "value": 0.7,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.35,
+          "high": 1.0,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass; size doesn't change this stat."
+        },
+        "group_tactics_0_1": {
+          "value": 0.1,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.05,
+          "high": 0.15,
+          "note": "Modeled on saltwater crocodile, scaled to African elephant mass; size doesn't change this stat."
+        }
+      },
+      "schema_version": 1,
+      "sheet_hash": "0886f81b8a66d45401313d8ae8a56800ce4d4e7bd808cfd72d9a5578a6260b84"
+    },
+    {
+      "fighter_id": "main-battle-tank",
+      "display_name": "Main battle tank",
+      "media_name": "main battle tank",
+      "category": "vehicle",
+      "body": "machine",
+      "habitat": "land",
+      "weapons": [
+        "ramming",
+        "crushing"
+      ],
+      "lore": null,
+      "stats": {
+        "mass_kg": {
+          "value": 70000.0,
+          "unit": "kg",
+          "source": {
+            "title": "Main battle tank",
+            "url": "https://en.wikipedia.org/w/index.php?title=Main_battle_tank&oldid=1384871486",
+            "quote": "The extreme weight of vehicles of this type 40–70 t (39–69 long tons; 44–77 short tons) also limits their speed.",
+            "retrieved_at": "2026-11-11T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 40000.0,
+          "high": 70000.0,
+          "note": "Upper figure of the stated 40-70 t range for main battle tanks; the source gives no mean. Low and high keep the stated range."
+        },
+        "size_m": {
+          "value": 7.93,
+          "unit": "m",
+          "source": {
+            "title": "M1 Abrams",
+            "url": "https://en.wikipedia.org/w/index.php?title=M1_Abrams&oldid=1384560905",
+            "quote": "Hull length: 26.02 ft (7.93 m)",
+            "retrieved_at": "2026-11-11T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 5.95,
+          "high": 9.91,
+          "note": "Stand-in: the hull length of one modern main battle tank (M1 Abrams, gun not counted), used for a generic tank because the Main battle tank article gives no length. Range is +/-25%."
+        },
+        "top_speed_mps": {
+          "value": 18.06,
+          "unit": "m/s",
+          "source": {
+            "title": "Main battle tank",
+            "url": "https://en.wikipedia.org/w/index.php?title=Main_battle_tank&oldid=1384871486",
+            "quote": "However, tracks are not as fast as wheels; the maximum speed of a tank is about 65 km/h (40 mph).",
+            "retrieved_at": "2026-11-11T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 16.25,
+          "high": 19.86,
+          "note": "65 km/h = 18.06 m/s. Range is the standard +/-10%."
+        },
+        "attack_force_n": {
+          "value": 126420.0,
+          "unit": "N",
+          "source": null,
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "derived",
+          "low": 65000.0,
+          "high": 139020.0,
+          "note": "Ramming machine: attack_force_n = RAM_DAMAGE_PER_MOMENTUM x mass_kg x top_speed_mps / DAMAGE_PER_NEWTON (0.005 x 70,000 x 18.06 / 0.05). The engine works out the real hit from mass and speed. Low and high use the low and high mass and speed."
+        },
+        "attacks_per_s": {
+          "value": 0.4,
+          "unit": "1/s",
+          "source": null,
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "derived",
+          "low": 0.4,
+          "high": 0.4,
+          "note": "Ramming machine: RAM_ATTACKS_PER_S, the engine's fixed ramming rate."
+        },
+        "reach_m": {
+          "value": 1.98,
+          "unit": "m",
+          "source": null,
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "derived",
+          "low": 1.49,
+          "high": 2.48,
+          "note": "reach = 0.25 x size_m, from size_m."
+        },
+        "armor_0_1": {
+          "value": 0.8,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.4,
+          "high": 1.0,
+          "note": "durability level 5: tank armor."
+        },
+        "endurance_s": {
+          "value": 27685.0,
+          "unit": "s",
+          "source": null,
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "derived",
+          "low": 25176.0,
+          "high": 30769.0,
+          "note": "Vehicle: endurance = range / top_speed_mps = 500,000 m / 18.06 m/s. Range from Main battle tank (https://en.wikipedia.org/w/index.php?title=Main_battle_tank&oldid=1384871486): \"with an operational range near 500 km (310 mi)\". Driving time at top speed, not measured fighting time. Low and high use the high and low speed."
+        },
+        "aggression_0_1": {
+          "value": 1.0,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.5,
+          "high": 1.0,
+          "note": "aggression level M: operated to win, a machine with a driver."
+        },
+        "group_tactics_0_1": {
+          "value": 0.8,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.4,
+          "high": 1.0,
+          "note": "group tactics level 4: tank platoons coordinate by radio, like a pack hunting together. Not level 5 (acting as one), since each tank still moves and fights on its own; not level 2, since they do coordinate."
+        }
+      },
+      "schema_version": 1,
+      "sheet_hash": "1df6f5a5f776cb042021d727e986864bb425e4b235d97c5410faa7ac8ece7587"
+    }
+  ],
+  "result": {
+    "seed": 390865302672015499,
+    "runs": 1000,
+    "win_prob": [
+      0.0,
+      1.0
+    ],
+    "draw_prob": 0.0,
+    "win_prob_ci95": [
+      [
+        0.0,
+        0.003826898586390522
+      ],
+      [
+        0.9961731014136095,
+        1.0
+      ]
+    ],
+    "mean_survivors": [
+      0.0,
+      1.0
+    ],
+    "mean_duration_s": 60.9639,
+    "outcome": "win_1",
+    "deciding_factor": "mass_kg",
+    "deciding_factor_explainer": "Size decided it: Main battle tank (70000 kg) against Dragon (6000 kg).",
+    "representative_log": [
+      {
+        "t": 0.0,
+        "type": "approach",
+        "side": 0,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "closes in"
+      },
+      {
+        "t": 0.0,
+        "type": "approach",
+        "side": 1,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "closes in"
+      },
+      {
+        "t": 0.7,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 2.1,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 2.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 3.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 4.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 5.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 6.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 7.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 7.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 8.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 10.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 10.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 11.6,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 12.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 13.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 14.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 15.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 15.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 17.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 17.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 18.4,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 19.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 20.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 21.2,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 22.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 22.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 23.9,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 25.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 25.3,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 26.6,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 27.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 28.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 29.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 30.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 30.7,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 32.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 32.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 33.4,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 34.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 35.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 36.2,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 37.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 37.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 38.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 40.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 40.2,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 41.6,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 42.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 43.0,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 44.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 45.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 45.7,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 47.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 47.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 48.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 49.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3196.6,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 50.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 51.1,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 52.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 52.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 52.6,
+        "type": "retreat",
+        "side": 0,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "breaks and runs"
+      },
+      {
+        "t": 55.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 2900.7,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 55.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 0,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 55.1,
+        "type": "end",
+        "side": 1,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "the fight is over"
+      }
+    ]
+  },
+  "fair_fight": {
+    "varied_side": 0,
+    "count": 4,
+    "win_prob_at_count": 0.49,
+    "message": "A fair fight needs 4 dragons against 1 main battle tank."
+  },
+  "challenger": {
+    "entity": "African elephant",
+    "tested_win_prob": 0.0,
+    "reason": "African elephant would be a clear underdog against Main battle tank."
+  },
+  "scripts": [
+    {
+      "kind": "intro",
+      "lines": [
+        {
+          "speaker": "announcer",
+          "text": "Good evening, fight fans, and welcome to Battle Royale!",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "In the red corner: Dragon!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Dragon, according to legend, weighs in at an estimated 6,000 kilograms (13,228 pounds) and tops out at an estimated 19.7 km/h. Legend numbers are estimates.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "And in the blue corner: Main battle tank!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Main battle tank weighs in at 70,000 kilograms (154,323 pounds) and tops out at 65 km/h.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "The science is in. The simulation has spoken. Let's fight!",
+          "at_event": null
+        }
+      ],
+      "fallback": true
+    },
+    {
+      "kind": "play_by_play",
+      "lines": [
+        {
+          "speaker": "announcer",
+          "text": "Dragon closes in. Here we go!",
+          "at_event": 0
+        },
+        {
+          "speaker": "announcer",
+          "text": "Dragon swings and misses: blast misses.",
+          "at_event": 3
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Dragon connects: blast lands! That one landed!",
+          "at_event": 6
+        },
+        {
+          "speaker": "announcer",
+          "text": "Dragon connects: blast lands! That one landed!",
+          "at_event": 9
+        },
+        {
+          "speaker": "announcer",
+          "text": "Dragon swings and misses: blast misses.",
+          "at_event": 13
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Dragon connects: blast lands! That one landed!",
+          "at_event": 16
+        },
+        {
+          "speaker": "announcer",
+          "text": "Dragon connects: blast lands! That one landed!",
+          "at_event": 19
+        },
+        {
+          "speaker": "announcer",
+          "text": "Dragon connects: blast lands! That one landed!",
+          "at_event": 23
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Dragon swings and misses: blast misses.",
+          "at_event": 26
+        },
+        {
+          "speaker": "announcer",
+          "text": "Main battle tank connects: ram lands! That one landed!",
+          "at_event": 29
+        },
+        {
+          "speaker": "announcer",
+          "text": "Dragon connects: blast lands! That one landed!",
+          "at_event": 33
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Dragon swings and misses: blast misses.",
+          "at_event": 36
+        },
+        {
+          "speaker": "announcer",
+          "text": "Dragon swings and misses: blast misses.",
+          "at_event": 39
+        },
+        {
+          "speaker": "announcer",
+          "text": "Dragon swings and misses: blast misses.",
+          "at_event": 42
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Main battle tank connects: ram lands! That one landed!",
+          "at_event": 46
+        },
+        {
+          "speaker": "announcer",
+          "text": "Main battle tank connects: ram lands! That one landed!",
+          "at_event": 49
+        },
+        {
+          "speaker": "announcer",
+          "text": "Main battle tank connects: ram lands! That one landed!",
+          "at_event": 52
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Dragon backs off to catch a breath.",
+          "at_event": 62
+        },
+        {
+          "speaker": "announcer",
+          "text": "Dragon goes down! That is a knockout!",
+          "at_event": 64
+        },
+        {
+          "speaker": "announcer",
+          "text": "And that is the fight!",
+          "at_event": 65
+        }
+      ],
+      "fallback": true
+    },
+    {
+      "kind": "outro",
+      "lines": [
+        {
+          "speaker": "announcer",
+          "text": "Your winner: Main battle tank!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Main battle tank won 100% of 1,000 simulated fights.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "The deciding factor: sheer mass.",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Want a fair fight? About 4 dragons make it a coin flip, winning 49% of the time.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "That's all from the arena. Good night, everybody!",
+          "at_event": null
+        }
+      ],
+      "fallback": true
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "sprite-dragon-v1",
+      "kind": "sprite",
+      "url": "/media/sprites/dragon-v1.png",
+      "prompt_hash": "85e67cd587929c4293830bffbcf315d4c18025f7c1a51a59ec44b230077f2dd9",
+      "fallback": false,
+      "script_kind": null
+    },
+    {
+      "asset_id": "sprite-main-battle-tank-v1",
+      "kind": "sprite",
+      "url": "/media/sprites/main-battle-tank-v1.png",
+      "prompt_hash": "d3c1f75f4a23a993d580a474eec44994f5dad37103dc5d957c103b6651ffb66d",
+      "fallback": false,
+      "script_kind": null
+    },
+    {
+      "asset_id": "battlefield-open_field-v1",
+      "kind": "battlefield",
+      "url": "/media/battlefields/open_field-v1.png",
+      "prompt_hash": "063606576aa5441f58e2c8783f63b087c162d48b971ec4b77d94a0cec9140022",
+      "fallback": false,
+      "script_kind": null
+    }
+  ],
+  "stages": [
+    {
+      "stage": "intake",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "research",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "simulate",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "summary",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "challenger",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "script",
+      "status": "fallback",
+      "detail": "Some of the commentary used the template script this time."
+    },
+    {
+      "stage": "audio",
+      "status": "fallback",
+      "detail": "Captions only this time, no announcer voice."
+    },
+    {
+      "stage": "music",
+      "status": "fallback",
+      "detail": "No music this time."
+    },
+    {
+      "stage": "images",
+      "status": "done",
+      "detail": null
+    }
+  ],
+  "status": "done"
+}

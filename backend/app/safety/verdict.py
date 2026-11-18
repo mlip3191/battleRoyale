@@ -43,7 +43,7 @@ MESSAGES: dict[str, str] = {
         "someone you trust or a local crisis line. We'll be right here when you want a goose fight."
     ),
     "copyrighted_character": (
-        "Named characters belong to their creators, so they can't step in. Try a creature type "
+        "Named characters, from stories or from myth, sit this one out. Try a creature type "
         'instead, like "a dragon" or "a giant robot".'
     ),
     "deity": 'Gods are above our pay grade. Try a mythical creature, like "a griffin", instead.',

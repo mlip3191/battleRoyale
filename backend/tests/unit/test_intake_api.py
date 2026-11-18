@@ -65,6 +65,12 @@ REPLIES: dict[str, Any] = {
     "grizzly bear vs goose": {
         "fighters": [side("grizzly bear", "grizzly bear"), side("goose", "goose")]
     },
+    # One side typed, and the live model asks about its kind, not its opponent (#360).
+    "a bear": {
+        "fighters": [side("a bear", "bear")],
+        "needs_clarification": {"question": "Which type of bear?", "options": ["Grizzly", "Polar"]},
+    },
+    "a grizzly bear": {"fighters": [side("a grizzly bear", "grizzly bear")]},
 }
 
 
@@ -156,7 +162,9 @@ def test_still_vague_after_the_answer_adds_an_assumption_and_is_ok(
     pending_id = ask_which_bear(client)
     body = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "the big one"}).json()
     assert body["status"] == "ok"
-    assert COMMON_KIND_NOTE in body["matchup"]["assumptions"]
+    # #168: the note names the fighter code picks for a bare kind, instead of a vague promise.
+    assert "Not sure which bear, so we used the grizzly bear." in body["matchup"]["assumptions"]
+    assert COMMON_KIND_NOTE not in body["matchup"]["assumptions"]
     assert body["matchup"]["fighters"][0]["entity"] == "bear"
     # A second question is never asked: no question, no new pending row, one re-parse only.
     assert body["question"] is None and body["options"] == [] and body["pending_id"] is None
@@ -301,6 +309,46 @@ def test_merge_answer_splices_an_offered_variant_before_the_asked_fighter(
     original: str, answer: str, question: str, options: list[str], merged: str
 ) -> None:
     assert merge_answer(original, answer, question, options) == merged
+
+
+# With one side typed, an offered variant names that fighter; an opponent question, or a typed
+# answer, still becomes the other side (#360).
+@pytest.mark.parametrize(
+    ("original", "answer", "question", "options", "merged"),
+    [
+        ("a bear", "Grizzly", "Which type of bear are we looking at?", BEARS, "a grizzly bear"),
+        ("3 bears", "Polar", "What type of bear is fighting?", BEARS, "3 polar bears"),
+        ("a wolf", "Bear", "Who does the wolf fight?", ["Bear", "Eagle"], "a wolf vs Bear"),
+        # Live wordings seen in the #360 check:
+        (
+            "a bear",
+            "Grizzly",
+            "Which species of bear would you like to fight?",
+            BEARS,
+            "a grizzly bear",
+        ),
+        ("a wolf", "Bear", "Which animal should the wolf fight?", ["Bear"], "a wolf vs Bear"),
+        ("a bear", "Wolf", "What kind of opponent should it face?", ["Wolf"], "a bear vs Wolf"),
+        ("a bear", "Grizzly bear", "Which bear?", ["Grizzly bear"], "a Grizzly bear"),
+        ("a bear", "Gray wolf", "Who should a bear fight?", ["Gray wolf"], "a bear vs Gray wolf"),
+        ("a bear", "a goose", "Which bear?", BEARS, "a bear vs a goose"),
+        ("a bear", "Polar", "", [], "a bear vs Polar"),
+    ],
+)
+def test_merge_answer_with_one_side_names_that_fighter_unless_asked_for_an_opponent(
+    original: str, answer: str, question: str, options: list[str], merged: str
+) -> None:
+    assert merge_answer(original, answer, question, options) == merged
+
+
+def test_a_variant_answer_to_one_side_asks_to_start_again_not_a_503(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    pending_id = client.post("/api/intake", json={"text": "a bear"}).json()["pending_id"]
+    response = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "Grizzly"})
+    assert chat.texts == ["a bear", "a grizzly bear"]
+    assert response.status_code == 200
+    assert response.json()["status"] == "blocked" and response.json()["message"] == START_OVER
 
 
 def test_a_one_word_option_answer_names_the_fighter(client: TestClient, chat: ScriptedChat) -> None:

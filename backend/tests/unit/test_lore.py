@@ -8,7 +8,15 @@ import pytest
 
 from app.models.stats import Ability, StatName
 from app.providers.live.http import ProviderError
-from app.research.lore import NONSENSE, UNAVAILABLE, article_text, heads_in_quote, lore_for
+from app.research.lore import (
+    GIANT_ANALOGS,
+    NONSENSE,
+    UNAVAILABLE,
+    article_text,
+    heads_in_quote,
+    lore_for,
+    real_fighters,
+)
 from app.research.mythical import build_mythical_sheet
 
 QUOTE = "The chimera was a monstrous fire-breathing hybrid creature, part lion and part goat."
@@ -121,3 +129,78 @@ def test_the_mock_chat_finds_nothing_so_mock_mode_blocks() -> None:
     from app.providers.mock.text import MockChatLLM
 
     assert run(MockChatLLM()) == NONSENSE
+
+
+@pytest.mark.parametrize(
+    ("heads", "quote", "ok"),
+    [
+        (3, "Some versions describe three heads: a lion, a goat and a snake.", True),
+        (9, "The nine-headed serpent lived in the lake.", True),
+        (3, "It had 3 heads.", True),
+        (3, "This is one of three versions of the story; it had heads like a lion.", False),
+        (4, "Some versions describe three heads.", False),
+        (3, "It lived past three headlands to the north.", False),
+    ],
+)
+def test_the_number_must_name_the_heads(heads: int, quote: str, ok: bool) -> None:
+    assert heads_in_quote(heads, quote) is ok
+
+
+# --- #391: powers and a giant body must be backed by the quote ----------------------------------
+
+COCKATRICE = (
+    "A cockatrice is a mythical beast, essentially a two-legged dragon, wyvern, or serpent-like "
+    "creature with a rooster's head."
+)
+
+
+def cockatrice_article(quote: str = COCKATRICE) -> str:
+    return f"<html><body><p>{quote} It is said to turn people to stone.</p></body></html>"
+
+
+def test_a_cockatrice_quote_yields_no_t_rex_and_no_fire_breath() -> None:
+    reply = answer(
+        body_analog="Tyrannosaurus rex", abilities=["flight", "breath_weapon"], quote=COCKATRICE
+    )
+    outcome = run(FakeChat(reply), article=cockatrice_article(), name="cockatrice")
+    assert outcome == NONSENSE  # a giant body the quote never calls big
+
+
+def test_powers_the_quote_does_not_back_are_dropped() -> None:
+    reply = answer(body_analog="Goose", abilities=["flight", "breath_weapon"], quote=COCKATRICE)
+    outcome = run(FakeChat(reply), article=cockatrice_article(), name="cockatrice")
+    assert outcome.creature is not None
+    assert outcome.creature.lore.body_analog == "Goose"
+    assert outcome.creature.lore.abilities == []
+
+
+@pytest.mark.parametrize(
+    ("ability", "quote"),
+    [
+        (Ability.FLIGHT, "The hippogriff is a winged creature, half horse and half eagle."),
+        (Ability.BREATH_WEAPON, "The beast breathes fire at anyone who comes near."),
+        (Ability.REGENERATION, "The phoenix is reborn from the ashes of its predecessor."),
+        (Ability.EXTRA_HEADS, "The serpent was many-headed and lived in a swamp."),
+    ],
+)
+def test_a_power_is_kept_when_its_word_is_in_the_quote(ability: Ability, quote: str) -> None:
+    reply = answer(abilities=[ability.value], quote=quote)
+    outcome = run(FakeChat(reply), article=cockatrice_article(quote), name="legend")
+    assert outcome.creature is not None and outcome.creature.lore.abilities == [ability]
+
+
+def test_a_giant_body_is_accepted_when_the_quote_says_it_is_big() -> None:
+    quote = "The wyvern is a huge two-legged dragon with a barbed tail."
+    reply = answer(body_analog="Tyrannosaurus rex", abilities=[], quote=quote)
+    outcome = run(FakeChat(reply), article=cockatrice_article(quote), name="wyvern")
+    assert outcome.creature is not None
+    assert outcome.creature.lore.body_analog == "Tyrannosaurus rex"
+
+
+def test_a_giant_size_analog_also_needs_the_quote_to_say_big() -> None:
+    reply = answer(size_analog="African elephant", abilities=[], quote=COCKATRICE)
+    assert run(FakeChat(reply), article=cockatrice_article(), name="cockatrice") == NONSENSE
+
+
+def test_every_giant_analog_is_a_real_fighter() -> None:
+    assert GIANT_ANALOGS <= set(real_fighters().values())

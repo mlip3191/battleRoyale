@@ -146,6 +146,19 @@
               }
             }
           },
+          "403": {
+            "description": "Blocked by the safety gate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntakeResult"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The safety check is unavailable; no battle was started."
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -747,7 +760,7 @@
           },
           "group_size": {
             "default": 1,
-            "description": "How many fighters acted together (more than 1 for swarm events).",
+            "description": "How many fighters a group event (`actor` None) covers, which can be 1; otherwise 1.",
             "title": "Group Size",
             "type": "integer"
           },

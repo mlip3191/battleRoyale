@@ -33,6 +33,9 @@ export const EXAMPLES = [
   "a saltwater crocodile vs a horse in the water",
 ];
 
+// The text box's hint: a size swap between two seed fighters, so typing it works (#361).
+export const PLACEHOLDER = "a horse-sized duck vs an african lion";
+
 export const TERRAINS = {
   arena: "Arena",
   open_field: "Open field",
@@ -174,7 +177,7 @@ export default function Home() {
           ref={box}
           className={styles.box}
           value={text}
-          placeholder="a horse-sized duck vs a lion"
+          placeholder={PLACEHOLDER}
           aria-describedby="matchup-hint"
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {

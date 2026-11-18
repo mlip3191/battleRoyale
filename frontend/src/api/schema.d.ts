@@ -362,7 +362,7 @@ export interface components {
             target: number | null;
             /**
              * Group Size
-             * @description How many fighters acted together (more than 1 for swarm events).
+             * @description How many fighters a group event (`actor` None) covers, which can be 1; otherwise 1.
              * @default 1
              */
             group_size: number;
@@ -1056,6 +1056,15 @@ export interface operations {
                     "application/json": components["schemas"]["BattleCreated"];
                 };
             };
+            /** @description Blocked by the safety gate. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntakeResult"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1064,6 +1073,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description The safety check is unavailable; no battle was started. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
