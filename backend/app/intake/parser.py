@@ -45,6 +45,7 @@ PROMPT_NAME = "intake_parse"
 PROMPT_PATH = Path(__file__).parents[2] / "prompts" / f"{PROMPT_NAME}.md"
 MAX_TEXT_CHARS = 500
 # Past this length, a read that fails or times out asks for a shorter matchup (#362).
+# 200 is a heuristic, not a measured limit: about twice a wordy one-sentence matchup.
 LONG_TEXT_CHARS = 200
 LONG_TEXT_QUESTION = "That's a long one! Can you sum up the matchup in one sentence?"
 MAX_VARIANT_CHARS = 60

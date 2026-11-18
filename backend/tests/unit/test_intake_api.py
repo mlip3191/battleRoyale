@@ -458,6 +458,23 @@ def test_a_short_matchup_that_fails_still_says_try_again(
     assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
 
 
+# Pin the cutoff: exactly LONG_TEXT_CHARS still retries; one more character asks for less.
+@pytest.mark.parametrize(
+    ("length", "asks_shorter"), [(LONG_TEXT_CHARS, False), (LONG_TEXT_CHARS + 1, True)]
+)
+def test_the_long_matchup_cutoff_is_exact(
+    client: TestClient, chat: ScriptedChat, length: int, asks_shorter: bool
+) -> None:
+    chat.down = True
+    text = ("a grizzly bear vs a gray wolf " * 10)[:length].rstrip().ljust(length, "x")
+    assert len(text.strip()) == length
+    response = client.post("/api/intake", json={"text": text})
+    if asks_shorter:
+        assert response.status_code == 200 and response.json()["question"] == LONG_TEXT_QUESTION
+    else:
+        assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
+
+
 def test_a_restored_question_keeps_its_id_and_age(db_path: Path) -> None:
     connection = connect(db_path)
     apply_migrations(connection)

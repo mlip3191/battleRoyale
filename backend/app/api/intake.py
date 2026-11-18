@@ -72,8 +72,8 @@ async def within_deadline[T](step: Awaitable[T]) -> T:
 async def start_intake(body: IntakeRequest, db: Db, chat: Chat) -> IntakeResult:
     try:
         result = await within_deadline(parse_matchup(body.text, chat=chat))
-    except HTTPException:
-        if len(body.text.strip()) > LONG_TEXT_CHARS:
+    except HTTPException as error:
+        if error.status_code == 503 and len(body.text.strip()) > LONG_TEXT_CHARS:
             return too_long()  # the same long text would fail again: ask for less (#362)
         raise
     if result.status != "clarify" or not result.question:
