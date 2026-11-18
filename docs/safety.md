@@ -281,12 +281,19 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   not a keeper case.
 - **Deity kinds are allowed; named deities block (#400 review, D-38).** "a god", "an angel", "a
   demon", "a valkyrie" and "a titan" are kinds (cases my-09 to my-13). Wikidata now blocks only
-  named deity individuals ("deity" is `individuals_only`); the classifier decides kinds, and its
-  prompt says generic kinds are allowed while "Zeus", "Thor" or "God" stay deity. On the live
-  probe of 2026-11-17, before this change, "a valkyrie" was blocked at Wikidata (its kind item
-  reaches "deity", which then applied to kinds) and "a god" was blocked by the classifier (the
-  prompt clarification is meant to fix that). A second live probe the same day, after those
-  fixes, allowed "a god" and "a valkyrie" as well as the angel, demon and titan.
+  named deity individuals ("deity" is `individuals_only`); the classifier decides kinds. The
+  rule: a generic kind of supernatural being is allowed; a named deity ("Zeus", "Allah",
+  "Buddha", capitalized "God") and a human religious figure ("a prophet", "a saint", "the Pope")
+  stay blocked as deity (cases dt-04 to dt-08). On the live probe of 2026-11-17, before this
+  change, "a valkyrie" was blocked at Wikidata (its kind item reaches "deity", which then
+  applied to kinds) and "a god" was blocked by the classifier. A second live probe the same day,
+  after those fixes, allowed "a god" and "a valkyrie" as well as the angel, demon and titan.
+- **Plain human religious roles are allowed (D-65).** "a monk", "a priest", "a nun", "a rabbi",
+  "an imam" and "a shaman" are generic human types (cases ut-05 to ut-10); human religious
+  figures ("a prophet", "a saint", "the Pope") stay blocked as deity.
+- **A named deity with a stray "subclass of" relies on the classifier.** Because "deity" is
+  `individuals_only`, a named deity that Wikidata wrongly gives a "subclass of" claim counts as a
+  kind and passes the Wikidata layer, the same as a named character; the classifier blocks it.
 - **The attack-planning rule is a word list.** It catches clear phrasings only; the classifier
   covers the rest.
 - **A fighter subject is still read only in a few shapes.** "how a wolf would kill", "step by

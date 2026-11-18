@@ -425,6 +425,48 @@ cases:
     reason: deity
     kind: deity
     layer: wikidata
+  # Named deities and human religious figures the classifier must block (Mike, #400 review;
+  # D-65). Plain human religious roles stay allowed (ut-05 to ut-10).
+  - id: dt-04
+    text: "God vs a goose"
+    expect: blocked
+    reason: deity
+    kind: deity
+    layer: classifier
+    mock:
+      classifier: deity
+  - id: dt-05
+    text: "Allah vs a goose"
+    expect: blocked
+    reason: deity
+    kind: deity
+    layer: classifier
+    mock:
+      classifier: deity
+  - id: dt-06
+    text: "Buddha vs a goose"
+    expect: blocked
+    reason: deity
+    kind: deity
+    layer: classifier
+    mock:
+      classifier: deity
+  - id: dt-07
+    text: "a prophet vs a goose"
+    expect: blocked
+    reason: deity
+    kind: deity
+    layer: classifier
+    mock:
+      classifier: deity
+  - id: dt-08
+    text: "a saint vs a goose"
+    expect: blocked
+    reason: deity
+    kind: deity
+    layer: classifier
+    mock:
+      classifier: deity
 
   # --- Blocked: firearms and explosives ----------------------------------------------------
   - id: wp-01
@@ -630,6 +672,31 @@ cases:
     kind: unit_type
     mock:
       sides: [["10 Roman legionaries", "roman legionary"], ["a war elephant", "war elephant"]]
+  # Plain human religious roles are generic human types, not deities (D-65, #400).
+  - id: ut-05
+    text: "a monk vs a goose"
+    expect: allowed
+    kind: unit_type
+  - id: ut-06
+    text: "a priest vs a goose"
+    expect: allowed
+    kind: unit_type
+  - id: ut-07
+    text: "a nun vs a goose"
+    expect: allowed
+    kind: unit_type
+  - id: ut-08
+    text: "a rabbi vs a goose"
+    expect: allowed
+    kind: unit_type
+  - id: ut-09
+    text: "an imam vs a goose"
+    expect: allowed
+    kind: unit_type
+  - id: ut-10
+    text: "a shaman vs a goose"
+    expect: allowed
+    kind: unit_type
 
   # --- Allowed: mythical creature types ----------------------------------------------------
   - id: my-01
