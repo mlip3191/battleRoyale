@@ -113,7 +113,9 @@ landform. "character" is `individuals_only` too (#340, D-38, D-60): a named char
 individual, so "a centaur" and "a harpy" (kinds that Wikidata files under mythological Greek
 character → mythical character → character) are allowed, while Cerberus and Medusa (the same
 path, but individuals) still block. Kinds from a franchise still block through "fictional
-species" (Pikachu, Dalek, Wookiee).
+species" (Pikachu, Dalek, Wookiee). "deity" is `individuals_only` as well (#400 review, D-38:
+named deities only): Zeus, Thor and Anubis still block, while kinds such as "a valkyrie" pass
+this layer and are left to the classifier.
 
 **Proper names:** a name reads as a proper name, judged on the user's casing, when it has no
 article or count ("Napoleon"), or when a word after "a", "the" or a number is capitalized ("a
@@ -258,7 +260,21 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   character) now passes this layer and is left to the classifier. Named individuals with no
   "subclass of" (Cerberus, Medusa, Mickey Mouse) are unchanged. Live, bare "Cerberus" and
   "Medusa" pick other same-named items (for "Medusa", a ship), so the classifier blocks those cases
-  (cc-05, cc-06), as before.
+  (cc-05, cc-06), as before. A named character that carries a stray "subclass of" claim now
+  counts as a kind here, so it relies on the classifier (or on "fictional species" when it is a
+  franchise kind). Kryptonian and Goomba are newly blocked here through "fictional species".
+- **Franchise kinds left to the classifier.** "a stormtrooper" and "a Minion" pass the Wikidata
+  layer; the live classifier blocked both on 2026-11-17 (cases cc-07, cc-08). Lowercase "a
+  minion" was also blocked by the classifier that day; it may mean a generic underling, so it is
+  not a keeper case.
+- **Deity kinds are allowed; named deities block (#400 review, D-38).** "a god", "an angel", "a
+  demon", "a valkyrie" and "a titan" are kinds (cases my-09 to my-13). Wikidata now blocks only
+  named deity individuals ("deity" is `individuals_only`); the classifier decides kinds, and its
+  prompt says generic kinds are allowed while "Zeus", "Thor" or "God" stay deity. On the live
+  probe of 2026-11-17, before this change, "a valkyrie" was blocked at Wikidata (its kind item
+  reaches "deity", which then applied to kinds) and "a god" was blocked by the classifier (the
+  prompt clarification is meant to fix that). A second live probe the same day, after those
+  fixes, allowed "a god" and "a valkyrie" as well as the angel, demon and titan.
 - **The attack-planning rule is a word list.** It catches clear phrasings only; the classifier
   covers the rest.
 - **"step by step: a wolf would kill a deer at the airport" still blocks as `other`.** The

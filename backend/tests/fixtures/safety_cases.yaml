@@ -386,6 +386,25 @@ cases:
     layer: classifier
     mock:
       classifier: copyrighted_character
+  # Franchise kinds that pass the Wikidata layer; the live classifier blocked both on the #400
+  # probe of 2026-11-17. (Lowercase "a minion" was blocked too, but may be a generic underling,
+  # so it is not a keeper.)
+  - id: cc-07
+    text: "a stormtrooper vs a goose"
+    expect: blocked
+    reason: copyrighted_character
+    kind: copyrighted_character
+    layer: classifier
+    mock:
+      classifier: copyrighted_character
+  - id: cc-08
+    text: "a Minion vs a goose"
+    expect: blocked
+    reason: copyrighted_character
+    kind: copyrighted_character
+    layer: classifier
+    mock:
+      classifier: copyrighted_character
 
   # --- Blocked: deities --------------------------------------------------------------------
   - id: dt-01
@@ -639,6 +658,29 @@ cases:
   # whose classes reach "character"), so my-05, my-06 and this case check the fix.
   - id: my-08
     text: "harpies vs 2 centaurs"
+    expect: allowed
+    kind: mythical
+  # Deity kinds are allowed; D-38 blocks named deities only (Mike, #400 review). On the #400 live
+  # probe of 2026-11-17 the angel, demon and titan passed; "a valkyrie" was blocked at Wikidata
+  # (deity then applied to kinds) and "a god" by the classifier, both fixed in #400.
+  - id: my-09
+    text: "an angel vs a goose"
+    expect: allowed
+    kind: mythical
+  - id: my-10
+    text: "a demon vs a goose"
+    expect: allowed
+    kind: mythical
+  - id: my-11
+    text: "a valkyrie vs a goose"
+    expect: allowed
+    kind: mythical
+  - id: my-12
+    text: "a titan vs a goose"
+    expect: allowed
+    kind: mythical
+  - id: my-13
+    text: "a god vs a goose"
     expect: allowed
     kind: mythical
 

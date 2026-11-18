@@ -25,6 +25,7 @@ from app.safety.wikidata import (
 )
 
 CHARACTER, FICTIONAL_SPECIES, GEOGRAPHIC_LOCATION = "Q95074", "Q21192438", "Q2221906"
+DEITY = "Q178885"
 CENTAUR, HARPIES, CERBERUS, MEDUSA, PIKACHU = "Q83203", "Q181360", "Q83496", "Q160730", "Q9351"
 
 
@@ -46,8 +47,9 @@ class OnlyItem(MockWikidataLookup):
 
 def test_character_counts_only_for_individuals() -> None:
     class_map = load_class_map()
-    assert class_map.version == 11
-    assert class_map.individuals_only == {CHARACTER, GEOGRAPHIC_LOCATION}
+    assert class_map.version >= 11  # later bumps keep it at 11 or above
+    assert class_map.individuals_only == {CHARACTER, GEOGRAPHIC_LOCATION, DEITY}
+    assert class_map.reasons[DEITY] == "deity"
     assert class_map.reasons[CHARACTER] == "copyrighted_character"
     assert class_map.reasons[FICTIONAL_SPECIES] == "copyrighted_character"
     assert FICTIONAL_SPECIES not in class_map.individuals_only
@@ -126,6 +128,15 @@ async def test_named_fictional_characters_still_block(cache: WikidataCache, name
         (EntityClasses((), ("MYTH",)), None),
         # A kind reaching "fictional species": blocked (Pikachu, Dalek).
         (EntityClasses((), ("SPECIES",)), "copyrighted_character"),
+        # An individual reaching "deity": blocked (Zeus, Thor, Anubis).
+        (EntityClasses(("GODS",)), "deity"),
+        # A kind reaching "deity": allowed (live "valkyrie"; D-38 blocks named deities only).
+        (EntityClasses((), ("GODS",)), None),
+        # A kind reaching both "character" and "deity": allowed (#400 review, PM decision).
+        (EntityClasses((), ("MYTH", "GODS")), None),
+        # An individual reaching both: still blocked (character is listed first in the file, so
+        # it gives the reason).
+        (EntityClasses(("MYTH", "GODS")), "copyrighted_character"),
     ],
 )
 async def test_character_and_fictional_species_rules(
@@ -134,6 +145,7 @@ async def test_character_and_fictional_species_rules(
     parents = {
         "MYTH": EntityClasses((), (CHARACTER,)),
         "SPECIES": EntityClasses((), (FICTIONAL_SPECIES,)),
+        "GODS": EntityClasses((), (DEITY,)),
     }
 
     class Ranked:

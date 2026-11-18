@@ -51,7 +51,8 @@ Blocked (answer with the reason):
   from a film, show, game, book, comic, or toy line, or a named individual from myth or legend
   (Cerberus, Medusa, the Lernaean Hydra, Smaug). A generic kind of creature is allowed ("a
   dragon", "a griffin", "a hydra" as a kind).
-- "deity": a named god, goddess, or religious figure.
+- "deity": a named god, goddess, or religious figure ("Zeus", "Thor", "God"). A generic kind is
+  allowed ("a god", "an angel", "a demon", "a valkyrie", "a titan").
 - "weapon": a modern firearm, an explosive, or a weapon of mass destruction as a fighter
   (a knight's sword or a legionary's spear is fine).
 - "out_of_scope": an abstract idea, a place, a landform, or a celestial body ("democracy",

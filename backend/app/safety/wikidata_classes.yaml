@@ -4,7 +4,7 @@
 # one of these classes, directly or up to two P279 levels higher. instance_only classes match
 # only the entity's own P31 (so the class "Roman legionary" is never a real person).
 # individuals_only classes match only an item that is not a kind of thing (see kind_matches):
-# geographic location and character.
+# geographic location, character and deity.
 #
 # Bump classes_version whenever this list changes: cached lookups from an older version are
 # ignored, so the change takes effect at once.
@@ -40,7 +40,9 @@
 # "the Cure", "the Animals" block), which changes how cached rows block.
 # Version 11 (#340): character is individuals_only, so kinds of mythical creature ("a centaur",
 # "a harpy") are allowed while named individuals (Cerberus, Medusa) still block; fictional
-# species blocks kinds from a franchise (Pikachu, Dalek). Cached rows block differently.
+# species blocks kinds from a franchise (Pikachu, Dalek). deity is individuals_only too (#400
+# review): named deities (Zeus, Thor) still block, kinds ("a valkyrie") are left to the
+# classifier. Cached rows block differently.
 classes_version: 11
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
@@ -275,9 +277,13 @@ classes:
   - qid: Q21192438
     label: fictional species
     reason: copyrighted_character
+  # deity is individuals_only (Mike, #400 review; D-38 blocks named deities only): Zeus, Thor and
+  # Anubis are individuals (no P279) and still block, while kinds such as "a valkyrie" (live
+  # Q131087 reaches deity) stay allowed here and are left to the classifier.
   - qid: Q178885
     label: deity
     reason: deity
+    individuals_only: true
   - qid: Q12796
     label: firearm
     reason: weapon

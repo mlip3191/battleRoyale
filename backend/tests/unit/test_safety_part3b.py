@@ -31,7 +31,7 @@ from app.safety.wikidata import (
 )
 
 GEOGRAPHIC_LOCATION, LANDFORM, TAXON, FILM, HUMAN = "Q2221906", "Q271669", "Q16521", "Q11424", "Q5"
-CHARACTER, FIREARM = "Q95074", "Q12796"
+CHARACTER, FIREARM, DEITY = "Q95074", "Q12796", "Q178885"
 
 
 @pytest.fixture
@@ -178,10 +178,11 @@ async def test_injected_text_does_not_turn_a_moose_into_a_person(cache: Wikidata
 # --- Issue 2: "a vending machine" ------------------------------------------------------------
 
 
-def test_geographic_location_blocks_only_individuals() -> None:
+def test_individuals_only_classes_are_place_character_and_deity() -> None:
     class_map = load_class_map()
     assert class_map.version >= 6
-    assert class_map.individuals_only == {GEOGRAPHIC_LOCATION, CHARACTER}  # character: #340
+    # character: #340; deity: #400 review (kinds such as "a valkyrie" stay allowed, D-38).
+    assert class_map.individuals_only == {GEOGRAPHIC_LOCATION, CHARACTER, DEITY}
     assert class_map.reasons[GEOGRAPHIC_LOCATION] == "out_of_scope"
 
 
