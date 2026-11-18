@@ -54,7 +54,7 @@ The run's traceability column comes from G06's checker (`scripts/trace_report.py
 - **Count ranges are assumptions, not measurements.** No source measures how many house cats equal a wolf. The ranges come from rough size ratios and are deliberately wide (for example `cnt-04` spans 20 to 300), so they catch gross errors in the engine, not small ones. A pass here is weak evidence.
 - **Fighters without hand-verified sheets.** Only 15 fighters get hand-verified sheets (G05). Matchups using the others can only be scored with research sheets or skipped.
 - **The set is small.** With 5 obvious cases held out, one miss moves that score by 20 points.
-- **No swarm or edge-case coverage.** No matchup puts more than 4 fighters on a side apart from the count-case ranges, so the set cannot judge swarm mode or `SWARM_THRESHOLD`. It also has no mirror matches, no draws, no ranged fighters, and never uses the water, urban or mountain terrain. Ten seed fighters (chimpanzee, great white shark, army ant, honey bee, T. rex, triceratops, medieval knight, samurai, pickup truck, saguaro cactus) are not used. The edge-case set below covers these.
+- **No swarm or edge-case coverage.** No matchup puts more than 4 fighters on a side apart from the count-case ranges, so the set cannot judge swarm mode or `SWARM_THRESHOLD`. It also has no mirror matches, no draws, no ranged fighters, and never uses the water, urban or mountain terrain. Ten seed fighters (chimpanzee, great white shark, army ant, honey bee, T. rex, triceratops, medieval knight, samurai, pickup truck, saguaro cactus) are not used. The edge-case set below covers most of these; since #427 it no longer uses the chimpanzee, army ant or honey bee, whose swarms won 0% and so checked nothing (a venomous swarm of 200 or fewer is covered by unit tests instead).
 
 ## Edge-case set
 
@@ -66,7 +66,7 @@ The run's traceability column comes from G06's checker (`scripts/trace_report.py
 
 | Group | Cases | What it checks |
 |---|---|---|
-| `swarm` | army ants (150, 300) vs a house cat; honey bees (150, 300) vs a chimpanzee | the same matchup on both sides of 200 per side |
+| `swarm` | Roman legionaries (150, 300) vs a lion; gorillas (150, 300) vs an elephant | the same matchup on both sides of 200 per side |
 | `showcase` | the five PRODUCT_SPEC §9 battles | the demo still behaves as planned |
 | `mirror` | samurai vs samurai; gray wolf vs gray wolf | no side bias |
 | `draw` | saguaro cactus vs toaster | a fight nobody can win |
