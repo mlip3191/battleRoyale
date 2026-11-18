@@ -87,6 +87,11 @@ The rules behind the table:
 
 Code applies this table, never a model: `DEFAULT_KINDS` in `backend/app/research/seed_fighters.py` copies it, and a test keeps the two identical. A bare kind (or its plural, such as "bears") becomes its default only when nothing more exact was given: an exact name, a kind ("polar bear"), or raw words that name a seed fighter ("6 gray wolves") always win. The battle's assumptions name the pick, for example "Not sure which bear, so we used the grizzly bear." (#168).
 
+Two details of the lookup (#415):
+
+- **The user's own words count.** Only articles, numbers, group words ("a pack of") and size words ("big", "small") may stand around a bare kind. "A bear", "6 bears" and "a big bear" get the grizzly and the note; "a polar bear" gets no default and no "Not sure which" note, even when the model reads it as the entity "bear" with no variant. It is then an unknown fighter, like any other name that is not on the seed list.
+- **Common names reach their seed fighter.** Besides the spellings in `_ALIASES` (grey, wolves, ducks, mice, cacti), `_NAME_ALIASES` maps a whole common name: hippo and hippos to `hippopotamus`; cobra and cobras to `king-cobra`; t-rex, t rex, T. Rex, trex and tyrannosaurus to `tyrannosaurus-rex`. These are matched as the whole name, so the full "king cobra" still works. Add a name there when a user's usual word is not the seed fighter's name or id.
+
 ## The seven physical stats
 
 These are sourced or labeled estimates. For each one we use the first of these that exists: a hand-verified seed sheet, a Wikidata fact, a number extracted with a verified quote, a value derived by code (the note names the formula), then the category default.

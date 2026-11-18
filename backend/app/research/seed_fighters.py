@@ -50,6 +50,33 @@ _ALIASES = {
 }
 
 
+# Common names that are a seed fighter's id, not one of its words (#415). They are matched as the
+# whole name: a word-by-word alias would turn "king cobra" into "king-king-cobra".
+_NAME_ALIASES = {
+    "hippo": "hippopotamus",
+    "hippos": "hippopotamus",
+    "cobra": "king-cobra",
+    "cobras": "king-cobra",
+    "t-rex": "tyrannosaurus-rex",
+    "t-rexes": "tyrannosaurus-rex",
+    "trex": "tyrannosaurus-rex",
+    "trexes": "tyrannosaurus-rex",
+    "tyrannosaurus": "tyrannosaurus-rex",
+}
+
+
+# Words that may stand around a bare kind in the user's own phrase without naming a kind: articles,
+# numbers, group words and size words. "a big bear" is still just a bear; "a polar bear" is not.
+_FILLER_WORDS = {
+    *("a", "an", "the", "some", "many", "few", "several", "of", "pack", "herd", "flock"),
+    *("swarm", "school", "group", "pair", "couple", "dozen", "hundred", "thousand", "million"),
+    *("big", "small", "large", "little", "huge", "giant", "tiny", "angry", "young", "old"),
+    *("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"),
+    *("eleven", "twelve", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty"),
+    *("ninety",),
+}
+
+
 # When a user names a kind without saying which one, code picks the most familiar seed fighter
 # of that kind (#168). This copies the "Default variants" table in docs/research.md, and a test
 # keeps the two identical, so the choice is a written rule, never a model's guess.
@@ -73,9 +100,10 @@ DEFAULT_KINDS: dict[str, str] = {
 
 
 # The default fighter's id for a bare kind ("bear", "bears", "wolves"), or None. Only when no
-# kind was given: "polar bear", or "bear" with a variant, is never replaced by a default.
-def default_kind(entity: str, variant: str | None = None) -> str | None:
-    if (variant or "").strip():
+# kind was given: "polar bear", "bear" with a variant, or "bear" with "a polar bear" in the user's
+# own words (`raw`), is never replaced by a default (#415).
+def default_kind(entity: str, variant: str | None = None, raw: str | None = None) -> str | None:
+    if (variant or "").strip() or _raw_names_a_kind(entity, raw):
         return None
     slug = _canonical_slug(entity)
     if slug in DEFAULT_KINDS:
@@ -84,8 +112,29 @@ def default_kind(entity: str, variant: str | None = None) -> str | None:
     return DEFAULT_KINDS.get(singular) if singular else None
 
 
+# True when the user's phrase has a word besides the entity, an article, a number or a size word,
+# so a kind was named ("a polar bear" for the entity "bear"). A phrase that does not contain the
+# entity at all describes something else and names no kind of it.
+def _raw_names_a_kind(entity: str, raw: str | None) -> bool:
+    if not raw or not raw.strip():
+        return False
+    entity_words = {w for part in _canonical_slug(entity).split("-") for w in (part, part + "s")}
+    words = _canonical_slug(raw).split("-")
+    if not entity_words & set(words):
+        return False  # the phrase does not describe this entity, so it names no kind of it
+    for word in words:
+        if not word or word.isdigit() or word in _FILLER_WORDS or word in entity_words:
+            continue
+        if not (word.endswith("s") and word[:-1] in entity_words):
+            return True
+    return False
+
+
 def _canonical_slug(name: str) -> str:
     """Slug a name, then map known alternate spellings to the sheet's word."""
+    whole = fighter_slug(name)
+    if whole in _NAME_ALIASES:
+        return _NAME_ALIASES[whole]
     parts = [_ALIASES.get(part, part) for part in fighter_slug(name).split("-") if part]
     return "-".join(parts)
 
@@ -118,7 +167,7 @@ def find_seed_sheet(
     sheet = _sheet_from_raw(entity, raw, sheets_dir)
     if sheet is not None:
         return sheet
-    default = default_kind(entity, variant)
+    default = default_kind(entity, variant, raw)
     return None if default is None else _sheet_at(default, sheets_dir)
 
 
@@ -178,7 +227,7 @@ def find_seed_fighter(
         found = by_name.get(_canonical_slug(name))
         if found is not None:
             return found
-    slug = _unique_raw_match(entity, raw, list(fighters)) or default_kind(entity, variant)
+    slug = _unique_raw_match(entity, raw, list(fighters)) or default_kind(entity, variant, raw)
     return None if slug is None else fighters.get(slug)
 
 
@@ -191,7 +240,7 @@ _PROPER_WORDS = {"African", "Roman"}
 def picked_default(
     entity: str, variant: str | None = None, raw: str | None = None
 ) -> SeedFighter | None:
-    slug = default_kind(entity, variant)
+    slug = default_kind(entity, variant, raw)
     if slug is None:
         return None
     fighters = {f.id: f for f in load_seed_fighters()}
