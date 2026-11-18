@@ -1,0 +1,29 @@
+# Mock edge-case set for CI (--mock). The real set is data/benchmark/edge.yaml (#136).
+matchups:
+  - id: edge-mock-mirror
+    group: mirror
+    fighters:
+      - {entity: gray wolf, count: 1}
+      - {entity: gray wolf, count: 1}
+    terrain: open_field
+    expected_winner: draw
+    confidence: medium
+    source: "assumption: identical fighters should split the wins close to 50/50"
+  - id: edge-mock-draw
+    group: draw
+    fighters:
+      - {entity: toaster, count: 1}
+      - {entity: toaster, count: 1}
+    terrain: arena
+    expected_winner: draw
+    confidence: medium
+    source: "assumption: two toasters cannot hurt each other"
+  - id: edge-mock-terrain
+    group: terrain
+    fighters:
+      - {entity: grizzly bear, count: 1, variant: adult male}
+      - {entity: toaster, count: 1}
+    terrain: open_field
+    expected_winner: "0"
+    confidence: medium
+    source: "assumption: a grizzly beats a toaster on any ground it can reach"

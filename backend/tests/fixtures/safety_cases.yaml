@@ -197,6 +197,26 @@ cases:
     reason: real_person
     kind: band
     layer: wikidata
+  # #426 (PM: option A, D-59 applied): a band name that is also an animal's common name reads as
+  # the animal unless the user names the band outright. "T. Rex" is the dinosaur's common name and
+  # "a goose" a common noun, so both allow; "the band T. Rex" names the band and blocks.
+  - id: band-17
+    text: "T. Rex vs a goose"
+    expect: allowed
+    kind: band
+  - id: band-18
+    text: "a T. Rex vs a goose"
+    expect: allowed
+    kind: band
+  - id: band-19
+    text: "the band T. Rex vs a goose"
+    expect: blocked
+    reason: real_person
+    kind: band
+    layer: classifier
+    mock:
+      sides: [["the band T. Rex", "t. rex"], ["a goose", "goose"]]
+      classifier: real_person
 
   # --- Sports teams (groups of real people, D-38; the same rule as bands, D-59) ------------
   - id: team-01
