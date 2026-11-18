@@ -92,7 +92,8 @@ the query, ignoring case), in search order, passing over:
 - **Creative works** (`demote_matches`): magazines, films, albums, songs and the like, used only
   if nothing else fits ("Dragon" the magazine loses to the dragon).
 - **Bands and sports teams**, when a *kind* item (anything with a "subclass of" value, or a
-  taxon) also matched exactly: "Grizzly Bear" the band loses to the grizzly bear. A band must
+  taxon, living or fossil) also matched exactly: "Grizzly Bear" the band loses to the grizzly
+  bear. A band must
   match by its label; a team may also match by an alias, since teams go by their nickname
   ("Lakers" matches the Los Angeles Lakers).
 
@@ -229,6 +230,11 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
 
 ## 8. Known limits
 
+- **An extinct animal counts as a kind only through its taxon item (#378).** "a stegosaurus" is
+  judged as the animal because its item is a *fossil taxon* (`kind_matches`). A fiction item of
+  the same name that ranks first in the top five (the D&D monster) would still be picked first
+  and block it. Today the animal ranks first. If another extinct animal is blocked as
+  `copyrighted_character`, check whether its item has a P31 that is missing from `kind_matches`.
 - **The mock run doesn't measure the classifier.** On mocks its verdict is written into each
   case, so CI checks the plumbing (rules, class map, reason routing). Classifier quality is
   only measured by the live eval.

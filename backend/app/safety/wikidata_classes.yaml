@@ -37,7 +37,9 @@
 # Version 10 (#316): "the" + a proper name also searches "the " + the name, and a band or team
 # labelled "The <name>" in its top 5 results is cached as a group that lost the pick ("the Who",
 # "the Cure", "the Animals" block), which changes how cached rows block.
-classes_version: 10
+# Version 11 (#378): fossil taxon is a kind item, so an extinct animal's own item counts as a kind
+# and "a stegosaurus" is no longer judged by the Dungeons & Dragons monster of the same name.
+classes_version: 11
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed
@@ -75,6 +77,8 @@ kind_matches:
   - qid: Q55983715
     label: organisms known by a particular common name # the live "raven"
     common_word: true
+  - qid: Q23038290
+    label: fossil taxon # the live "Stegosaurus": an extinct genus, P31 only, no P279 (#378)
 
 # Creative works that share a name with a fighter. When picking the top exact match, an item whose
 # P31 is only these classes (or band classes, see "band: true" below) is passed over if another
