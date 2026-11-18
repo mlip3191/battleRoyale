@@ -367,15 +367,21 @@ def judge_edge(entry: Entry, result: SimulationResult) -> Judged:
         return Judged(entry, result.outcome, None, win_pct, None, ok, reason)
     if entry.group == "draw":
         # A fight nobody can hurt anybody in ends as `no_contest` (win and draw shares 0), which is
-        # the same "nobody wins" as a draw; the other draws are counted from the runs.
-        harmless = result.outcome == "no_contest"
+        # the same "nobody wins" as a draw (Mike's ruling on #418). A `no_contest` because the
+        # fighters cannot reach each other in the terrain (deciding factor "habitat") is not
+        # harmless: it usually means a wrong habitat on a sheet, so it fails. The other draws are
+        # counted from the runs.
+        harmless = result.outcome == "no_contest" and result.deciding_factor != "habitat"
         ok = harmless or result.draw_prob >= DRAW_MIN_PROB
-        reason = (
-            f"no contest, so nobody wins ({result.deciding_factor_explainer})"
-            if harmless
-            else f"a draw {round(result.draw_prob * 100, 1)}% of the time, "
-            f"{'at least' if ok else 'under'} {round(DRAW_MIN_PROB * 100)}%"
-        )
+        if harmless:
+            reason = f"no contest, so nobody wins ({result.deciding_factor_explainer})"
+        elif result.outcome == "no_contest":
+            reason = f"no contest, but not a harmless one ({result.deciding_factor_explainer})"
+        else:
+            share = f"{round(result.draw_prob * 100, 1)}% of the time"
+            reason = (
+                f"a draw {share}, {'at least' if ok else 'under'} {round(DRAW_MIN_PROB * 100)}%"
+            )
         return Judged(entry, result.outcome, None, win_pct, None, ok, reason)
     return judge(entry, result, None)  # swarm, showcase, terrain: the same favorite rule
 
@@ -425,8 +431,9 @@ def venom_pins_one_by_one(entry: Entry, stat_sheets: Sequence[StatSheet]) -> boo
 def swarm_vs_individual(entry: Entry, sheets: SheetSource, runs: int) -> float:
     """Rule 5 (D-45): how far apart side 0's win share is in swarm mode and one by one.
 
-    Each mode is forced the way `scripts/validate_swarm.py` does it: swarm through the work rule
-    (so the real step cap applies), one by one through a head-count threshold no fight reaches.
+    Only side 0's win share is compared. Each mode is forced the way `scripts/validate_swarm.py`
+    does it: swarm through the work rule (so the real step cap applies), one by one through a
+    head-count threshold no fight reaches.
     Changes two module constants and restores them in `finally`; not safe to run in threads.
     """
     stat_sheets = [sheets.get(f) for f in entry.matchup.fighters]
