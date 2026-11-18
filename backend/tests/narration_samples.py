@@ -195,6 +195,7 @@ def grizzly_vs_gorilla() -> Sample:
         ),
         _a("Two heavyweights. One arena. No refunds. Let the science begin!"),
     ]
+    # 13 events but 12 beats, the most the writer asks for (#363): the Gorilla's miss is skipped.
     pbp = [
         _a("The Grizzly bear lumbers forward like a refrigerator with a grudge.", 0),
         _a("The Gorilla steps up to answer. Here we go!", 1),
@@ -205,7 +206,6 @@ def grizzly_vs_gorilla() -> Sample:
         _c("The Gorilla backs off to reconsider some life choices.", 6),
         _a("He is back! The Gorilla closes in again!", 7),
         _a("Grizzly bear connects again! The momentum has a mailing address now.", 8),
-        _c("Gorilla throws a punch at a spot where a bear used to be.", 9),
         _a("Shoulder charge from the Grizzly bear! Like a sofa falling down the stairs!", 10),
         _a("The Gorilla goes down! That is a knockout!", 11),
         _c("And that is the fight. A very productive evening for the bear.", 12),

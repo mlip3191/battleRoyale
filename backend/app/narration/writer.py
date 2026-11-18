@@ -262,7 +262,7 @@ def read_reply(kind: Kind, reply: object, facts: NarrationFacts, log_len: int) -
 
 # How many beats to ask for: one per event, kept between MIN_BEATS and MAX_BEATS.
 def beat_target(log_len: int) -> int:
-    """8 for a short log, one per event up to 20."""
+    """8 for a short log, one per event up to 12."""
     return max(MIN_BEATS, min(MAX_BEATS, log_len))
 
 

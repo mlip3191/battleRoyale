@@ -20,7 +20,8 @@ from app.text import counted_name, pluralize
 MAX_LINE = 200
 MAX_HINT = 60
 MIN_BEATS = 8
-MAX_BEATS = 20
+# At most 12 beats, so the play-by-play and its one retry fit the per-script deadline (#363).
+MAX_BEATS = 12
 # Stands in for a fighter's name while the number guard reads a line ("Three-toed sloth").
 NAME_MASK = "Fighter"
 
@@ -238,7 +239,7 @@ def beat_text(event: FightEvent, facts: NarrationFacts, use_hint: bool = True) -
 
 
 def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Script:
-    """Play-by-play: 8 to 20 beats, each pointing at a real event in the representative log."""
+    """Play-by-play: 8 to 12 beats, each pointing at a real event in the representative log."""
     log = result.representative_log
     lines: list[ScriptLine] = []
     seen: set[int] = set()
