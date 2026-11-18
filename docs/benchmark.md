@@ -72,7 +72,7 @@ The run's traceability column comes from G06's checker (`scripts/trace_report.py
 | `draw` | saguaro cactus vs toaster | a fight nobody can win |
 | `terrain` | water, mountain, urban | the terrains the main set never uses |
 
-Together they use all ten seed fighters the main set leaves out.
+Together they use seven of the ten seed fighters the main set leaves out; the chimpanzee, army ant and honey bee were dropped when the swarm pairs changed (#427).
 
 **Pass rules, written before the first run:**
 
