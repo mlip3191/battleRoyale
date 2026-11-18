@@ -21,6 +21,7 @@ from app.models.matchup import Matchup
 from app.pipeline import orchestrator, stages
 from app.pipeline.orchestrator import FALLBACK_WITH_VALUE, STUB, run_battle
 from app.pipeline.store import STAGES, BattleStore
+from app.research.lore import NONSENSE, LoreOutcome
 from app.research.seed_fighters import find_seed_sheet
 from tests.conftest import mock_settings
 
@@ -140,14 +141,37 @@ async def test_stages_move_pending_running_done(store: BattleStore) -> None:
     assert_each_stage_ran(await store.changes(record.battle_id))
 
 
-def test_unknown_fighter_fails_the_battle_with_a_reason(client: TestClient) -> None:
+def test_unknown_fighter_reaches_done_on_estimates(client: TestClient) -> None:
+    # #345: no sheet and no legend gives an all-estimate sheet instead of a failed battle.
+    record = wait_until_finished(client, start(client, matchup_body("grizzly bear", "okapi")))
+    assert record.status == "done" and record.result is not None
+    research = final_stage(record, "research")
+    assert (research.status, research.detail) == (
+        "fallback",
+        "We have no stat sheet for 'okapi', so its stats are estimates.",
+    )
+    assert all(stat.is_estimate for stat in record.stat_sheets[1].stats.values())
+
+
+def test_blocked_legend_fails_the_battle_with_a_reason(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    block_legends(monkeypatch)
     record = wait_until_finished(client, start(client, matchup_body("grizzly bear", "okapi")))
     assert record.status == "failed"
     research = final_stage(record, "research")
     assert research.status == "failed"
-    assert research.detail and "okapi" in research.detail
+    assert research.detail == stages.LEGEND_BLOCKED.format(name="okapi")
     assert record.result is None
     assert final_stage(record, "simulate").status == "pending"
+
+
+# Every legend lookup answers "blocked", as the live lookup does for a name it refuses.
+def block_legends(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def blocked(*_: object) -> LoreOutcome:
+        return NONSENSE
+
+    monkeypatch.setattr(stages, "resolve_legend", blocked)
 
 
 def test_size_swap_with_a_seed_reference_reaches_done(client: TestClient) -> None:
@@ -265,7 +289,10 @@ def assert_stream_matches_record(changes: list[StageStatus], record: BattleRecor
     assert last == final
 
 
-def test_event_stream_ends_for_a_failed_battle(client: TestClient) -> None:
+def test_event_stream_ends_for_a_failed_battle(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    block_legends(monkeypatch)
     battle_id = start(client, matchup_body("okapi", "gray wolf"))
     events = parse_sse(read_events(client, battle_id).text)
     assert events[-1] == ("end", json.dumps({"status": "failed"}))
