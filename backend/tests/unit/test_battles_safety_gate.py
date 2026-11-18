@@ -33,7 +33,7 @@ WAIT_SECONDS = 30.0
 # A made-up fighter word per reason: the classifier stand-in blocks a text naming it.
 BLOCK_WORDS = {reason: f"zorp{index:02d}" for index, reason in enumerate(BLOCKED_REASONS)}
 # Modules that ask the registry for a provider once a battle runs.
-DOWNSTREAM_MODULES = (stages, media_images, media_audio, writer, challenger)
+DOWNSTREAM_MODULES = (stages, media_images, media_audio, challenger)
 
 
 class StandInClassifier:
@@ -107,8 +107,14 @@ def downstream(monkeypatch: pytest.MonkeyPatch) -> Downstream:
         counts.providers.append(name)
         return registry.get_provider(name, settings)
 
+    # The script writer asks for its own chat (thinking off, #363); count it as a chat too.
+    def counting_script_chat() -> Any:
+        counts.providers.append("chat")
+        return registry.get_script_chat()
+
     for module in DOWNSTREAM_MODULES:
         monkeypatch.setattr(module, "get_provider", counting_provider)
+    monkeypatch.setattr(writer, "get_script_chat", counting_script_chat)
     real_research = stages.research
 
     async def counting_research(matchup: Matchup) -> stages.Research:

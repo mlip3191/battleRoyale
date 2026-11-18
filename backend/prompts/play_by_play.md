@@ -18,10 +18,13 @@ there to show the order: never say a time. "hint" is a short neutral description
 2. Every line has "at_event": the index of the event it describes, copied from the log. Indexes
    must exist in the log and never go backwards (a reaction to the same event repeats its index).
    Only describe what the event says happened; call knockouts and the end where the log has them.
+   The index goes only in "at_event", never in "text": write "The wolf lunges!", not "At event
+   3, the wolf lunges!" or "3: The wolf lunges!".
 3. Use the fighters' names exactly as the fact list writes them.
 4. Numbers: you may only say a number that appears in the fact list or as a group_size, written
    the same way or as plain words for the same value. Never invent, add up, or compare numbers
-   yourself. Fewer numbers is better; most beats need none.
+   yourself. Fewer numbers is better; most beats need none. Don't count or number the moments
+   ("Third strike!", "Three down!").
 5. Keep it PG: hits land, fighters dodge, back off, go down, tap out. No blood, gore, injuries,
    or suffering. Jokes are about the fighters and the absurdity, never about groups of people.
 6. Objects and machines get the same dead-serious treatment as animals. A mythical creature's

@@ -51,6 +51,8 @@ class Blocklist:
     subject_modals: frozenset[str] = frozenset()
     subject_after: frozenset[str] = frozenset()
     not_fighters: frozenset[str] = frozenset()
+    ask_opener: re.Pattern[str] = re.compile(r"(?!)")
+    """An ask phrase and its comma at the start of the text, see strip_ask_opener (#344)."""
 
 
 # Phrases as one regex alternative, longest first, each as whole words.
@@ -107,6 +109,10 @@ def load_blocklist() -> Blocklist:
         subject_modals=words("attack_planning", "subject_modals"),
         subject_after=words("attack_planning", "subject_after"),
         not_fighters=_not_fighters(words),
+        ask_opener=re.compile(
+            rf"^\s*(?:please\s+)?(?:{_alternatives(words('real_person', 'ask_openers'))})\s*,\s*",
+            re.IGNORECASE,
+        ),
     )
 
 
@@ -128,6 +134,13 @@ def _clean(text: str) -> str:
     text = text.lower().replace("-", " ").translate(APOSTROPHES)
     words = " ".join(re.sub(r"[^a-z0-9' ]+", " ", text).split())
     return re.sub(r"\bmy self\b", "myself", words)
+
+
+# The text without an ask phrase and its comma at the start: "help me, a lion vs a goose" -> "a
+# lion vs a goose" (#344). Without the comma it is left alone, so "help me vs a goose" still
+# reads "me" as a fighter, and "help me, me vs a goose" still has its "me" side.
+def strip_ask_opener(text: str, lists: Blocklist) -> str:
+    return lists.ask_opener.sub("", text, count=1)
 
 
 # The text's sides, each cut before its place phrase: "a toddler vs a goose in a pond" -> 2.
@@ -212,19 +225,31 @@ def _harms_a_target(cleaned: str, lists: Blocklist) -> bool:
     return False
 
 
-# True when the words before a harm word end in "how <fighter> <modal>" or "<modal> <fighter>":
-# "how a lion would", "would 6 wolves"; not if a subject word is a person or pronoun ("how a
-# terrorist would", "would i"), or the subject is part of a longer phrase ("with a gun would").
-# A subject of four or more words ("a very angry unemployed pilot") is not read as a fighter, so it
-# fails safe and still blocks; the limit stays at three words on purpose.
+# True when the words end in an ask phrase from the attack_planning ask list ("step by step").
+def _ends_with_ask(words: list[str], lists: Blocklist) -> bool:
+    return any(
+        words[-len(phrase.split()) :] == phrase.split() for phrase in lists.attack_ask if words
+    )
+
+
+# True when the words before a harm word end in "<modal> <fighter>" or "<lead> <fighter> <modal>",
+# where the lead is "how", the start of the request, or an ask phrase: "how a lion would", "step
+# by step: a wolf would", "a wolf would", "would 6 wolves"; not if a subject word is a person or
+# pronoun ("how a terrorist would", "would i"), or the subject is part of a longer phrase ("with a
+# gun would"). A subject of four or more words ("a very angry unemployed pilot") is not read as a
+# fighter, so it fails safe and still blocks; the limit stays at three words on purpose.
 def _fighter_is_subject(before: list[str], lists: Blocklist) -> bool:
     modal_last = bool(before) and before[-1] in lists.subject_modals
     words = before[:-1] if modal_last else before
     for size in (1, 2, 3):
-        if len(words) < size + 2:
+        if len(words) < size + 1:
             break
-        lead, opener, nouns = words[-size - 2], words[-size - 1], words[-size:]
-        led = lead in lists.subject_modals or (modal_last and lead in lists.subject_after)
+        opener, nouns, lead_words = words[-size - 1], words[-size:], words[: -size - 1]
+        lead = lead_words[-1] if lead_words else ""
+        led = lead in lists.subject_modals or (
+            modal_last
+            and (not lead_words or lead in lists.subject_after or _ends_with_ask(lead_words, lists))
+        )
         is_start = opener in lists.subject_starts or opener.isdigit()
         if led and is_start and not any(_in(w, lists.not_fighters) for w in nouns):
             return True
@@ -241,7 +266,7 @@ def check_text_rules(text: str) -> SafetyVerdict:
         return blocked("minor", "rules")
     if _names_someone_known(text, lists):
         return blocked("real_person", "rules")
-    for words in sides(text):
+    for words in sides(strip_ask_opener(text, lists)):
         verdict = _check_side(words, lists)
         if not verdict.allowed:
             return verdict

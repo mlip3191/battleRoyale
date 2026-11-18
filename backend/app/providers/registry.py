@@ -155,3 +155,14 @@ def get_intake_chat(settings: Settings | None = None) -> ChatLLM:
         timeout_s=settings.intake_timeout_s,
         retries=settings.intake_retries,
     )
+
+
+# The chat model for the announcer scripts: the same provider with its thinking step off, so a
+# script comes back in a few seconds instead of 15-47 s (#363).
+def get_script_chat(settings: Settings | None = None) -> ChatLLM:
+    settings = settings or get_settings()
+    if settings.provider_mode == "mock":
+        return mock.MockChatLLM()
+    from app.providers.live.chat import LiveChatLLM
+
+    return LiveChatLLM(service_config("chat", settings), settings, thinking=False)

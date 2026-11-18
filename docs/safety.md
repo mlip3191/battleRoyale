@@ -40,12 +40,18 @@ Wikidata files them under one ("a vending machine", "a lighthouse").
 1. **Code rules** (`rules.py`, word lists in `blocklist.yaml`) run on the whole text before any
    model call. They catch only clear cases: self-harm phrases about the user ("end my life",
    "hurt myself"), minors, groups of people, "me", "my brother", and real-world attack planning.
+   An ask phrase that opens the request before a comma ("help me, a lion vs a goose"; also "tell
+   me", "show me", "give me", "teach me", "help us") is not a fighter and is cut off first
+   (`ask_openers`, #344). "help me vs a goose" and "help me, me vs a goose" still block, because
+   there the user is a side.
    Attack planning needs both a clear ask ("step by step", "how to", "plans to") and a harm word
    followed by a real-world target ("attack a shopping mall"; not "a school of fish" or "an
    office brawl"), or a direct ask right before harm to a person ("how to poison someone"; not
    "the wolf attacks someone"). A harm word whose subject is a fighter is fight wording, so it
    doesn't count: "how a lion would attack a restaurant", "how would a bear kill a shark in the
-   hospital" (#317). This exception looks only at the harm word's subject. A person or pronoun
+   hospital" (#317). The subject may follow "how", start the request, or follow an ask phrase:
+   "step by step: a wolf would kill a deer at the airport" (#343). This exception looks only
+   at the harm word's subject. A person or pronoun
    as the subject still counts ("how would I attack a restaurant", "how a terrorist would attack
    a mall", "how would a boy attack a school"): the person words are `not_fighters` plus every
    people list in `blocklist.yaml`. A person subject on none of those lists ("a retired
@@ -92,7 +98,8 @@ the query, ignoring case), in search order, passing over:
 - **Creative works** (`demote_matches`): magazines, films, albums, songs and the like, used only
   if nothing else fits ("Dragon" the magazine loses to the dragon).
 - **Bands and sports teams**, when a *kind* item (anything with a "subclass of" value, or a
-  taxon) also matched exactly: "Grizzly Bear" the band loses to the grizzly bear. A band must
+  taxon, living or fossil) also matched exactly: "Grizzly Bear" the band loses to the grizzly
+  bear. A band must
   match by its label; a team may also match by an alias, since teams go by their nickname
   ("Lakers" matches the Los Angeles Lakers).
 
@@ -229,6 +236,11 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
 
 ## 8. Known limits
 
+- **An extinct animal counts as a kind only through its taxon item (#378).** "a stegosaurus" is
+  judged as the animal because its item is a *fossil taxon* (`kind_matches`). A fiction item of
+  the same name that ranks first in the top five (the D&D monster) would still be picked first
+  and block it. Today the animal ranks first. If another extinct animal is blocked as
+  `copyrighted_character`, check whether its item has a P31 that is missing from `kind_matches`.
 - **The mock run doesn't measure the classifier.** On mocks its verdict is written into each
   case, so CI checks the plumbing (rules, class map, reason routing). Classifier quality is
   only measured by the live eval.
@@ -248,9 +260,10 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   the live eval shows the classifier missing these, the fix is to tighten what counts as a kind.
 - **The attack-planning rule is a word list.** It catches clear phrasings only; the classifier
   covers the rest.
-- **"step by step: a wolf would kill a deer at the airport" still blocks as `other`.** The
-  fighter-subject exception needs "how" before the subject when the modal comes after it ("how a
-  wolf would kill"). This is the safe direction (over-blocking); a follow-up can widen it.
+- **A fighter subject is still read only in a few shapes.** "how a wolf would kill", "step by
+  step: a wolf would kill" and "a wolf would kill" at the start of the request are fighters;
+  anything further from the harm word ("step by step, so the wolf, in the end, would kill")
+  still blocks as `other`. This is the safe direction (over-blocking).
 - **Self-harm phrases also match fight text about a fighter.** "a cornered rat that doesn't want
   to die vs a cat" and "a suicide bomber vs a goose" block as `self_harm`. This is deliberate:
   over-blocking is the safer mistake, and the user can rephrase.
