@@ -36,7 +36,7 @@ from app.narration.templates import (
     play_by_play_script,
 )
 from app.providers.base import ChatLLM, ChatMessage
-from app.providers.registry import get_provider
+from app.providers.registry import get_script_chat
 
 logger = logging.getLogger(__name__)
 
@@ -241,9 +241,15 @@ def read_reply(kind: Kind, reply: object, facts: NarrationFacts, log_len: int) -
         raw = [item.get("text", "") for item in items if isinstance(item, dict)]
         used = {name for text in raw if isinstance(text, str) for name in PLACEHOLDER.findall(text)}
         groups = required_placeholders(facts)
-        missing = [" or ".join(group) for group in groups if not used & set(group)]
+        missing = [
+            " or ".join(f"{{{name}}}" for name in group)
+            for group in groups
+            if not used & set(group)
+        ]
         if missing:
-            raise ScriptRejected(f"the outro must use these placeholders: {', '.join(missing)}")
+            raise ScriptRejected(
+                f"the outro must use these placeholders: {', '.join(missing)}. {PLACEHOLDER_HINT}"
+            )
     script = Script(kind=kind, lines=lines, fallback=False)
     problems = check_script(script, facts, log_len)
     if problems:
@@ -324,6 +330,23 @@ def reply_schema(kind: Kind, log_len: int) -> dict[str, Any]:
     }
 
 
+# How to fix a rejected reply, for the retry. Live, without its thinking step, the model kept
+# counting moments ("Third strike!") or naming the winner itself after a bare "rejected" (#363).
+PLACEHOLDER_HINT = (
+    "Write each one exactly like that, in curly braces; never write the winner's name or the "
+    "deciding factor in your own words."
+)
+NUMBER_HINT = (
+    "Only numbers from the fact list are allowed, written the same way. Don't count or number "
+    "the moments, and don't convert or round a number.\n"
+)
+
+
+# The extra advice for a retry, chosen by what the checks rejected.
+def _retry_hint(reason: str) -> str:
+    return NUMBER_HINT if "numbers not in the fact list" in reason else ""
+
+
 # Ask for one script, regenerating once if the reply is invalid; the template on any failure.
 async def write_one(
     kind: Kind,
@@ -353,7 +376,7 @@ async def write_one(
                 {"role": "assistant", "content": str(reply)},
                 {
                     "role": "user",
-                    "content": f"That reply was rejected: {reason}\n"
+                    "content": f"That reply was rejected: {reason}\n{_retry_hint(reason)}"
                     "Write it again, following every rule. Reply with JSON only.",
                 },
             ]
@@ -368,11 +391,13 @@ async def write_scripts(
     *,
     chat: ChatLLM | None = None,
     counts: Sequence[int] | None = None,
+    deadline_s: float | None = None,
 ) -> list[Script]:
     """Intro, play-by-play, and outro, in broadcast order; each falls back to its template alone.
 
-    `chat` defaults to the registry's chat provider; `counts` (from the Matchup) sets each side's
-    fighter count, as in build_facts.
+    `chat` defaults to the registry's script chat (thinking off, #363); `counts` (from the
+    Matchup) sets each side's fighter count, as in build_facts. With `deadline_s`, a script the
+    model hasn't finished by then is its template, and the others keep the model's lines.
     """
     facts = build_facts(stat_sheets, result, fair_fight, counts)
     templates: dict[Kind, Script] = {
@@ -382,7 +407,7 @@ async def write_scripts(
     }
     if chat is None:
         try:
-            chat = get_provider("chat")
+            chat = get_script_chat()
         except Exception as error:  # e.g. live mode with a missing setting
             logger.warning("chat provider unavailable (%s); using template scripts", error)
             return list(templates.values())
@@ -392,7 +417,14 @@ async def write_scripts(
     async def one(kind: Kind) -> Script:
         if kind == "play_by_play" and not result.representative_log:
             return templates[kind]
-        return await write_one(kind, provider, facts, result, templates[kind])
+        writing = write_one(kind, provider, facts, result, templates[kind])
+        if deadline_s is None:
+            return await writing
+        try:
+            return await asyncio.wait_for(writing, deadline_s)
+        except TimeoutError:
+            logger.warning("%s ran past %.1fs; using its template", PROMPT_NAMES[kind], deadline_s)
+            return templates[kind]
 
     kinds: tuple[Kind, ...] = ("intro", "play_by_play", "outro")
     return list(await asyncio.gather(*(one(kind) for kind in kinds)))

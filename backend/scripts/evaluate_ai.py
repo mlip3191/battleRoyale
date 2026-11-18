@@ -2,7 +2,7 @@
 
 Run by hand (never in CI), from the repo root, with PROVIDER_MODE=live in .env:
   uv run --directory backend python scripts/evaluate_ai.py --sections extraction,coverage
-(sections: intake, safety, retrieval, extraction, coverage; the default is all of them)
+(sections: intake, safety, retrieval, extraction, coverage, cost; the default is all of them)
 
 Each run measures the sections it is given and rewrites only those sections of
 docs/evaluation.md, keeping the others, with the run date and commit at the top. The whole file
@@ -32,7 +32,6 @@ from app.config import get_settings  # noqa: E402
 REPO = BACKEND.parent
 OUTPUT = REPO / "docs" / "evaluation.md"
 INTAKE_CASES = BACKEND / "tests" / "fixtures" / "providers" / "intake_cases.yaml"
-RETRIEVAL_CASES = BACKEND / "tests" / "fixtures" / "retrieval_cases.yaml"
 # Section order in the document: (key, heading). The summary and limitations are written by hand.
 SECTIONS = [
     ("summary", "Summary"),
@@ -45,7 +44,7 @@ SECTIONS = [
     ("cost", "7. Cost and speed"),
     ("limitations", "What this means and limitations"),
 ]
-RUNNABLE = ("intake", "safety", "retrieval", "extraction", "coverage")
+RUNNABLE = ("intake", "safety", "retrieval", "extraction", "coverage", "cost")
 NOT_RUN = "_Not measured yet._"
 FIELDS = ("entity", "count", "terrain")
 # Each phrasing is read this many times: the live model doesn't answer the same way every time.
@@ -277,33 +276,31 @@ async def run_safety() -> str:
 
 # Score retrieval hit@5 on G03's cases.
 async def run_retrieval() -> str:
+    import retrieval_eval
+
     from app.db.connection import connect
     from app.db.migrate import apply_migrations
-    from app.models.stats import StatName
     from app.providers.registry import get_provider
-    from app.research.evidence_check import normalize_text
-    from app.research.retrieve import evidence_for
 
-    cases = yaml.safe_load(RETRIEVAL_CASES.read_text(encoding="utf-8"))["cases"]
+    cases = retrieval_eval.load_cases()
     embedder, reranker = get_provider("embedder"), get_provider("reranker")
-    connection, ranks = connect(), []
+    connection = connect()
     try:
         apply_migrations(connection)
-        for case in cases:
-            found = await evidence_for(
-                connection, embedder, reranker, case["fighter_id"], StatName(case["stat"])
-            )
-            phrase = normalize_text(case["phrase"])
-            hit = [i for i, p in enumerate(found, 1) if phrase in normalize_text(p.text)]
-            ranks.append(hit[0] if hit else None)
+        # The same scoring as scripts/retrieval_eval.py, so the README and this doc agree (#389).
+        ranked = await retrieval_eval.case_ranks(connection, embedder, reranker, cases)
     finally:
         connection.close()
-    hits = [r for r in ranks if r is not None]
-    top1 = sum(r == 1 for r in hits)
+    return retrieval_markdown(ranked)
+
+
+# The retrieval section's Markdown, from each case and its rank (None for a miss).
+def retrieval_markdown(ranked: list[tuple[dict[str, Any], int | None]]) -> str:
+    cases = [case for case, _ in ranked]
+    hits = [rank for _, rank in ranked if rank is not None]
+    top1 = sum(rank == 1 for rank in hits)
     missed = [
-        f"- {c['fighter_id']} {c['stat']}: {c['phrase']!r}"
-        for c, r in zip(cases, ranks, strict=True)
-        if r is None
+        f"- {c['fighter_id']} {c['stat']}: {c['phrase']!r}" for c, rank in ranked if rank is None
     ]
     return "\n".join(
         [
@@ -333,12 +330,20 @@ async def run_coverage() -> str:
     return await eval_research.run_coverage()
 
 
+# Cost and speed lives in eval_cost.py, imported only when it runs.
+async def run_cost() -> str:
+    import eval_cost
+
+    return await eval_cost.run_cost()
+
+
 RUNNERS = {
     "intake": run_intake,
     "safety": run_safety,
     "retrieval": run_retrieval,
     "extraction": run_extraction,
     "coverage": run_coverage,
+    "cost": run_cost,
 }
 
 

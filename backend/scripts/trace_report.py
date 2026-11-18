@@ -6,12 +6,13 @@ From the repo root:
   uv run --directory backend python scripts/trace_report.py --require-quotes
 
 Each battle gets one line ("b-7f3k2q: 0 issues (...)") and every issue is listed under it.
-Extracted quotes whose article isn't stored here are counted as unchecked, not as issues.
+Quotes (extracted or hand-verified) whose article isn't stored here are counted as unchecked,
+not as issues.
 The footer gives the share of battles with no issues and how many quotes it was checked against.
 Exits 1 when any battle has an issue, so it can gate a run, and 2 when --db names no file. The
 benchmark (F07) uses the same check for its traceability column.
 
-Strict mode (--require-quotes, #370) also exits 1 when any extracted quote couldn't be checked
+Strict mode (--require-quotes, #370) also exits 1 when any quote couldn't be checked
 because its article isn't stored here, so "traceable" means every quote was really verified.
 """
 
@@ -47,8 +48,7 @@ def render(reports: list[TraceReport], require_quotes: bool = False) -> str:
     checked = sum(r.quotes_checked for r in reports)
     unchecked = sum(r.quotes_unchecked for r in reports)
     lines.append(
-        f"Extracted quotes checked against stored articles: {checked}; "
-        f"not checkable here: {unchecked}."
+        f"Quotes checked against stored articles: {checked}; not checkable here: {unchecked}."
     )
     if require_quotes and unchecked:
         names = ", ".join(r.battle_id for r in reports if r.quotes_unchecked)
@@ -68,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--require-quotes",
         action="store_true",
-        help="also fail when any extracted quote couldn't be checked against a stored article",
+        help="also fail when any quote couldn't be checked against a stored article",
     )
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):

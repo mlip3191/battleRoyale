@@ -21,10 +21,10 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 from app.intake.llm_io import CALL_ERRORS, data_block
 from app.models.stats import LoreProfile
 from app.providers.base import ChatLLM, ChatMessage
-from app.research.evidence_check import normalize_text, number_in_quote, quote_in_passage
+from app.research.evidence_check import normalize_text, quote_in_passage
 from app.research.mythical import Creature
 from app.research.seed_fighters import fighter_slug, load_seed_fighters
-from app.research.sources import SourceError, fetch_article
+from app.research.sources import SourceDocument, SourceError, fetch_article
 from app.safety.media_names import safe_media_name
 
 logger = logging.getLogger(__name__)
@@ -138,9 +138,11 @@ async def ask_model(chat: ChatLLM, messages: list[ChatMessage]) -> LoreReply | N
 
 # True when the quote states this number of heads, in digits or in words.
 def heads_in_quote(heads: int, quote: str) -> bool:
-    words = {w for w, n in HEAD_WORDS.items() if n == heads}
-    said = set(re.findall(r"[a-z]+", quote.lower()))
-    return number_in_quote(heads, quote) or bool(words & said)
+    # The number must name the heads ("three heads", "nine-headed", "3 heads"), so a stray
+    # "three" elsewhere ("one of three versions") doesn't count.
+    names = [str(heads), *(w for w, n in HEAD_WORDS.items() if n == heads)]
+    pattern = rf"\b(?:{'|'.join(names)})[\s-]+head(?:s|ed)?\b"  # not "three headlands"
+    return re.search(pattern, quote, flags=re.IGNORECASE) is not None
 
 
 # The model's reply as a lore profile, or None when code can't verify every choice.
@@ -175,10 +177,21 @@ def verified_lore(
         return None
 
 
+# The legend's article: "<Name> (mythology)" first, because a bare name such as "Hydra" can land
+# on a disambiguation page (#324); the bare name when there's no such article.
+async def fetch_legend_article(client: httpx.AsyncClient, name: str) -> SourceDocument | None:
+    bare = name.strip()
+    for title in (f"{bare[:1].upper()}{bare[1:]} (mythology)", bare):
+        article = await fetch_article(client, title)
+        if article is not None:
+            return article
+    return None
+
+
 # The creature for a legend not in mythical.yaml, a block, or nothing when a service is down.
 async def lore_for(name: str, client: httpx.AsyncClient, chat: ChatLLM) -> LoreOutcome:
     try:
-        article = await fetch_article(client, name)
+        article = await fetch_legend_article(client, name)
     except (SourceError, httpx.HTTPError) as error:
         logger.warning("Could not fetch the article for %r (%s).", name, error)
         return UNAVAILABLE

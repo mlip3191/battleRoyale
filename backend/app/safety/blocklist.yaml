@@ -356,8 +356,9 @@ attack_planning:
     - kidnapping
   # A harm word whose subject is a fighter right before it is fight wording, not planning (#317):
   # "how a lion would attack a restaurant", "how would a bear kill a shark in the hospital". The
-  # subject is an article or count and one to three words, either after "how" and before a modal
-  # or right after a modal. If any of those words is a person, an attacker or a pronoun ("how a
+  # subject is an article or count and one to three words, either right after a modal, or before a
+  # modal when it follows "how", starts the request, or follows an ask phrase from the ask list
+  # above ("step by step: a wolf would kill a deer", #343). If any of those words is a person, an attacker or a pronoun ("how a
   # terrorist would attack a mall", "how would I attack a mall"), the harm word still counts.
   # The words that count as a person are not_fighters below PLUS every people list in this file
   # (minor head and anywhere, group_of_people head and people_words, real_person relations), so

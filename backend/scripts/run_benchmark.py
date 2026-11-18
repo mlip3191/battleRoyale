@@ -70,7 +70,7 @@ def add_traceability(report: bm.RunReport, mock: bool, require_quotes: bool = Fa
     passing = "have no issues and every quote checked" if require_quotes else "have no issues"
     report.notes.append(
         f"Traceability (G06): {clean} of {len(traced)} stored battles {passing}; "
-        f"{checked} extracted quotes were checked against stored articles and "
+        f"{checked} quotes were checked against stored articles and "
         f"{unchecked} could not be checked here. Run `scripts/trace_report.py` for details."
         if traced
         else "Traceability (G06): no finished battles stored yet, so it shows n/a."
@@ -97,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--require-quotes",
         action="store_true",
-        help="traceability counts a battle only if every extracted quote was checked (#370)",
+        help="traceability counts a battle only if every quote was checked (#370)",
     )
     parser.add_argument(
         "--tuning-only", action="store_true",

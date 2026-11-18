@@ -6,14 +6,21 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+from pydantic import HttpUrl
 
 from app.db import battles as saved
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
 from app.models.battle import BattleRecord
 from app.models.narration import Script
-from app.models.stats import StatName
-from app.research.trace import check_battle, trace_stored_battles, traceable_share
+from app.models.stats import StatName, StatSheet, StatValue
+from app.research.trace import (
+    check_battle,
+    trace_stored_battles,
+    traceable,
+    traceable_share,
+    value_in_quote,
+)
 from app.simulation import benchmark as bm
 from scripts import run_benchmark, trace_report
 
@@ -157,7 +164,7 @@ def test_trace_report_checks_every_stored_battle_and_exits_1_on_an_issue(
     assert "b-7f3k2q: 0 issues" in printed and "b-broken: 1 issue " in printed
     assert "outro line 0: numbers not in the inputs: '9,999'" in printed
     assert "Traceable: 1 of 2 battles (50%)." in printed
-    assert "Extracted quotes checked against stored articles: 10; not checkable here: 0." in printed
+    assert "Quotes checked against stored articles: 10; not checkable here: 0." in printed
 
 
 def test_a_stored_record_that_no_longer_loads_is_one_issue(db: sqlite3.Connection) -> None:
@@ -199,11 +206,11 @@ def test_100_percent_with_no_stored_articles_says_no_quote_was_checked(
     assert trace_report.main(["--db", str(path)]) == 0
     printed = capsys.readouterr().out
     assert "Traceable: 1 of 1 battles (100%)." in printed
-    assert "Extracted quotes checked against stored articles: 0; not checkable here: 5." in printed
+    assert "Quotes checked against stored articles: 0; not checkable here: 5." in printed
     monkeypatch.setattr(run_benchmark, "connect", lambda: connect(path))
     report = bm.RunReport("seed", [], 0.0, "abc1234", datetime.now())
     run_benchmark.add_traceability(report, mock=False)
-    assert "0 extracted quotes were checked" in report.notes[0]
+    assert "0 quotes were checked" in report.notes[0]
     assert "5 could not be checked here" in report.notes[0]
     connection.close()
 
@@ -232,12 +239,127 @@ def test_the_benchmark_fills_its_traceability_column_from_stored_battles(
     assert report.traceability == 1.0
     assert "traceability 100%" in bm.render_run(report)
     assert (
-        "5 extracted quotes were checked against stored articles and 0 could not be checked"
+        "5 quotes were checked against stored articles and 0 could not be checked"
         in (report.notes[0])
     )
     mock = bm.RunReport("mock", [], 0.0, "abc1234", datetime.now())
     run_benchmark.add_traceability(mock, mock=True)
     assert mock.traceability is None and "isn't checked in mock mode" in mock.notes[0]
+
+
+# --- #369: hand-verified quotes are re-checked, and every value must be in its own quote --------
+
+SEED_DIR = Path(__file__).parents[3] / "data" / "seed" / "fighters"
+
+
+def sourced(
+    value: float, unit: str, quote: str, method: str = "hand_verified", note: str | None = None
+) -> StatValue:
+    source = clean().stat_sheets[0].stats[StatName.MASS].source
+    assert source is not None
+    return StatValue(
+        value=value,
+        unit=unit,
+        source=source.model_copy(update={"quote": quote}),
+        confidence="medium",
+        is_estimate=False,
+        method=method,
+        note=note,
+    )
+
+
+def test_a_hand_verified_quote_missing_from_its_stored_article_is_flagged(
+    db: sqlite3.Connection,
+) -> None:
+    source = clean().stat_sheets[0].stats[StatName.MASS].source
+    assert source is not None
+    tampered = source.model_copy(update={"quote": source.quote.replace("389", "489")})
+    record = with_stat(0, StatName.MASS, method="hand_verified", source=tampered, value=489.0)
+    found = [p for p in problems(record, db) if "/ mass_kg" in p]  # the script's 389 is apart
+    assert len(found) == 1 and "is not in the stored article" in found[0]
+
+
+def test_a_value_that_matches_no_number_in_its_quote_is_flagged(db: sqlite3.Connection) -> None:
+    record = with_stat(0, StatName.MASS, value=500.0)  # its quote says 389 kilograms (858 lb)
+    # (The commentary's "389" is now flagged too, as a number not in the inputs.)
+    assert [p for p in problems(record, db) if "/ mass_kg" in p] == [
+        "Grizzly bear - adult male / mass_kg: value 500.0 kg isn't a number in its quote, "
+        "even after unit conversion"
+    ]
+
+
+def test_a_value_converted_from_the_quotes_unit_passes() -> None:
+    speed = sourced(13.33, "m/s", "It can run at speeds of up to 48 km/h (30 mph).")
+    assert value_in_quote(StatName.SPEED, speed)
+    pounds = sourced(389.0, "kg", "males weighing up to 858 lb")
+    assert value_in_quote(StatName.MASS, pounds)
+
+
+def test_a_unit_written_as_a_capital_symbol_passes() -> None:
+    kick = sourced(1924.0, "N", "90% of the impacts had a maximum value below 1924 N.")
+    assert value_in_quote(StatName.ATTACK_FORCE, kick)
+
+
+def test_a_table_row_with_no_units_passes_but_a_wrong_number_does_not() -> None:
+    row = "Anas platyrhynchos Mallard 1.14 0.890 0.107 19.7 1.55 21"
+    assert value_in_quote(StatName.MASS, sourced(1.14, "kg", row))
+    assert not value_in_quote(StatName.MASS, sourced(1.5, "kg", row))
+    # Once the quote states a unit for this stat, a bare number no longer counts.
+    assert not value_in_quote(StatName.MASS, sourced(21.0, "kg", "weighs 1.14 kg, 21 of them"))
+
+
+def test_a_figure_converted_in_the_note_passes_only_from_a_quoted_number() -> None:
+    quote = "It is powerful enough to lift up to 350 kg (770 lb)"
+    good = sourced(3432.0, "N", quote, note="350 kgf x 9.80665 m/s^2 = 3432 N.")
+    assert value_in_quote(StatName.ATTACK_FORCE, good)
+    other_start = sourced(3432.0, "N", quote, note="400 kgf x 8.58 = 3432 N.")
+    assert not value_in_quote(StatName.ATTACK_FORCE, other_start)  # 400 isn't in the quote
+    wrong_end = sourced(3432.0, "N", quote, note="350 kgf x 9.80665 = 3000 N.")
+    assert not value_in_quote(StatName.ATTACK_FORCE, wrong_end)
+
+
+def test_every_committed_seed_sheet_passes_the_value_check() -> None:
+    failing = []
+    for path in sorted(SEED_DIR.glob("*.json")):
+        sheet = StatSheet.model_validate_json(path.read_text(encoding="utf-8"))
+        for name, stat in sheet.stats.items():
+            if stat.method in ("extracted", "hand_verified") and stat.source is not None:
+                if not value_in_quote(name, stat):
+                    failing.append(f"{path.stem}/{name.value}")
+    assert failing == []
+
+
+# #379 review: the checker accepts exactly the unit spellings extraction accepts.
+@pytest.mark.parametrize(
+    ("stat", "value", "unit", "quote"),
+    [
+        (StatName.MASS, 389.18, "kg", "males weighing up to 858 lbs"),
+        (StatName.SPEED, 13.3333, "m/s", "It can run at 48 kilometres per hour."),
+        (StatName.SPEED, 13.3333, "m/s", "It can run at 48 kilometers per hour."),
+        (StatName.SPEED, 13.4112, "m/s", "It was clocked at 30 MPH."),
+        (StatName.ATTACK_FORCE, 4000.0, "N", "Its bite reaches 4 kN."),
+        (StatName.MASS, 4.0, "kg", "Adults weigh 4-5 kg."),
+        (StatName.MASS, 5.0, "kg", "Adults weigh 4-5 kg."),
+    ],
+)
+def test_extraction_spellings_and_range_ends_pass(
+    stat: StatName, value: float, unit: str, quote: str
+) -> None:
+    assert value_in_quote(stat, sourced(value, unit, quote, method="extracted"))
+
+
+def test_an_extracted_value_must_match_to_its_stored_digits() -> None:
+    quote = "males weighing 389 kilograms (858 lb)"
+    assert value_in_quote(StatName.MASS, sourced(389.0, "kg", quote, method="extracted"))
+    assert not value_in_quote(StatName.MASS, sourced(392.0, "kg", quote, method="extracted"))
+    # A hand-verified value may be rounded by the person who checked it (within 1%).
+    assert value_in_quote(StatName.MASS, sourced(391.0, "kg", quote))
+
+
+def test_a_note_formula_with_wrong_arithmetic_is_flagged() -> None:
+    quote = "It is powerful enough to lift up to 350 kg (770 lb)"
+    wrong = sourced(5000.0, "N", quote, note="350 kgf x 2 = 5000 N.")
+    assert not value_in_quote(StatName.ATTACK_FORCE, wrong)
 
 
 # --- #370: strict mode, so "traceable" means every quote was really checked -----------------
@@ -315,3 +437,36 @@ def test_strict_mode_says_quote_for_a_count_of_one() -> None:
     one = check_battle(clean())
     one.quotes_unchecked = 1
     assert "1 quote couldn't be checked" in trace_report.render([one], require_quotes=True)
+
+
+# --- #379 re-review: hand-verified quotes in strict mode, and tiny stored values ------------------
+
+
+def test_require_quotes_counts_a_hand_verified_quote_with_no_stored_article(
+    db: sqlite3.Connection, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Every extracted quote's article is stored (the db fixture); this one points elsewhere.
+    source = clean().stat_sheets[0].stats[StatName.MASS].source
+    assert source is not None
+    elsewhere = source.model_copy(update={"url": HttpUrl("https://example.org/not-stored")})
+    store(db, with_stat(0, StatName.MASS, method="hand_verified", source=elsewhere))
+    path = str(tmp_path / "app.db")
+    assert trace_report.main(["--db", path]) == 0  # unchecked, not an issue
+    assert "0 issues" in capsys.readouterr().out
+    assert trace_report.main(["--db", path, "--require-quotes"]) == 1
+    assert "1 quote couldn't be checked" in capsys.readouterr().out
+
+
+def test_a_tiny_extracted_value_must_still_match_to_its_stored_digits() -> None:
+    # 2.5e-06 prints in exponent form; its digits must still be read as 0.0000025 (#379 review).
+    quote = "A female weighs about 2.5 mg."
+    assert value_in_quote(StatName.MASS, sourced(2.5e-06, "kg", quote, method="extracted"))
+    assert not value_in_quote(StatName.MASS, sourced(3.0e-06, "kg", quote, method="extracted"))
+
+
+def test_a_hand_verified_quote_counts_as_unchecked_without_a_database() -> None:
+    # The fixture's five quotes are all extracted; this pins the hand-verified path (#379 review).
+    report = check_battle(with_stat(0, StatName.MASS, method="hand_verified"))
+    assert report.ok and report.quotes_unchecked == 5
+    assert traceable(report) is True
+    assert traceable(report, require_quotes=True) is False
