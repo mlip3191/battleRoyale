@@ -4,6 +4,8 @@
 
 matchups:
 # --- Swarms on both sides of 200 per side: the same matchup at ~150 and ~300 -------------------
+# These pairs were picked by scanning engine output on the seed sheets for close fights (#427),
+# so their expected winner is a consistency check, not independent evidence.
 - id: edge-swarm-01a
   group: swarm
   fighters:
@@ -22,7 +24,7 @@ matchups:
   terrain: open_field
   expected_winner: "0"
   confidence: medium
-  source: "assumption: twice the soldiers should win at least as often; a closer fight than the ant and bee pairs, so rules 4 and 5 can fail"
+  source: "assumption: twice the soldiers should win at least as often"
 
 - id: edge-swarm-02a
   group: swarm
