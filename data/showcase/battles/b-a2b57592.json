@@ -1,0 +1,2986 @@
+{
+  "battle_id": "b-a2b57592",
+  "created_at": "2026-11-18T21:32:28.619667Z",
+  "matchup": {
+    "fighters": [
+      {
+        "entity": "horse",
+        "count": 100,
+        "variant": null,
+        "size_reference": "duck",
+        "raw": "100 duck-sized horses"
+      },
+      {
+        "entity": "duck",
+        "count": 1,
+        "variant": null,
+        "size_reference": "horse",
+        "raw": "1 horse-sized duck"
+      }
+    ],
+    "terrain": "arena",
+    "raw_text": "100 duck-sized horses vs 1 horse-sized duck",
+    "assumptions": []
+  },
+  "stat_sheets": [
+    {
+      "fighter_id": "horse",
+      "display_name": "Horse",
+      "media_name": "horse",
+      "category": "mammal",
+      "body": "living",
+      "habitat": "land",
+      "weapons": [
+        "hooves",
+        "teeth"
+      ],
+      "lore": null,
+      "stats": {
+        "mass_kg": {
+          "value": 500.0,
+          "unit": "kg",
+          "source": {
+            "title": "Horse",
+            "url": "https://en.wikipedia.org/w/index.php?title=Horse&oldid=1384350711",
+            "quote": "weighing from 500 to 600 kilograms (1,100 to 1,320 lb)",
+            "retrieved_at": "2026-11-10T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 500.0,
+          "high": 600.0,
+          "note": "Lower end of the range for larger riding horses; the source gives no mean."
+        },
+        "size_m": {
+          "value": 1.57,
+          "unit": "m",
+          "source": {
+            "title": "Horse",
+            "url": "https://en.wikipedia.org/w/index.php?title=Horse&oldid=1384350711",
+            "quote": "usually start at about 15.2 hands (62 inches, 157 cm)",
+            "retrieved_at": "2026-11-10T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 1.57,
+          "high": 1.73,
+          "note": "Shoulder height; the article gives no body length. High is the taller end of the same sentence."
+        },
+        "top_speed_mps": {
+          "value": 13.33,
+          "unit": "m/s",
+          "source": {
+            "title": "Horse",
+            "url": "https://en.wikipedia.org/w/index.php?title=Horse&oldid=1384350711",
+            "quote": "the gallop, which averages 40 to 48 kilometres per hour (25 to 30 mph)",
+            "retrieved_at": "2026-11-10T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 11.11,
+          "high": 13.33,
+          "note": "Converted from 48 km/h, low from 40 km/h."
+        },
+        "attack_force_n": {
+          "value": 1924.0,
+          "unit": "N",
+          "source": {
+            "title": "Säkra häststall – hästens sparkbelastning på inredning och byggnadskonstruktioner",
+            "url": "https://res.slu.se/id/publ/34072",
+            "quote": "90% of the impacts had a maximum value below 1924 N and the highest one was 8722 N.",
+            "retrieved_at": "2026-11-10T00:00:00Z",
+            "license": "No license stated; one attributed sentence cited"
+          },
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 1443.0,
+          "high": 2405.0,
+          "note": "von Wachenfelt, Nilsson and Ventorp 2011, SLU report 2011:20, English conclusions. 1924 N is the level 90% of the roughly 500 recorded kicks stayed under (the report gives no average), so it is a high-end figure, not a typical kick. Stall kicks against a measuring wall, often unprovoked, not fighting; the peak was 8722 N and the authors think horses can kick harder. Range is +/-25%."
+        },
+        "attacks_per_s": {
+          "value": 1.5,
+          "unit": "1/s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 0.75,
+          "high": 2.25,
+          "note": "No published attack rate found for this animal; category default."
+        },
+        "reach_m": {
+          "value": 0.39,
+          "unit": "m",
+          "source": null,
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "derived",
+          "low": 0.29,
+          "high": 0.49,
+          "note": "reach = 0.25 x size_m, from size_m."
+        },
+        "armor_0_1": {
+          "value": 0.15,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.075,
+          "high": 0.225,
+          "note": "armor level 1: fur, feathers, or bare skin."
+        },
+        "endurance_s": {
+          "value": 300.0,
+          "unit": "s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 150.0,
+          "high": 450.0,
+          "note": "Category default (mammal). The gallop distance in the Gallop article is not fighting endurance (D-47)."
+        },
+        "aggression_0_1": {
+          "value": 0.3,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.15,
+          "high": 0.45,
+          "note": "aggression level 2: flees first, fights when cornered."
+        },
+        "group_tactics_0_1": {
+          "value": 0.3,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.15,
+          "high": 0.45,
+          "note": "group tactics level 2: lives in groups, but responds to danger by running and kicks alone."
+        }
+      },
+      "schema_version": 1,
+      "sheet_hash": "2a053ca2c1fb934d6fa2a5bbc3b83990a20ad8e03f7a7576b65f8eafa349d5c9"
+    },
+    {
+      "fighter_id": "duck",
+      "display_name": "Duck",
+      "media_name": "mallard duck",
+      "category": "bird",
+      "body": "living",
+      "habitat": "amphibious",
+      "weapons": [
+        "beak"
+      ],
+      "lore": null,
+      "stats": {
+        "mass_kg": {
+          "value": 1.14,
+          "unit": "kg",
+          "source": {
+            "title": "Air speeds of migrating birds observed by ornithodolite and compared with predictions from flight theory",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3730693/",
+            "quote": "Anas platyrhynchos Mallard 1.14 0.890 0.107 19.7 1.55 21",
+            "retrieved_at": "2026-11-10T00:00:00Z",
+            "license": "CC BY 3.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 0.7,
+          "high": 1.6,
+          "note": "Mean mass of the mallards measured (Table 1, the same row as the top speed). Low and high are the Mallard article's 0.7-1.6 kg range (https://en.wikipedia.org/w/index.php?title=Mallard&oldid=1383243084)."
+        },
+        "size_m": {
+          "value": 0.65,
+          "unit": "m",
+          "source": {
+            "title": "Mallard",
+            "url": "https://en.wikipedia.org/w/index.php?title=Mallard&oldid=1383243084",
+            "quote": "It is 50–65 cm (20–26 in) long",
+            "retrieved_at": "2026-11-10T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 0.5,
+          "high": 0.65,
+          "note": "Upper end of the stated range; the source gives no mean."
+        },
+        "top_speed_mps": {
+          "value": 19.7,
+          "unit": "m/s",
+          "source": {
+            "title": "Air speeds of migrating birds observed by ornithodolite and compared with predictions from flight theory",
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3730693/",
+            "quote": "Anas platyrhynchos Mallard 1.14 0.890 0.107 19.7 1.55 21",
+            "retrieved_at": "2026-11-10T00:00:00Z",
+            "license": "CC BY 3.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 17.73,
+          "high": 21.67,
+          "note": "Airspeed in steady flight (Table 1); range is the standard +/-10%. A flight speed, used on every terrain; revisit when the showcases are calibrated."
+        },
+        "attack_force_n": {
+          "value": 30.0,
+          "unit": "N",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 15.0,
+          "high": 45.0,
+          "note": "No measured mallard bite force found; category default. One of the duck's 3 allowed estimates (D-47)."
+        },
+        "attacks_per_s": {
+          "value": 2.0,
+          "unit": "1/s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 1.0,
+          "high": 3.0,
+          "note": "No published attack rate found for this animal; category default."
+        },
+        "reach_m": {
+          "value": 0.16,
+          "unit": "m",
+          "source": null,
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "derived",
+          "low": 0.12,
+          "high": 0.2,
+          "note": "reach = 0.25 x size_m (lunging bite), from size_m."
+        },
+        "armor_0_1": {
+          "value": 0.15,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.075,
+          "high": 0.225,
+          "note": "armor level 1: feathers."
+        },
+        "endurance_s": {
+          "value": 300.0,
+          "unit": "s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 150.0,
+          "high": 450.0,
+          "note": "No published figure for how long it can keep fighting; category default."
+        },
+        "aggression_0_1": {
+          "value": 0.3,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.15,
+          "high": 0.45,
+          "note": "aggression level 2: flees first, fights when cornered."
+        },
+        "group_tactics_0_1": {
+          "value": 0.3,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.15,
+          "high": 0.45,
+          "note": "group tactics level 2: gathers in flocks, but each bird acts alone."
+        }
+      },
+      "schema_version": 1,
+      "sheet_hash": "6a950c3d22f13d1ca4b66db9c29324ddbf9dcb16727a7ce7f9543a99c25a364e"
+    }
+  ],
+  "result": {
+    "seed": 262872823879990568,
+    "runs": 1000,
+    "win_prob": [
+      0.0,
+      1.0
+    ],
+    "draw_prob": 0.0,
+    "win_prob_ci95": [
+      [
+        0.0,
+        0.003826898586390522
+      ],
+      [
+        0.9961731014136095,
+        1.0
+      ]
+    ],
+    "mean_survivors": [
+      0.0,
+      1.0
+    ],
+    "mean_duration_s": 75.77539999999999,
+    "outcome": "win_1",
+    "deciding_factor": "mass_kg",
+    "deciding_factor_explainer": "Size decided it: after scaling, Duck (1.14 kg normally, scaled to horse size) against 100 Horse (500 kg normally, scaled to duck size).",
+    "representative_log": [
+      {
+        "t": 0.0,
+        "type": "approach",
+        "side": 0,
+        "actor": null,
+        "target": null,
+        "group_size": 100,
+        "damage": null,
+        "text_hint": "closes in, scaled to duck size"
+      },
+      {
+        "t": 0.0,
+        "type": "approach",
+        "side": 1,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "closes in, scaled to horse size"
+      },
+      {
+        "t": 0.3,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 0.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 33,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 0.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 50,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 0.3,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 0.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 0.3,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 0.3,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 0.3,
+        "type": "hit",
+        "side": 0,
+        "actor": 93,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 0.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 50,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 0.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 50,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 0.7,
+        "type": "miss",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 1.0,
+        "type": "miss",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 1.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 33,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 93,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.3,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 69,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 1.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 69,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 1.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.7,
+        "type": "miss",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 1.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 93,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 1.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 93,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 1.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 1.8,
+        "type": "miss",
+        "side": 0,
+        "actor": 33,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 1.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 2.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 2.3,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 63,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "peck misses"
+      },
+      {
+        "t": 2.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 33,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 2.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 2.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 2.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 2.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 2.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 2.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 2.9,
+        "type": "miss",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 2.9,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 63,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 2.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 63,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 3.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.2,
+        "type": "miss",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 3.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 33,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.4,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 65,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 3.4,
+        "type": "ko",
+        "side": 0,
+        "actor": 65,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 3.6,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 3.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 33,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.0,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 44,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "peck misses"
+      },
+      {
+        "t": 4.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.3,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.5,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 44,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 4.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 44,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 4.6,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 33,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 4.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 5.1,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 33,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "peck misses"
+      },
+      {
+        "t": 5.1,
+        "type": "miss",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 5.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 33,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 5.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 5.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 5.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 5.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 5.4,
+        "type": "miss",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 5.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 33,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 5.6,
+        "type": "ko",
+        "side": 0,
+        "actor": 33,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 5.6,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 5.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 62,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 5.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 57,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 6.2,
+        "type": "ko",
+        "side": 0,
+        "actor": 57,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 6.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 6.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 6.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 62,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 21,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 6.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 21,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 6.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 6.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 7.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 7.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 62,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 7.2,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 64,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "peck misses"
+      },
+      {
+        "t": 7.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 7.6,
+        "type": "miss",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 7.6,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 7.6,
+        "type": "miss",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 7.6,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 7.6,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 7.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 64,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 7.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 64,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 7.8,
+        "type": "miss",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 7.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 62,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 8.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 8.3,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 41,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "peck misses"
+      },
+      {
+        "t": 8.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 8.3,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 8.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 8.3,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 8.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 8.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 8.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 62,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 8.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 8.9,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 41,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 8.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 41,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 9.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.0,
+        "type": "miss",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "kick misses"
+      },
+      {
+        "t": 9.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.4,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 82,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 9.4,
+        "type": "ko",
+        "side": 0,
+        "actor": 82,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 9.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 62,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 71,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 18,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.7,
+        "type": "hit",
+        "side": 0,
+        "actor": 72,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 32,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 9.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 67,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 10.0,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 40,
+        "group_size": 1,
+        "damage": 89.8,
+        "text_hint": "peck lands"
+      },
+      {
+        "t": 10.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 40,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 10.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 62,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 10.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 80,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 10.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 94,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1.5,
+        "text_hint": "kick lands"
+      },
+      {
+        "t": 10.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 68,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 11.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 24,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 11.6,
+        "type": "ko",
+        "side": 0,
+        "actor": 34,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 12.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 99,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 12.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 55,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 13.2,
+        "type": "ko",
+        "side": 0,
+        "actor": 85,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 13.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 17,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 14.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 96,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 15.4,
+        "type": "ko",
+        "side": 0,
+        "actor": 83,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 15.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 62,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 16.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 16,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 17.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 78,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 17.6,
+        "type": "ko",
+        "side": 0,
+        "actor": 54,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 18.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 9,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 18.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 74,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 19.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 59,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 20.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 5,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 20.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 4,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 21.4,
+        "type": "ko",
+        "side": 0,
+        "actor": 23,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 21.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 81,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 22.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 32,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 23.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 22,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 23.6,
+        "type": "ko",
+        "side": 0,
+        "actor": 71,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 24.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 11,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 24.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 52,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 25.2,
+        "type": "ko",
+        "side": 0,
+        "actor": 38,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 25.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 92,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 26.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 61,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 26.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 75,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 27.4,
+        "type": "ko",
+        "side": 0,
+        "actor": 46,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 27.4,
+        "type": "retreat",
+        "side": 0,
+        "actor": null,
+        "target": null,
+        "group_size": 57,
+        "damage": null,
+        "text_hint": "breaks and runs"
+      },
+      {
+        "t": 27.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 98,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 28.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 73,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 29.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 42,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 30.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 18,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 30.6,
+        "type": "ko",
+        "side": 0,
+        "actor": 29,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 31.2,
+        "type": "ko",
+        "side": 0,
+        "actor": 77,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 31.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 48,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 32.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 25,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 32.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 49,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 34.4,
+        "type": "ko",
+        "side": 0,
+        "actor": 70,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 35.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 36,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 35.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 47,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 36.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 94,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 37.2,
+        "type": "ko",
+        "side": 0,
+        "actor": 28,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 38.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 43,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 38.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 90,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 39.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 51,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 40.4,
+        "type": "ko",
+        "side": 0,
+        "actor": 15,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 41.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 19,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 41.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 10,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 42.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 89,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 43.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 76,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 44.2,
+        "type": "ko",
+        "side": 0,
+        "actor": 0,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 44.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 12,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 45.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 66,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 45.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 84,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 47.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 53,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 47.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 14,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 48.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 2,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 48.6,
+        "type": "ko",
+        "side": 0,
+        "actor": 39,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 49.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 86,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 49.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 91,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 51.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 67,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 52.4,
+        "type": "ko",
+        "side": 0,
+        "actor": 80,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 52.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 13,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 53.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 79,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 54.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 8,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 54.6,
+        "type": "ko",
+        "side": 0,
+        "actor": 45,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 55.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 97,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 55.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 1,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 56.2,
+        "type": "ko",
+        "side": 0,
+        "actor": 26,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 56.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 37,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 57.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 58,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 57.8,
+        "type": "ko",
+        "side": 0,
+        "actor": 56,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 58.4,
+        "type": "ko",
+        "side": 0,
+        "actor": 6,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 58.9,
+        "type": "ko",
+        "side": 0,
+        "actor": 87,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 59.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 20,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 60.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 72,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 60.6,
+        "type": "ko",
+        "side": 0,
+        "actor": 88,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 62.2,
+        "type": "ko",
+        "side": 0,
+        "actor": 35,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 63.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 31,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 65.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 30,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 66.0,
+        "type": "ko",
+        "side": 0,
+        "actor": 7,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 66.5,
+        "type": "ko",
+        "side": 0,
+        "actor": 60,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 68.2,
+        "type": "ko",
+        "side": 0,
+        "actor": 95,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 68.7,
+        "type": "ko",
+        "side": 0,
+        "actor": 3,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 69.3,
+        "type": "ko",
+        "side": 0,
+        "actor": 27,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down"
+      },
+      {
+        "t": 69.3,
+        "type": "end",
+        "side": 1,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "the fight is over"
+      }
+    ]
+  },
+  "fair_fight": {
+    "varied_side": 0,
+    "count": 500,
+    "win_prob_at_count": 0.455,
+    "message": "A fair fight needs 500 horses against 1 duck."
+  },
+  "challenger": {
+    "entity": "African lion",
+    "tested_win_prob": 0.13,
+    "reason": "African lion would be a clear underdog against Duck (horse-sized)."
+  },
+  "scripts": [
+    {
+      "kind": "intro",
+      "lines": [
+        {
+          "speaker": "announcer",
+          "text": "LADIES AND GENTLEMEN, WELCOME TO BATTLE ROYALE!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Tonight, a collision of titans and tiny talents.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "IN THE RED CORNER, THE STEEL-HOOFED STORM, HORSE X100!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "A collective mass of five hundred kilograms of muscle.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "AND IN THE BLUE, THE FEATHERED FURY, DUCK X1!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Weighing in at just over one kilogram. Quite agile.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "ONE HUNDRED VS ONE. LET US SEE WHAT HAPPENS!",
+          "at_event": null
+        }
+      ],
+      "fallback": false
+    },
+    {
+      "kind": "play_by_play",
+      "lines": [
+        {
+          "speaker": "announcer",
+          "text": "Horse, all 100 of them, closes in. Here we go!",
+          "at_event": 0
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 11
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 21
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 28
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 43
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 52
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 64
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 81
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 91
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 96
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 112
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 126
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 135
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 144
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 148
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 149
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 150
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 151
+        },
+        {
+          "speaker": "announcer",
+          "text": "Horse goes down! That is a knockout!",
+          "at_event": 152
+        },
+        {
+          "speaker": "announcer",
+          "text": "And that is the fight!",
+          "at_event": 236
+        }
+      ],
+      "fallback": true
+    },
+    {
+      "kind": "outro",
+      "lines": [
+        {
+          "speaker": "announcer",
+          "text": "The simulation ends. Your winner: Duck!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "It happened 100% of the time across 1,000 runs.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "It came down to sheer mass.",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Want a fair fight? About 500 horses make it a coin flip, winning 46% of the time.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "Good night, and stay aerodynamic.",
+          "at_event": null
+        }
+      ],
+      "fallback": false
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "sprite-horse-v1",
+      "kind": "sprite",
+      "url": "/media/sprites/horse-v1.png",
+      "prompt_hash": "5c6d124e5d9fd7ad59484e4ad70859bba685faf91268400a82d78f3030d1433a",
+      "fallback": false,
+      "script_kind": null
+    },
+    {
+      "asset_id": "sprite-duck-v1",
+      "kind": "sprite",
+      "url": "/media/sprites/duck-v1.png",
+      "prompt_hash": "f426d1a1eba81eab3ec2fdc25b43de8ac0449628fc2126c8d9f637a0a2a65c86",
+      "fallback": false,
+      "script_kind": null
+    },
+    {
+      "asset_id": "battlefield-arena-v1",
+      "kind": "battlefield",
+      "url": "/media/battlefields/arena-v1.png",
+      "prompt_hash": "76cda9177945731711fdbbfe0c3312162eaecbf2d0e9319e588fceff26ed2581",
+      "fallback": false,
+      "script_kind": null
+    }
+  ],
+  "stages": [
+    {
+      "stage": "intake",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "research",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "simulate",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "summary",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "challenger",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "script",
+      "status": "fallback",
+      "detail": "Some of the commentary used the template script this time."
+    },
+    {
+      "stage": "audio",
+      "status": "fallback",
+      "detail": "Captions only this time, no announcer voice."
+    },
+    {
+      "stage": "music",
+      "status": "fallback",
+      "detail": "No music this time."
+    },
+    {
+      "stage": "images",
+      "status": "done",
+      "detail": null
+    }
+  ],
+  "status": "done"
+}
