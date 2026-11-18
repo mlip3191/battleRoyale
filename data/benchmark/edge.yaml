@@ -7,42 +7,42 @@ matchups:
 - id: edge-swarm-01a
   group: swarm
   fighters:
-    - {entity: army-ant, count: 150, variant: null}
-    - {entity: house-cat, count: 1, variant: null}
-  terrain: forest
-  expected_winner: "1"
+    - {entity: roman-legionary, count: 150, variant: null}
+    - {entity: african-lion, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "0"
   confidence: medium
-  source: "assumption: 150 ant bites barely hurt a cat that can swat or flee"
+  source: "assumption: 150 armored, organized soldiers beat one lion, but not every time"
 
 - id: edge-swarm-01b
   group: swarm
   fighters:
-    - {entity: army-ant, count: 300, variant: null}
-    - {entity: house-cat, count: 1, variant: null}
-  terrain: forest
-  expected_winner: "1"
+    - {entity: roman-legionary, count: 300, variant: null}
+    - {entity: african-lion, count: 1, variant: null}
+  terrain: open_field
+  expected_winner: "0"
   confidence: medium
-  source: "assumption: twice the ants is still far too little mass to stop a cat; the ants' win share should rise, not fall"
+  source: "assumption: twice the soldiers should win at least as often; a closer fight than the ant and bee pairs, so rules 4 and 5 can fail"
 
 - id: edge-swarm-02a
   group: swarm
   fighters:
-    - {entity: honey-bee, count: 150, variant: null}
-    - {entity: chimpanzee, count: 1, variant: null}
+    - {entity: gorilla, count: 150, variant: null}
+    - {entity: african-elephant, count: 1, variant: null}
   terrain: open_field
-  expected_winner: "1"
+  expected_winner: "0"
   confidence: medium
-  source: "assumption: 150 stings hurt but don't stop an adult chimpanzee"
+  source: "assumption: 150 gorillas overwhelm one elephant, though an elephant is no pushover"
 
 - id: edge-swarm-02b
   group: swarm
   fighters:
-    - {entity: honey-bee, count: 300, variant: null}
-    - {entity: chimpanzee, count: 1, variant: null}
+    - {entity: gorilla, count: 300, variant: null}
+    - {entity: african-elephant, count: 1, variant: null}
   terrain: open_field
-  expected_winner: "1"
+  expected_winner: "0"
   confidence: medium
-  source: "assumption: 300 stings are still well short of a lethal dose for a 40-60 kg ape; the bees' share should rise"
+  source: "assumption: twice the gorillas should win at least as often"
 
 # --- The five showcase battles (PRODUCT_SPEC section 9) ----------------------------------------
 - id: edge-show-01
