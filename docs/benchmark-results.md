@@ -12,6 +12,96 @@ Three cases fail in the baseline and are recorded as known limits, not fixed (Mi
 
 None of the three is an "obvious" case, so the 80% held-out "obvious" target is unaffected.
 
+## Run 2026-11-18 09:28 — sheets: research
+
+Commit `960ead2` · runtime 79.0 s · traceability 89%
+
+| Set | Pass rate |
+|---|---|
+| Tuning | 17/20 (85%) |
+| Held-out (never used to change constants) | 9/10 (90%) |
+
+| Group | Tuning | Held-out |
+|---|---|---|
+| obvious | 10/10 (100%) | 4/5 (80%) |
+| documented | 4/7 (57%) | 3/3 (100%) |
+| count | 3/3 (100%) | 2/2 (100%) |
+
+_Traceability (G06): 8 of 9 stored battles have no issues; 7 quotes were checked against stored articles and 45 could not be checked here. Run `scripts/trace_report.py` for details._
+
+### Edge-case set (reported separately)
+
+Judged by the rules in `docs/benchmark.md`, section "Edge-case set". These are not part of the tuning or held-out scores above, or of the 80% target.
+
+| Group | Pass rate |
+|---|---|
+| swarm | 4/4 (100%) |
+| showcase | 2/5 (40%) |
+| mirror | 2/2 (100%) |
+| draw | 1/1 (100%) |
+| terrain | 3/3 (100%) |
+| all edge cases | 12/15 (80%) |
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Swarm v 1-by-1 | Result |
+|---|---|---|---|---|---|---|
+| edge-swarm-01a | swarm | side 1 | side 1 | 0.0 / 100.0 | 0.000 | pass — favorite matches; swarm and one by one differ by 0.000 (within 0.03) |
+| edge-swarm-01b | swarm | side 1 | side 1 | 0.0 / 99.0 | 0.000 | pass — favorite matches; the bigger swarm wins 0.0% against 0.0% for the smaller; swarm and one by one differ by 0.000 (within 0.03) |
+| edge-swarm-02a | swarm | side 1 | side 1 | 0.0 / 100.0 | 0.000 | pass — favorite matches; swarm and one by one differ by 0.000 (within 0.03) |
+| edge-swarm-02b | swarm | side 1 | side 1 | 0.0 / 99.8 | 0.000 | pass — favorite matches; the bigger swarm wins 0.0% against 0.0% for the smaller; swarm and one by one differ by 0.000 (within 0.03) |
+| edge-show-01 | showcase | side 1 | side 0 | 99.9 / 0.1 | — | FAIL — expected side 1, got side 0 |
+| edge-show-02 | showcase | side 1 | side 0 | 68.7 / 31.3 | — | FAIL — expected side 1, got side 0 |
+| edge-show-03 | showcase | side 0 | side 0 | 96.9 / 3.1 | — | pass — favorite matches |
+| edge-show-04 | showcase | side 1 | side 1 | 8.2 / 91.8 | — | pass — favorite matches |
+| edge-show-05 | showcase | side 1 | side 0 | 100.0 / 0.0 | — | FAIL — expected side 1, got side 0 |
+| edge-mirror-01 | mirror | draw | none | 50.7 / 49.3 | — | pass — side 0 wins 50.7%, inside 40 to 60% |
+| edge-mirror-02 | mirror | draw | none | 50.4 / 49.6 | — | pass — side 0 wins 50.4%, inside 40 to 60% |
+| edge-draw-01 | draw | draw | none | 0.0 / 0.0 | — | pass — no contest, so nobody wins (No contest: neither Saguaro cactus nor Toaster can hurt the other.) |
+| edge-terrain-01 | terrain | side 0 | side 0 | 71.8 / 28.2 | — | pass — favorite matches |
+| edge-terrain-02 | terrain | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| edge-terrain-03 | terrain | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+
+**Reading the edge set:** 12 of 15 pass. All four swarm pairs agree between swarm and one-by-one mode to 0.000 (limit 0.03), the mirrors sit at 50%, and the cactus v toaster case is a no contest, which rule 3 counts as nobody winning (#418). The three showcase failures come from the research-built sheets, not the engine: on the hand-verified seed sheets all five showcase cases pass (duck 100%, wolves 56.7%, tank 100%), and with research sheets the duck-sized horses, the grizzly and the dragon win instead. The research sheets for the duck, horse, wolf, grizzly, dragon and tank differ from the seed ones, which is why the pipeline's sheets need checking before the showcase runs on them. No constant or sheet was changed to make a case pass.
+
+### Tuning set
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
+|---|---|---|---|---|---|---|
+| cnt-02 | count | side 1 | side 1 | 0.0 / 100.0 | 5 | pass — fair count 5 inside expected 3-10 |
+| cnt-03 | count | side 1 | side 1 | 2.3 / 97.7 | 8 | pass — fair count 8 inside expected 8-40 |
+| cnt-05 | count | side 1 | side 1 | 0.6 / 99.4 | 5 | pass — fair count 5 inside expected 2-8 |
+| doc-01 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| doc-02 | documented | side 1 | side 0 | 77.9 / 22.1 | — | FAIL — expected side 1, got side 0 |
+| doc-03 | documented | side 1 | side 1 | 11.9 / 88.1 | — | pass — favorite matches |
+| doc-06 | documented | side 0 | side 1 | 11.9 / 88.1 | — | FAIL — expected side 0, got side 1 |
+| doc-07 | documented | side 0 | side 0 | 74.0 / 26.0 | — | pass — favorite matches |
+| doc-08 | documented | side 1 | side 0 | 52.2 / 47.8 | — | FAIL — expected side 1, got side 0 |
+| doc-09 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-02 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-03 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-04 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-06 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-07 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-08 | obvious | side 1 | side 1 | 0.7 / 99.3 | — | pass — favorite matches |
+| obv-11 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-12 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-14 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-15 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+
+### Held-out set
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
+|---|---|---|---|---|---|---|
+| cnt-01 | count | side 1 | side 1 | 1.0 / 99.0 | 6 | pass — fair count 6 inside expected 3-12 |
+| cnt-04 | count | side 1 | side 1 | 0.0 / 100.0 | 128 | pass — fair count 128 inside expected 20-300 |
+| doc-04 | documented | side 0 | side 0 | 96.9 / 3.1 | — | pass — favorite matches |
+| doc-05 | documented | side 0 | side 0 | 75.6 / 24.4 | — | pass — favorite matches |
+| doc-10 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-01 | obvious | side 1 | side 1 | 1.2 / 98.8 | — | pass — favorite matches |
+| obv-05 | obvious | side 0 | side 0 | 98.6 / 1.4 | — | pass — favorite matches |
+| obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
+| obv-13 | obvious | side 1 | side 1 | 33.5 / 66.5 | — | FAIL — right favorite but only 66.5% (high confidence needs 70%) |
+
 ## Run 2026-11-17 19:08 — sheets: research
 
 Commit `e1d7a24` · runtime 7.1 s · traceability 89%
@@ -257,72 +347,4 @@ _Traceability (G06) is not wired in yet; it shows n/a until research/trace.py la
 | obv-05 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
 | obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
 | obv-10 | obvious | side 1 | side 1 | 0.1 / 99.9 | — | pass — favorite matches |
-| obv-13 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-
-
-
-
-## Run 2026-11-14 13:21 — sheets: seed
-
-Commit `ff61d0c` · runtime 4.9 s · traceability n/a
-
-| Set | Pass rate |
-|---|---|
-| Tuning | 15/16 (94%), 4 skipped |
-| Held-out (never used to change constants) | 7/9 (78%), 1 skipped |
-
-| Group | Tuning | Held-out |
-|---|---|---|
-| obvious | 8/8 (100%), 2 skipped | 5/5 (100%) |
-| documented | 5/5 (100%), 2 skipped | 1/2 (50%), 1 skipped |
-| count | 2/3 (67%) | 1/2 (50%) |
-
-**Skipped (5):** not scored, because a stat sheet is missing.
-
-- doc-06: no stat sheet for 'golden-retriever'
-- doc-08: no stat sheet for 'goose'
-- obv-04: no stat sheet for 'toaster'
-- obv-08: no stat sheet for 'house-mouse'
-- doc-10: no stat sheet for 'hippopotamus'
-
-_Traceability (G06) is not wired in yet; it shows n/a until research/trace.py lands._
-
-### Tuning set
-
-| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
-|---|---|---|---|---|---|---|
-| cnt-02 | count | side 1 | side 1 | 0.0 / 100.0 | 4 | pass — fair count 4 inside expected 3-10 |
-| cnt-03 | count | side 1 | side 1 | 0.0 / 100.0 | 28 | pass — fair count 28 inside expected 8-40 |
-| cnt-05 | count | side 1 | side 1 | 0.0 / 100.0 | 24 | FAIL — fair count 24 outside expected 2-8 |
-| doc-01 | documented | side 0 | side 0 | 99.7 / 0.3 | — | pass — favorite matches |
-| doc-02 | documented | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| doc-03 | documented | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| doc-06 | documented | side 0 | — | — | — | skipped — no stat sheet for 'golden-retriever' |
-| doc-07 | documented | side 0 | side 0 | 99.7 / 0.3 | — | pass — favorite matches |
-| doc-08 | documented | side 1 | — | — | — | skipped — no stat sheet for 'goose' |
-| doc-09 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-02 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| obv-03 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-04 | obvious | side 1 | — | — | — | skipped — no stat sheet for 'toaster' |
-| obv-06 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| obv-07 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-08 | obvious | side 1 | — | — | — | skipped — no stat sheet for 'house-mouse' |
-| obv-11 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-12 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| obv-14 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-15 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-
-### Held-out set
-
-| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
-|---|---|---|---|---|---|---|
-| cnt-01 | count | side 1 | side 1 | 0.0 / 100.0 | 5 | pass — fair count 5 inside expected 3-12 |
-| cnt-04 | count | side 1 | side 1 | 0.0 / 100.0 | 320 | FAIL — fair count 320 outside expected 20-300 |
-| doc-04 | documented | side 0 | side 0 | 95.0 / 5.0 | — | pass — favorite matches |
-| doc-05 | documented | side 0 | side 1 | 1.3 / 98.7 | — | FAIL — expected side 0, got side 1 |
-| doc-10 | documented | side 0 | — | — | — | skipped — no stat sheet for 'hippopotamus' |
-| obv-01 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| obv-05 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
