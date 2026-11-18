@@ -143,3 +143,37 @@ def test_intake_leaves_a_plain_bear_and_a_given_variant_alone() -> None:
     assert result.matchup is not None
     plain, given = result.matchup.fighters
     assert plain.variant is None and given.variant == "grizzly"
+
+
+@pytest.mark.parametrize(
+    "raw",
+    ["a bear in a forest", "a bear on the ice", "the bear at the lake", "a bear inside a cave"],
+)
+def test_a_trailing_place_phrase_is_not_a_kind(raw: str) -> None:
+    assert default_kind("bear", None, raw) == "grizzly-bear"
+    assert named_kind_words("bear", raw) is None
+    assert default_kind_notes([request("bear", raw)]) == [
+        "Not sure which bear, so we used the grizzly bear."
+    ]
+
+
+def test_a_kind_is_still_found_before_a_trailing_place_phrase() -> None:
+    assert named_kind_words("bear", "a polar bear on the ice") == "polar"
+    assert named_kind_words("shark", "a shark in the water") is None
+    assert named_kind_words("wolf", "6 gray wolves in a forest") == "gray"
+    assert default_kind("bear", None, "a polar bear on the ice") is None
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "the bear's",
+        "a bear's",
+        "a bunch of bears",
+        "dozens of bears",
+        "both bears",
+        "fifteen bears",
+    ],
+)
+def test_possessives_and_more_group_words_do_not_name_a_kind(raw: str) -> None:
+    assert default_kind("bear", None, raw) == "grizzly-bear"

@@ -66,13 +66,17 @@ _NAME_ALIASES = {
 
 
 # Words that may stand around a bare kind in the user's own phrase without naming a kind: articles,
-# numbers, group words and size words. "a big bear" is still just a bear; "a polar bear" is not.
+# numbers, group words, size words, possessives and plain adjectives. "a big bear" or "my fierce
+# bear" is still just a bear; "a polar bear" is not. The list is closed: a word that is not on it
+# counts as naming a kind (add a word here when a plain one turns up).
 _FILLER_WORDS = {
     *("a", "an", "the", "some", "many", "few", "several", "of", "pack", "herd", "flock"),
     *("swarm", "school", "group", "pair", "couple", "dozen", "hundred", "thousand", "million"),
     *("big", "small", "large", "little", "huge", "giant", "tiny", "angry", "young", "old"),
     *("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"),
     *("eleven", "twelve", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty"),
+    *("thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"),
+    *("bunch", "troop", "trio", "pride", "dozens", "hundreds", "thousands", "lots", "both", "all"),
     *("ninety", "my", "your", "his", "her", "our", "their", "lone", "wild", "adult", "mature"),
     *("fierce", "hungry", "mean", "strong", "fast", "scary", "tough", "mighty", "grumpy", "deadly"),
     *("venomous", "poisonous", "dangerous", "hairy", "fat", "tall", "short", "ordinary", "normal"),
@@ -114,11 +118,23 @@ def default_kind(entity: str, variant: str | None = None, raw: str | None = None
     return DEFAULT_KINDS.get(singular) if singular else None
 
 
+# A trailing place phrase ("in a forest", "on the ice") that rides along in a side's exact words
+# when the battlefield comes last. It is not a kind of fighter.
+_PLACE_TAIL = re.compile(r"\s+(?:in|on|at|inside|into)\s+.*$", re.IGNORECASE)
+_POSSESSIVE = re.compile(r"['’]s\b", re.IGNORECASE)
+
+
+# The words of a side that can name a kind: without a trailing place phrase or a possessive "'s".
+def _side_words(raw: str | None) -> str:
+    return _POSSESSIVE.sub("", _PLACE_TAIL.sub("", (raw or "").strip()))
+
+
 # True when the user's phrase has a word besides the entity, an article, a number or a size word,
 # so a kind was named ("a polar bear" for the entity "bear"). A phrase that does not contain the
 # entity at all describes something else and names no kind of it.
 def _raw_names_a_kind(entity: str, raw: str | None) -> bool:
-    if not raw or not raw.strip():
+    raw = _side_words(raw)
+    if not raw:
         return False
     entity_words = {w for part in _canonical_slug(entity).split("-") for w in (part, part + "s")}
     words = _canonical_slug(raw).split("-")
@@ -140,7 +156,7 @@ def named_kind_words(entity: str, raw: str | None) -> str | None:
         return None
     entity_words = {w for part in _canonical_slug(entity).split("-") for w in (part, part + "s")}
     kept = []
-    for word in re.findall(r"[A-Za-z]+", raw or ""):
+    for word in re.findall(r"[A-Za-z]+", _side_words(raw)):
         low = _canonical_slug(word)
         plural_of_entity = low.endswith("s") and low[:-1] in entity_words
         if low and low not in _FILLER_WORDS and low not in entity_words and not plural_of_entity:
