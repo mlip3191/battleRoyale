@@ -128,7 +128,9 @@ def test_the_choice_changes_the_fight_in_the_expected_direction():
 
     def share(sheet: StatSheet) -> float:
         match = matchup_of(3, 1, terrain=Terrain.OPEN_FIELD)
-        # 1,000 runs. Measured at 4,000 on engine 12: base 0.379, speed 0.368, attack 0.457.
+        # 1,000 runs. At 4,000 runs on engine 12: base 0.379, speed 0.368, attack 0.457. At 1,000
+        # runs the speed kit can land a few points either side of the base, so the speed check below
+        # only rules out a clear gain (5 points); the attack check is the one that shows direction.
         return run(match, [sheet, bear], runs=1000, explain=False).win_prob[0]
 
     base = share(wolf)

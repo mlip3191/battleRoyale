@@ -1,12 +1,12 @@
 # Loadouts and tournament progression (design, prework for #283)
 
-**Status: prework, not decided.** Nothing here is wired into battles or the API. Mike decides the scope on #283. Everything below is built to be safe to adopt, not to force the choice.
+**Status: prework, parked post-MVP (D-56).** Nothing here is wired into battles or the API. Mike ruled on #283 that loadouts are post-MVP; PR #284 stays a draft as future-work material, and this design is kept for when it comes back. Everything below is built to be safe to adopt, not to force the choice.
 
 What exists in code today (PR #284, draft): four loadouts (attack, defense, speed, balanced) with five tiers, combined into a **kit** that is applied to a stat sheet by code (`backend/app/simulation/loadouts.py`), scaled by the fighter's own starting stats with a bonus for its primary attribute, and with the negative traits of carrying a lot. This page covers the items, how a fighter improves through the tournament, and what the simulator says about whether it matters.
 
 ## 1. The items: what each kind of fighter carries
 
-What a fighter can carry depends on what it is. A warrior carries iron, a wolf grows claws and hide, a horse hardens its hooves, a bird sharpens its talons, a tank bolts on plating. There are nine kinds (`data/loadouts/items.yaml`), each with the same four loadouts and five items per loadout, so 180 items; the kind comes from the stat sheet (its category, and its weapons for hooves, horns and tusks). All are natural or pre-modern: D-07 and D-38 block firearms, explosives and modern vehicles as fighters, so none is offered. A test checks every name is safe to show and no item is modern. An item is only a name until a teammate sources its real-world facts with a URL and an exact quote, like a stat sheet; each kind has a `research` note saying what to find.
+What a fighter can carry depends on what it is. A warrior carries iron, a wolf grows claws and hide, a horse hardens its hooves, a bird sharpens its talons, a tank bolts on plating. There are nine kinds (`data/loadouts/items.yaml`), each with the same four loadouts and five items per loadout, so 180 items; the kind comes from the stat sheet (its category, and its weapons for hooves, horns and tusks). The gear line is pre-modern and natural only (D-56, under D-07 and D-38, which block firearms and explosives; D-38 does allow machines as fighters). The machine kind still lists engineered parts such as a tuned engine (`data/loadouts/items.yaml`), which would be reworded if loadouts return. A test checks every name is safe to show; it bans weapon words only, so it does not prove an item is pre-modern. An item is only a name until a teammate sources its real-world facts with a URL and an exact quote, like a stat sheet; each kind has a `research` note saying what to find.
 
 The effect of a loadout is the same for every kind of fighter (section 3); what differs is the **name of the item** and **how heavy it is** (which decides when the negative traits start).
 
@@ -122,7 +122,7 @@ Resulting multipliers for one loadout alone at each tier, for a warrior (force /
 
 ### Starting stats matter, and a fighter's primary attribute pays extra
 
-Every change is a **multiplier on the fighter's own stat**, never a flat number, so the starting stats decide how much a loadout is worth. The same tier-3 speed loadout takes a cheetah from 29 to 46 m/s (+17) but a gray wolf only from 17.8 to 28.2 (+10); the same tier-3 defense loadout takes a rhino's armor from 0.60 to 1.0 but a wolf's from 0.15 to 0.28. (Armor is multiplied from a floor of 0.05, so a fighter with none can still gain a little.)
+Every change is a **multiplier on the fighter's own stat**, never a flat number, so the starting stats decide how much a loadout is worth. The same tier-3 speed loadout takes a cheetah from 29 to 49.9 m/s (+20.9) but a gray wolf only from 17.8 to 30.6 (+12.8); the same tier-3 defense loadout takes a rhino's armor from 0.60 to 1.0 but a wolf's from 0.15 to 0.28. (Armor is multiplied from a floor of 0.05, so a fighter with none can still gain a little.)
 
 On top of that each fighter has a **primary attribute**: what it is best at, measured on a fixed scale (attack = force times rate against 1,500 N per second, defense = armor against 0.4, speed against 20 m/s; `PRIMARY_REFERENCE`). The best one counts if it leads the next by 20%; otherwise the fighter is a generalist and the *balanced* loadout is its match. **Enhancing the primary attribute pays extra:** the matching loadout's gains (not its costs) grow by 60% (`PRIMARY_SYNERGY`), so a cheetah's speed loadout and a rhino's armor loadout get even better, while the same loadout on a fighter whose strength lies elsewhere does not.
 
@@ -171,7 +171,9 @@ The script runs every seed fighter against every other with every kit that spend
 | At 2 points, all points in the fighter's primary attribute is best | 2 of 17 (12%): specializing never paid | 8 of 17 (47%) |
 | At 4 points | a spread kit was best in every pair (19 of 19) | two loadouts best in 74%, all in one in 26%, 8 of 35 kits best somewhere |
 
-What changed: the balanced loadout was nearly free (it appeared in every winning kit), so its gains were cut roughly in half; the primary-attribute bonus went from 30% to 60%; and the split-focus penalty was added so spreading is no longer free. It is still not a solved-proof design: only **19 pairs of the 15 seed fighters are contested** (the rest are lopsided), so the sample is small; attack stays the strongest lean because the engine rewards it most; and at 4 points a two-loadout kit is still the usual best. Rerun the script after any constant change.
+**Re-measured on engine 12 (500 runs, current seed fighters):** 17 contested pairs (not 19). At 2 points "attack 2" is best in 7 of 17 (41%), 6 of 10 kits are best somewhere, and all points in the primary attribute is best in 4 of 15. The script flags "all in one loadout" as a **dominant shape** at 2 points (11 of 17, 65%). At 4 points two loadouts are best in 15 of 17 (88%, also flagged), and 10 of 35 kits are best somewhere. So the rebalancing above has not held up on the newer engine; the figures in the table are from the earlier one.
+
+What changed: the balanced loadout was nearly free (it appeared in every winning kit), so its gains were cut roughly in half; the primary-attribute bonus went from 30% to 60%; and the split-focus penalty was added so spreading is no longer free. It is still not a solved-proof design: only **17 pairs of the 15 seed fighters are contested** (19 on the earlier engine) (the rest are lopsided), so the sample is small; attack stays the strongest lean because the engine rewards it most; and at 4 points a two-loadout kit is still the usual best. Rerun the script after any constant change.
 
 ### Previews (`backend/app/simulation/loadout_preview.py`)
 
@@ -179,10 +181,10 @@ Before each round the user can see what every choice would do: `preview_choices`
 
 What would still make it better, in order: give speed and armor a real effect in the engine (a dodge or initiative effect; an engine change with a version bump and Mike's approval), narrate the loadout in the announcer ("the plate slowed it down"), and source the items so the multipliers become derived from real masses and materials.
 
-## 5. Open questions for Mike
+## 5. Open questions for Mike (answered or deferred by D-56)
 
-1. Is this in scope for the course project at all (code complete Nov 25), or post-MVP?
-2. Is the pre-modern item list the right safety line, or should a few non-firearm machines (a siege engine, a chariot) be allowed? D-38 blocks modern vehicles; the tank is a seed fighter.
-3. Entry points and points per win (2 and 1) give a champion four choices. Should a bracket give more, so tiers 4 and 5 matter?
+1. **Answered:** post-MVP, not before code complete (Nov 25).
+2. **Answered for now:** pre-modern and natural gear only; the machine question is deferred with the rest. (D-38 allows machines as fighters; it is the gear that is limited.)
+3. **Deferred.** Entry points and points per win (2 and 1) give a champion four choices. Should a bracket give more, so tiers 4 and 5 matter?
 4. Should the user choose every upgrade, or only the first loadout (with automatic tier-ups)?
 5. Does a loadout need critical hits to feel different? That is a new mechanic (a seeded draw per attack, parity tests against swarm mode, an `ENGINE_VERSION` bump), so it is left out until you ask for it.
