@@ -58,8 +58,10 @@ MAX_ENGAGERS = 8
 SWARM_THRESHOLD = 200
 # D-50: a fight also runs in swarm mode when its estimated work (attacks both sides make during the
 # expected fight, from stats only) is above this, even with fewer than SWARM_THRESHOLD per side.
-# Chosen so the one-by-one engine stays within the 3 s Simulate budget (assumption, calibrated
-# against measured timings in docs/swarm-validation.md).
+# Chosen so the one-by-one engine stays well inside the 15 s Simulate limit (D-63; assumption,
+# calibrated against measured timings in docs/swarm-validation.md). At work 2,000 a fight took
+# about 7 s on a laptop, and an estimated 13 s on the slowest one measured (#386; see
+# simulation-model.md).
 SWARM_WORK_BUDGET = 2000.0
 # #341: a deciding-factor variant of a one-by-one fight is skipped (not measured) when its own
 # estimated work is above this many times SWARM_WORK_BUDGET (assumption, see simulation-model.md).
@@ -68,8 +70,10 @@ VARIANT_WORK_CUTOFF = 4.0
 # work rule cannot rescue it, and it can take 20 to 30 s. The Simulate stage refuses a one-by-one
 # fight with a venomous side whose estimated work is above this ("too big to simulate quickly").
 # Measured on the author's laptop (1,000 runs with the analysis): work 360 took 3.0 s, 880 took
-# 3.6 s, 1,900 took 6 s, 3,800 took 11 s, 7,600 took 20 s. CI runners are 2 to 3 times slower, so
-# this is the point where a laptop is near the 3 s budget (assumption). No effect on results.
+# 3.6 s, 1,900 took 6 s, 3,800 took 11 s, 7,600 took 20 s. Kept at 1,000 (#386): on a later laptop
+# work 1,053 took 4.5 s and 1,396 took 5.4 s, well inside the 15 s Simulate limit (D-63), so a
+# higher value would probably fit. It changes only with slow-hardware timings and a D-number
+# (assumption). No effect on results.
 VENOM_WORK_MAX = 1000.0
 # Shortest swarm step. Swarm fights act in coarse steps, not per-fighter events.
 SWARM_STEP_S = 0.5
