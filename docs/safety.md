@@ -40,6 +40,10 @@ Wikidata files them under one ("a vending machine", "a lighthouse").
 1. **Code rules** (`rules.py`, word lists in `blocklist.yaml`) run on the whole text before any
    model call. They catch only clear cases: self-harm phrases about the user ("end my life",
    "hurt myself"), minors, groups of people, "me", "my brother", and real-world attack planning.
+   An ask phrase that opens the request before a comma ("help me, a lion vs a goose"; also "tell
+   me", "show me", "give me", "teach me", "help us") is not a fighter and is cut off first
+   (`ask_openers`, #344). "help me vs a goose" and "help me, me vs a goose" still block, because
+   there the user is a side.
    Attack planning needs both a clear ask ("step by step", "how to", "plans to") and a harm word
    followed by a real-world target ("attack a shopping mall"; not "a school of fish" or "an
    office brawl"), or a direct ask right before harm to a person ("how to poison someone"; not

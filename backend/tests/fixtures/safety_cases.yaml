@@ -729,6 +729,14 @@ cases:
     kind: fight_wording
     mock:
       sides: [["a bear", "bear"], ["a shark", "shark"]]
+  # #344: an ask phrase before a comma is not a "me" fighter.
+  - id: fw-06
+    text: "help me, a lion vs a goose"
+    expect: allowed
+    kind: fight_wording
+    mock:
+      sides: [["a lion", "lion"], ["a goose", "goose"]]
+
   # #343: the fighter is the harm word's subject without "how" before it.
   - id: fw-07
     text: "step by step: a wolf would kill a deer at the airport"
