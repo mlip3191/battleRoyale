@@ -78,6 +78,22 @@ REPLIES: dict[str, Any] = {
         "needs_clarification": {"question": "Which type of bear?", "options": ["Grizzly", "Polar"]},
     },
     "a grizzly bear": {"fighters": [side("a grizzly bear", "grizzly bear")]},
+    # The typed terrain must survive the answer (#416): the live re-parse can drop it.
+    "a bear vs 6 gray wolves in a forest": {
+        "fighters": [side("a bear", "bear"), side("6 gray wolves", "gray wolf")],
+        "terrain": "forest",
+        "needs_clarification": {"question": "Which type of bear?", "options": ["Grizzly", "Polar"]},
+    },
+    "a grizzly bear vs 6 gray wolves in a forest": {
+        "fighters": [side("a grizzly bear", "grizzly bear"), side("6 gray wolves", "gray wolf")]
+    },
+    "a grizzly bear vs 6 gray wolves in a lake": {
+        "fighters": [side("a grizzly bear", "grizzly bear"), side("6 gray wolves", "gray wolf")],
+        "terrain": "lake",
+    },
+    "a grizzly bear vs 6 gray wolves in the arena": {
+        "fighters": [side("a grizzly bear", "grizzly bear"), side("6 gray wolves", "gray wolf")]
+    },
 }
 
 
@@ -364,6 +380,39 @@ def test_a_one_word_option_answer_names_the_fighter(client: TestClient, chat: Sc
     assert chat.texts == ["bear vs goose", "grizzly bear vs goose"]
     assert body["status"] == "ok"
     assert body["matchup"]["fighters"][0]["entity"] == "grizzly bear"
+
+
+# Ask "Which type of bear?" about the forest fight and send back the answer.
+def answer_forest_bear(client: TestClient, answer: str) -> dict[str, Any]:
+    text = "a bear vs 6 gray wolves in a forest"
+    pending_id = client.post("/api/intake", json={"text": text}).json()["pending_id"]
+    return client.post(f"/api/intake/{pending_id}/answer", json={"answer": answer}).json()
+
+
+def test_the_typed_terrain_survives_a_re_parse_that_falls_back_to_the_arena(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    body = answer_forest_bear(client, "Grizzly")
+    assert chat.texts[-1] == "a grizzly bear vs 6 gray wolves in a forest"
+    assert body["status"] == "ok" and body["matchup"]["terrain"] == "forest"
+    assert body["matchup"]["fighters"][0]["entity"] == "grizzly bear"
+    assert "in the forest" in body["message"]
+
+
+def test_a_different_terrain_from_the_re_parse_is_kept(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    body = answer_forest_bear(client, "a grizzly bear vs 6 gray wolves in a lake")
+    assert chat.texts[-1] == "a grizzly bear vs 6 gray wolves in a lake"
+    assert body["status"] == "ok" and body["matchup"]["terrain"] == "water"
+
+
+def test_an_answer_that_names_the_arena_beats_the_first_request(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    body = answer_forest_bear(client, "a grizzly bear vs 6 gray wolves in the arena")
+    assert chat.texts[-1] == "a grizzly bear vs 6 gray wolves in the arena"
+    assert body["status"] == "ok" and body["matchup"]["terrain"] == "arena"
 
 
 # --- Safety (A04 runs inside parse_matchup), outages, and the 25 s deadline ---------------------
