@@ -2,11 +2,15 @@
 
 From the repo root:
   uv run --directory backend python scripts/run_benchmark.py --mock
-      CI-safe: three matchups from test fixtures, nothing is written unless --output is given.
+      CI-safe: three matchups and three edge cases from test fixtures, nothing is written unless
+      --output is given.
   uv run --directory backend python scripts/run_benchmark.py --live --sheets seed
   uv run --directory backend python scripts/run_benchmark.py --live --sheets seed --tuning-only
   uv run --directory backend python scripts/run_benchmark.py --live --sheets research
-      The real run: data/benchmark/matchups.yaml (tuning) and heldout.yaml (never tuned on).
+      The real run: data/benchmark/matchups.yaml (tuning) and heldout.yaml (never tuned on), plus
+      the edge-case set data/benchmark/edge.yaml (#376), scored by its own rules and reported in
+      its own table. `--no-edge` leaves it out. Swarm entries are also run in both modes (D-45),
+      which can take a minute or two.
 
 The simulation itself uses no endpoints. `--sheets research` builds every sheet with the research
 pipeline (G04) and so uses the providers set in `.env` (PROVIDER_MODE=mock needs none, but then
@@ -93,6 +97,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runs", type=int, default=None, help="simulation runs per matchup")
     parser.add_argument("--matchups", type=Path, default=None)
     parser.add_argument("--heldout", type=Path, default=None)
+    parser.add_argument(
+        "--edge", type=Path, default=None, help="edge-case set (default: edge.yaml)"
+    )
+    parser.add_argument("--no-edge", action="store_true", help="do not run the edge-case set")
     parser.add_argument("--output", type=Path, default=None, help="results file to update")
     parser.add_argument(
         "--require-quotes",
@@ -109,19 +117,32 @@ def main(argv: list[str] | None = None) -> int:
         if args.mock:
             tuning = bm.load_entries(args.matchups or bm.MOCK_DIR / "matchups.yaml", False)
             held = bm.load_entries(args.heldout or bm.MOCK_DIR / "heldout.yaml", True)
+            edge_file = args.edge or bm.MOCK_DIR / "edge.yaml"
+            edge = [] if args.no_edge else bm.load_entries(edge_file, False, edge=True)
             sheets, label = bm.mock_sheets(), "mock"
             runs, output = args.runs or 200, args.output  # mock never touches docs/ by default
         else:
             tuning = bm.load_entries(args.matchups or bm.BENCHMARK_DIR / "matchups.yaml", False)
             held = bm.load_entries(args.heldout or bm.BENCHMARK_DIR / "heldout.yaml", True)
+            edge_file = args.edge or bm.BENCHMARK_DIR / "edge.yaml"
+            edge = [] if args.no_edge else bm.load_entries(edge_file, False, edge=True)
             sheets = (
                 bm.seed_sheets()
                 if args.sheets == "seed"
-                else build_research_sheets([*tuning, *held])
+                else build_research_sheets([*tuning, *held, *edge])
             )
             label = args.sheets
             runs, output = args.runs or get_settings().sim_runs, args.output or bm.RESULTS_FILE
-        report = bm.run_benchmark(sheets, label, tuning, held, runs, args.tuning_only)
+        report = bm.run_benchmark(
+            sheets,
+            label,
+            tuning,
+            held,
+            runs,
+            args.tuning_only,
+            edge=edge,
+            check_modes=not args.mock,
+        )
         add_traceability(report, args.mock, args.require_quotes)
     except bm.BenchmarkError as error:
         print(f"Cannot run the benchmark: {error}", file=sys.stderr)

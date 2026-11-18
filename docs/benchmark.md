@@ -78,9 +78,9 @@ Together they use all ten seed fighters the main set leaves out.
 
 1. **Swarm, showcase, terrain:** the same favorite rule as the main set (rule 1). All are `medium`, so rule 2's 0.7 floor doesn't apply.
 2. **Mirror:** the first side's win probability is within 0.1 of 0.5 (|p − 0.5| ≤ 0.1). `expected_winner` is `draw` only to mark it; the outcome itself doesn't have to be a draw.
-3. **Draw:** a draw is the most likely outcome, with a draw probability of at least 0.5.
+3. **Draw:** a draw is the most likely outcome, with a draw probability of at least 0.5. A **harmless** fight, where neither side can hurt the other, ends as `no_contest` (win and draw shares both 0), which counts as the same "nobody wins" (Mike's ruling on #418: the runner reads it this way because the engine never reports a harmless fight as a counted draw). A `no_contest` because the fighters **can't reach each other** in the terrain (deciding factor "habitat") does not count and fails the case: it usually means a wrong habitat on a sheet, which is what this check should catch.
 4. **Swarm pairs** (`a` is about 150 per side, `b` about 300): both pick the expected favorite, and the bigger swarm never does worse. The swarm side's win probability in `b` is at least its value in `a` minus 0.03 (more fighters never hurt, #108).
-5. **Swarm against one-by-one (D-45):** when the runner can run one count both ways, the two win probabilities agree within ±0.03. That needs a runner option (F07, Felipe), so until then rule 4 stands in for it.
+5. **Swarm against one-by-one (D-45):** the runner runs each swarm case in both modes and the two win probabilities agree within ±0.03. `run_benchmark.py` does this for the four swarm entries (#376), forcing swarm through the work rule and one-by-one through a head-count threshold nobody reaches, the same way `scripts/validate_swarm.py` does. A venomous side with 200 or fewer per side stays one by one whatever the budget (D-44), so such a case is reported with no mode check instead of a false 0.000. It adds a minute or two to a live run; `--no-edge` leaves the whole edge set out.
 
 The edge-case results are reported in their own table, never mixed into the main set's scores or its 80% target.
 
