@@ -23,6 +23,7 @@ from tests.property.sim_helpers import make_sheet, matchup_of
 
 # The fingerprint of the explainer text at each engine version. When the test below fails, the
 # wording changed: bump ENGINE_VERSION in constants.py and record the new fingerprint here.
+# Any new ENGINE_VERSION needs an entry here; if only the version moved, copy the same fingerprint.
 TEXT_AT_VERSION = {13: "8301a424be2d0ee8135258e2be0c8dc31c4ff1bb3aedc3a26499053a1dec2cdf"}
 
 
@@ -60,6 +61,8 @@ def test_the_explainer_text_is_pinned_to_the_engine_version():
     texts = explainer_samples()
     assert StatName.SIZE in _STAT_TEXT and len(texts) > 100  # the samples cover the templates
     assert TEXT_AT_VERSION.get(c.ENGINE_VERSION) == fingerprint(texts), (
-        "The deciding-factor wording changed, so saved battles would keep the old text: bump "
-        "ENGINE_VERSION and record the new fingerprint in TEXT_AT_VERSION (#414)."
+        "No fingerprint for this ENGINE_VERSION, or the deciding-factor wording changed (saved "
+        "battles would keep the old text). After a bump for another reason, copy the previous "
+        "fingerprint to the new version; after a wording change, bump ENGINE_VERSION and record "
+        "the new fingerprint in TEXT_AT_VERSION (#414)."
     )
