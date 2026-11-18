@@ -1,7 +1,9 @@
 """The LLM announcer writer: checked scripts, the number guard, one retry, and template fallback."""
 
+import asyncio
 import json
 import socket
+import time
 from collections.abc import Iterator
 from typing import Any
 
@@ -271,11 +273,43 @@ async def test_each_script_falls_back_on_its_own() -> None:
     assert (intro.fallback, pbp.fallback, outro.fallback) == (False, False, True)
 
 
+# A live model slower than the deadline on one script (#363): that script is the template, and
+# the two that finished in time keep the model's lines.
+async def test_a_script_past_the_deadline_falls_back_alone() -> None:
+    sample = SAMPLES[GRIZZLY]
+    chat = sample_chat(sample)
+    fast = chat.complete
+
+    async def slow_outro(messages: Any, *, prompt_name: str, json_schema: Any = None) -> str:
+        if prompt_name == "outro":
+            await asyncio.sleep(5)
+        return await fast(messages, prompt_name=prompt_name, json_schema=json_schema)
+
+    chat.complete = slow_outro  # type: ignore[method-assign]
+    started = time.perf_counter()
+    intro, pbp, outro = await write_scripts(
+        sample.sheets, sample.result, sample.fair, chat=chat, counts=sample.counts, deadline_s=0.2
+    )
+    assert time.perf_counter() - started < 2
+    assert (intro.fallback, pbp.fallback, outro.fallback) == (False, False, True)
+    assert outro == _templates(sample)[2]
+
+
+# With no chat passed in, the writer uses the script chat (thinking off, #363).
+async def test_the_writer_uses_the_script_chat_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    sample = SAMPLES[GRIZZLY]
+    chat = sample_chat(sample)
+    monkeypatch.setattr(writer, "get_script_chat", lambda: chat)
+    scripts = await write_scripts(sample.sheets, sample.result, sample.fair, counts=sample.counts)
+    assert not any(s.fallback for s in scripts)
+    assert [chat.count(p) for p in PROMPTS] == [1, 1, 1]
+
+
 async def test_no_provider_at_all_returns_templates(monkeypatch: pytest.MonkeyPatch) -> None:
-    def broken(name: str) -> None:
+    def broken() -> None:
         raise RuntimeError("Live 'chat' provider needs settings")
 
-    monkeypatch.setattr(writer, "get_provider", broken)
+    monkeypatch.setattr(writer, "get_script_chat", broken)
     sample = SAMPLES[GRIZZLY]
     scripts = await write_scripts(sample.sheets, sample.result, sample.fair, counts=sample.counts)
     assert scripts == _templates(sample)
@@ -473,6 +507,35 @@ async def test_outro_missing_a_required_placeholder_is_rejected() -> None:
     chat = _chat_with(sample, "outro", bad)
     _, _, outro = await _write(sample, chat)
     assert outro.fallback is True
+
+
+# Live, the model often wrote the winner's name instead of {winner}, and a retry that said only
+# "winner" didn't fix it (#363): the retry shows the placeholder in braces, as it must be written.
+async def test_the_retry_shows_a_missing_placeholder_in_braces() -> None:
+    sample = SAMPLES[GRIZZLY]
+    lines = sample.replies["outro"]["lines"]
+    bad = {
+        "lines": [
+            {**line, "text": line["text"].replace("{winner}", "the grizzly")} for line in lines
+        ]
+    }
+    chat = _chat_with(sample, "outro", bad, sample.replies["outro"])
+    _, _, outro = await _write(sample, chat)
+    assert outro.fallback is False
+    retry = [m for name, m, _ in chat.calls if name == "outro"][1][-1]["content"]
+    assert "{winner}" in retry and "curly braces" in retry
+
+
+# Live, a rejected play-by-play counted the moments ("Third strike!"); the retry says why such a
+# number is out, not only which words were (#363).
+async def test_a_number_retry_says_not_to_count_or_number_moments() -> None:
+    sample = SAMPLES[GRIZZLY]
+    bad = _with_line(sample, "play_by_play", 1, "Seventeenth strike for the bear!")
+    chat = _chat_with(sample, "play_by_play", bad, sample.replies["play_by_play"])
+    _, pbp, _ = await _write(sample, chat)
+    assert pbp.fallback is False
+    retry = [m for name, m, _ in chat.calls if name == "play_by_play"][1][-1]["content"]
+    assert "Seventeenth" in retry and "count" in retry and "fact list" in retry
 
 
 async def test_draw_outro_uses_draw_pct_and_has_no_winner() -> None:

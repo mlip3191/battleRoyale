@@ -52,6 +52,9 @@ STAGE_BUDGETS_S: dict[str, float] = {
 # Share of the script budget the model writer gets; the rest leaves time to swap in the
 # templates and save them before the orchestrator's cut-off.
 SCRIPT_WRITER_SHARE = 0.8
+# Share each script gets on its own: a script past it is its template, and the ones that
+# finished keep the model's lines (#363). Below the writer's share, so it ends first.
+SCRIPT_CALL_SHARE = 0.7
 # Share of the audio and music budgets the providers get; the rest leaves time to save.
 MEDIA_PROVIDER_SHARE = 0.8
 # The scripts that each get a narration file, in broadcast order.
@@ -241,8 +244,9 @@ async def challenger(
 # Steps 4–5: intro, play-by-play, and outro scripts (narration/writer.py, A06). The outro's
 # fair-fight line needs `fair_fight` (None if the summary gave nothing). A script the model could
 # not write comes back as its template (fallback=True); then the stage ends "fallback".
-# A slow model must not leave the battle silent: if the writer runs past its share of the
-# stage budget, all three template scripts are used instead (also fallback=True).
+# A slow model must not leave the battle silent: a script past its own share of the stage budget
+# is its template (#363), and if the writer as a whole runs past its share, all three template
+# scripts are used instead (also fallback=True).
 async def scripts(
     matchup: Matchup,
     found: Research,
@@ -251,9 +255,13 @@ async def scripts(
 ) -> Stubbed[list[Script]]:
     counts = [fighter.count for fighter in matchup.fighters]
     deadline = STAGE_BUDGETS_S["script"] * SCRIPT_WRITER_SHARE
+    per_script = STAGE_BUDGETS_S["script"] * SCRIPT_CALL_SHARE
     try:
         written = await asyncio.wait_for(
-            writer.write_scripts(found.sheets, result, fair_fight, counts=counts), deadline
+            writer.write_scripts(
+                found.sheets, result, fair_fight, counts=counts, deadline_s=per_script
+            ),
+            deadline,
         )
     except TimeoutError:
         logger.warning("script writer ran past %.1fs; using the template scripts", deadline)

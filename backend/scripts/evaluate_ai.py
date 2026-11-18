@@ -2,7 +2,7 @@
 
 Run by hand (never in CI), from the repo root, with PROVIDER_MODE=live in .env:
   uv run --directory backend python scripts/evaluate_ai.py --sections extraction,coverage
-(sections: intake, safety, retrieval, extraction, coverage; the default is all of them)
+(sections: intake, safety, retrieval, extraction, coverage, cost; the default is all of them)
 
 Each run measures the sections it is given and rewrites only those sections of
 docs/evaluation.md, keeping the others, with the run date and commit at the top. The whole file
@@ -44,7 +44,7 @@ SECTIONS = [
     ("cost", "7. Cost and speed"),
     ("limitations", "What this means and limitations"),
 ]
-RUNNABLE = ("intake", "safety", "retrieval", "extraction", "coverage")
+RUNNABLE = ("intake", "safety", "retrieval", "extraction", "coverage", "cost")
 NOT_RUN = "_Not measured yet._"
 FIELDS = ("entity", "count", "terrain")
 # Each phrasing is read this many times: the live model doesn't answer the same way every time.
@@ -330,12 +330,20 @@ async def run_coverage() -> str:
     return await eval_research.run_coverage()
 
 
+# Cost and speed lives in eval_cost.py, imported only when it runs.
+async def run_cost() -> str:
+    import eval_cost
+
+    return await eval_cost.run_cost()
+
+
 RUNNERS = {
     "intake": run_intake,
     "safety": run_safety,
     "retrieval": run_retrieval,
     "extraction": run_extraction,
     "coverage": run_coverage,
+    "cost": run_cost,
 }
 
 

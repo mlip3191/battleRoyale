@@ -43,7 +43,11 @@
 # species blocks kinds from a franchise (Pikachu, Dalek). deity is individuals_only too (#400
 # review): named deities (Zeus, Thor) still block, kinds ("a valkyrie") are left to the
 # classifier. Cached rows block differently.
-classes_version: 11
+# Version 11 (#378): fossil taxon is a kind item, so an extinct animal's own item counts as a kind
+# and "a stegosaurus" is no longer judged by the Dungeons & Dragons monster of the same name.
+# Version 12 (#340 + #378 merged): both branches had bumped to 11 separately, so the merge bumps
+# again: rows cached under either version 11 are ignored.
+classes_version: 12
 
 # Name and meta items. When picking the top exact match, an item whose P31 (instance of) is only
 # these classes is skipped and the next exact match is used: "Moon" the family name is passed
@@ -81,6 +85,8 @@ kind_matches:
   - qid: Q55983715
     label: organisms known by a particular common name # the live "raven"
     common_word: true
+  - qid: Q23038290
+    label: fossil taxon # the live "Stegosaurus": an extinct genus, P31 only, no P279 (#378)
 
 # Creative works that share a name with a fighter. When picking the top exact match, an item whose
 # P31 is only these classes (or band classes, see "band: true" below) is passed over if another
