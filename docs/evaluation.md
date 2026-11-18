@@ -9,7 +9,7 @@ Last run: 2026-11-17 with the code in commit `66e579e` (measured: 6. Benchmark: 
 <!-- section:summary -->
 _Written 2026-11-17 from the sections below._
 
-Measured on the live course endpoints on Nov 16–17, 2026. The parts that keep the app safe and find evidence work well. The safety gate caught 66 of the 68 requests it should block and wrongly blocked 2 of 52 allowed ones (both mythical creatures, #340), which still misses its zero-false-blocks bar, and every one of 7 prompt-injection attempts behaved like its clean version. Retrieval found the right passage in the top 5 for 14 of 15 cases. Reading matchups is good but not perfect: 85% of 105 readings got every field right, and 71% of phrasings were read the same way three times running. Extracting numbers is the weak link. Of 51 hand-verified stats rebuilt from research alone, 37% landed within 25% and 35% fell back to labeled estimates. But no number the pipeline kept failed its quote check: it errs toward a labeled estimate rather than an invented figure. A showcase battle reaches its verdict in under 2 s (median 0.3 s), and a repeat battle is answered from the cache at once (5 of 5). The full show takes a median 4.7 s (8.9 s at most) since the script writer's thinking step was turned off (#398). On the F07 benchmark's held-out matchups, research-only sheets matched the expert answer as often as the hand-verified seed sheets (9 of 10 in both research runs; 8 of 9 for seed sheets, which lack one fighter), though they got different cases right, and two research runs disagreed on 2 of 20 tuning matchups.
+Measured on the live course endpoints on Nov 16–17, 2026. The parts that keep the app safe and find evidence work well. The safety gate caught 66 of the 68 requests it should block and wrongly blocked 2 of 52 allowed ones (both mythical creatures, #340), which still misses its zero-false-blocks bar, and every one of 7 prompt-injection attempts behaved like its clean version. Retrieval found the right passage in the top 5 for 14 of 15 cases. Reading matchups is good but not perfect: 85% of 105 readings got every field right, and 71% of phrasings were read the same way three times running. Extracting numbers is the weak link. Of 51 hand-verified stats rebuilt from research alone, 37% landed within 25% and 35% fell back to labeled estimates. But no number the pipeline kept failed its quote check: it errs toward a labeled estimate rather than an invented figure. A showcase battle reaches its verdict in under 2 s (median 0.3 s), and a repeat battle's verdict is answered from the cache at once (5 of 5). The full show takes a median 4.7 s since the script writer's thinking step was turned off (#398); script retries still push some shows to 7–9 s. On the F07 benchmark's held-out matchups, research-only sheets matched the expert answer as often as the hand-verified seed sheets (9 of 10 in both research runs; 8 of 9 for seed sheets, which lack one fighter), though they got different cases right, and two research runs disagreed on 2 of 20 tuning matchups.
 <!-- /section -->
 
 ## 1. Extraction accuracy
@@ -71,7 +71,7 @@ _Measured 2026-11-17 with the code in commit `eca18b0`._
 
 Ten fighters on neither the seed list nor `mythical.yaml` (5 animals, 3 objects or machines, 2 mythical creatures; 246 s). Counts are the 7 physical stats.
 
-**The app can't fight the 8 non-mythical ones yet**: research only builds sheets for seed-list fighters, and the fallback for others is #345. So their article was fetched on demand and run through the same pipeline here, to show what research can do once #345 lets them in. The two mythical creatures went through the app's real legend path.
+**The app can't fight the 8 non-mythical ones yet**: research only builds sheets for seed-list fighters. Others fight on an all-estimate sheet in mock mode (#345, #401) but are still refused live (#403). So their article was fetched on demand and run through the same pipeline here, to show what research could add for them. The two mythical creatures went through the app's real legend path.
 
 | Fighter | Kind | sourced | derived | estimate | assumption |
 |---|---|---|---|---|---|
@@ -195,7 +195,7 @@ Misses:
 <!-- section:benchmark -->
 _Measured 2026-11-17 with the code in commit `66e579e`._
 
-The F07 benchmark ran on one commit with the hand-verified seed sheets, then 2 times with sheets built by the research pipeline alone (772 s in all). The simulation is seeded, so seed-sheet results repeat exactly; research-only sheets come from the live models, which aren't fully repeatable. A held-out matchup was never used to change a constant. Three known limits fail by design (D-58; see `docs/benchmark-results.md`).
+The F07 benchmark ran on one commit with the hand-verified seed sheets, then 2 times with sheets built by the research pipeline alone (772 s in all). The simulation is seeded, so seed-sheet results repeat exactly; research-only sheets come from the live models, which aren't fully repeatable. A held-out matchup was never used to change a constant. D-58 records three known limits (cnt-05, cnt-04, doc-05; see `docs/benchmark-results.md`).
 
 | Set | Seed sheets | Research-only, run 1 | Research-only, run 2 |
 |---|---|---|---|
@@ -205,7 +205,7 @@ The F07 benchmark ran on one commit with the hand-verified seed sheets, then 2 t
 | Held-out: count | 2/2 (100%) | 1/2 (50%) | 1/2 (50%) |
 | Tuning | 15/16 (94%), 4 skipped | 16/20 (80%) | 18/20 (90%) |
 
-Matchups whose result depends on the sheets or the run:
+In this run only cnt-05 and doc-05 fail, and only with seed sheets; cnt-01 is a new miss with research-only sheets. Seed sheets skip a matchup when a fighter has no hand-verified sheet yet (the hippopotamus on the held-out set). Matchups whose result depends on the sheets or the run:
 
 | Matchup | Set | Group | Seed sheets | Research-only, run 1 | Research-only, run 2 |
 |---|---|---|---|---|---|
@@ -226,7 +226,7 @@ Matchups whose result depends on the sheets or the run:
 <!-- section:cost -->
 _Measured 2026-11-17 with the code in commit `66e579e`._
 
-The 5 showcase battles ran twice through the real pipeline in this process (59 s): a fresh run, then a repeat that the repeat-battle cache should answer. Times start when the battle starts; intake (reading the typed matchup, about 8 s a reading in section 4) comes before that and isn't included. Calls are course endpoint calls, each counted once however many times it was retried. Images, voice and music came from the local media cache (no live voice or music service is wired up yet), so their calls and time aren't in these numbers.
+The 5 showcase battles ran twice through the real pipeline in this process (59 s): a fresh run, then a repeat that the repeat-battle cache should answer. Times start when the battle starts; intake (reading the typed matchup, about 8 s a reading in section 4) comes before that and isn't included. Calls are course endpoint calls, each counted once however many times it was retried. Images came from the local media cache, and voice and music weren't made (no live voice or music service is wired up yet), so their calls and time aren't in these numbers. The repeat-battle cache skips only the simulation: the show is written again, so its time varies with the live model.
 
 | Battle | Run | Status | Verdict | Full show | chat | structured |
 |---|---|---|---|---|---|---|
@@ -260,9 +260,9 @@ The 5 showcase battles ran twice through the real pipeline in this process (59 s
 - **Two-sided matchups only.** Every battle is exactly two sides, each one kind of fighter in any number.
 - **Dependence on the course endpoints.** Every AI number here comes from the course's models as they behaved on Nov 16–17. They can change without notice, and they aren't fully repeatable: the same phrasing was read differently across runs (71% stable), and live reranking occasionally swaps near-tied passages (one rank changed between runs; hit@5 stayed 14/15).
 - **Extraction ignores the fighter's variant.** Research doesn't use sex, age or which speed, so some "more than 25% off" values compare different things (the lion's mass, the bald eagle's dive speed). The extraction table also counts derived values, so one wrong input can spread, such as a crocodile bite force computed from a wrong mass.
-- **New fighters.** The app can't fight animals or objects off the 30-fighter seed list until #345 lands. Section 3 measures what research could do for them.
+- **New fighters.** In mock mode, a fighter off the 30-fighter seed list now fights on an all-estimate sheet (#401). In live mode the app still refuses an ordinary animal or object that isn't on the list, because the legend lookup treats it as nonsense (#403; #345 stays open). Section 3 measures what research could do for them.
 - **Mythical stand-ins.** Hippogriff built on a horse is sensible. The cockatrice built on a T. rex with fire breath doesn't fit the legend (#391).
 - **Safety misses.** Two mythical creatures are falsely blocked (#340), two blocked requests got the wrong reason, and two were answered "clarify" instead of blocked. In intake, "a T. rex vs a stegosaurus" was falsely blocked on all three readings (#378).
-- **Cost and speed were measured on the showcase battles.** Their fighters have ready-made seed sheets, so those battles make no research calls; a new fighter adds research (about 21 s a fighter in section 1). Images, voice and music came from the local media cache, so these numbers leave media out: an earlier cold run, before this one, made about 6 image calls per battle, and there's no live voice or music service yet. Times are from one Mac; slower laptops were up to about 4x slower in the Simulate stage (D-63).
-- **Small samples, one run each.** 15 retrieval cases, 35 phrasings, 15 fighters, 10 new fighters. Treat the percentages as indicative, not precise.
+- **Cost and speed were measured on the showcase battles.** Their fighters have ready-made seed sheets, so those battles make no research calls; a new fighter adds research (about 21 s a fighter in section 1). Images came from the local media cache and voice and music weren't made, so these numbers leave media out: an earlier cold run, before this one, made about 6 image calls per battle, and there's no live voice or music service yet. Times are from one Mac; slower laptops were up to about 4x slower in the Simulate stage (D-63).
+- **Small samples, mostly one run each.** 15 retrieval cases, 35 phrasings, 15 fighters, 10 new fighters, and 10 held-out benchmark matchups, so one case moves that rate 10 points. The research-only benchmark ran twice and the runs disagreed on 2 of 20 tuning matchups. Treat the percentages as indicative, not precise.
 <!-- /section -->

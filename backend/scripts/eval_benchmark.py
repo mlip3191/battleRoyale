@@ -33,8 +33,8 @@ def benchmark_markdown(seed: bm.RunReport, research: Sequence[bm.RunReport], sec
         f"{len(research)} times with sheets built by the research pipeline alone ({seconds:.0f} s "
         "in all). The simulation is seeded, so seed-sheet results repeat exactly; research-only "
         "sheets come from the live models, which aren't fully repeatable. A held-out matchup was "
-        "never used to change a constant. Three known limits fail by design (D-58; see "
-        "`docs/benchmark-results.md`).",
+        "never used to change a constant. D-58 records three known limits (cnt-05, cnt-04, "
+        "doc-05; see `docs/benchmark-results.md`).",
         "",
         "| Set | " + " | ".join(heads) + " |",
         "|---|" + "---|" * len(heads),
@@ -50,7 +50,11 @@ def benchmark_markdown(seed: bm.RunReport, research: Sequence[bm.RunReport], sec
     differ = [
         j.entry for j in seed.judged if len({verdict(index.get(j.entry.id)) for index in by_id}) > 1
     ]
-    out += ["", "Matchups whose result depends on the sheets or the run:", ""]
+    out += [
+        "",
+        "Matchups whose result depends on the sheets or the run:",
+        "",
+    ]
     if not differ:
         out.append("- none: every matchup got the same result in every run.")
         return "\n".join(out)
