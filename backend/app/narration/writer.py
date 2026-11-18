@@ -60,6 +60,9 @@ PLACEHOLDER = re.compile(r"\{([A-Za-z_]+)\}")
 # "55%%" or "55% percent" after a percentage placeholder: keep one percent sign.
 _EXTRA_PERCENT = re.compile(r"(\d%)\s*(?:%|per ?cent\b)", re.I)
 MAX_REASON_CHARS = 300
+# How two rejection reasons start; the retry picks its advice by them (retry_message).
+NUMBERS_NOT_LISTED = "numbers not in the fact list"
+PLACEHOLDERS_MISSING = "the outro must use these placeholders"
 
 # What each outro placeholder means, as told to the model (values are filled in by code).
 PLACEHOLDER_HELP = {
@@ -177,7 +180,7 @@ def _line_problems(line: ScriptLine, facts: NarrationFacts) -> list[str]:
         problems.append("curly braces left in the text")
     bad = unsupported_numbers(line.text, facts)
     if bad:
-        problems.append("numbers not in the fact list: " + ", ".join(repr(b.text) for b in bad))
+        problems.append(f"{NUMBERS_NOT_LISTED}: " + ", ".join(repr(b.text) for b in bad))
     return problems
 
 
@@ -247,9 +250,7 @@ def read_reply(kind: Kind, reply: object, facts: NarrationFacts, log_len: int) -
             if not used & set(group)
         ]
         if missing:
-            raise ScriptRejected(
-                f"the outro must use these placeholders: {', '.join(missing)}. {PLACEHOLDER_HINT}"
-            )
+            raise ScriptRejected(f"{PLACEHOLDERS_MISSING}: {', '.join(missing)}")
     script = Script(kind=kind, lines=lines, fallback=False)
     problems = check_script(script, facts, log_len)
     if problems:
@@ -330,21 +331,32 @@ def reply_schema(kind: Kind, log_len: int) -> dict[str, Any]:
     }
 
 
-# How to fix a rejected reply, for the retry. Live, without its thinking step, the model kept
-# counting moments ("Third strike!") or naming the winner itself after a bare "rejected" (#363).
-PLACEHOLDER_HINT = (
-    "Write each one exactly like that, in curly braces; never write the winner's name or the "
-    "deciding factor in your own words."
-)
-NUMBER_HINT = (
-    "Only numbers from the fact list are allowed, written the same way. Don't count or number "
-    "the moments, and don't convert or round a number.\n"
-)
+# The sections of backend/prompts/script_retry.md, by "## name" heading (the note above the
+# first heading is for people and is never sent).
+def _retry_sections() -> dict[str, str]:
+    sections: dict[str, list[str]] = {}
+    name: str | None = None
+    for line in load_prompt("script_retry").splitlines():
+        if line.startswith("## "):
+            name = line[3:].strip()
+            sections[name] = []
+        elif name is not None:
+            sections[name].append(line)
+    return {key: "\n".join(lines).strip() for key, lines in sections.items()}
 
 
-# The extra advice for a retry, chosen by what the checks rejected.
-def _retry_hint(reason: str) -> str:
-    return NUMBER_HINT if "numbers not in the fact list" in reason else ""
+# The message after a rejected reply: why, plus how to fix it when the reason is one the model
+# kept repeating without its thinking step (#363). The wording is in script_retry.md.
+def retry_message(reason: str) -> str:
+    sections = _retry_sections()
+    if NUMBERS_NOT_LISTED in reason:
+        hint = sections["numbers"] + "\n"
+    elif PLACEHOLDERS_MISSING in reason:
+        hint = sections["placeholders"] + "\n"
+    else:
+        hint = ""
+    # {hint} first, so a {hint} quoted from the model's reply in `reason` is never filled.
+    return sections["retry"].replace("{hint}", hint).replace("{reason}", reason)
 
 
 # Ask for one script, regenerating once if the reply is invalid; the template on any failure.
@@ -374,11 +386,7 @@ async def write_one(
             messages = [
                 *messages,
                 {"role": "assistant", "content": str(reply)},
-                {
-                    "role": "user",
-                    "content": f"That reply was rejected: {reason}\n{_retry_hint(reason)}"
-                    "Write it again, following every rule. Reply with JSON only.",
-                },
+                {"role": "user", "content": retry_message(reason)},
             ]
     logger.warning("%s: no valid reply after a retry; using the template", prompt_name)
     return template
