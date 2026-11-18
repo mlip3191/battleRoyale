@@ -62,9 +62,11 @@ def cost_markdown(runs: list[BattleRun], seconds: float) -> str:
         f"process ({seconds:.0f} s): a fresh run, then a repeat that the repeat-battle cache "
         "should answer. Times start when the battle starts; intake (reading the typed matchup, "
         "about 8 s a reading in section 4) comes before that and isn't included. Calls are "
-        "course endpoint calls, each counted once however many times it was retried. Images, "
-        "voice and music came from the local media cache (no live voice or music service is "
-        "wired up yet), so their calls and time aren't in these numbers.",
+        "course endpoint calls, each counted once however many times it was retried. Images "
+        "came from the local media cache, and voice and music weren't made (no live voice or "
+        "music service is wired up yet), so their calls and time aren't in these numbers. The "
+        "repeat-battle cache skips only the simulation: the show is written again, so its "
+        "time varies with the live model.",
         "",
         *rows,
         "",

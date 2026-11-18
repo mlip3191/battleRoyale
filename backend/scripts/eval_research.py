@@ -176,9 +176,10 @@ def coverage_markdown(
         f"machines, 2 mythical creatures; {seconds:.0f} s). Counts are the 7 physical stats.",
         "",
         "**The app can't fight the 8 non-mythical ones yet**: research only builds sheets for "
-        "seed-list fighters, and the fallback for others is #345. So their article was fetched "
-        "on demand and run through the same pipeline here, to show what research can do once "
-        "#345 lets them in. The two mythical creatures went through the app's real legend path.",
+        "seed-list fighters. Others fight on an all-estimate sheet in mock mode (#345, #401) "
+        "but are still refused live (#403). So their article was fetched on demand and run "
+        "through the same pipeline here, to show what research could add for them. The two "
+        "mythical creatures went through the app's real legend path.",
         "",
         *table,
     ]
