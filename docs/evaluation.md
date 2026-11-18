@@ -2,14 +2,14 @@
 
 Does the GenAI actually work? Numbers from the real course endpoints, made by `backend/scripts/evaluate_ai.py`. Hosts and keys are never written here.
 
-Last run: 2026-11-17 with the code in commit `009ad5c` (measured: 7. Cost and speed).
+Last run: 2026-11-17 with the code in commit `66e579e` (measured: 6. Benchmark: seed vs research-only sheets, 7. Cost and speed).
 
 ## Summary
 
 <!-- section:summary -->
-_Written 2026-11-17 from the sections below; the benchmark (section 6) is added once F07 (#43) lands._
+_Written 2026-11-17 from the sections below._
 
-Measured on the live course endpoints on Nov 16–17, 2026. The parts that keep the app safe and find evidence work well. The safety gate caught 66 of the 68 requests it should block and wrongly blocked 2 of 52 allowed ones (both mythical creatures, #340), which still misses its zero-false-blocks bar, and every one of 7 prompt-injection attempts behaved like its clean version. Retrieval found the right passage in the top 5 for 14 of 15 cases. Reading matchups is good but not perfect: 85% of 105 readings got every field right, and 71% of phrasings were read the same way three times running. Extracting numbers is the weak link. Of 51 hand-verified stats rebuilt from research alone, 37% landed within 25% and 35% fell back to labeled estimates. But no number the pipeline kept failed its quote check: it errs toward a labeled estimate rather than an invented figure. A showcase battle reaches its verdict in under 2 s (median 0.3 s), and a repeat battle is answered from the cache at once (5 of 5). The full show takes about 8 s, set by the script writer's 8 s deadline, which it currently always overruns before the template script takes over (#363).
+Measured on the live course endpoints on Nov 16–17, 2026. The parts that keep the app safe and find evidence work well. The safety gate caught 66 of the 68 requests it should block and wrongly blocked 2 of 52 allowed ones (both mythical creatures, #340), which still misses its zero-false-blocks bar, and every one of 7 prompt-injection attempts behaved like its clean version. Retrieval found the right passage in the top 5 for 14 of 15 cases. Reading matchups is good but not perfect: 85% of 105 readings got every field right, and 71% of phrasings were read the same way three times running. Extracting numbers is the weak link. Of 51 hand-verified stats rebuilt from research alone, 37% landed within 25% and 35% fell back to labeled estimates. But no number the pipeline kept failed its quote check: it errs toward a labeled estimate rather than an invented figure. A showcase battle reaches its verdict in under 2 s (median 0.3 s), and a repeat battle is answered from the cache at once (5 of 5). The full show takes a median 4.7 s (8.9 s at most) since the script writer's thinking step was turned off (#398). On the F07 benchmark's held-out matchups, research-only sheets matched the expert answer as often as the hand-verified seed sheets (9 of 10 in both research runs; 8 of 9 for seed sheets, which lack one fighter), though they got different cases right, and two research runs disagreed on 2 of 20 tuning matchups.
 <!-- /section -->
 
 ## 1. Extraction accuracy
@@ -193,36 +193,61 @@ Misses:
 ## 6. Benchmark: seed vs research-only sheets
 
 <!-- section:benchmark -->
-_Not measured yet._
+_Measured 2026-11-17 with the code in commit `66e579e`._
+
+The F07 benchmark ran on one commit with the hand-verified seed sheets, then 2 times with sheets built by the research pipeline alone (772 s in all). The simulation is seeded, so seed-sheet results repeat exactly; research-only sheets come from the live models, which aren't fully repeatable. A held-out matchup was never used to change a constant. Three known limits fail by design (D-58; see `docs/benchmark-results.md`).
+
+| Set | Seed sheets | Research-only, run 1 | Research-only, run 2 |
+|---|---|---|---|
+| **Held-out** | 8/9 (89%), 1 skipped | 9/10 (90%) | 9/10 (90%) |
+| Held-out: obvious | 5/5 (100%) | 5/5 (100%) | 5/5 (100%) |
+| Held-out: documented | 1/2 (50%), 1 skipped | 3/3 (100%) | 3/3 (100%) |
+| Held-out: count | 2/2 (100%) | 1/2 (50%) | 1/2 (50%) |
+| Tuning | 15/16 (94%), 4 skipped | 16/20 (80%) | 18/20 (90%) |
+
+Matchups whose result depends on the sheets or the run:
+
+| Matchup | Set | Group | Seed sheets | Research-only, run 1 | Research-only, run 2 |
+|---|---|---|---|---|---|
+| cnt-03 | tuning | count | pass | FAIL | FAIL |
+| cnt-05 | tuning | count | FAIL | pass | pass |
+| doc-06 | tuning | documented | skipped | FAIL | FAIL |
+| doc-07 | tuning | documented | pass | FAIL | pass |
+| doc-08 | tuning | documented | skipped | FAIL | pass |
+| obv-04 | tuning | obvious | skipped | pass | pass |
+| obv-08 | tuning | obvious | skipped | pass | pass |
+| cnt-01 | held-out | count | pass | FAIL | FAIL |
+| doc-05 | held-out | documented | FAIL | pass | pass |
+| doc-10 | held-out | documented | skipped | pass | pass |
 <!-- /section -->
 
 ## 7. Cost and speed
 
 <!-- section:cost -->
-_Measured 2026-11-17 with the code in commit `009ad5c`._
+_Measured 2026-11-17 with the code in commit `66e579e`._
 
-The 5 showcase battles ran twice through the real pipeline in this process (84 s): a fresh run, then a repeat that the repeat-battle cache should answer. Times start when the battle starts; intake (reading the typed matchup, about 8 s a reading in section 4) comes before that and isn't included. Calls are course endpoint calls, each counted once however many times it was retried. Images, voice and music came from the local media cache (no live voice or music service is wired up yet), so their calls and time aren't in these numbers.
+The 5 showcase battles ran twice through the real pipeline in this process (59 s): a fresh run, then a repeat that the repeat-battle cache should answer. Times start when the battle starts; intake (reading the typed matchup, about 8 s a reading in section 4) comes before that and isn't included. Calls are course endpoint calls, each counted once however many times it was retried. Images, voice and music came from the local media cache (no live voice or music service is wired up yet), so their calls and time aren't in these numbers.
 
 | Battle | Run | Status | Verdict | Full show | chat | structured |
 |---|---|---|---|---|---|---|
-| 100 duck-sized horses vs 1 horse-sized duck | fresh | done | 1.5 s | 9.9 s | 3 | 1 |
-| Grizzly bear vs 4 gray wolves | fresh | done | 0.4 s | 8.4 s | 3 | 1 |
-| Honey badger vs king cobra | fresh | done | 0.2 s | 8.2 s | 3 | 1 |
-| Roman legionary vs gorilla | fresh | done | 0.2 s | 8.7 s | 3 | 1 |
-| Dragon vs main battle tank | fresh | done | 0.3 s | 8.5 s | 3 | 1 |
-| 100 duck-sized horses vs 1 horse-sized duck | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
-| Grizzly bear vs 4 gray wolves | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
-| Honey badger vs king cobra | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
-| Roman legionary vs gorilla | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
-| Dragon vs main battle tank | repeat (cached) | done | 0.0 s | 8.1 s | 3 | 0 |
+| 100 duck-sized horses vs 1 horse-sized duck | fresh | done | 1.5 s | 8.9 s | 4 | 1 |
+| Grizzly bear vs 4 gray wolves | fresh | done | 0.4 s | 7.4 s | 5 | 1 |
+| Honey badger vs king cobra | fresh | done | 0.2 s | 4.7 s | 4 | 1 |
+| Roman legionary vs gorilla | fresh | done | 0.3 s | 4.7 s | 4 | 1 |
+| Dragon vs main battle tank | fresh | done | 0.3 s | 4.7 s | 5 | 1 |
+| 100 duck-sized horses vs 1 horse-sized duck | repeat (cached) | done | 0.0 s | 5.7 s | 4 | 0 |
+| Grizzly bear vs 4 gray wolves | repeat (cached) | done | 0.0 s | 7.1 s | 6 | 0 |
+| Honey badger vs king cobra | repeat (cached) | done | 0.0 s | 6.2 s | 4 | 0 |
+| Roman legionary vs gorilla | repeat (cached) | done | 0.0 s | 5.0 s | 5 | 0 |
+| Dragon vs main battle tank | repeat (cached) | done | 0.0 s | 4.9 s | 3 | 0 |
 
 | Measure | Fresh | Repeat |
 |---|---|---|
 | Median time to verdict | 0.3 s | 0.0 s |
 | 90th percentile time to verdict | 1.5 s | 0.0 s |
-| Median time to full show | 8.5 s | 8.1 s |
-| 90th percentile time to full show | 9.9 s | 8.1 s |
-| Calls per battle: chat | 3.0 | |
+| Median time to full show | 4.7 s | 5.7 s |
+| 90th percentile time to full show | 8.9 s | 7.1 s |
+| Calls per battle: chat | 4.4 | |
 | Calls per battle: structured | 1.0 | |
 | Repeat battles answered from the cache | | 5 of 5 |
 <!-- /section -->
