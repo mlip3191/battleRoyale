@@ -5,9 +5,10 @@ Change a value here and the results change, so bump ENGINE_VERSION in the same c
 """
 
 # Part of the random seed, so a new engine never silently reproduces an old battle.
-# 12: a variant far over the work budget is skipped (#341); 11: variants use the baseline's swarm
-# mode (#301); 10: #229
-ENGINE_VERSION = 12
+# The deciding-factor text is part of a saved battle, so a wording change bumps it too (#414).
+# 13: #390's size wording, so saved battles drop the old text (#414); 12: a variant far over the
+# work budget is skipped (#341); 11: variants use the baseline's swarm mode (#301); 10: #229
+ENGINE_VERSION = 13
 
 # Length of one simulation tick; attack times are rounded up to a multiple of this.
 TICK_S = 0.1
