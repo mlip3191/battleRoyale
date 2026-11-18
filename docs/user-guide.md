@@ -67,6 +67,8 @@ Then move the terminal into that folder:
 cd battleRoyale
 ```
 
+![Terminal showing git clone downloading the project into a battleRoyale folder, then cd battleRoyale](images/user-guide/01b-clone.png)
+
 > **No Git?** On the project's GitHub page you can click the green **Code** button, then **Download ZIP**, and unzip it somewhere easy. To move the terminal into that folder, type `cd ` (with a space), drag the folder from File Explorer or Finder onto the terminal window, and press Enter. Everything works, except that `npm run setup` (step 4) ends with a *"not a git repository"* (or *"git is not recognized"*) error after the installs finish. That last part only turns on a check for people changing the code, so you can ignore it.
 
 ### Step 3: Connect the course AI endpoints (optional)
@@ -103,7 +105,9 @@ If you did step 3, run this once:
 npm run ingest
 ```
 
-It downloads the reference articles the app researches fighters from, and takes a few minutes. You only need it once, not every time you start the app. In mock mode (you skipped step 3) you don't need it.
+It downloads the reference articles the app researches fighters from. It takes a while (about half an hour on a laptop), and it's quiet for long stretches, so let it run. Lines like "Parser skipped…" and "No trait match…" are normal. It's done when it prints a table and "Finished in … s". You only need it once, not every time you start the app. In mock mode (you skipped step 3) you don't need it.
+
+![Terminal showing npm run ingest finishing with a table: 30 fighters, 30 documents, 0 failures, then "Finished in 1814 s."](images/user-guide/03b-ingest.png)
 
 ### Step 6: Start the app
 
@@ -170,13 +174,13 @@ The fight replays one of the simulated fights. The floating minus numbers are da
 
 At the end, the verdict shows the winner, their win chance, and the reason in one line.
 
-![The verdict: "Winner: 6 gray wolves!", win chance 72% with range 69–75% over 1,000 simulated fights, and the deciding factor](images/user-guide/12-verdict.jpg)
+![The verdict: "Winner: 6 gray wolves!", win chance 78% with range 75–80% over 1,000 simulated fights, and the deciding factor: numbers decided it](images/user-guide/12-verdict.jpg)
 
 ### Read the results page
 
 Click **See the full results**. Each part, top to bottom:
 
-- **Win chance and range.** For example "72% – range 69–75%". The app runs about 1,000 fights, and each one draws the fighters' stats from within their known range. The range shows how sure the result is, given how uncertain the stats are. It also shows how many fighters are usually left standing and how long fights last.
+- **Win chance and range.** For example "78% – range 75–80%". The app runs about 1,000 fights, and each one draws the fighters' stats from within their known range. The range shows how sure the result is, given how uncertain the stats are. It also shows how many fighters are usually left standing and how long fights last.
 - **Deciding factor.** The one thing that mattered most, such as numbers, size, speed or armor. Code finds it by testing which stat changes the result most.
 
 ![The top of the results page: winner, win chance and range for each side, draw chance, average fight length, and the deciding factor](images/user-guide/13-results-verdict.png)
@@ -215,7 +219,7 @@ The app politely turns some requests away, and tells you why:
 | It won't use | Why | What you'll see |
 |---|---|---|
 | **Real people** (alive or historical) | It's not fair or kind to stage fights between real people. | "We keep real people out of the ring. Try a type of fighter instead, like a Roman legionary or a medieval knight." |
-| **Named fictional characters** | They belong to their creators, and they have no real-world stats to look up. | "Named characters belong to their creators, so they can't step in. Try a creature type instead, like a dragon or a giant robot." |
+| **Named characters**, from stories or from myth | They belong to their creators or their legends, and they have no real-world stats to look up. | "Named characters, from stories or from myth, sit this one out. Try a creature type instead, like a dragon or a giant robot." |
 | **Gods and deities** | No sources measure them, and they matter to many people. | "Gods are above our pay grade. Try a mythical creature, like a griffin, instead." |
 | **Firearms and explosives** | The app keeps things PG. | "No firearms or explosives in this arena. Vehicles and machines are welcome, like a bulldozer." |
 | **Groups of people** (nations, armies, teams) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
@@ -242,4 +246,4 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and skipped [step 5](#step-5-build-the-knowledge-base-live-mode-only). Stop the app with Ctrl+C, run `npm run ingest` once, then `npm start` again. |
 | **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then run `npm run ingest` once and restart the app. |
 
-Still stuck? Run `npm run doctor`. It checks your computer's setup and says what to fix, without showing any secret values.
+Still stuck? Run `npm run env:check`. It checks your settings file and says what to fix, without showing any secret values.
