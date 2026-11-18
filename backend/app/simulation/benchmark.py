@@ -370,7 +370,7 @@ def judge_edge(entry: Entry, result: SimulationResult) -> Judged:
         harmless = result.outcome == "no_contest"
         ok = harmless or result.draw_prob >= DRAW_MIN_PROB
         reason = (
-            "no contest: neither side can hurt the other, so nobody wins"
+            f"no contest, so nobody wins ({result.deciding_factor_explainer})"
             if harmless
             else f"a draw {round(result.draw_prob * 100, 1)}% of the time, "
             f"{'at least' if ok else 'under'} 50%"

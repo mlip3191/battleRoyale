@@ -377,6 +377,11 @@ def test_a_draw_needs_a_draw_share_of_half_or_a_harmless_no_contest():
     assert not bm.judge_edge(draw, with_draw("draw", 0.3, 0.2, 0.49)).passed
     nobody = bm.judge_edge(draw, with_draw("no_contest", 0.0, 0.0, 0.0))
     assert nobody.passed and "nobody wins" in nobody.reason
+    # The reason names the fighters, so a real stalemate reads differently from a bad sheet (#418).
+    named = with_draw("no_contest", 0.0, 0.0, 0.0).model_copy(
+        update={"deciding_factor_explainer": "No contest: neither Cactus nor Toaster can hurt it."}
+    )
+    assert "neither Cactus nor Toaster" in bm.judge_edge(draw, named).reason
 
 
 def judged_pair(small_pct, big_pct, small_ok=True, big_ok=True):
