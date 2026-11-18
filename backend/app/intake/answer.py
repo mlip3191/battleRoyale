@@ -145,6 +145,8 @@ def _keep_typed_terrain(result: IntakeResult, text: str, original: str) -> Intak
     matchup = result.matchup
     if matchup is None or matchup.terrain != Terrain.ARENA:
         return result
+    # The answer wins even when it names the arena: the tuple is always truthy, so `or` only
+    # falls through to the first request when the answer typed no battlefield at all.
     typed = _typed_terrain(text) or _typed_terrain(original)
     if typed is None or typed[0] == Terrain.ARENA:
         return result

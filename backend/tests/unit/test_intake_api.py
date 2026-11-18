@@ -84,6 +84,9 @@ REPLIES: dict[str, Any] = {
         "fighters": [side("a grizzly bear", "grizzly bear"), side("6 gray wolves", "gray wolf")],
         "terrain": "lake",
     },
+    "a grizzly bear vs 6 gray wolves in the arena": {
+        "fighters": [side("a grizzly bear", "grizzly bear"), side("6 gray wolves", "gray wolf")]
+    },
 }
 
 
@@ -395,6 +398,14 @@ def test_a_different_terrain_from_the_re_parse_is_kept(
     body = answer_forest_bear(client, "a grizzly bear vs 6 gray wolves in a lake")
     assert chat.texts[-1] == "a grizzly bear vs 6 gray wolves in a lake"
     assert body["status"] == "ok" and body["matchup"]["terrain"] == "water"
+
+
+def test_an_answer_that_names_the_arena_beats_the_first_request(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    body = answer_forest_bear(client, "a grizzly bear vs 6 gray wolves in the arena")
+    assert chat.texts[-1] == "a grizzly bear vs 6 gray wolves in the arena"
+    assert body["status"] == "ok" and body["matchup"]["terrain"] == "arena"
 
 
 # --- Safety (A04 runs inside parse_matchup), outages, and the 25 s deadline ---------------------
