@@ -46,7 +46,9 @@ STAGE_BUDGETS_S: dict[str, float] = {
     "simulate": 15.0,
     "summary": 5.0,
     "challenger": 10.0,
-    "script": 10.0,
+    # 15 s, not 10 s (D-66, #363): a play-by-play rejected on its first try needs room for its
+    # one retry, so each script gets about 10.5 s instead of 7 s.
+    "script": 15.0,
     "audio": 60.0,
     "music": 60.0,
     "images": 60.0,
