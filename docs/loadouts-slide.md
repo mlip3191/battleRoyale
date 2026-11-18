@@ -14,10 +14,10 @@
 ## A number to show (all from the simulator)
 | Fight | No kit | Best of the kits tried | Worst of the kits tried |
 |---|---|---|---|
-| Roman legionary v gray wolf | 9% | 20% (balanced, tier 3) | 3% (speed, tier 4) |
-| Gray wolf v Roman legionary | 89% | 93% (attack, tier 3) | 77% (defense, tier 5: heavy gear slows it) |
+| Roman legionary v gray wolf | 11% | 18% (balanced, tier 3) | 2% (speed, tier 4) |
+| Gray wolf v Roman legionary | 91% | 94% (attack, tier 3) | 75% (defense, tier 5: heavy gear slows it) |
 
-*Win share of the first fighter, 500 runs; from `docs/loadouts-design.md` section 4 (measured on an earlier engine version; re-measured on engine 11 the figures drift by up to 3 points, within noise).*
+*Win share of the first fighter, 2,000 runs, re-measured on engine 12 (`docs/loadouts-design.md` section 4 has the original 500-run figures from an earlier engine, which differ by up to 3 points).*
 
 ## Speaker note (20 seconds)
 "We built the whole system and then asked our own harness whether it was fair. It was not, so we fixed it, and the honest result is that gear only nudges fights that were already close. With code complete near, the PM parked it, and the design and the harness are in the repo for next time."
