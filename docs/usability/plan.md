@@ -32,10 +32,21 @@ Read each task out, then watch. Don't point at the screen or name the button. Gi
 - **Called off:** if a battle ends with "This fight was called off" (for example, an animal with no ready-made stat sheet), that's a **product** finding, not the tester's fault. Mark the task "called off", note what they typed, and move on.
 - **Off-limits fighters:** don't suggest real people or other off-limits fighters. If a tester tries one, the safety check refuses it: note how the refusal landed, and don't coach.
 
+**Known in live mode** (from a 24-battle live check on Nov 17; re-run your example battle on the day, since fixes may land before Nov 21):
+
+- **Most animals off the fighter list get called off.** Tiger, kangaroo, raccoon, moose, polar bear, orca, penguin, spider and rooster all did (10 of 11 everyday picks). The message shows within about 10 seconds. #403 may change this before the sessions.
+- **The quick question's buttons can lead to a called-off fight.** In task 3, only "Grizzly" works; "Polar", "Black", "Brown", "Kodiak" and "Sloth" are called off. Note which button they press.
+- **No announcer voice or music yet.** Live mode plays captions only, with a note on the stage saying so. Tell the tester up front so "no sound" isn't logged as a new finding, and don't spend task time on Mute.
+- **Expect pauses.** Reading the matchup takes 7–15 seconds after pressing go (longer with a question), and a whole battle 20–50 seconds.
+
+**Fighter list** (show this only after a called-off fight in task 2; type the name as written: "hippo" and "t-rex" are called off):
+
+> Grizzly bear · Gray wolf · African lion · House cat · Golden retriever · African elephant · Horse · Hippopotamus · Chimpanzee · Gorilla · Honey badger · House mouse · Bald eagle · Duck · Goose · Saltwater crocodile · King cobra · Great white shark · Army ant · Honey bee · Triceratops
+
 | # | Say this | It's done when | Watch for |
 |---|---|---|---|
 | 1 | "Get a fight going without making up your own." | A battle starts from an example chip. | Do they see the examples? Do they know they have to confirm on tonight's card? |
-| 2 | "Now type a matchup of your own: any two animals you like." | Their own battle starts, or they get a clear message about why not. A "called off" battle counts as done; log it as a product finding. | Do refusals or "no stat sheet" messages make sense to them? Do they know what to type? |
+| 2 | "Now type a matchup of your own: any two animals you like." | Their own battle starts, or they get a clear message about why not. A "called off" battle counts as done; log it as a product finding, then show the fighter list above and say "Try one more from this list" (this second try doesn't change the task's mark). | Do refusals or "no stat sheet" messages make sense to them? Do they know what to type? |
 | 3 | "Type this in, then carry on until a fight starts: *a bear vs 6 gray wolves in a forest*." | They answer the quick question and the battle starts (or it's called off: log that as a product finding). | Do they understand why it's asking? Do they use a button or type? |
 | 4 | "After the fight, find out where one of the numbers came from." | They find a sourced stat's link and quote, or a stat's tag (estimate, derived, assumption). | Do they find the results page and sources? Do the tags mean anything to them? |
 | 5 | "Keep the show going: set up another fight from where you are." | The next challenger fight starts. No challenger card (a draw or no contest)? Note it and skip task 5. | Do they find the next challenger section? Is "Fight them!" clear? |
@@ -59,6 +70,7 @@ Task 1 (example):      done / done with help / gave up / called off    time: ___
   notes:
 Task 2 (own matchup):  done / done with help / gave up / called off    time: ___
   what they typed (no personal details):
+  if called off, second try from the list: ___   ran / called off
   notes:
 Task 3 (question):     done / done with help / gave up / called off / skipped (mock)
   notes:
