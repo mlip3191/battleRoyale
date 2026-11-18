@@ -26,6 +26,10 @@ HARD_TIMEOUT = 20.0  # no battle in this file may take longer than this
 SMALL_BUDGET = 8.0  # every stage's limit in these tests, unless a test shrinks one further
 TINY_BUDGET = 0.05  # for the "ran past its budget" tests
 TOO_LONG = 5.0  # how long a slow stand-in sleeps (far past TINY_BUDGET, its patched limit)
+# Script budget for the slow-outro test: each script gets 70% of it (about 1.4 s), well past
+# BUSY_RUNNER, so a busy runner can't make the intro miss its deadline too (#420).
+SLOW_OUTRO_BUDGET = 2.0
+BUSY_RUNNER = 0.5  # extra time a script takes on a slow runner (more than the old 0.35 s share)
 PAUSE = 0.1  # how long recorded stages wait, so overlaps are visible
 OPTIONAL = ("summary", "challenger", "script", "audio", "music", "images")
 MEDIA = {"audio": "audio", "music": "music", "images": "images"}
@@ -273,15 +277,15 @@ async def test_a_slow_outro_keeps_the_intro_the_model_wrote_in_time(
     store: BattleStore, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # Only the outro is slow (#363): it becomes the template; the intro keeps the model's lines.
+    # The other scripts are held back by BUSY_RUNNER too, as on a slow CI runner (#420).
     mock = MockChatLLM()
 
     class SlowOutro:
         async def complete(self, messages: Any, *, prompt_name: str, **kwargs: Any) -> str:
-            if prompt_name == "outro":
-                await asyncio.sleep(TOO_LONG)
+            await asyncio.sleep(TOO_LONG if prompt_name == "outro" else BUSY_RUNNER)
             return await mock.complete(messages, prompt_name=prompt_name, **kwargs)
 
-    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "script", 0.5)
+    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "script", SLOW_OUTRO_BUDGET)
     monkeypatch.setattr(writer, "get_script_chat", lambda: SlowOutro())
     record = await battle(store)
     assert stage_of(record, "script").status == "fallback"
@@ -407,10 +411,16 @@ async def test_two_missing_size_references_share_one_note(store: BattleStore) ->
     )
 
 
-async def test_a_missing_fighter_still_fails_research(store: BattleStore) -> None:
+async def test_a_missing_fighter_fights_on_estimates_not_a_failure(store: BattleStore) -> None:
+    # #345: no sheet and no legend gives an all-estimate sheet; the found reference adds no note.
     record = await battle(store, matchup("okapi", "horse", refs=(None, "duck")))
-    assert record.status == "failed"
-    assert "okapi" in (stage_of(record, "research").detail or "")
+    assert record.status == "done" and record.result is not None
+    research = stage_of(record, "research")
+    assert (research.status, research.detail) == (
+        "fallback",
+        "We have no stat sheet for 'okapi', so its stats are estimates.",
+    )
+    assert all(stat.is_estimate for stat in record.stat_sheets[0].stats.values())
 
 
 def _fight(
@@ -471,14 +481,20 @@ async def test_mock_style_full_name_with_a_descriptive_variant_still_finds_the_s
     assert [s.fighter_id for s in record.stat_sheets] == ["grizzly-bear", "gray-wolf"]
 
 
-async def test_a_live_style_name_with_no_sheet_still_fails_with_the_plain_message(
-    store: BattleStore,
-) -> None:
+# The research stage's note for a battle where `name` fought on estimates (#345).
+def estimated(name: str) -> tuple[str, str]:
+    return ("fallback", orchestrator.ESTIMATED_FIGHTER.format(names=repr(name)))
+
+
+def research_end(record: BattleRecord) -> tuple[str, str | None]:
+    stage = stage_of(record, "research")
+    return stage.status, stage.detail
+
+
+async def test_a_live_style_name_with_no_sheet_fights_on_estimates(store: BattleStore) -> None:
     record = await battle(store, _fight({"entity": "bear", "variant": "polar"}, {"entity": "duck"}))
-    assert record.status == "failed"
-    detail = stage_of(record, "research").detail or ""
-    assert "bear" in detail
-    assert detail == stages.NOT_FOUND.format(name="polar bear")
+    assert record.status == "done"
+    assert research_end(record) == estimated("polar bear")
 
 
 async def test_live_style_raw_phrase_finds_the_seed_sheets(store: BattleStore) -> None:
@@ -496,35 +512,32 @@ async def test_live_style_raw_phrase_finds_the_seed_sheets(store: BattleStore) -
     assert [s.fighter_id for s in record.stat_sheets] == ["grizzly-bear", "gray-wolf"]
 
 
-async def test_a_vague_raw_phrase_still_fails_with_the_plain_message(store: BattleStore) -> None:
+async def test_a_vague_raw_phrase_fights_on_estimates(store: BattleStore) -> None:
     # A vague kind with no default ("bear" has one since #168: the grizzly bear).
     record = await battle(
         store, _fight({"entity": "lizard", "raw": "a lizard"}, {"entity": "duck"})
     )
-    assert record.status == "failed"
-    detail = stage_of(record, "research").detail or ""
-    assert detail == stages.NOT_FOUND.format(name="lizard")
+    assert record.status == "done"
+    assert research_end(record) == estimated("lizard")
 
 
-async def test_the_no_stat_sheet_message_names_the_fighter_as_typed(store: BattleStore) -> None:
+async def test_the_estimate_note_names_the_fighter_as_typed(store: BattleStore) -> None:
     # A plain name, with no variant.
     record = await battle(store, _fight({"entity": "okapi"}, {"entity": "duck"}))
-    assert record.status == "failed"
-    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="okapi")
+    assert record.status == "done"
+    assert research_end(record) == estimated("okapi")
     # A label-style variant is not shown.
     record = await battle(
         store, _fight({"entity": "okapi", "variant": "adult male"}, {"entity": "duck"})
     )
-    assert record.status == "failed"
-    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(name="okapi")
+    assert record.status == "done"
+    assert research_end(record) == estimated("okapi")
     # If the variant already contains the name, do not double it.
     record = await battle(
         store, _fight({"entity": "okapi", "variant": "white okapi"}, {"entity": "duck"})
     )
-    assert record.status == "failed"
-    assert (stage_of(record, "research").detail or "") == stages.NOT_FOUND.format(
-        name="white okapi"
-    )
+    assert record.status == "done"
+    assert research_end(record) == estimated("white okapi")
 
 
 async def test_the_fair_fight_comes_from_the_real_search(store: BattleStore) -> None:

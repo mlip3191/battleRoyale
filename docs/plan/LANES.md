@@ -35,6 +35,8 @@ The slide deck and presentation are prepared outside this repo, starting Nov 25 
 | Freeze + fix | **Feature freeze end of Sun Nov 22**; fixes Mon Nov 23 – Tue Nov 24 | final README, export | fixes | fixes | fixes | fixes |
 | Code complete | **Wed Nov 25** | tag `v1.0`, export (DELIVERABLES) | — | — | — | — |
 
+**Already cut at MS-2 (Nov 17):** the tournament, #114–#117 (D-64). The bracket engine (#113) stays merged.
+
 **Cut order if we're behind** (check at MS-1 on Nov 14 and MS-2 on Nov 17). Cut from the top; the app still works with captions and placeholder sprites:
 1. Music generation (keep the announcer voice) — part of A07
 2. On-demand mythical creatures in G09 (the 12 in `mythical.yaml` still work; unknown legends get a friendly "not in our bestiary yet")

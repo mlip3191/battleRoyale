@@ -26,7 +26,14 @@ from app.db.intake_pending import (
 )
 from app.db.migrate import apply_migrations
 from app.intake.answer import START_OVER, merge_answer
-from app.intake.parser import COMMON_KIND_NOTE, INPUT_END, INPUT_START, parse_matchup
+from app.intake.parser import (
+    COMMON_KIND_NOTE,
+    INPUT_END,
+    INPUT_START,
+    LONG_TEXT_CHARS,
+    LONG_TEXT_QUESTION,
+    parse_matchup,
+)
 from app.main import create_app
 from app.providers.base import ChatMessage
 from app.providers.live.chat import LiveChatLLM
@@ -71,6 +78,22 @@ REPLIES: dict[str, Any] = {
         "needs_clarification": {"question": "Which type of bear?", "options": ["Grizzly", "Polar"]},
     },
     "a grizzly bear": {"fighters": [side("a grizzly bear", "grizzly bear")]},
+    # The typed terrain must survive the answer (#416): the live re-parse can drop it.
+    "a bear vs 6 gray wolves in a forest": {
+        "fighters": [side("a bear", "bear"), side("6 gray wolves", "gray wolf")],
+        "terrain": "forest",
+        "needs_clarification": {"question": "Which type of bear?", "options": ["Grizzly", "Polar"]},
+    },
+    "a grizzly bear vs 6 gray wolves in a forest": {
+        "fighters": [side("a grizzly bear", "grizzly bear"), side("6 gray wolves", "gray wolf")]
+    },
+    "a grizzly bear vs 6 gray wolves in a lake": {
+        "fighters": [side("a grizzly bear", "grizzly bear"), side("6 gray wolves", "gray wolf")],
+        "terrain": "lake",
+    },
+    "a grizzly bear vs 6 gray wolves in the arena": {
+        "fighters": [side("a grizzly bear", "grizzly bear"), side("6 gray wolves", "gray wolf")]
+    },
 }
 
 
@@ -359,6 +382,39 @@ def test_a_one_word_option_answer_names_the_fighter(client: TestClient, chat: Sc
     assert body["matchup"]["fighters"][0]["entity"] == "grizzly bear"
 
 
+# Ask "Which type of bear?" about the forest fight and send back the answer.
+def answer_forest_bear(client: TestClient, answer: str) -> dict[str, Any]:
+    text = "a bear vs 6 gray wolves in a forest"
+    pending_id = client.post("/api/intake", json={"text": text}).json()["pending_id"]
+    return client.post(f"/api/intake/{pending_id}/answer", json={"answer": answer}).json()
+
+
+def test_the_typed_terrain_survives_a_re_parse_that_falls_back_to_the_arena(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    body = answer_forest_bear(client, "Grizzly")
+    assert chat.texts[-1] == "a grizzly bear vs 6 gray wolves in a forest"
+    assert body["status"] == "ok" and body["matchup"]["terrain"] == "forest"
+    assert body["matchup"]["fighters"][0]["entity"] == "grizzly bear"
+    assert "in the forest" in body["message"]
+
+
+def test_a_different_terrain_from_the_re_parse_is_kept(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    body = answer_forest_bear(client, "a grizzly bear vs 6 gray wolves in a lake")
+    assert chat.texts[-1] == "a grizzly bear vs 6 gray wolves in a lake"
+    assert body["status"] == "ok" and body["matchup"]["terrain"] == "water"
+
+
+def test_an_answer_that_names_the_arena_beats_the_first_request(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    body = answer_forest_bear(client, "a grizzly bear vs 6 gray wolves in the arena")
+    assert chat.texts[-1] == "a grizzly bear vs 6 gray wolves in the arena"
+    assert body["status"] == "ok" and body["matchup"]["terrain"] == "arena"
+
+
 # --- Safety (A04 runs inside parse_matchup), outages, and the 25 s deadline ---------------------
 
 
@@ -414,6 +470,58 @@ def test_a_slow_model_hits_the_deadline_on_both_routes(
     assert first.status_code == 503 and first.json()["detail"] == UNAVAILABLE_MESSAGE
     answer = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "grizzly bear"})
     assert answer.status_code == 503 and pending_rows(db_path) == 1  # the question is kept
+
+
+# About 490 characters: under the 500 limit, so the model is asked to read it (#362).
+LONG_MATCHUP = "a " + "very " * 94 + "big bear vs a wolf"
+
+
+@pytest.mark.parametrize("trouble", ["outage", "slow"])
+def test_a_long_matchup_that_fails_asks_for_a_shorter_one_not_a_retry(
+    client: TestClient,
+    db_path: Path,
+    chat: ScriptedChat,
+    monkeypatch: pytest.MonkeyPatch,
+    trouble: str,
+) -> None:
+    assert LONG_TEXT_CHARS < len(LONG_MATCHUP) < 500
+    if trouble == "outage":
+        chat.down = True
+    else:
+        monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", 0.05)
+        chat.delay = 1.0
+    response = client.post("/api/intake", json={"text": LONG_MATCHUP})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "clarify" and body["question"] == LONG_TEXT_QUESTION
+    assert body["pending_id"] is None and pending_rows(db_path) == 0
+
+
+def test_a_short_matchup_that_fails_still_says_try_again(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    chat.down = True
+    text = "a grizzly bear vs a gray wolf in a forest " * 4  # just under LONG_TEXT_CHARS
+    assert len(text.strip()) <= LONG_TEXT_CHARS
+    response = client.post("/api/intake", json={"text": text})
+    assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
+
+
+# Pin the cutoff: exactly LONG_TEXT_CHARS still retries; one more character asks for less.
+@pytest.mark.parametrize(
+    ("length", "asks_shorter"), [(LONG_TEXT_CHARS, False), (LONG_TEXT_CHARS + 1, True)]
+)
+def test_the_long_matchup_cutoff_is_exact(
+    client: TestClient, chat: ScriptedChat, length: int, asks_shorter: bool
+) -> None:
+    chat.down = True
+    text = ("a grizzly bear vs a gray wolf " * 10)[:length].rstrip().ljust(length, "x")
+    assert len(text.strip()) == length
+    response = client.post("/api/intake", json={"text": text})
+    if asks_shorter:
+        assert response.status_code == 200 and response.json()["question"] == LONG_TEXT_QUESTION
+    else:
+        assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
 
 
 def test_a_restored_question_keeps_its_id_and_age(db_path: Path) -> None:
