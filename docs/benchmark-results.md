@@ -62,6 +62,12 @@ Judged by the rules in `docs/benchmark.md`, section "Edge-case set". These are n
 
 **Reading the edge set:** 12 of 15 pass. All four swarm pairs agree between swarm and one-by-one mode to 0.000 (limit 0.03), the mirrors sit at 50%, and the cactus v toaster case is a no contest, which rule 3 counts as nobody winning (#418). The three showcase failures come from the research-built sheets, not the engine: on the hand-verified seed sheets all five showcase cases pass (duck 100%, wolves 56.7%, tank 100%), and with research sheets the duck-sized horses, the grizzly and the dragon win instead. The dragon's sheet comes from the same legend file in both runs, so for the dragon v tank case it is the tank's research sheet that differs; for the other two it is the sheets of the duck and horse, and of the wolf or the grizzly (not yet compared stat by stat). The pipeline's sheets need checking before the showcase runs on them. No constant or sheet was changed to make a case pass.
 
+**Rules 4 and 5 passed only trivially.** The swarm side wins 0.0% in every swarm case, in both modes and at both sizes, so the agreement shows only that both modes pick the same certain winner. It says nothing about how accurate swarm mode is. The entries are #136's; closer swarm matchups would make these rules able to fail.
+
+**Seed-sheet edge run (offline, same code, same day):** showcase 5 of 5: horses v duck 0.0 / 100.0, grizzly v 4 wolves 43.3 / 56.7, honey badger v king cobra 95.7 / 4.3, legionary v gorilla 0.0 / 100.0, dragon v tank 0.0 / 100.0; mirror-02 49.9 / 50.1; the other nine cases were skipped for want of a seed sheet.
+
+**The main sets moved since the previous research run** (tuning 17/20 and held-out 9/10, against 18/20 and 7/10) because the research sheets are rebuilt on every run and vary. cnt-04, cnt-05 and doc-05, the three known limits below, all passed on these sheets; doc-02, doc-06, doc-08 and obv-13 (66.5%, under the 70% floor) did not. The "Known limits (D-58)" section is Mike's ruling and is left as it was.
+
 ### Tuning set
 
 | Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |

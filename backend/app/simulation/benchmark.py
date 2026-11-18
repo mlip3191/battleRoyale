@@ -362,7 +362,8 @@ def judge_edge(entry: Entry, result: SimulationResult) -> Judged:
     win_pct = (round(p0 * 100, 1), round(p1 * 100, 1))
     if entry.group == "mirror":
         ok = abs(p0 - 0.5) <= MIRROR_BAND + 1e-9
-        reason = f"side 0 wins {win_pct[0]}%, {'inside' if ok else 'outside'} 40 to 60%"
+        low, high = round((0.5 - MIRROR_BAND) * 100), round((0.5 + MIRROR_BAND) * 100)
+        reason = f"side 0 wins {win_pct[0]}%, {'inside' if ok else 'outside'} {low} to {high}%"
         return Judged(entry, result.outcome, None, win_pct, None, ok, reason)
     if entry.group == "draw":
         # A fight nobody can hurt anybody in ends as `no_contest` (win and draw shares 0), which is
@@ -373,7 +374,7 @@ def judge_edge(entry: Entry, result: SimulationResult) -> Judged:
             f"no contest, so nobody wins ({result.deciding_factor_explainer})"
             if harmless
             else f"a draw {round(result.draw_prob * 100, 1)}% of the time, "
-            f"{'at least' if ok else 'under'} 50%"
+            f"{'at least' if ok else 'under'} {round(DRAW_MIN_PROB * 100)}%"
         )
         return Judged(entry, result.outcome, None, win_pct, None, ok, reason)
     return judge(entry, result, None)  # swarm, showcase, terrain: the same favorite rule
@@ -391,7 +392,7 @@ def check_pairs(judged: Sequence[Judged]) -> list[Judged]:
     The swarm side is the side with more fighters in the smaller (`a`) matchup. A pair with a
     skipped half is left alone. The check is added to the `b` row, which fails if it breaks.
     """
-    by_key = {_pair_key(j.entry.id): j for j in judged if j.entry.group == "swarm"}
+    by_key = {k: j for j in judged if j.entry.group == "swarm" and (k := _pair_key(j.entry.id))}
     out = []
     for j in judged:
         key = _pair_key(j.entry.id) if j.entry.group == "swarm" else None
@@ -404,9 +405,21 @@ def check_pairs(judged: Sequence[Judged]) -> list[Judged]:
         low, high = small.win_pct[side], j.win_pct[side]
         ok = high / 100 >= low / 100 - PAIR_SLACK - 1e-9
         note = f"the bigger swarm wins {high}% against {low}% for the smaller"
-        note += "" if ok else " (more than 3 points lower: more fighters should never hurt)"
+        points = round(PAIR_SLACK * 100)
+        note += "" if ok else f" (more than {points} points lower: more fighters should never hurt)"
         out.append(replace(j, passed=j.passed and ok, reason=f"{j.reason}; {note}"))
     return out
+
+
+def venom_pins_one_by_one(entry: Entry, stat_sheets: Sequence[StatSheet]) -> bool:
+    """True when swarm mode cannot be forced: a venomous side stays one by one up to the ceiling.
+
+    The engine's `use_swarm` keeps such a fight one by one whatever `SWARM_WORK_BUDGET` is (D-44,
+    #229), so the "swarm" run would be a second one-by-one run and the gap a false 0.000.
+    `scripts/validate_swarm.py` warns about the same thing.
+    """
+    venomous = any("venom" in sheet.weapons for sheet in stat_sheets)
+    return venomous and max(f.count for f in entry.matchup.fighters) <= c.SWARM_THRESHOLD
 
 
 def swarm_vs_individual(entry: Entry, sheets: SheetSource, runs: int) -> float:
@@ -454,9 +467,14 @@ def evaluate_edge(
     for index, j in enumerate(judged):
         if j.entry.group != "swarm" or j.skipped:
             continue
+        if venom_pins_one_by_one(j.entry, [sheets.get(f) for f in j.entry.matchup.fighters]):
+            note = "no mode check: a venomous side stays one by one up to the swarm ceiling (D-44)"
+            judged[index] = replace(j, reason=f"{j.reason}; {note}")
+            continue
         gap = swarm_vs_individual(j.entry, sheets, runs)
         ok = gap <= MODE_AGREEMENT + 1e-9
-        note = f"swarm and one by one differ by {gap:.3f} ({'within' if ok else 'over'} 0.03)"
+        limit = f"{MODE_AGREEMENT:.2f}"
+        note = f"swarm and one by one differ by {gap:.3f} ({'within' if ok else 'over'} {limit})"
         judged[index] = replace(
             j, passed=j.passed and ok, reason=f"{j.reason}; {note}", mode_gap=gap
         )
@@ -544,7 +562,7 @@ def render_edge(report: RunReport) -> list[str]:
         "|---|---|---|---|---|---|---|",
     ]
     for j in rows:
-        favorite = {None: "none"}.get(j.favorite, f"side {j.favorite}")
+        favorite = "none" if j.favorite is None else f"side {j.favorite}"
         wins = f"{j.win_pct[0]} / {j.win_pct[1]}"
         if j.skipped:
             favorite = wins = "—"

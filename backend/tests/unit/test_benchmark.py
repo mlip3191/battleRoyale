@@ -345,6 +345,17 @@ def test_the_real_edge_set_loads_with_its_groups_and_size_references():
     assert [f.size_reference for f in horses.matchup.fighters] == ["duck", "horse"]
 
 
+def test_size_references_reach_the_engine_for_the_duck_sized_horses():
+    edge = bm.load_entries(bm.BENCHMARK_DIR / "edge.yaml", False, edge=True)
+    (horses,) = [e for e in edge if e.id == "edge-show-01"]
+    sheets = bm.seed_sheets()
+    found = bm.reference_sheets(horses, sheets)
+    assert [s.fighter_id for s in found] == ["duck", "horse"]
+    assert bm.reference_sheets(edge_entry("terrain"), sheets) is None
+    (scaled,) = bm.evaluate_edge([horses], sheets, runs=50, check_modes=False)
+    assert scaled.passed  # without the size swap the 100 horses win instead
+
+
 def test_edge_groups_belong_in_the_edge_file_and_edge_ids_start_with_edge():
     raw = {"id": "edge-x", "group": "mirror", "expected_winner": "draw"}
     raw["fighters"] = [{"entity": "a"}, {"entity": "b"}]
@@ -407,6 +418,19 @@ def test_a_bigger_swarm_may_not_do_worse_than_the_smaller_by_more_than_three_poi
     assert better[1].passed
 
 
+def test_the_bigger_swarm_may_also_be_on_side_one():
+    def row(entry_id, pct, counts):
+        entry = edge_entry("swarm", "0", entry_id, counts=counts)
+        return bm.Judged(
+            entry, "win_0", 0, (pct, round(100 - pct, 1)), None, True, "favorite matches"
+        )
+
+    pair = [row("edge-swarm-01a", 90.0, (1, 150)), row("edge-swarm-01b", 80.0, (1, 300))]
+    assert bm.check_pairs(pair)[1].passed  # side 1 is the swarm: 20% against 10% before
+    worse = [row("edge-swarm-01a", 70.0, (1, 150)), row("edge-swarm-01b", 90.0, (1, 300))]
+    assert not bm.check_pairs(worse)[1].passed  # the swarm's share fell from 30% to 10%
+
+
 def test_a_pair_needs_both_favorites_and_ignores_a_skipped_half():
     wrong_favorite = bm.check_pairs(judged_pair(10.0, 12.0, big_ok=False))
     assert not wrong_favorite[1].passed  # the favorite rule already failed it
@@ -449,6 +473,35 @@ def test_a_swarm_entry_fails_when_the_two_modes_disagree(monkeypatch):
     ]
     (judged,) = bm.evaluate_edge(entries, bm.mock_sheets(), runs=40)
     assert not judged.passed and judged.mode_gap == 0.08 and "over 0.03" in judged.reason
+
+
+def test_a_venomous_swarm_under_the_ceiling_gets_no_mode_check_instead_of_a_false_pass():
+    from tests.property.sim_helpers import make_sheet
+
+    class Sheets:
+        def get(self, fighter):
+            return (
+                make_sheet("snake", weapons=["venom"])
+                if fighter.entity == "snake"
+                else make_sheet("rat")
+            )
+
+    entry = bm.parse_entry(
+        {
+            "id": "edge-t-01a",
+            "group": "swarm",
+            "fighters": [{"entity": "snake", "count": 30}, {"entity": "rat", "count": 5}],
+            "expected_winner": "0",
+        },
+        False,
+        edge=True,
+    )
+    assert bm.venom_pins_one_by_one(
+        entry, [make_sheet("snake", weapons=["venom"]), make_sheet("rat")]
+    )
+    assert not bm.venom_pins_one_by_one(entry, [make_sheet("snake"), make_sheet("rat")])
+    (judged,) = bm.evaluate_edge([entry], Sheets(), runs=40)
+    assert judged.mode_gap is None and "no mode check" in judged.reason
 
 
 def test_a_missing_sheet_skips_an_edge_case_and_the_legend_sheet_is_found():

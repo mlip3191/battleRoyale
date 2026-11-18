@@ -2,7 +2,8 @@
 
 From the repo root:
   uv run --directory backend python scripts/run_benchmark.py --mock
-      CI-safe: three matchups from test fixtures, nothing is written unless --output is given.
+      CI-safe: three matchups and three edge cases from test fixtures, nothing is written unless
+      --output is given.
   uv run --directory backend python scripts/run_benchmark.py --live --sheets seed
   uv run --directory backend python scripts/run_benchmark.py --live --sheets seed --tuning-only
   uv run --directory backend python scripts/run_benchmark.py --live --sheets research
