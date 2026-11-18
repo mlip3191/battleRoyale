@@ -45,7 +45,9 @@ Wikidata files them under one ("a vending machine", "a lighthouse").
    office brawl"), or a direct ask right before harm to a person ("how to poison someone"; not
    "the wolf attacks someone"). A harm word whose subject is a fighter is fight wording, so it
    doesn't count: "how a lion would attack a restaurant", "how would a bear kill a shark in the
-   hospital" (#317). This exception looks only at the harm word's subject. A person or pronoun
+   hospital" (#317). The subject may follow "how", start the request, or follow an ask phrase:
+   "step by step: a wolf would kill a deer at the airport" (#343). This exception looks only
+   at the harm word's subject. A person or pronoun
    as the subject still counts ("how would I attack a restaurant", "how a terrorist would attack
    a mall", "how would a boy attack a school"): the person words are `not_fighters` plus every
    people list in `blocklist.yaml`. A person subject on none of those lists ("a retired
@@ -254,9 +256,10 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   the live eval shows the classifier missing these, the fix is to tighten what counts as a kind.
 - **The attack-planning rule is a word list.** It catches clear phrasings only; the classifier
   covers the rest.
-- **"step by step: a wolf would kill a deer at the airport" still blocks as `other`.** The
-  fighter-subject exception needs "how" before the subject when the modal comes after it ("how a
-  wolf would kill"). This is the safe direction (over-blocking); a follow-up can widen it.
+- **A fighter subject is still read only in a few shapes.** "how a wolf would kill", "step by
+  step: a wolf would kill" and "a wolf would kill" at the start of the request are fighters;
+  anything further from the harm word ("step by step, so the wolf, in the end, would kill")
+  still blocks as `other`. This is the safe direction (over-blocking).
 - **Self-harm phrases also match fight text about a fighter.** "a cornered rat that doesn't want
   to die vs a cat" and "a suicide bomber vs a goose" block as `self_harm`. This is deliberate:
   over-blocking is the safer mistake, and the user can rephrase.

@@ -212,19 +212,31 @@ def _harms_a_target(cleaned: str, lists: Blocklist) -> bool:
     return False
 
 
-# True when the words before a harm word end in "how <fighter> <modal>" or "<modal> <fighter>":
-# "how a lion would", "would 6 wolves"; not if a subject word is a person or pronoun ("how a
-# terrorist would", "would i"), or the subject is part of a longer phrase ("with a gun would").
-# A subject of four or more words ("a very angry unemployed pilot") is not read as a fighter, so it
-# fails safe and still blocks; the limit stays at three words on purpose.
+# True when the words end in an ask phrase from the attack_planning ask list ("step by step").
+def _ends_with_ask(words: list[str], lists: Blocklist) -> bool:
+    return any(
+        words[-len(phrase.split()) :] == phrase.split() for phrase in lists.attack_ask if words
+    )
+
+
+# True when the words before a harm word end in "<modal> <fighter>" or "<lead> <fighter> <modal>",
+# where the lead is "how", the start of the request, or an ask phrase: "how a lion would", "step
+# by step: a wolf would", "a wolf would", "would 6 wolves"; not if a subject word is a person or
+# pronoun ("how a terrorist would", "would i"), or the subject is part of a longer phrase ("with a
+# gun would"). A subject of four or more words ("a very angry unemployed pilot") is not read as a
+# fighter, so it fails safe and still blocks; the limit stays at three words on purpose.
 def _fighter_is_subject(before: list[str], lists: Blocklist) -> bool:
     modal_last = bool(before) and before[-1] in lists.subject_modals
     words = before[:-1] if modal_last else before
     for size in (1, 2, 3):
-        if len(words) < size + 2:
+        if len(words) < size + 1:
             break
-        lead, opener, nouns = words[-size - 2], words[-size - 1], words[-size:]
-        led = lead in lists.subject_modals or (modal_last and lead in lists.subject_after)
+        opener, nouns, lead_words = words[-size - 1], words[-size:], words[: -size - 1]
+        lead = lead_words[-1] if lead_words else ""
+        led = lead in lists.subject_modals or (
+            modal_last
+            and (not lead_words or lead in lists.subject_after or _ends_with_ask(lead_words, lists))
+        )
         is_start = opener in lists.subject_starts or opener.isdigit()
         if led and is_start and not any(_in(w, lists.not_fighters) for w in nouns):
             return True

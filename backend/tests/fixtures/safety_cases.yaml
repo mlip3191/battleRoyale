@@ -729,6 +729,13 @@ cases:
     kind: fight_wording
     mock:
       sides: [["a bear", "bear"], ["a shark", "shark"]]
+  # #343: the fighter is the harm word's subject without "how" before it.
+  - id: fw-07
+    text: "step by step: a wolf would kill a deer at the airport"
+    expect: allowed
+    kind: fight_wording
+    mock:
+      sides: [["a wolf", "wolf"], ["a deer", "deer"]]
 
   # --- Bare names (no article or count), D-51 (#186) ------------------------------------------
   # A bare name typed all in lowercase is judged by its kind item when the top pick is a person
