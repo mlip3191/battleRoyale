@@ -1,7 +1,7 @@
-"""#119: simulate plus the deciding-factor analysis fits the 3 s Simulate stage.
+"""#119: simulate plus the deciding-factor analysis fits the 15 s Simulate stage (D-63).
 
-The 3 s budget is for a developer laptop. CI runners are 2 to 3 times slower, so a wall-clock
-assert at 3 s would fail there for no reason. What made the explained showcase battle slow was
+The stage limit is for a developer laptop. CI runners are 2 to 3 times slower, so a fixed
+wall-clock assert would fail there for no reason. What made the explained showcase battle slow was
 building a replay event for every hit of every run, so the strict test counts those instead (it
 does not depend on the machine), and the timing test only catches a gross regression.
 """
