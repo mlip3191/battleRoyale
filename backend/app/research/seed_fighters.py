@@ -73,7 +73,9 @@ _FILLER_WORDS = {
     *("big", "small", "large", "little", "huge", "giant", "tiny", "angry", "young", "old"),
     *("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"),
     *("eleven", "twelve", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty"),
-    *("ninety",),
+    *("ninety", "my", "your", "his", "her", "our", "their", "lone", "wild", "adult", "mature"),
+    *("fierce", "hungry", "mean", "strong", "fast", "scary", "tough", "mighty", "grumpy", "deadly"),
+    *("venomous", "poisonous", "dangerous", "hairy", "fat", "tall", "short", "ordinary", "normal"),
 }
 
 

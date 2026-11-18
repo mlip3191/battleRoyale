@@ -60,7 +60,18 @@ def test_a_named_kind_in_the_raw_text_is_not_swapped_for_the_default(raw: str) -
 
 
 @pytest.mark.parametrize(
-    "raw", ["a bear", "the bear", "6 bears", "three bears", "a big bear", "some small bears"]
+    "raw",
+    [
+        "a bear",
+        "the bear",
+        "6 bears",
+        "three bears",
+        "a big bear",
+        "some small bears",
+        "a fierce bear",
+        "an adult bear",
+        "my bear",
+    ],
 )
 def test_a_bare_kind_with_only_articles_numbers_or_size_words_still_gets_the_default(
     raw: str,
