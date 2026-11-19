@@ -164,11 +164,11 @@ While the app researches and simulates, a ticker shows what it's doing and a lis
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 
-Then the show starts: the announcer introduces the fighters, with captions on screen. Click **Start the fight** when you're ready, or **Skip to verdict** to jump straight to the result. If a note says some effects are unavailable, the announcer voice or music couldn't be made this time; the captions and fight still work.
+Then the show starts: the announcer introduces the fighters, with captions on screen. Click **Start the fight** when you're ready, or **Skip to verdict** to jump straight to the result. If a note says some effects are unavailable, the announcer voice couldn't be made this time; the captions always carry the show, and the fight still works.
 
 ![The intro: Grizzly bear VS 6 gray wolves, an announcer caption, and Start the fight and Skip to verdict buttons](images/user-guide/10-intro.png)
 
-The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log. Use **Pause**, **1×** and **2×** to control the speed, or **Skip to end**. The sound controls (**Play sound**, **Mute** and a volume slider) control the announcer and music.
+The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log. Use **Pause**, **1×** and **2×** to control the speed, or **Skip to end**. The sound controls (**Play sound**, **Mute** and a volume slider) control the announcer's voice. The captions always carry the show, with or without sound.
 
 ![The animated fight: a grizzly bear facing six wolves in a pixel-art forest, with a damage number above the bear](images/user-guide/11-fight.jpg)
 
@@ -207,10 +207,11 @@ Click **See the full results**. Each part, top to bottom:
 
 Ready-made battles show off what the app can do. They load automatically when the app starts and appear under **Showcase** on the home page. Click one to watch it straight away, with no waiting:
 
-1. Grizzly bear vs 4 gray wolves
-2. Honey badger vs king cobra
-3. Roman legionary vs gorilla
-4. Dragon vs main battle tank
+1. 100 duck-sized horses vs 1 horse-sized duck
+2. Grizzly bear vs 4 gray wolves
+3. Honey badger vs king cobra
+4. Roman legionary vs gorilla
+5. Dragon vs main battle tank
 
 ## 4. What it won't do
 
@@ -241,7 +242,7 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **"This fight was called off"** with "We don't have a stat sheet for … yet" | The app doesn't know that fighter yet. Pick one of the 15 fighters listed in [Type a matchup](#type-a-matchup), or click an example matchup. |
 | **"Address already in use"** or port 8000 is busy when you run `npm start` | The app (or something else) is already running. Use the window where it's already running, or close it with Ctrl+C and run `npm start` again. Restarting the computer also clears it. |
 | **The page looks old or a button does nothing after you update the code** | Stop the app with Ctrl+C, run `npm run setup` and then `npm start` again, and refresh the browser page. |
-| **No announcer voice or music** | Sound is optional, and the captions always work. Click **Play sound**, check that **Mute** is off and your computer isn't muted. A note at the top of the broadcast says when a voice or music track couldn't be made this time. |
+| **No announcer voice** | Sound is optional, and the captions always carry the show. Click **Play sound**, check that **Mute** is off and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
 | **`npm run setup` ends with "not a git repository" or "git is not recognized"** | You downloaded the ZIP instead of cloning. The installs already finished, so you can ignore it and go on. |
 | **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and skipped [step 5](#step-5-build-the-knowledge-base-live-mode-only). Stop the app with Ctrl+C, run `npm run ingest` once, then `npm start` again. |
 | **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then run `npm run ingest` once and restart the app. |
