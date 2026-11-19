@@ -7,6 +7,7 @@ served from /media, and the asset url always names the same relative path as the
 """
 
 import os
+import time
 import uuid
 from pathlib import Path
 
@@ -14,6 +15,10 @@ from app.config import get_settings
 from app.providers.registry import ProviderMode
 
 MOCK_FOLDER = "mock"
+# Pauses before each retry of a refused replace, about 1 s in all (#381). Windows refuses to
+# replace a file another process has open for a moment: an antivirus scan, the search indexer,
+# or a browser still downloading the old copy.
+REPLACE_RETRY_PAUSES_S = (0.05, 0.1, 0.2, 0.3, 0.4)
 
 
 # The folder generated media lives in.
@@ -37,6 +42,17 @@ def save(file: Path, data: bytes) -> None:
     partial = file.with_name(f".{file.name}.{uuid.uuid4().hex}.tmp")
     try:
         partial.write_bytes(data)
-        os.replace(partial, file)
+        _replace(partial, file)
     finally:
         partial.unlink(missing_ok=True)
+
+
+# os.replace, retried while Windows says the target is in use; a file held longer still fails.
+def _replace(source: Path, target: Path) -> None:
+    for pause in REPLACE_RETRY_PAUSES_S:
+        try:
+            os.replace(source, target)
+            return
+        except PermissionError:
+            time.sleep(pause)
+    os.replace(source, target)

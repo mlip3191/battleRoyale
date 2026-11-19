@@ -4,6 +4,7 @@ Every test uses stand-in providers (no network). "Live" here only means settings
 PROVIDER_MODE=live; the provider passed in is still a stand-in.
 """
 
+import threading
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -153,6 +154,38 @@ async def test_an_empty_cached_file_is_a_miss_and_is_made_again(
     again = await make(provider, tmp_path)
     assert calls(provider) > 0 and again == first
     assert file.stat().st_size > 0
+
+
+def test_save_waits_out_a_brief_open_handle_on_the_old_file(tmp_path: Path) -> None:
+    # #381: on Windows, replacing a file that another process has open (an antivirus scan,
+    # the search indexer, a browser still downloading it) fails with PermissionError.
+    file = tmp_path / "sprite.png"
+    file.write_bytes(b"old")
+    handle = file.open("rb")
+    releaser = threading.Timer(0.2, handle.close)
+    releaser.start()
+    try:
+        files.save(file, b"new")
+    finally:
+        releaser.join()
+        handle.close()
+    assert file.read_bytes() == b"new"
+    assert [p.name for p in tmp_path.iterdir()] == ["sprite.png"]  # no temp file left behind
+
+
+def test_save_still_fails_when_the_file_stays_locked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A file held for good fails after the retries, so the caller falls back as before.
+    def locked(source: object, target: object) -> None:
+        raise PermissionError("locked")
+
+    monkeypatch.setattr(files.os, "replace", locked)
+    monkeypatch.setattr(files.time, "sleep", lambda _s: None)
+    file = tmp_path / "sprite.png"
+    with pytest.raises(PermissionError):
+        files.save(file, b"new")
+    assert list(tmp_path.iterdir()) == []
 
 
 def test_is_cached_needs_a_non_empty_regular_file(tmp_path: Path) -> None:
