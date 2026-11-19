@@ -41,7 +41,22 @@ article is about any of these instead:
 Also answer found false when nothing in the article supports a choice. Saying "not found" is
 always better than a guess.
 
+When you answer found false, also give "reason": exactly one of these words, the one that
+fits the article best:
+- "real_animal": a real animal, breed or species (a moose, a pug, an okapi).
+- "object_or_machine": an ordinary object, tool, vehicle or machine (a forklift, a canoe).
+- "person": a real person or a group of people.
+- "deity": a god, goddess or any deity.
+- "named_character": one particular named individual from myth or fiction.
+- "weapon": a firearm, explosive or other weapon.
+- "nonsense": anything else (a place, a film, a band, a list of meanings, gibberish, or when
+  you are not sure).
+If the message says no Wikipedia article was found, answer found false and pick the reason
+from the name alone. A made-up or unclear name is "nonsense".
+When in doubt, choose "nonsense". Code uses the reason only to decide what happens next; it
+never changes a number.
+
 Reply with JSON only, matching the schema:
 {"found": true, "body_analog": "<fighter>", "size_analog": "<fighter or null>", "abilities": ["<ability>"], "heads": null, "quote": "<sentence>"}
 or
-{"found": false, "body_analog": null, "size_analog": null, "abilities": [], "heads": null, "quote": null}
+{"found": false, "body_analog": null, "size_analog": null, "abilities": [], "heads": null, "quote": null, "reason": "<one word from the list>"}

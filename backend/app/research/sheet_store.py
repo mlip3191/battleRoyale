@@ -166,8 +166,9 @@ def legend_client() -> httpx.AsyncClient | None:
 
 
 # A legend not in mythical.yaml (G09): its cached sheet, or one modeled from its article now
-# and saved. Otherwise the LoreOutcome says why (blocked, or a service is down), or None in
-# mock mode, where no article can be fetched.
+# and saved. Otherwise the LoreOutcome says why (blocked, or a service is down), or None when
+# there is nothing to model: mock mode (no article can be fetched) or "not a legend" (#403), a
+# plausible real fighter that fights on an estimate sheet.
 async def resolve_legend(
     connection: sqlite3.Connection, chat: ChatLLM, name: str
 ) -> StatSheet | LoreOutcome | None:
@@ -196,6 +197,8 @@ async def _resolve_legend(
     except TimeoutError:
         logger.warning("Modeling the legend %r ran out of time.", name)
         return UNAVAILABLE
+    if outcome.not_a_legend:
+        return None  # a plausible real fighter (#403): the battle falls back to an estimate sheet
     if outcome.creature is None:
         if outcome.blocked:
             remember_refusal(slug)
