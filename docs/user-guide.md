@@ -12,7 +12,7 @@ You name two sides of an imaginary fight, like *"a grizzly bear vs 6 gray wolves
 
 **What "science-backed" means here:**
 
-- **Sourced stats.** Every number on a stat sheet links to the page it came from, along with the exact quote. An AI model may copy a number only together with that quote, and code checks that the number really is in it.
+- **Sourced stats.** Every sourced number on a stat sheet links to the page it came from, along with the exact quote. An AI model may copy a number only together with that quote, and code checks that the number really is in it.
 - **Labeled guesses.** When no source gives a number, the app uses a default for that kind of fighter and tags it **estimate**. Traits that no source measures (aggression, armor, teamwork) are tagged **assumption** and come from a written scale.
 - **Code decides the winner.** A simulation written in plain code picks the winner, not an AI model. The same matchup always gives the same result.
 
@@ -221,7 +221,7 @@ The app politely turns some requests away, and tells you why:
 |---|---|---|
 | **Real people** (alive or historical) | It's not fair or kind to stage fights between real people. | "We keep real people out of the ring. Try a type of fighter instead, like a Roman legionary or a medieval knight." |
 | **Named characters**, from stories or from myth | They belong to their creators or their legends, and they have no real-world stats to look up. | "Named characters, from stories or from myth, sit this one out. Try a creature type instead, like a dragon or a giant robot." |
-| **Gods and deities** | No sources measure them, and they matter to many people. | "Gods are above our pay grade. Try a mythical creature, like a griffin, instead." |
+| **Named deities** (Zeus, Thor) | No sources measure them, and they matter to many people. A generic kind, like "a god" or "an angel", is fine. | "Gods are above our pay grade. Try a mythical creature, like a griffin, instead." |
 | **Firearms and explosives** | The app keeps things PG. | "No firearms or explosives in this arena. Vehicles and machines are welcome, like a bulldozer." |
 | **Groups of people** (nations, armies, teams) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
 | **Abstract ideas, places, landforms, planets** | They aren't physical fighters with measurable stats. | A message explaining what kinds of fighters work. |
