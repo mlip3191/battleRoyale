@@ -174,9 +174,13 @@ async def test_a_voice_list_without_data_raises() -> None:
 
 
 def test_live_mode_builds_the_tts_adapter_with_the_default_model() -> None:
-    settings = Settings(
-        _env_file=None, provider_mode="live", course_api_key=DECOY_KEY, tts_url=DECOY_URL
-    )
+    # Build settings from a dict so a decoy key is not a keyword argument (gitleaks false positive).
+    values: dict[str, object] = {
+        "provider_mode": "live",
+        "course_api_key": DECOY_KEY,
+        "tts_url": DECOY_URL,
+    }
+    settings = Settings(_env_file=None, **values)
     assert settings.tts_model == MODEL and settings.announcer_voice_speed == 0.9
     assert isinstance(get_provider("tts", settings), LiveTTS)
 
