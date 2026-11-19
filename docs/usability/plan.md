@@ -4,6 +4,7 @@ We're testing the app with 3–5 people from outside the team (friends, family, 
 
 - **Who can test:** adults only (18+), or a parent's written consent for anyone younger.
 - **Length:** about 15 minutes per session. Each task gets about 3 minutes; after that, mark it "gave up" and move on.
+- **When:** by the afternoon of Sat Nov 21. Each facilitator sends their filled-in notes sheet to Dillon by 3 pm, and the top 3 go to Mike that evening.
 - **Who runs it:** one teammate as the facilitator. The facilitator reads the script, watches, and takes notes. They don't help unless the tester is stuck for more than a minute.
 - **Where:** in person at the facilitator's computer if you can. On a video call, give the tester remote control of your screen; if you drive the mouse for them, they can't discover hovering for a quote, Mute, or Skip, and the sound depends on the call. Run at least some sessions in person. Don't record video calls.
 - **Mode:** live mode (`npm run env:setup` done, `npm start`). Task 3 needs live mode, because mock mode never asks a clarifying question. If live mode is down, run in mock mode, skip task 3, and note it; for tasks 4 and 5, use one of the five showcase battles on the home page. A facilitator setting up live mode for the first time can follow [docs/onboarding.md](../onboarding.md).
@@ -29,17 +30,17 @@ We're testing the app with 3–5 people from outside the team (friends, family, 
 
 Read each task out, then watch. Don't point at the screen or name the button. Give each task about 3 minutes, then mark it "gave up" and go on. You may press "Skip to verdict" for them only from the second battle on, once they've seen one broadcast.
 
-- **Called off:** if a battle ends with "This fight was called off" (for example, an animal with no ready-made stat sheet), that's a **product** finding, not the tester's fault. Mark the task "called off", note what they typed, and move on.
+- **Called off:** if a battle ends with "This fight was called off" (rare since #441; for example, when a service is down), that's a **product** finding, not the tester's fault. Mark the task "called off", note what they typed, and move on.
 - **Off-limits fighters:** don't suggest real people or other off-limits fighters. If a tester tries one, the safety check refuses it: note how the refusal landed, and don't coach.
 
-**Known in live mode** (from a 24-battle live check on Nov 17; re-run your example battle on the day, since fixes may land before Nov 21):
+**Known in live mode** (re-checked live on Nov 19 after #441 and #443; re-run your example battle on the day, since fixes may land before Nov 21):
 
-- **Most animals off the fighter list get called off.** Tiger, kangaroo, raccoon, moose, polar bear, orca, penguin, spider and rooster all did (10 of 11 everyday picks). The message shows within about 10 seconds. #403 may change this before the sessions.
-- **The quick question's buttons can lead to a called-off fight.** In task 3, only "Grizzly" works; "Polar", "Black", "Brown", "Kodiak" and "Sloth" are called off. Note which button they press.
-- **No announcer voice or music yet.** Live mode plays captions only, with a note on the stage saying so. Tell the tester up front so "no sound" isn't logged as a new finding, and don't spend task time on Mute.
+- **Animals off the fighter list fight on estimates.** Since #441 (Nov 19), a tiger, moose or penguin is no longer called off: the battle runs, and every one of its stats is labeled an estimate (checked live: tiger vs goose, moose vs hippo, penguin vs house cat). In task 4, watch whether the tester notices the estimate tags and what they make of them.
+- **The quick question's buttons all lead to a fight.** In task 3, "Grizzly" uses the hand-checked stat sheet; the others ("Polar" was checked live) fight on estimates. Note which button they press.
+- **Announcer voice: check it on the day. No music.** The live voice landed on Nov 19 (#443); music is cut. If your example battle says "Captions only this time, no announcer voice", check that `ANNOUNCER_VOICE_ID` in your `.env` is `default` as in `.env.example` (an older placeholder value makes the voice service refuse every line; #454 makes the app skip a placeholder). If the voice still isn't working, tell the tester up front that it's captions only, so "no sound" isn't logged as a new finding, and don't spend task time on Mute.
 - **Expect pauses.** Reading the matchup takes 7–15 seconds after pressing go (longer with a question), and a whole battle 20–50 seconds.
 
-**Fighter list** (show this only after a called-off fight in task 2). Everyday names for these work too ("hippo", "t-rex", "dog"), but an animal that isn't on the list (tiger, moose, polar bear) is still called off. These notes go stale fast: re-run "hippo vs a goose" on the day to confirm.
+**Fighter list** (show this only if a tester's own fight in task 2 is called off, or they're stuck for ideas). These have hand-checked stat sheets, and everyday names for them work too ("hippo", "t-rex", "dog"). Since #441, an animal that isn't on the list (tiger, moose, polar bear) fights on estimated stats instead of being called off. These notes go stale fast: re-run "a tiger vs a goose" on the day to confirm.
 
 > Grizzly bear · Gray wolf · African lion · House cat · Golden retriever · African elephant · Horse · Hippopotamus · Chimpanzee · Gorilla · Honey badger · House mouse · Bald eagle · Duck · Goose · Saltwater crocodile · King cobra · Great white shark · Army ant · Honey bee · Triceratops
 
