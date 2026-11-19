@@ -26,6 +26,10 @@ HARD_TIMEOUT = 20.0  # no battle in this file may take longer than this
 SMALL_BUDGET = 8.0  # every stage's limit in these tests, unless a test shrinks one further
 TINY_BUDGET = 0.05  # for the "ran past its budget" tests
 TOO_LONG = 5.0  # how long a slow stand-in sleeps (far past TINY_BUDGET, its patched limit)
+# Script budget for the slow-outro test: each script gets 70% of it (about 1.4 s), well past
+# BUSY_RUNNER, so a busy runner can't make the intro miss its deadline too (#420).
+SLOW_OUTRO_BUDGET = 2.0
+BUSY_RUNNER = 0.5  # extra time a script takes on a slow runner (more than the old 0.35 s share)
 PAUSE = 0.1  # how long recorded stages wait, so overlaps are visible
 OPTIONAL = ("summary", "challenger", "script", "audio", "music", "images")
 MEDIA = {"audio": "audio", "music": "music", "images": "images"}
@@ -273,15 +277,15 @@ async def test_a_slow_outro_keeps_the_intro_the_model_wrote_in_time(
     store: BattleStore, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # Only the outro is slow (#363): it becomes the template; the intro keeps the model's lines.
+    # The other scripts are held back by BUSY_RUNNER too, as on a slow CI runner (#420).
     mock = MockChatLLM()
 
     class SlowOutro:
         async def complete(self, messages: Any, *, prompt_name: str, **kwargs: Any) -> str:
-            if prompt_name == "outro":
-                await asyncio.sleep(TOO_LONG)
+            await asyncio.sleep(TOO_LONG if prompt_name == "outro" else BUSY_RUNNER)
             return await mock.complete(messages, prompt_name=prompt_name, **kwargs)
 
-    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "script", 0.5)
+    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "script", SLOW_OUTRO_BUDGET)
     monkeypatch.setattr(writer, "get_script_chat", lambda: SlowOutro())
     record = await battle(store)
     assert stage_of(record, "script").status == "fallback"

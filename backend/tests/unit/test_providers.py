@@ -225,6 +225,47 @@ def test_intake_chat_has_a_shorter_timeout_and_fewer_retries() -> None:
     assert isinstance(get_intake_chat(mock_settings()), MockChatLLM)
 
 
+# A served model whose server refuses the thinking switch (400): the script chat asks once more
+# without it, so a model swap can't silence the commentary (#398 review).
+async def test_a_refused_thinking_switch_is_retried_once_without_it() -> None:
+    sent: list[dict[str, Any]] = []
+
+    def refuse_the_switch(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        if "chat_template_kwargs" in sent[-1]:
+            return httpx.Response(400, json={"error": "unknown field chat_template_kwargs"})
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+
+    settings = live_settings()
+    script = get_script_chat(settings)
+    assert isinstance(script, LiveChatLLM)
+    script.client = httpx.AsyncClient(transport=httpx.MockTransport(refuse_the_switch))
+    messages: list[base.ChatMessage] = [{"role": "user", "content": "hi"}]
+    assert await script.complete(messages, prompt_name="outro") == "ok"
+    assert ["chat_template_kwargs" in body for body in sent] == [True, False]
+
+
+# A 400 for any other reason, with or without the switch, still fails the call (once each).
+async def test_a_bad_request_without_the_switch_still_fails() -> None:
+    sent: list[dict[str, Any]] = []
+
+    def always_bad(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return httpx.Response(400, json={"error": "bad request"})
+
+    script = get_script_chat(live_settings())
+    assert isinstance(script, LiveChatLLM)
+    script.client = httpx.AsyncClient(transport=httpx.MockTransport(always_bad))
+    messages: list[base.ChatMessage] = [{"role": "user", "content": "hi"}]
+    with pytest.raises(ProviderError):
+        await script.complete(messages, prompt_name="outro")
+    assert len(sent) == 2
+    sent.clear()
+    with pytest.raises(ProviderError):
+        await chat_with(httpx.MockTransport(always_bad)).complete(messages, prompt_name="outro")
+    assert len(sent) == 1  # the shared chat sends no switch, so there is nothing to drop
+
+
 # The course chat model "thinks" before it answers: 85–95% of a script reply's tokens, 15–47 s a
 # script against an 8 s limit. The script chat turns that off; the shared chat keeps it (#363).
 async def test_script_chat_turns_the_models_thinking_off() -> None:

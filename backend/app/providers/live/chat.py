@@ -1,5 +1,6 @@
 """Live ChatLLM: OpenAI-compatible /v1/chat/completions on the course chat endpoint."""
 
+import logging
 from typing import TYPE_CHECKING, Any
 
 import httpx
@@ -10,6 +11,11 @@ from app.providers.live.http import RETRIES, ProviderError, post_json
 
 if TYPE_CHECKING:
     from app.providers.registry import ServiceConfig
+
+logger = logging.getLogger(__name__)
+THINKING_SWITCH = "chat_template_kwargs"
+# Statuses a server gives for a request field it doesn't accept.
+REFUSED_FIELD = {400, 422}
 
 
 class LiveChatLLM:
@@ -46,13 +52,33 @@ class LiveChatLLM:
         payload: dict[str, Any] = {"model": self.config.model, "messages": messages}
         if not self.thinking:
             # The served model's chat template switch; a template without it ignores the key.
-            payload["chat_template_kwargs"] = {"enable_thinking": False}
+            payload[THINKING_SWITCH] = {"enable_thinking": False}
         if json_schema is not None:
             payload["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {"name": prompt_name, "schema": json_schema},
             }
-        reply = await post_json(
+        try:
+            reply = await self._post(payload)
+        except ProviderError as error:
+            if THINKING_SWITCH not in payload or error.status not in REFUSED_FIELD:
+                raise
+            # A served model whose server refuses the switch: ask once more without it, so a
+            # model swap can't silence the commentary (#398 review).
+            logger.warning("chat: the thinking switch was refused (%s); retrying without it", error)
+            payload.pop(THINKING_SWITCH)
+            reply = await self._post(payload)
+        try:
+            content = reply["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as error:
+            raise ProviderError("Live 'chat' reply had no choices[0].message.content.") from error
+        if not isinstance(content, str):
+            raise ProviderError("Live 'chat' reply content was not text.")
+        return content
+
+    # One POST to the chat endpoint, with the shared timeout and retries.
+    async def _post(self, payload: dict[str, Any]) -> Any:
+        return await post_json(
             provider="chat",
             base_url=self.config.base_url,
             path="/v1/chat/completions",
@@ -62,10 +88,3 @@ class LiveChatLLM:
             client=self.client,
             retries=self.retries,
         )
-        try:
-            content = reply["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as error:
-            raise ProviderError("Live 'chat' reply had no choices[0].message.content.") from error
-        if not isinstance(content, str):
-            raise ProviderError("Live 'chat' reply content was not text.")
-        return content
