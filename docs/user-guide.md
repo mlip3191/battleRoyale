@@ -142,7 +142,7 @@ Good examples:
 
 Counts can be numbers or words ("a dozen house cats"), up to 10,000 per side. Size phrases like "horse-sized duck" work too: the app scales the duck up using both animals' real weights.
 
-**Fighters that work best today:** the app has hand-checked stat sheets for 15 fighters: African elephant, African lion, bald eagle, bulldozer, duck, gorilla, gray wolf, grizzly bear, honey badger, horse, house cat, king cobra, main battle tank, Roman legionary, and saltwater crocodile. If you pick one it doesn't know yet, it says so and asks you to choose one of these.
+**Fighters that work best today:** the app has hand-checked stat sheets for 15 fighters: African elephant, African lion, bald eagle, bulldozer, duck, gorilla, gray wolf, grizzly bear, honey badger, horse, house cat, king cobra, main battle tank, Roman legionary, and saltwater crocodile. Any other fighter still gets a battle, but its stats are estimates, not looked up. A name the app can't place, or one it isn't allowed to use, is called off with a friendly message instead.
 
 ![The matchup "a bear vs 6 wolves in a forest" typed into the box](images/user-guide/06-typed.png)
 
@@ -239,7 +239,7 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **Windows: "running scripts is disabled on this system"** when you type `npm` | Type `npm.cmd` instead of `npm`, for example `npm.cmd run setup` and `npm.cmd start`. There's no need to change any Windows security settings. |
 | **"'node' (or 'uv') is not recognized" / "command not found"** | Close the terminal and open a new one after installing, so it finds the new programs. If it still fails, install that program again (step 1). |
 | **The page says "We couldn't reach the studio"**, or the browser says it can't connect to localhost:8000 | The app isn't running. Check that the `npm start` window is still open and shows "Application startup complete". If you closed it, run `npm start` again, then refresh the page (F5, or Cmd+R on Mac). |
-| **"This fight was called off"** with "We don't have a stat sheet for … yet" | The app doesn't know that fighter yet. Pick one of the 15 fighters listed in [Type a matchup](#type-a-matchup), or click an example matchup. |
+| **"This fight was called off"** with "We don't have a stat sheet for …" | The app couldn't place that fighter. Pick one of the 15 fighters listed in [Type a matchup](#type-a-matchup), a mythical creature such as "a griffin", or click an example matchup. |
 | **"Address already in use"** or port 8000 is busy when you run `npm start` | The app (or something else) is already running. Use the window where it's already running, or close it with Ctrl+C and run `npm start` again. Restarting the computer also clears it. |
 | **The page looks old or a button does nothing after you update the code** | Stop the app with Ctrl+C, run `npm run setup` and then `npm start` again, and refresh the browser page. |
 | **No announcer voice** | Sound is optional, and the captions always carry the show. Click **Play sound**, check that **Mute** is off and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
