@@ -42,8 +42,9 @@ def evidence_is_valid(value_as_written: float, quote: str, passage: str) -> bool
     return number_in_quote(value_as_written, quote) and quote_in_passage(quote, passage)
 
 
-# What may sit between a number and its unit: an optional range end ("4-5 kg", "4 to 5 kg").
-RANGE_TAIL = r"(?:\s*(?:-|to)\s*\d[\d,]*(?:\.\d+)?)?\s*"
+# What may sit between a number and its unit: an optional range end ("4-5 kg", "4 to 5 kg"),
+# then spaces or one hyphen, as English joins a compound ("a 450-kilogram horse", #425).
+RANGE_TAIL = r"(?:\s*(?:-|to)\s*\d[\d,]*(?:\.\d+)?)?(?:\s*|-)"
 # Units this short are symbols ("m", "mm", "Mm", "kg", "N"), where case changes the meaning.
 SHORT_UNIT_CHARS = 3
 # Unit symbols that are also English words.
