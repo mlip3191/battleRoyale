@@ -20,6 +20,96 @@ None of the three is an "obvious" case, so the 80% held-out "obvious" target is 
 - **Main battle tank mass:** it stays a 3,000 kg default, so dragon v tank (`edge-show-05`) stays wrong. The stored articles first lacked the "40-70 t" sentence the seed sheet quotes. A one-page re-ingest (`ingest_seed --live --refresh --only main-battle-tank`, Nov 19) put it back (115 to 183 chunks, the sentence is in chunk 2480), but the mass search still does not return it: it ranks outside the top 100 of 183 candidates for the query "adult body mass weight kg lb weighs", and only a query that repeats the passage's own words ("weighs tonnes t extreme weight") reaches it. Tuning the search to fit one sentence would be tuning to pass a case, so under D-58 it is recorded as a known limit.
 - **After the MVP:** prefer a typical value over a single stored row, and add a prompt line so reach is not the length of a claw.
 
+## Run 2026-11-19 14:49 — sheets: research
+
+Commit `6a2fac5` · runtime 16.6 s · traceability 89%
+
+| Set | Pass rate |
+|---|---|
+| Tuning | 17/20 (85%) |
+| Held-out (never used to change constants) | 7/10 (70%) |
+
+| Group | Tuning | Held-out |
+|---|---|---|
+| obvious | 10/10 (100%) | 4/5 (80%) |
+| documented | 4/7 (57%) | 2/3 (67%) |
+| count | 3/3 (100%) | 1/2 (50%) |
+
+_Traceability (G06): 8 of 9 stored battles have no issues; 7 quotes were checked against stored articles and 45 could not be checked here. Run `scripts/trace_report.py` for details._
+
+### Edge-case set (reported separately)
+
+Judged by the rules in `docs/benchmark.md`, section "Edge-case set". These are not part of the tuning or held-out scores above, or of the 80% target.
+
+| Group | Pass rate |
+|---|---|
+| swarm | 4/4 (100%) |
+| showcase | 3/5 (60%) |
+| mirror | 2/2 (100%) |
+| draw | 1/1 (100%) |
+| terrain | 2/3 (67%) |
+| all edge cases | 12/15 (80%) |
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Swarm v 1-by-1 | Result |
+|---|---|---|---|---|---|---|
+| edge-swarm-01a | swarm | side 0 | side 0 | 100.0 / 0.0 | 0.000 | pass — favorite matches; swarm and one by one differ by 0.000 (within 0.03) |
+| edge-swarm-01b | swarm | side 0 | side 0 | 100.0 / 0.0 | 0.000 | pass — favorite matches; the bigger swarm wins 100.0% against 100.0% for the smaller; swarm and one by one differ by 0.000 (within 0.03) |
+| edge-swarm-02a | swarm | side 0 | side 0 | 100.0 / 0.0 | 0.000 | pass — favorite matches; swarm and one by one differ by 0.000 (within 0.03) |
+| edge-swarm-02b | swarm | side 0 | side 0 | 100.0 / 0.0 | 0.000 | pass — favorite matches; the bigger swarm wins 100.0% against 100.0% for the smaller; swarm and one by one differ by 0.000 (within 0.03) |
+| edge-show-01 | showcase | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| edge-show-02 | showcase | side 1 | side 0 | 65.3 / 34.7 | — | FAIL — expected side 1, got side 0 |
+| edge-show-03 | showcase | side 0 | side 0 | 97.4 / 2.6 | — | pass — favorite matches |
+| edge-show-04 | showcase | side 1 | side 1 | 6.8 / 93.2 | — | pass — favorite matches |
+| edge-show-05 | showcase | side 1 | side 0 | 100.0 / 0.0 | — | FAIL — expected side 1, got side 0 |
+| edge-mirror-01 | mirror | draw | none | 49.7 / 50.3 | — | pass — side 0 wins 49.7%, inside 40 to 60% |
+| edge-mirror-02 | mirror | draw | none | 49.6 / 50.4 | — | pass — side 0 wins 49.6%, inside 40 to 60% |
+| edge-draw-01 | draw | draw | none | 0.0 / 0.0 | — | pass — no contest, so nobody wins (No contest: neither Saguaro cactus nor Toaster can hurt the other.) |
+| edge-terrain-01 | terrain | side 0 | side 1 | 48.2 / 51.8 | — | FAIL — expected side 0, got side 1 |
+| edge-terrain-02 | terrain | side 0 | side 0 | 99.8 / 0.2 | — | pass — favorite matches |
+| edge-terrain-03 | terrain | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+
+**Reading this run (#450).** Run with the digit-after-unit change (the commit shown is the base). Totals match the 13:11 run (tuning 17/20, held-out 7/10); three single verdicts differ from it: doc-09 (crocodile v horse) now passes, doc-08 and `edge-terrain-01` (great white shark v crocodile in water, 100% before, 48.2% now) now fail. The new rule is not the cause: I rebuilt every benchmark fighter's research sheet with the old and new unit check side by side, and across 35 quotes the new rule changed the answer for none. Research sheets come from a live model and are not repeatable run to run (the evaluation already found 2 of 20 tuning matchups differing between two runs). No constant, expected answer or sheet was changed.
+
+### Tuning set
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
+|---|---|---|---|---|---|---|
+| cnt-02 | count | side 1 | side 1 | 0.0 / 100.0 | 5 | pass — fair count 5 inside expected 3-10 |
+| cnt-03 | count | side 1 | side 1 | 2.5 / 97.5 | 8 | pass — fair count 8 inside expected 8-40 |
+| cnt-05 | count | side 1 | side 1 | 0.3 / 99.7 | 5 | pass — fair count 5 inside expected 2-8 |
+| doc-01 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| doc-02 | documented | side 1 | side 0 | 72.7 / 27.3 | — | FAIL — expected side 1, got side 0 |
+| doc-03 | documented | side 1 | side 1 | 10.6 / 89.4 | — | pass — favorite matches |
+| doc-06 | documented | side 0 | side 1 | 21.9 / 78.1 | — | FAIL — expected side 0, got side 1 |
+| doc-07 | documented | side 0 | side 0 | 75.7 / 24.3 | — | pass — favorite matches |
+| doc-08 | documented | side 1 | side 0 | 51.6 / 48.4 | — | FAIL — expected side 1, got side 0 |
+| doc-09 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-02 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-03 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-04 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-06 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-07 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-08 | obvious | side 1 | side 1 | 0.9 / 99.1 | — | pass — favorite matches |
+| obv-11 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-12 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+| obv-14 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-15 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
+
+### Held-out set
+
+| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
+|---|---|---|---|---|---|---|
+| cnt-01 | count | side 1 | side 1 | 1.5 / 98.5 | 6 | pass — fair count 6 inside expected 3-12 |
+| cnt-04 | count | side 1 | side 1 | 0.0 / 100.0 | 2048 | FAIL — fair count 2048 outside expected 20-300 |
+| doc-04 | documented | side 0 | side 0 | 97.4 / 2.6 | — | pass — favorite matches |
+| doc-05 | documented | side 0 | side 1 | 6.2 / 93.8 | — | FAIL — expected side 0, got side 1 |
+| doc-10 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-01 | obvious | side 1 | side 1 | 2.1 / 97.9 | — | pass — favorite matches |
+| obv-05 | obvious | side 0 | side 0 | 99.2 / 0.8 | — | pass — favorite matches |
+| obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
+| obv-10 | obvious | side 1 | side 1 | 0.2 / 99.8 | — | pass — favorite matches |
+| obv-13 | obvious | side 1 | side 1 | 33.5 / 66.5 | — | FAIL — right favorite but only 66.5% (high confidence needs 70%) |
+
 ## Run 2026-11-19 13:11 — sheets: research
 
 Commit `4af0fdc` (the base: run with the #448 change, before it was committed) · runtime 15.3 s · traceability 89%
@@ -110,6 +200,7 @@ Judged by the rules in `docs/benchmark.md`, section "Edge-case set". These are n
 | obv-10 | obvious | side 1 | side 1 | 0.2 / 99.8 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 34.4 / 65.6 | — | FAIL — right favorite but only 65.6% (high confidence needs 70%) |
 
+
 ## Run 2026-11-18 15:21 — sheets: research
 
 Commit `6cb61ff` · runtime 11.7 s · traceability 89%
@@ -199,6 +290,7 @@ Judged by the rules in `docs/benchmark.md`, section "Edge-case set". These are n
 | obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
 | obv-10 | obvious | side 1 | side 1 | 0.2 / 99.8 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 33.5 / 66.5 | — | FAIL — right favorite but only 66.5% (high confidence needs 70%) |
+
 
 ## Run 2026-11-18 09:28 — sheets: research
 
@@ -296,6 +388,7 @@ Judged by the rules in `docs/benchmark.md`, section "Edge-case set". These are n
 | obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 33.5 / 66.5 | — | FAIL — right favorite but only 66.5% (high confidence needs 70%) |
 
+
 ## Run 2026-11-17 19:08 — sheets: research
 
 Commit `e1d7a24` · runtime 7.1 s · traceability 89%
@@ -352,61 +445,4 @@ _Traceability (G06): 8 of 9 stored battles have no issues; 7 quotes were checked
 | obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
 | obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 33.4 / 66.6 | — | FAIL — right favorite but only 66.6% (high confidence needs 70%) |
-
-## Run 2026-11-17 18:50 — sheets: research
-
-Commit `e1d7a24` · runtime 6.5 s · traceability n/a
-
-| Set | Pass rate |
-|---|---|
-| Tuning | 17/20 (85%) |
-| Held-out (never used to change constants) | 9/10 (90%) |
-
-| Group | Tuning | Held-out |
-|---|---|---|
-| obvious | 10/10 (100%) | 4/5 (80%) |
-| documented | 4/7 (57%) | 3/3 (100%) |
-| count | 3/3 (100%) | 2/2 (100%) |
-
-_Traceability (G06): no finished battles stored yet, so it shows n/a._
-
-### Tuning set
-
-| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
-|---|---|---|---|---|---|---|
-| cnt-02 | count | side 1 | side 1 | 0.0 / 100.0 | 5 | pass — fair count 5 inside expected 3-10 |
-| cnt-03 | count | side 1 | side 1 | 2.3 / 97.7 | 8 | pass — fair count 8 inside expected 8-40 |
-| cnt-05 | count | side 1 | side 1 | 0.6 / 99.4 | 5 | pass — fair count 5 inside expected 2-8 |
-| doc-01 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| doc-02 | documented | side 1 | side 0 | 77.9 / 22.1 | — | FAIL — expected side 1, got side 0 |
-| doc-03 | documented | side 1 | side 1 | 11.9 / 88.1 | — | pass — favorite matches |
-| doc-06 | documented | side 0 | side 1 | 22.7 / 77.3 | — | FAIL — expected side 0, got side 1 |
-| doc-07 | documented | side 0 | side 0 | 75.1 / 24.9 | — | pass — favorite matches |
-| doc-08 | documented | side 1 | side 0 | 51.0 / 49.0 | — | FAIL — expected side 1, got side 0 |
-| doc-09 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-02 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| obv-03 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-04 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| obv-06 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| obv-07 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-08 | obvious | side 1 | side 1 | 0.7 / 99.3 | — | pass — favorite matches |
-| obv-11 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-12 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-| obv-14 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-15 | obvious | side 1 | side 1 | 0.0 / 100.0 | — | pass — favorite matches |
-
-### Held-out set
-
-| Matchup | Group | Expected | Favorite | Win % (side 0 / 1) | Fair count | Result |
-|---|---|---|---|---|---|---|
-| cnt-01 | count | side 1 | side 1 | 1.0 / 99.0 | 6 | pass — fair count 6 inside expected 3-12 |
-| cnt-04 | count | side 1 | side 1 | 0.0 / 100.0 | 120 | pass — fair count 120 inside expected 20-300 |
-| doc-04 | documented | side 0 | side 0 | 97.5 / 2.5 | — | pass — favorite matches |
-| doc-05 | documented | side 0 | side 0 | 74.3 / 25.7 | — | pass — favorite matches |
-| doc-10 | documented | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-01 | obvious | side 1 | side 1 | 1.2 / 98.8 | — | pass — favorite matches |
-| obv-05 | obvious | side 0 | side 0 | 98.6 / 1.4 | — | pass — favorite matches |
-| obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
-| obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
-| obv-13 | obvious | side 1 | side 1 | 33.5 / 66.5 | — | FAIL — right favorite but only 66.5% (high confidence needs 70%) |
 

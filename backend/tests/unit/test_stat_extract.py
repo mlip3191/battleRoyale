@@ -313,6 +313,24 @@ def test_the_horse_mass_from_the_research_run_is_now_extracted() -> None:
     assert value is not None and value.value == 450.0 and not value.is_estimate
 
 
+# #450: a digit right after the unit makes it another unit ("m2" is square metres, "m3" cubic),
+# so "5 m2" and "5-m3" are not 5 metres. Letters, "/" and superscripts were already blocked.
+@pytest.mark.parametrize(
+    ("number", "unit", "quote", "ok"),
+    [
+        (5, "m", "a 5 m2 area", False),
+        (5, "m", "a 5-m3 tank", False),
+        (5, "kg", "a load of 5 kg2", False),
+        (5, "m", "about 5 m (16 ft) long", True),  # a space or bracket after the unit is fine
+        (5, "m", "it was 5 m, then 2 m", True),
+        (5, "m", "5 m. 2 more were seen", True),
+        (5, "m", "a 5 m² area", False),  # the superscript was already blocked
+    ],
+)
+def test_a_digit_right_after_the_unit_is_rejected(number, unit, quote, ok) -> None:
+    assert number_has_unit_in_quote(number, unit, quote) is ok
+
+
 def test_real_units_still_match_after_tightening() -> None:
     assert number_has_unit_in_quote(12, "in", "about 12 in (30 cm) long")
     assert number_has_unit_in_quote(5, "kg", "weighs 4–5 kg.")
