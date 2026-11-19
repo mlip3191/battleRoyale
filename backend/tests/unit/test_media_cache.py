@@ -4,6 +4,8 @@ Every test uses stand-in providers (no network). "Live" here only means settings
 PROVIDER_MODE=live; the provider passed in is still a stand-in.
 """
 
+import os
+import threading
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -184,3 +186,55 @@ async def test_a_mock_file_is_served_at_its_url(tmp_path: Path) -> None:
     response = client.get(asset.url)
     assert response.status_code == 200
     assert response.content == file_of(asset, media_dir).read_bytes()
+
+
+# #381: on Windows os.replace fails with PermissionError while anything (a virus scan, the media
+# server reading the file) has the target open. save() waits and retries instead of giving up.
+def test_save_retries_when_windows_briefly_holds_the_target(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    real_replace = os.replace
+    refusals = []
+
+    def flaky_replace(src: Path, dst: Path) -> None:
+        if len(refusals) < 3:
+            refusals.append(1)
+            raise PermissionError(13, "file in use")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(files.os, "replace", flaky_replace)
+    monkeypatch.setattr(files.time, "sleep", lambda _seconds: None)
+    target = tmp_path / "sprites" / "a.png"
+    files.save(target, b"data")
+    assert target.read_bytes() == b"data" and len(refusals) == 3
+    assert not list(target.parent.glob("*.tmp"))  # no half-written leftovers
+
+
+def test_save_still_raises_when_the_target_stays_locked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def locked(src: Path, dst: Path) -> None:
+        raise PermissionError(13, "file in use")
+
+    monkeypatch.setattr(files.os, "replace", locked)
+    monkeypatch.setattr(files.time, "sleep", lambda _seconds: None)
+    with pytest.raises(PermissionError):
+        files.save(tmp_path / "a.png", b"data")
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+# #381 with a real open handle, the way Windows hits it (on Mac and Linux the replace just works).
+# The handle is let go after 0.2 s, well inside the 0.6 s of retries.
+def test_save_waits_out_a_brief_open_handle_on_the_old_file(tmp_path: Path) -> None:
+    file = tmp_path / "sprite.png"
+    file.write_bytes(b"old")
+    handle = file.open("rb")
+    releaser = threading.Timer(0.2, handle.close)
+    releaser.start()
+    try:
+        files.save(file, b"new")
+    finally:
+        releaser.join()
+        handle.close()
+    assert file.read_bytes() == b"new"
+    assert [p.name for p in tmp_path.iterdir()] == ["sprite.png"]  # no temp file left behind

@@ -390,6 +390,15 @@ async def test_too_many_beats_is_rejected() -> None:
     assert pbp.fallback is True
 
 
+# A long fight asks the model for 12 beats, not one per event, so a retry fits the deadline (#363).
+def test_a_long_log_asks_for_twelve_beats() -> None:
+    sample = SAMPLES[GRIZZLY]
+    log = (sample.result.representative_log * 109)[:109]
+    messages = writer.build_messages("play_by_play", _facts(sample), log)
+    assert "TASK: write exactly 12 beats" in messages[1]["content"]
+    assert "from 0 to 108" in messages[1]["content"]
+
+
 async def test_a_line_over_the_limit_is_rejected() -> None:
     sample = SAMPLES[GRIZZLY]
     long = "The Grizzly bear is " + "very " * 40 + "large."

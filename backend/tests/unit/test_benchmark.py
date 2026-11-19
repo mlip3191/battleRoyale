@@ -345,6 +345,21 @@ def test_the_real_edge_set_loads_with_its_groups_and_size_references():
     assert [f.size_reference for f in horses.matchup.fighters] == ["duck", "horse"]
 
 
+def test_two_swarm_pairs_are_close_enough_that_rules_4_and_5_can_fail():
+    # #427: the old ant and bee swarms won 0% in both modes, so those rules passed without
+    # checking anything. The legionary and gorilla pairs sit between 15% and 90% for the swarm side.
+    edge = bm.load_entries(bm.BENCHMARK_DIR / "edge.yaml", False, edge=True)
+    judged = bm.evaluate_edge(
+        [e for e in edge if e.id.startswith("edge-swarm-0")],
+        bm.seed_sheets(),
+        runs=100,
+        check_modes=False,
+    )
+    assert len(judged) == 4 and not any(j.skipped for j in judged)
+    # the legionaries sit near 87%; 0.15 to 0.9 guards the intent without flaking
+    assert all(0.15 < j.win_pct[0] / 100 < 0.9 for j in judged), [j.win_pct for j in judged]
+
+
 def test_size_references_reach_the_engine_for_the_duck_sized_horses():
     edge = bm.load_entries(bm.BENCHMARK_DIR / "edge.yaml", False, edge=True)
     (horses,) = [e for e in edge if e.id == "edge-show-01"]
