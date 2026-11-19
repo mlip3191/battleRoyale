@@ -196,6 +196,8 @@ async def _resolve_legend(
     except TimeoutError:
         logger.warning("Modeling the legend %r ran out of time.", name)
         return UNAVAILABLE
+    if outcome.not_a_legend:
+        return None  # a plausible real fighter (#403): the battle falls back to an estimate sheet
     if outcome.creature is None:
         if outcome.blocked:
             remember_refusal(slug)

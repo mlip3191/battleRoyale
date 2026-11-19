@@ -11,6 +11,7 @@ from app.providers.live.http import ProviderError
 from app.research.lore import (
     GIANT_ANALOGS,
     NONSENSE,
+    NOT_A_LEGEND,
     UNAVAILABLE,
     article_text,
     heads_in_quote,
@@ -110,9 +111,11 @@ def test_heads_from_the_quote_are_accepted_in_words_or_digits() -> None:
     assert heads_in_quote(3, "It had 3 heads.") and not heads_in_quote(4, quote)
 
 
-def test_a_missing_article_is_nonsense_and_asks_no_model() -> None:
+def test_a_missing_article_is_not_a_legend_and_asks_no_model() -> None:
+    # #403 (PM): with no article there is nothing to ask, so the name falls back to estimates;
+    # the safety gate at intake has already passed it. Was "blocked" before the live fallback.
     chat = FakeChat()
-    assert run(chat, article=None) == NONSENSE and chat.calls == 0
+    assert run(chat, article=None) == NOT_A_LEGEND and chat.calls == 0
 
 
 def test_an_outage_gives_no_sheet_rather_than_a_guess() -> None:
