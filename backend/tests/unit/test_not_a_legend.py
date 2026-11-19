@@ -142,7 +142,9 @@ async def test_only_real_refusals_go_into_the_refusal_memory(
     go_live(monkeypatch, chat)
     for _ in range(2):
         await stages.lookup_fighter_or_estimate(FighterRequest(entity="moose", raw="moose"))
-    assert "moose" not in sheet_store._REFUSED and chat.calls == 2  # asked again, not remembered
+    # not a refusal, so not in the refusal memory; since #445 it has its own short memory, so the
+    # second battle made no new lookup
+    assert "moose" not in sheet_store._REFUSED and chat.calls == 1
     zeus = ScriptedChat(not_a_legend("deity"))
     go_live(monkeypatch, zeus)
     with pytest.raises(StageFailed):
@@ -181,3 +183,70 @@ async def test_the_prompt_lists_every_reason_code_knows() -> None:
     assert set(lore.NOT_A_LEGEND_REASONS) == set(ALLOWED)
     assert lore.NOT_A_LEGEND_REASONS | lore.REFUSAL_REASONS == {*ALLOWED, *REFUSED}
     assert not lore.NOT_A_LEGEND_REASONS & lore.REFUSAL_REASONS
+
+
+# --- #445: a short memory for "not a legend", so a repeated unknown fighter costs no new lookup.
+
+
+async def lookup(name: str = "moose") -> tuple:
+    return await stages.lookup_fighter_or_estimate(FighterRequest(entity=name, raw=f"a {name}"))
+
+
+async def test_a_second_battle_with_the_same_unknown_fighter_makes_no_new_lookup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    chat = ScriptedChat(not_a_legend("real_animal"))
+    go_live(monkeypatch, chat)
+    first, _ = await lookup()
+    second, estimated = await lookup()
+    assert estimated and second.display_name == first.display_name
+    assert chat.calls == 1  # the second battle asked nobody
+
+
+async def test_the_lookup_is_made_again_after_the_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    chat = ScriptedChat(not_a_legend("real_animal"))
+    go_live(monkeypatch, chat)
+    await lookup()
+    expired = sheet_store.time.monotonic() - sheet_store.NOT_A_LEGEND_MEMORY_S - 1
+    monkeypatch.setitem(sheet_store._NOT_A_LEGEND, "moose", expired)  # backdated, not a fake clock
+    await lookup()
+    assert chat.calls == 2 and "moose" in sheet_store._NOT_A_LEGEND  # remembered afresh
+
+
+async def test_each_name_has_its_own_entry(monkeypatch: pytest.MonkeyPatch) -> None:
+    chat = ScriptedChat(not_a_legend("real_animal"))
+    go_live(monkeypatch, chat)
+    await lookup("moose")
+    await lookup("forklift")
+    assert chat.calls == 2 and set(sheet_store._NOT_A_LEGEND) == {"moose", "forklift"}
+
+
+async def test_the_two_memories_stay_separate(monkeypatch: pytest.MonkeyPatch) -> None:
+    go_live(monkeypatch, ScriptedChat(not_a_legend("real_animal")))
+    await lookup("moose")
+    go_live(monkeypatch, ScriptedChat(not_a_legend("deity")))
+    with pytest.raises(StageFailed):
+        await lookup("zeus")
+    assert set(sheet_store._NOT_A_LEGEND) == {"moose"}  # no refusal in here
+    assert set(sheet_store._REFUSED) == {"zeus"}  # and no "not a legend" in there
+
+
+async def test_an_outage_is_not_remembered_as_not_a_legend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    go_live(monkeypatch, ScriptedChat(not_a_legend("real_animal")), status=503)
+    with pytest.raises(StageFailed):
+        await lookup()
+    assert not sheet_store._NOT_A_LEGEND
+
+
+def test_forgetting_clears_both_memories_and_recording_prunes_expired_entries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expired = sheet_store.time.monotonic() - sheet_store.NOT_A_LEGEND_MEMORY_S - 1
+    monkeypatch.setitem(sheet_store._NOT_A_LEGEND, "old-name", expired)
+    sheet_store.remember_not_a_legend("new-name")
+    assert set(sheet_store._NOT_A_LEGEND) == {"new-name"}
+    sheet_store.remember_refusal("zeus")
+    sheet_store.forget_refusals()
+    assert not sheet_store._NOT_A_LEGEND and not sheet_store._REFUSED
