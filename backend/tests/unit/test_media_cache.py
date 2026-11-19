@@ -5,6 +5,7 @@ PROVIDER_MODE=live; the provider passed in is still a stand-in.
 """
 
 import os
+import threading
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -220,3 +221,20 @@ def test_save_still_raises_when_the_target_stays_locked(
     with pytest.raises(PermissionError):
         files.save(tmp_path / "a.png", b"data")
     assert not list(tmp_path.glob("*.tmp"))
+
+
+# #381 with a real open handle, the way Windows hits it (on Mac and Linux the replace just works).
+# The handle is let go after 0.2 s, well inside the 0.6 s of retries.
+def test_save_waits_out_a_brief_open_handle_on_the_old_file(tmp_path: Path) -> None:
+    file = tmp_path / "sprite.png"
+    file.write_bytes(b"old")
+    handle = file.open("rb")
+    releaser = threading.Timer(0.2, handle.close)
+    releaser.start()
+    try:
+        files.save(file, b"new")
+    finally:
+        releaser.join()
+        handle.close()
+    assert file.read_bytes() == b"new"
+    assert [p.name for p in tmp_path.iterdir()] == ["sprite.png"]  # no temp file left behind
