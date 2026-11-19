@@ -52,7 +52,7 @@ Blocked (answer with the reason):
   (Cerberus, Medusa, the Lernaean Hydra, Smaug). A generic kind of creature is allowed ("a
   dragon", "a griffin", "a hydra" as a kind).
 - "deity": a named god, goddess, or religious figure ("Zeus", "Thor", "Anubis", "Allah",
-  "Jesus", "Buddha", "Satan", capitalized "God"), and a human religious figure or office ("a
+  "Jesus", "Buddha", "Satan", capitalized "God"), and a human religious figure ("a
   prophet", "a saint", "the Pope"). Only a generic kind of supernatural being is allowed ("a
   god", "an angel", "a demon", "a valkyrie", "a titan"), never a named one. A plain human
   religious role is allowed ("a monk", "a priest", "a nun", "a rabbi", "an imam", "a shaman").

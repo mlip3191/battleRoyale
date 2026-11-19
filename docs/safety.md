@@ -291,7 +291,7 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   named deity individuals ("deity" is `individuals_only`); the classifier decides kinds. The
   rule: a generic kind of supernatural being is allowed; a named deity ("Zeus", "Allah",
   "Buddha", capitalized "God") and a human religious figure ("a prophet", "a saint", "the Pope")
-  stay blocked as deity (cases dt-04 to dt-08). On the live probe of 2026-11-17, before this
+  stay blocked as deity (cases dt-04 to dt-09). On the live probe of 2026-11-17, before this
   change, "a valkyrie" was blocked at Wikidata (its kind item reaches "deity", which then
   applied to kinds) and "a god" was blocked by the classifier. A second live probe the same day,
   after those fixes, allowed "a god" and "a valkyrie" as well as the angel, demon and titan.

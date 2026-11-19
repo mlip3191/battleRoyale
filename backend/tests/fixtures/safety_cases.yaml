@@ -487,6 +487,14 @@ cases:
     layer: classifier
     mock:
       classifier: deity
+  - id: dt-09
+    text: "the Pope vs a goose"
+    expect: blocked
+    reason: deity
+    kind: deity
+    layer: classifier
+    mock:
+      classifier: deity
 
   # --- Blocked: firearms and explosives ----------------------------------------------------
   - id: wp-01
