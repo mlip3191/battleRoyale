@@ -53,6 +53,8 @@ class Settings(BaseSettings):
     image_url: str = Field(default="", repr=False)
     image_api_key: SecretStr | None = None
     tts_url: str = Field(default="", repr=False)
+    # The course TTS service lists one model; defaulting it means live mode works without the line.
+    tts_model: str = "chatterbox-v3"
     tts_api_key: SecretStr | None = None
     music_url: str = Field(default="", repr=False)
     music_api_key: SecretStr | None = None
@@ -62,7 +64,9 @@ class Settings(BaseSettings):
     # Announcer voice
     announcer_voice_source: str = "stock"
     announcer_voice_id: str = ""
-    announcer_voice_style: str = ""
+    announcer_voice_style: str = ""  # not sent: the TTS endpoint has no style or pitch field
+    # Tempo multiplier sent as the TTS `speed` field (1 = unchanged); D-09's mild slowdown.
+    announcer_voice_speed: float = 0.9
     announcer_voice_consent_file: Path | None = None
 
     # Simulation
