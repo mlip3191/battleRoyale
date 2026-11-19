@@ -63,7 +63,8 @@ def number_has_unit_in_quote(value_as_written: float, unit: str, quote: str) -> 
     # may differ in case.
     flags = re.IGNORECASE if len(unit_text) > SHORT_UNIT_CHARS else 0
     # "in" is also a word, so as inches it can't be followed by another word ("5 in the wild").
-    word_after = r"(?!\s+[A-Za-z])" if unit_text.lower() in UNITS_THAT_ARE_WORDS else ""
+    # A hyphen joins it too ("3-in-1", "5-in-the-wild"), so those are not inches either (#425).
+    word_after = r"(?!\s+[A-Za-z]|\s*-\s*\w)" if unit_text.lower() in UNITS_THAT_ARE_WORDS else ""
     # One- and two-letter symbols take no plural, so "5 ms" is not metres nor "5 gs" grams.
     plural = "" if len(unit_text) <= 2 else r"(?:e?s)?"
     tail = re.compile(

@@ -14,7 +14,7 @@ None of the three is an "obvious" case, so the 80% held-out "obvious" target is 
 
 ## Run 2026-11-19 13:11 — sheets: research
 
-Commit `4af0fdc` · runtime 15.3 s · traceability 89%
+Commit `4af0fdc` (the base: run with the #448 change, before it was committed) · runtime 15.3 s · traceability 89%
 
 | Set | Pass rate |
 |---|---|
@@ -192,7 +192,6 @@ Judged by the rules in `docs/benchmark.md`, section "Edge-case set". These are n
 | obv-10 | obvious | side 1 | side 1 | 0.2 / 99.8 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 33.5 / 66.5 | — | FAIL — right favorite but only 66.5% (high confidence needs 70%) |
 
-
 ## Run 2026-11-18 09:28 — sheets: research
 
 Commit `960ead2` · runtime 79.0 s · traceability 89%
@@ -289,8 +288,6 @@ Judged by the rules in `docs/benchmark.md`, section "Edge-case set". These are n
 | obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 33.5 / 66.5 | — | FAIL — right favorite but only 66.5% (high confidence needs 70%) |
 
-
-
 ## Run 2026-11-17 19:08 — sheets: research
 
 Commit `e1d7a24` · runtime 7.1 s · traceability 89%
@@ -348,8 +345,6 @@ _Traceability (G06): 8 of 9 stored battles have no issues; 7 quotes were checked
 | obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 33.4 / 66.6 | — | FAIL — right favorite but only 66.6% (high confidence needs 70%) |
 
-
-
 ## Run 2026-11-17 18:50 — sheets: research
 
 Commit `e1d7a24` · runtime 6.5 s · traceability n/a
@@ -406,6 +401,4 @@ _Traceability (G06): no finished battles stored yet, so it shows n/a._
 | obv-09 | obvious | side 0 | side 0 | 100.0 / 0.0 | — | pass — favorite matches |
 | obv-10 | obvious | side 1 | side 1 | 0.3 / 99.7 | — | pass — favorite matches |
 | obv-13 | obvious | side 1 | side 1 | 33.5 / 66.5 | — | FAIL — right favorite but only 66.5% (high confidence needs 70%) |
-
-
 

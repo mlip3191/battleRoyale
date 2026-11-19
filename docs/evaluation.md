@@ -195,7 +195,7 @@ Misses:
 <!-- section:benchmark -->
 _Measured 2026-11-17 with the code in commit `66e579e`._
 
-The F07 benchmark ran on one commit with the hand-verified seed sheets, then 2 times with sheets built by the research pipeline alone (772 s in all). The simulation is seeded, so seed-sheet results repeat exactly; research-only sheets come from the live models, which aren't fully repeatable. A held-out matchup was never used to change a constant. D-58 records three known limits (cnt-05, cnt-04, doc-05; see `docs/benchmark-results.md`).
+The F07 benchmark ran on one commit with the hand-verified seed sheets, then 2 times with sheets built by the research pipeline alone (772 s in all). The simulation is seeded, so seed-sheet results repeat exactly; research-only sheets come from the live models, which aren't fully repeatable. A held-out matchup was never used to change a constant. D-58 records three known limits (cnt-05, cnt-04, doc-05; see `docs/benchmark-results.md`). The seed-sheet run (the "Seed sheets" column) is the section "Run 2026-11-16 09:09, sheets: seed" of [that file at commit 4af0fdc](https://github.com/mlip3191/battleRoyale/blob/4af0fdc7b0c80a7569c4cefdb491fab163fc5d04/docs/benchmark-results.md); the current file keeps only the last five runs.
 
 | Set | Seed sheets | Research-only, run 1 | Research-only, run 2 |
 |---|---|---|---|

@@ -291,6 +291,13 @@ def test_a_unit_running_into_another_is_rejected(number, unit, quote) -> None:
         (5, "kg", "a 5-kg/m load", False),
         (5, "kg", "weighs 4-5 kg", True),  # a range still works
         (5, "kg", "a 4-5-kg cat", True),  # and a range joined to the unit by a hyphen
+        (3, "in", "a 3-in-1 tool", False),  # "in" the word, joined by hyphens
+        (5, "in", "a 5-in-the-wild", False),
+        (5, "in", "a 5-in. barrel", True),  # real inches still match
+        (5, "m", "a 5-mile walk", False),  # a unit prefix of a longer word
+        (5, "t", "a 5-ton truck", False),
+        (70, "t", "weighs 40-70 t", True),  # both ends of a range keep working
+        (72, "t", "the T-72 tank weighs 41 t", False),  # a hyphen before a number never binds
     ],
 )
 def test_a_hyphen_may_join_the_number_and_its_unit(number, unit, quote, ok) -> None:
