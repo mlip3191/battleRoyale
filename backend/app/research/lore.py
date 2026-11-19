@@ -11,7 +11,10 @@ outage gives no sheet, never a guess.
 When the model answers found false it also picks one reason from a fixed list (#403). Code maps
 the two harmless reasons (a real animal, an object or machine) to "not a legend", which falls
 back to an all-estimate sheet (#401); every other reason, and a missing or invalid one, stays
-blocked. The model only picks a label; it never sets a number.
+blocked. The model only picks a label; it never sets a number. A name with no Wikipedia article
+is asked about too, with the name alone and a marker in place of the article: found false goes
+through the same reason check, and found true is blocked because there is no text to check a
+quote against.
 """
 
 import json
@@ -69,6 +72,7 @@ GIANT_ANALOGS = {
 BIG_WORDS = r"big|large|huge|giant\w*|enormous|massive|colossal|monstrous|immense"
 # Why the model answers found false (#403). Only the first two mean "a plausible fighter, just not
 # a legend"; the rest, and anything else, are refusals. Fixed here and in prompts/lore_extract.md.
+NO_ARTICLE = "(no Wikipedia article was found)"  # sent in place of the article text
 NOT_A_LEGEND_REASONS = frozenset({"real_animal", "object_or_machine"})
 REFUSAL_REASONS = frozenset({"person", "deity", "named_character", "weapon", "nonsense"})
 
@@ -90,7 +94,7 @@ class LoreReply(BaseModel):
     """How many heads, only with extra_heads and only when the quote states it."""
     quote: str | None = None
     """The sentence that supports the choices, copied word for word."""
-    reason: Any = None
+    reason: Any = None  # Any on purpose: a wrongly typed reason must fail closed, not raise
     """Only with found false: why (real_animal, object_or_machine, person, deity,
     named_character, weapon or nonsense). Code checks it; anything else is a refusal."""
 
@@ -254,22 +258,23 @@ def outcome_for_not_found(reason: object) -> LoreOutcome:
 
 
 # The creature for a legend not in mythical.yaml, a block, "not a legend", or nothing when a
-# service is down. With no article there is nothing to ask the model about, so it is "not a
-# legend" too (the intake safety gate has already passed the name).
+# service is down. With no article the model is still asked, with the name alone (#403, PM).
 async def lore_for(name: str, client: httpx.AsyncClient, chat: ChatLLM) -> LoreOutcome:
     try:
         article = await fetch_legend_article(client, name)
     except (SourceError, httpx.HTTPError) as error:
         logger.warning("Could not fetch the article for %r (%s).", name, error)
         return UNAVAILABLE
-    if article is None:
-        return NOT_A_LEGEND
-    text = article_text(article.body.decode("utf-8", errors="replace"))
+    text = NO_ARTICLE
+    if article is not None:
+        text = article_text(article.body.decode("utf-8", errors="replace"))
     reply = await ask_model(chat, build_messages(name, text, sorted(real_fighters().values())))
     if reply is None:
         return UNAVAILABLE
     if not reply.found:
         return outcome_for_not_found(reply.reason)
+    if article is None:  # a legend claimed with no article: no text to check a quote against
+        return NONSENSE
     source = {
         "title": article.title,
         "url": article.url,

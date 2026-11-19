@@ -51,6 +51,8 @@ fits the article best:
 - "weapon": a firearm, explosive or other weapon.
 - "nonsense": anything else (a place, a film, a band, a list of meanings, gibberish, or when
   you are not sure).
+If the message says no Wikipedia article was found, answer found false and pick the reason
+from the name alone. A made-up or unclear name is "nonsense".
 When in doubt, choose "nonsense". Code uses the reason only to decide what happens next; it
 never changes a number.
 

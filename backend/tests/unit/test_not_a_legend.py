@@ -11,8 +11,9 @@ import pytest
 from app.models.matchup import FighterRequest
 from app.pipeline import stages
 from app.pipeline.stages import StageFailed
+from app.providers.live.http import ProviderError
 from app.research import lore, sheet_store
-from app.research.lore import NONSENSE, NOT_A_LEGEND
+from app.research.lore import NONSENSE, NOT_A_LEGEND, UNAVAILABLE
 from tests.unit.test_legend_cache import ScriptedChat
 from tests.unit.test_lore import FakeChat, answer, run
 from tests.unit.test_mythical_battles import go_live, matchup
@@ -43,9 +44,45 @@ def test_a_reason_cannot_rescue_an_answer_that_found_a_legend_but_failed_checks(
     assert run(FakeChat(bad)) == NONSENSE
 
 
-def test_no_article_means_nothing_to_ask_so_it_is_not_a_legend() -> None:
-    chat = FakeChat()
-    assert run(chat, article=None) == NOT_A_LEGEND and chat.calls == 0
+# --- A name with no Wikipedia article: the model is still asked, with the name alone (#403, PM).
+
+
+@pytest.mark.parametrize("reason", ALLOWED)
+def test_no_article_and_a_harmless_reason_is_not_a_legend(reason: str) -> None:
+    chat = FakeChat(not_a_legend(reason))
+    assert run(chat, article=None) == NOT_A_LEGEND and chat.calls == 1
+
+
+@pytest.mark.parametrize("reason", [*REFUSED, "sparkly", None])
+def test_no_article_and_any_other_reason_is_blocked(reason: object) -> None:
+    assert run(FakeChat(not_a_legend(reason)), article=None) == NONSENSE
+
+
+def test_no_article_and_found_true_is_blocked_because_there_is_no_text_to_check() -> None:
+    assert run(FakeChat(answer()), article=None) == NONSENSE
+
+
+def test_no_article_and_a_model_that_is_down_is_unavailable() -> None:
+    down = FakeChat(ProviderError("down"), ProviderError("down"))
+    assert run(down, article=None) == UNAVAILABLE
+
+
+def test_the_model_is_told_there_is_no_article() -> None:
+    seen: list[str] = []
+
+    class Spy(FakeChat):
+        async def complete(self, messages, *, prompt_name, json_schema=None) -> str:
+            seen.append(messages[1]["content"])
+            return await super().complete(messages, prompt_name=prompt_name)
+
+    run(Spy(not_a_legend("real_animal")), article=None)
+    assert lore.NO_ARTICLE in seen[0]
+
+
+def test_the_reason_ignores_case_and_surrounding_spaces() -> None:
+    assert lore.outcome_for_not_found(" Real_Animal ") == NOT_A_LEGEND
+    assert lore.outcome_for_not_found("OBJECT_OR_MACHINE") == NOT_A_LEGEND
+    assert lore.outcome_for_not_found("real animal") == NONSENSE  # a different word, not a match
 
 
 async def fighter_for(monkeypatch: pytest.MonkeyPatch, name: str, reason: object) -> tuple:
@@ -113,7 +150,34 @@ async def test_only_real_refusals_go_into_the_refusal_memory(
     assert "zeus" in sheet_store._REFUSED
 
 
+async def test_a_live_name_with_no_article_is_asked_about_and_fights_on_estimates(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    chat = ScriptedChat(not_a_legend("real_animal"))
+    go_live(monkeypatch, chat, status=404)  # Wikipedia has no page for it
+    sheet, estimated = await stages.lookup_fighter_or_estimate(
+        FighterRequest(entity="quokka", raw="a quokka")
+    )
+    assert estimated and chat.calls == 1 and sheet.display_name.lower() == "quokka"
+
+
+@pytest.mark.parametrize("reason", ["person", "nonsense"])
+async def test_a_live_name_with_no_article_and_a_refusal_reason_is_blocked_and_remembered(
+    monkeypatch: pytest.MonkeyPatch, reason: str
+) -> None:
+    chat = ScriptedChat(not_a_legend(reason))
+    go_live(monkeypatch, chat, status=404)
+    with pytest.raises(StageFailed) as failure:
+        await stages.lookup_fighter_or_estimate(
+            FighterRequest(entity="dave", raw="my coworker dave")
+        )
+    assert str(failure.value) == stages.LEGEND_BLOCKED.format(name="dave")
+    assert "dave" in sheet_store._REFUSED
+
+
 async def test_the_prompt_lists_every_reason_code_knows() -> None:
     prompt = lore.load_prompt()
     assert all(reason in prompt for reason in [*ALLOWED, *REFUSED])
     assert set(lore.NOT_A_LEGEND_REASONS) == set(ALLOWED)
+    assert lore.NOT_A_LEGEND_REASONS | lore.REFUSAL_REASONS == {*ALLOWED, *REFUSED}
+    assert not lore.NOT_A_LEGEND_REASONS & lore.REFUSAL_REASONS
