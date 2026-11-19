@@ -3,8 +3,10 @@
 import re
 
 from app.db.intake_pending import PendingQuestion
-from app.intake.parser import parse_matchup, typed_sides
+from app.intake.parser import ok_message, parse_matchup, typed_sides
+from app.intake.rules import map_terrain
 from app.models.matchup import IntakeResult
+from app.models.terrain import Terrain
 from app.providers.base import ChatLLM
 
 ARTICLES = {"a", "an", "the"}
@@ -23,6 +25,9 @@ AND_WORD = re.compile(r"\band\b", re.I)
 OPPONENT_WORDS = re.compile(r"\b(?:who|whom|against|opponents?|vs|versus)\b", re.I)
 FIGHT_WORDS = re.compile(r"\b(?:fight|fighting|face|battle|take on)\b", re.I)
 KIND_WORDS = re.compile(r"\b(?:type|kind|species|breed|sort|variety)\b", re.I)
+# A side's trailing place phrase, "6 gray wolves in a forest" -> "in a forest" (#416). Only the
+# tail counts, so a place word inside a fighter's name ("sea turtle") is not the battlefield.
+TERRAIN_TAIL = re.compile(r"\s+((?:in|on|at|inside|into)\s+.+)$", re.I)
 START_OVER = (
     "Sorry, we still couldn't set up that matchup. Please start again and name two fighters, "
     'like "a grizzly bear vs a gray wolf".'
@@ -121,4 +126,33 @@ async def resolve_answer(pending: PendingQuestion, answer: str, chat: ChatLLM) -
     result = await parse_matchup(text, chat=chat, ask=False)
     if result.status == "clarify":
         return IntakeResult(status="blocked", blocked_reason="nonsense", message=START_OVER)
-    return result
+    return _keep_typed_terrain(result, text, pending.original_text)
+
+
+# The battlefield the user typed in a side's trailing place phrase, or None if no side has one.
+def _typed_terrain(text: str) -> tuple[Terrain, str | None] | None:
+    for side in typed_sides(text):
+        match = TERRAIN_TAIL.search(side)
+        if match is not None:
+            return map_terrain(match.group(1))
+    return None
+
+
+# The answer only fills in what was asked (#416): when the re-parse falls back to the arena but
+# the user typed a battlefield (in the answer first, else the first request), that one is used.
+# A non-arena terrain from the re-parse is kept as it is.
+def _keep_typed_terrain(result: IntakeResult, text: str, original: str) -> IntakeResult:
+    matchup = result.matchup
+    if matchup is None or matchup.terrain != Terrain.ARENA:
+        return result
+    # The answer wins even when it names the arena: the tuple is always truthy, so `or` only
+    # falls through to the first request when the answer typed no battlefield at all.
+    typed = _typed_terrain(text) or _typed_terrain(original)
+    if typed is None or typed[0] == Terrain.ARENA:
+        return result
+    terrain, note = typed
+    notes = list(dict.fromkeys([*matchup.assumptions, *([note] if note else [])]))
+    fixed = matchup.model_copy(update={"terrain": terrain, "assumptions": notes})
+    return result.model_copy(
+        update={"matchup": fixed, "message": ok_message(fixed.fighters, terrain)}
+    )

@@ -25,6 +25,7 @@ from app.narration.writer import (
     unsupported_numbers,
     write_scripts,
 )
+from app.providers.live.http import ProviderError
 from app.providers.mock import MockChatLLM
 from tests.narration_samples import Sample, ScriptedChat, sample_chat, samples
 
@@ -255,6 +256,9 @@ def test_a_name_is_masked_in_any_case_and_plural() -> None:
         httpx.ConnectError("refused"),
         LookupError("no mock fixture"),
         RuntimeError("anything else"),
+        # A live server refusing the request, even after the script chat's retry without the
+        # thinking switch (#398 review).
+        ProviderError("Live 'chat' call to /v1/chat/completions failed: 400.", status=400),
     ],
 )
 async def test_failing_llm_returns_templates_without_network(error: Exception) -> None:
@@ -536,6 +540,35 @@ async def test_a_number_retry_says_not_to_count_or_number_moments() -> None:
     assert pbp.fallback is False
     retry = [m for name, m, _ in chat.calls if name == "play_by_play"][1][-1]["content"]
     assert "Seventeenth" in retry and "count" in retry and "fact list" in retry
+
+
+# The retry wording lives in backend/prompts/script_retry.md, like every prompt (#398 review):
+# editing that file changes what the model is told, with no code change.
+async def test_the_retry_wording_comes_from_the_prompt_file(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    for prompt in writer.PROMPTS_DIR.glob("*.md"):
+        (tmp_path / prompt.name).write_text(prompt.read_text(encoding="utf-8"), encoding="utf-8")
+    (tmp_path / "script_retry.md").write_text(
+        "<!-- a test copy -->\n## retry\nNOPE: {reason}\n{hint}AGAIN.\n"
+        "## placeholders\nBRACES-HINT\n## numbers\nNUMBERS-HINT\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(writer, "PROMPTS_DIR", tmp_path)
+    sample = SAMPLES[GRIZZLY]
+    count = _with_line(sample, "play_by_play", 1, "Seventeenth strike for the bear!")
+    lines = sample.replies["outro"]["lines"]
+    named = {
+        "lines": [{**ln, "text": ln["text"].replace("{winner}", "the grizzly")} for ln in lines]
+    }
+    chat = _chat_with(sample, "play_by_play", count, sample.replies["play_by_play"])
+    chat.replies["outro"] = [named, sample.replies["outro"]]
+    await _write(sample, chat)
+    retries = {name: m[-1]["content"] for name, m, _ in chat.calls if len(m) > 2}
+    assert retries["play_by_play"].startswith("NOPE: line 1: numbers not in the fact list")
+    assert retries["play_by_play"].endswith("NUMBERS-HINT\nAGAIN.")
+    assert "{winner}" in retries["outro"] and retries["outro"].endswith("BRACES-HINT\nAGAIN.")
+    assert "<!--" not in retries["outro"]
 
 
 async def test_draw_outro_uses_draw_pct_and_has_no_winner() -> None:
