@@ -39,7 +39,7 @@ Read each task out, then watch. Don't point at the screen or name the button. Gi
 - **No announcer voice or music yet.** Live mode plays captions only, with a note on the stage saying so. Tell the tester up front so "no sound" isn't logged as a new finding, and don't spend task time on Mute.
 - **Expect pauses.** Reading the matchup takes 7–15 seconds after pressing go (longer with a question), and a whole battle 20–50 seconds.
 
-**Fighter list** (show this only after a called-off fight in task 2; type the name as written: "hippo" and "t-rex" are called off):
+**Fighter list** (show this only after a called-off fight in task 2). Everyday names for these work too ("hippo", "t-rex", "dog"), but an animal that isn't on the list (tiger, moose, polar bear) is still called off. These notes go stale fast: re-run "hippo vs a goose" on the day to confirm.
 
 > Grizzly bear · Gray wolf · African lion · House cat · Golden retriever · African elephant · Horse · Hippopotamus · Chimpanzee · Gorilla · Honey badger · House mouse · Bald eagle · Duck · Goose · Saltwater crocodile · King cobra · Great white shark · Army ant · Honey bee · Triceratops
 
