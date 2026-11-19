@@ -63,7 +63,7 @@ bird:
     attack: [sharper talons, hardened beak, razor talons, striking dive, crushing grip]
     defense: [thicker feathers, dense plumage, tough skin, armored breast, hardened plumage]
     speed: [stronger wings, steeper dive, lean flight muscle, tail steering, stooping speed]
-    balanced: [hunting practice, sharp eyes, seasoned hunter, veteran flier, master of the air]
+    balanced: [hunting practice, sharp eyes, seasoned hunter, veteran flier, lord of the air]
 
 aquatic:
   covers: [fish, mollusk]
@@ -71,7 +71,7 @@ aquatic:
   items:
     attack: [sharper teeth, stronger jaws, serrated bite, crushing bite, thrashing strike]
     defense: [thicker scales, tough skin, hardened shell, ridged plates, armored scales]
-    speed: [stronger fins, streamlined body, strong tail, burst swim, torpedo speed]
+    speed: [stronger fins, streamlined body, strong tail, burst swim, streaking speed]
     balanced: [hunting practice, sharp senses, seasoned hunter, old survivor, apex hunter]
 
 insect:
@@ -88,9 +88,9 @@ machine:
   research: typical mass and thickness of each plate, ram and engine part (manufacturer or museum pages)
   items:
     attack: [reinforced ram plate, hardened ram, spiked ram, heavy ram, siege ram]
-    defense: [bolted armor plates, layered plating, sloped plating, heavy plating, reinforced hull]
-    speed: [tuned engine, lighter wheels, stripped body, better gearing, racing tune]
-    balanced: [service upgrade, field repairs, reinforced frame, veteran crew, full overhaul]
+    defense: [bolted armor plates, layered plating, hammered plating, heavy plating, riveted shell]
+    speed: [oiled axles, lighter frame, stripped body, greased joints, streamlined frame]
+    balanced: [routine upkeep, field repairs, reinforced frame, seasoned handlers, complete rebuild]
 
 mythical:
   covers: [mythical]

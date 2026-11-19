@@ -6,7 +6,7 @@ What exists in code today (PR #284, draft): four loadouts (attack, defense, spee
 
 ## 1. The items: what each kind of fighter carries
 
-What a fighter can carry depends on what it is. A warrior carries iron, a wolf grows claws and hide, a horse hardens its hooves, a bird sharpens its talons, a tank bolts on plating. There are nine kinds (`data/loadouts/items.yaml`), each with the same four loadouts and five items per loadout, so 180 items; the kind comes from the stat sheet (its category, and its weapons for hooves, horns and tusks). The gear line is pre-modern and natural only (D-56, under D-07 and D-38, which block firearms and explosives; D-38 does allow machines as fighters). The machine kind still lists engineered parts such as a tuned engine (`data/loadouts/items.yaml`), which would be reworded if loadouts return. A test checks every name is safe to show; it bans weapon words only, so it does not prove an item is pre-modern. An item is only a name until a teammate sources its real-world facts with a URL and an exact quote, like a stat sheet; each kind has a `research` note saying what to find.
+What a fighter can carry depends on what it is. A warrior carries iron, a wolf grows claws and hide, a horse hardens its hooves, a bird sharpens its talons, a tank bolts on plating. There are nine kinds (`data/loadouts/items.yaml`), each with the same four loadouts and five items per loadout, so 180 items; the kind comes from the stat sheet (its category, and its weapons for hooves, horns and tusks). The gear line is pre-modern and natural only (D-56, under D-07 and D-38, which block firearms and explosives; D-38 does allow machines as fighters). The machine kind's parts were reworded to pre-modern ones (oiled axles, riveted shell) after Mike's review. A test checks every name is safe to show; it bans weapon words and modern engineering terms (engine, wheel, gearing, hull, tune and a few more), so it still does not prove an item is pre-modern. An item is only a name until a teammate sources its real-world facts with a URL and an exact quote, like a stat sheet; each kind has a `research` note saying what to find.
 
 The effect of a loadout is the same for every kind of fighter (section 3); what differs is the **name of the item** and **how heavy it is** (which decides when the negative traits start).
 
@@ -53,7 +53,7 @@ The effect of a loadout is the same for every kind of fighter (section 3); what 
 | Attack | sharper talons | hardened beak | razor talons | striking dive | crushing grip |
 | Defense | thicker feathers | dense plumage | tough skin | armored breast | hardened plumage |
 | Speed | stronger wings | steeper dive | lean flight muscle | tail steering | stooping speed |
-| Balanced | hunting practice | sharp eyes | seasoned hunter | veteran flier | master of the air |
+| Balanced | hunting practice | sharp eyes | seasoned hunter | veteran flier | lord of the air |
 
 **Aquatic** (fish and mollusks)
 
@@ -61,7 +61,7 @@ The effect of a loadout is the same for every kind of fighter (section 3); what 
 |---|---|---|---|---|---|
 | Attack | sharper teeth | stronger jaws | serrated bite | crushing bite | thrashing strike |
 | Defense | thicker scales | tough skin | hardened shell | ridged plates | armored scales |
-| Speed | stronger fins | streamlined body | strong tail | burst swim | torpedo speed |
+| Speed | stronger fins | streamlined body | strong tail | burst swim | streaking speed |
 | Balanced | hunting practice | sharp senses | seasoned hunter | old survivor | apex hunter |
 
 **Insect** (insects and arachnids)
@@ -78,9 +78,9 @@ The effect of a loadout is the same for every kind of fighter (section 3); what 
 | Loadout | Tier 1 | Tier 2 | Tier 3 | Tier 4 | Tier 5 |
 |---|---|---|---|---|---|
 | Attack | reinforced ram plate | hardened ram | spiked ram | heavy ram | siege ram |
-| Defense | bolted armor plates | layered plating | sloped plating | heavy plating | reinforced hull |
-| Speed | tuned engine | lighter wheels | stripped body | better gearing | racing tune |
-| Balanced | service upgrade | field repairs | reinforced frame | veteran crew | full overhaul |
+| Defense | bolted armor plates | layered plating | hammered plating | heavy plating | riveted shell |
+| Speed | oiled axles | lighter frame | stripped body | greased joints | streamlined frame |
+| Balanced | routine upkeep | field repairs | reinforced frame | seasoned handlers | complete rebuild |
 
 **Mythical** (mythical creatures (dragon, griffin))
 

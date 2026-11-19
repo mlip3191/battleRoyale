@@ -64,6 +64,18 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `STRENGTH_SCALE_EXP` | 2/3 | Strength and damage scale as k^(2/3) when resized by k. | Muscle force follows cross-section area, so mass^(2/3): the square-cube law (Galileo 1638; Hill 1950, "The Dimensions of Animals and their Muscular Dynamics") |
 | `LENGTH_SCALE_EXP` | 1/3 | Size and reach scale as k^(1/3). | Geometric similarity: length = mass^(1/3) |
 | `SPEED_SCALE_EXP` | 1/6 | Top speed scales as k^(1/6). | Maximum running speed grows about mass^0.17 across mammals (Garland 1983, *J. Zoology*); simplified to 1/6 and applied to all movement. Garland also finds speed falls for the very largest animals, which this does not model |
+| `LOADOUTS` | per kit: force x1.5 / rate x0.8 / speed x0.95 (attack); armor x1.5 with speed x0.9 (defense); speed x1.25 with armor x0.8 (speed); small gains for balanced | One loadout's multipliers on the sheet's own values (#283, not wired into battles). | **Assumption**: new numbers with no source; the benchmark cannot check them (D-56) |
+| `ARMOR_FLOOR` | 0.05 | Lowest armor a fighter is treated as having when a loadout multiplies it, so one with none can still gain. | **Assumption** |
+| `PRIMARY_REFERENCE`, `PRIMARY_CLEAR_MARGIN` | attack 1,500 N/s, defense 0.4, speed 20 m/s; 1.2 | The scale that finds a fighter's primary attribute, and how far it must lead the next to count. | **Assumption**: typical strong values |
+| `PRIMARY_SYNERGY` | 0.6 | The matching loadout's gains grow by this share (a cheetah's speed gets even better). | **Assumption** |
+| `SPLIT_FOCUS_PENALTY`, `SPLIT_FOCUS_FLOOR` | 0.2, 0.4 | Each extra loadout beyond the first shrinks all gains by 20%, down to 40% of their size. | **Assumption** |
+| `LOADOUT_TIER_SCALE` | 1.0, 1.4, 1.8, 2.2, 2.6 for tiers 1 to 5 | A tier-up scales every change from 1 by this factor, so gains and costs both grow. | **Assumption** |
+| `LOADOUT_ARCHETYPES` | `free` 1.5 to 3.0 and `load` per tier, by kind of fighter | How much gear a kind of fighter carries free, and the weight each tier adds. | **Assumption** |
+| `ENCUMBRANCE_SPEED_PER_LOAD`, `ENCUMBRANCE_RATE_PER_LOAD` | 0.06, 0.03 | Each unit of load above the free load cuts top speed and attack rate by this much. | **Assumption** |
+| `ENCUMBRANCE_SPEED_FLOOR`, `ENCUMBRANCE_RATE_FLOOR` | 0.5, 0.6 | Speed and rate never drop below this share. | **Assumption** |
+| `RECKLESS_ARMOR_SHARE_PER_TIER` | 0.1 | Each attack tier above 3 cuts armor by this share. | **Assumption** |
+| `FRAGILE_FORCE_PER_TIER`, `FRAGILE_FORCE_FLOOR` | 0.04, 0.5 | Each speed tier above 3 cuts attack force by this share, to a floor of half. | **Assumption** |
+| `TOURNAMENT_ENTRY_POINTS`, `TOURNAMENT_POINTS_PER_WIN` | 2, 1 | Points to spend on loadouts at entry and after each round won. | **Assumption** (tournament is post-MVP, D-64) |
 
 ## Numbers and size (F03)
 

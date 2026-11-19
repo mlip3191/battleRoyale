@@ -214,7 +214,11 @@ def test_armor_still_stays_between_zero_and_one_at_every_tier():
 def test_every_kind_of_fighter_has_five_safe_natural_or_pre_modern_items_per_loadout():
     data = yaml.safe_load(ITEMS.read_text("utf-8"))
     assert set(data) == set(c.LOADOUT_ARCHETYPES)
-    banned = ("gun", "rifle", "pistol", "musket", "cannon", "bomb", "grenade", "explosive", "tnt")
+    banned = (
+        "gun", "rifle", "pistol", "musket", "cannon", "bomb", "grenade", "explosive", "tnt",
+        # modern engineering terms: D-56 allows pre-modern and natural gear only
+        "engine", "wheel", "gearing", "hull", "sloped", "tune", "torpedo",
+    )  # fmt: skip
     names = []
     for archetype, entry in data.items():
         assert set(entry["items"]) == set(c.LOADOUTS), archetype
