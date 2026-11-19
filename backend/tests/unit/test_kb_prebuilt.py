@@ -3,6 +3,7 @@
 import asyncio
 import json
 import sqlite3
+import struct
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from app.research.kb_prebuilt import (
     export_prebuilt,
     load_prebuilt,
     model_fingerprint,
+    to_half,
 )
 from app.research.kb_store import DocumentRecord, ensure_vector_table, store_document
 from app.research.retrieve import retrieve
@@ -156,7 +158,8 @@ def test_mock_mode_never_loads_the_prebuilt_files(tmp_path: Path) -> None:
         connection.close()
 
 
-def test_round_trip_keeps_the_same_top_passages_and_distances(
+# The file stores float16, so distances move by rounding only; the ranking must not change.
+def test_round_trip_keeps_the_same_top_passages_and_close_distances(
     tmp_path: Path, fresh: sqlite3.Connection
 ) -> None:
     source = ingested(tmp_path / "source.db")
@@ -166,7 +169,26 @@ def test_round_trip_keeps_the_same_top_passages_and_distances(
     finally:
         source.close()
     assert load_prebuilt(fresh, MODEL, tmp_path / "out").outcome is LoadOutcome.LOADED
-    assert {fighter: top(fresh, fighter) for fighter in TEXTS} == before
+    after = {fighter: top(fresh, fighter) for fighter in TEXTS}
+    for fighter in TEXTS:
+        assert [text for text, _ in after[fighter]] == [text for text, _ in before[fighter]]
+        for (_, new), (_, old) in zip(after[fighter], before[fighter], strict=True):
+            assert new == pytest.approx(old, abs=1e-3)
+
+
+# Once rounded to float16, a load and a second export give back the very same files.
+def test_loading_and_exporting_again_gives_the_same_bytes(
+    tmp_path: Path, fresh: sqlite3.Connection
+) -> None:
+    assert load_prebuilt(fresh, MODEL, FIXTURE).outcome is LoadOutcome.LOADED
+    export_prebuilt(fresh, ["horse", "duck"], MODEL, tmp_path / "again")
+    for name in (MANIFEST_FILE, VECTORS_FILE):
+        assert (tmp_path / "again" / name).read_bytes() == (FIXTURE / name).read_bytes()
+
+
+def test_a_number_too_large_for_float16_is_refused() -> None:
+    with pytest.raises(ValueError, match="too large for float16"):
+        to_half(struct.pack("<2f", 0.5, 1e6))
 
 
 def test_export_is_the_same_bytes_every_time_and_holds_no_model_name(tmp_path: Path) -> None:

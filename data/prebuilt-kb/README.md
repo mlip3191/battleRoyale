@@ -8,9 +8,10 @@ fingerprint of the model name, never the name itself). Otherwise it says so and 
 
 - `knowledge-base.json`: each document's title, URL, license, retrieval date and content hash,
   and its passages (no article HTML).
-- `vectors.f32`: one little-endian float32 vector per passage, in the JSON's order.
+- `vectors.f16`: one little-endian float16 vector per passage, in the JSON's order (the app
+  stores them as float32; half precision halves the file without changing search results).
 
-To export again after a full live ingest (rarely: each export adds about 30 MB to git history):
+To export again after a full live ingest (rarely: each export adds about 16 MB to git history):
 `uv run --directory backend python -m app.research.kb_prebuilt`
 
 ## License

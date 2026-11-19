@@ -6,7 +6,9 @@ no export time, so the same knowledge base always exports to the same bytes.
 
   knowledge-base.json  the documents and their passages, plus a manifest (format, vector size,
                        a SHA-256 fingerprint of the embedding model name, the vectors' SHA-256)
-  vectors.f32          one little-endian float32 vector per passage, in the JSON's order
+  vectors.f16          one little-endian float16 vector per passage, in the JSON's order. The
+                       database keeps float32; half precision halves the file and leaves the
+                       retrieval ranking unchanged (checked on the 15 retrieval cases, #438)
 """
 
 import hashlib
@@ -18,6 +20,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from app.config import REPO_ROOT, get_settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
@@ -26,9 +30,10 @@ from app.research.seed_fighters import load_seed_fighters
 
 PREBUILT_KB_DIR = REPO_ROOT / "data" / "prebuilt-kb"
 MANIFEST_FILE = "knowledge-base.json"
-VECTORS_FILE = "vectors.f32"
-FORMAT = 1
-FLOAT_BYTES = 4
+VECTORS_FILE = "vectors.f16"
+FORMAT = 2
+FLOAT_BYTES = 4  # float32, as the database stores each vector
+FILE_FLOAT_BYTES = 2  # float16, as the file stores it
 
 
 class LoadOutcome(Enum):
@@ -54,6 +59,20 @@ def model_fingerprint(model_name: str) -> str:
     return hashlib.sha256(model_name.strip().encode("utf-8")).hexdigest()
 
 
+# Float32 vector bytes as float16 bytes (rounded to nearest); a value too big for float16 fails.
+def to_half(blob: bytes) -> bytes:
+    with np.errstate(over="ignore"):  # an overflow becomes inf, refused just below
+        half = np.frombuffer(blob, dtype="<f4").astype("<f2")
+    if not np.isfinite(half).all():
+        raise ValueError("a vector holds a number too large for float16")
+    return half.tobytes()
+
+
+# Float16 vector bytes back as float32 bytes, the form the database stores.
+def to_single(blob: bytes) -> bytes:
+    return np.frombuffer(blob, dtype="<f2").astype("<f4").tobytes()
+
+
 # Write the given fighters' documents, passages and vectors to folder; returns the passage count.
 def export_prebuilt(
     connection: sqlite3.Connection, fighter_ids: list[str], model_name: str, folder: Path
@@ -65,9 +84,10 @@ def export_prebuilt(
         raise ValueError("the knowledge base has no vector size; run `npm run ingest` first")
     size = int(size_row[0])
     documents, vectors = _collect(connection, sorted(set(fighter_ids)), size)
-    blob = b"".join(vectors)
+    blob = to_half(b"".join(vectors))
     manifest = {
         "format": FORMAT,
+        "vector_type": "float16",
         "embedding_dim": size,
         "embedding_model_sha256": model_fingerprint(model_name),
         "vectors_sha256": hashlib.sha256(blob).hexdigest(),
@@ -129,14 +149,14 @@ def load_prebuilt(
     size = int(manifest["embedding_dim"])
     blob = (folder / VECTORS_FILE).read_bytes()
     _check_vectors(manifest, blob, size)
-    _store(connection, manifest["documents"], blob, size)
+    _store(connection, manifest["documents"], to_single(blob), size)
     return LoadResult(LoadOutcome.LOADED, len(manifest["documents"]), int(manifest["chunks"]))
 
 
 # The vectors file must be whole, unchanged, and hold one vector per passage.
 def _check_vectors(manifest: dict[str, Any], blob: bytes, size: int) -> None:
     count = sum(len(document["chunks"]) for document in manifest["documents"])
-    if count != manifest["chunks"] or len(blob) != count * size * FLOAT_BYTES:
+    if count != manifest["chunks"] or len(blob) != count * size * FILE_FLOAT_BYTES:
         raise ValueError(f"{VECTORS_FILE} doesn't hold one {size}-number vector per passage")
     if hashlib.sha256(blob).hexdigest() != manifest["vectors_sha256"]:
         raise ValueError(f"{VECTORS_FILE} doesn't match the fingerprint in {MANIFEST_FILE}")
@@ -197,7 +217,7 @@ def _insert_document(connection: sqlite3.Connection, document: dict[str, Any]) -
 # From the backend folder, after a full live `npm run ingest`:
 #   uv run python -m app.research.kb_prebuilt
 # Run it rarely (only when the seed list or embedding model changes): each re-export adds about
-# 30 MB to the git history.
+# 16 MB to the git history.
 def main(folder: Path = PREBUILT_KB_DIR) -> int:
     settings = get_settings()
     connection = connect(settings.data_dir / "app.db")
