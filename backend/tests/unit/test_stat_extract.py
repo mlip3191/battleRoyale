@@ -271,6 +271,48 @@ def test_a_unit_running_into_another_is_rejected(number, unit, quote) -> None:
     assert not number_has_unit_in_quote(number, unit, quote)
 
 
+# #425: a number and its unit joined by a hyphen, as English writes a compound ("a 450-kilogram
+# horse"), is the same quantity. The research run rejected this quote, so the horse fell back to
+# a 50 kg category default and 100 of them lost to a duck.
+@pytest.mark.parametrize(
+    ("number", "unit", "quote", "ok"),
+    [
+        (
+            450,
+            "kilogram",
+            "Therefore, a 450-kilogram (990 lb) adult horse could eat 11 kilograms.",
+            True,
+        ),
+        (450, "kg", "a 450-kg horse", True),
+        (450, "kg", "a 450–kg horse", True),  # an en dash is normalised to a hyphen
+        (990, "kilogram", "a 450-kilogram (990 lb) adult horse", False),  # 990 is in lb
+        (5, "m", "a 5-mm gap", False),  # a hyphen does not let a unit run into another
+        (5, "in", "a 5-in the wild", False),  # "in" the word still cannot be inches
+        (5, "kg", "a 5-kg/m load", False),
+        (5, "kg", "weighs 4-5 kg", True),  # a range still works
+        (5, "kg", "a 4-5-kg cat", True),  # and a range joined to the unit by a hyphen
+        (3, "in", "a 3-in-1 tool", False),  # "in" the word, joined by hyphens
+        (5, "in", "a 5-in-the-wild", False),
+        (5, "in", "a 5-in. barrel", True),  # real inches still match
+        (5, "m", "a 5-mile walk", False),  # a unit prefix of a longer word
+        (5, "t", "a 5-ton truck", False),
+        (70, "t", "weighs 40-70 t", True),  # both ends of a range keep working
+        (72, "t", "the T-72 tank weighs 41 t", False),  # a hyphen before a number never binds
+    ],
+)
+def test_a_hyphen_may_join_the_number_and_its_unit(number, unit, quote, ok) -> None:
+    assert number_has_unit_in_quote(number, unit, quote) is ok
+
+
+def test_the_horse_mass_from_the_research_run_is_now_extracted() -> None:
+    quote = "Therefore, a 450-kilogram (990 lb) adult horse could eat up to 11 kilograms."
+    passages = [Passage(1, "Horse", URL, "CC BY-SA 4.0", None, quote, 0.1)]
+    value = verified_value(
+        StatName.MASS, answer(450, "kilogram", quote, passage=1), passages, {URL: WHEN}
+    )
+    assert value is not None and value.value == 450.0 and not value.is_estimate
+
+
 def test_real_units_still_match_after_tightening() -> None:
     assert number_has_unit_in_quote(12, "in", "about 12 in (30 cm) long")
     assert number_has_unit_in_quote(5, "kg", "weighs 4–5 kg.")
