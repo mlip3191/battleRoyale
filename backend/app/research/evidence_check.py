@@ -58,7 +58,8 @@ def number_has_unit_in_quote(value_as_written: float, unit: str, quote: str) -> 
     unit_text = normalize_text(unit)
     if not unit_text:
         return False
-    # A unit may not run on into another ("5 m/s" is not metres, "5 in the wild" not inches).
+    # A unit may not run on into another ("5 m/s" is not metres, "5 in the wild" not inches, and
+    # "5 m2" or "5-m3" are square and cubic metres, #450).
     # Short symbols match case exactly, so "5 Mm" is never millimetres; words like "Newtons"
     # may differ in case.
     flags = re.IGNORECASE if len(unit_text) > SHORT_UNIT_CHARS else 0
@@ -68,7 +69,7 @@ def number_has_unit_in_quote(value_as_written: float, unit: str, quote: str) -> 
     # One- and two-letter symbols take no plural, so "5 ms" is not metres nor "5 gs" grams.
     plural = "" if len(unit_text) <= 2 else r"(?:e?s)?"
     tail = re.compile(
-        RANGE_TAIL + re.escape(unit_text) + plural + r"(?![A-Za-z/²³])" + word_after, flags
+        RANGE_TAIL + re.escape(unit_text) + plural + r"(?![A-Za-z0-9/²³])" + word_after, flags
     )
     for found in NUMBER.finditer(text):
         number = float(found.group().replace(",", ""))
