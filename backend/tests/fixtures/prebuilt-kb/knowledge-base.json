@@ -1,0 +1,53 @@
+{
+ "chunks": 4,
+ "documents": [
+  {
+   "chunks": [
+    {
+     "heading": "Description",
+     "ordinal": 0,
+     "text": "The mallard weighs about 1.1 kg and is 60 cm long."
+    },
+    {
+     "heading": "Diet",
+     "ordinal": 1,
+     "text": "Mallards eat plants, insects and small fish they find near the water."
+    }
+   ],
+   "content_hash": "95270ec5402f192d2076c87f157acc69b0072704870c4b4b41ae58010de8e38b",
+   "doc_id": "duck/wikipedia",
+   "fighter_id": "duck",
+   "license": "CC BY-SA 4.0",
+   "retrieved_at": "2026-11-01T00:00:00+00:00",
+   "source": "wikipedia",
+   "title": "Mallard",
+   "url": "https://en.wikipedia.org/wiki/Mallard"
+  },
+  {
+   "chunks": [
+    {
+     "heading": "Size",
+     "ordinal": 0,
+     "text": "A large horse weighs 500 kg and stands 1.6 m at the shoulder."
+    },
+    {
+     "heading": "Behaviour",
+     "ordinal": 1,
+     "text": "Horses are herd animals that can run at 88 km/h in a short sprint."
+    }
+   ],
+   "content_hash": "2a4b95f8c4b22935ddb8e94291609c080ceb2c7c8fdae354c8b7ba6d5ccf280d",
+   "doc_id": "horse/wikipedia",
+   "fighter_id": "horse",
+   "license": "CC BY-SA 4.0",
+   "retrieved_at": "2026-11-01T00:00:00+00:00",
+   "source": "wikipedia",
+   "title": "Horse",
+   "url": "https://en.wikipedia.org/wiki/Horse"
+  }
+ ],
+ "embedding_dim": 8,
+ "embedding_model_sha256": "a2e5432b8ccdcfdb7cec4add299c6815f8e3d5e5bb36051534bafa6c3470fbe5",
+ "format": 1,
+ "vectors_sha256": "5e593d2ded2adb114cf353392ec7e41c0f97faddcf7a2f804dadcfd5cca2c916"
+}

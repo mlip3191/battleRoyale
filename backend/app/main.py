@@ -22,12 +22,18 @@ from app.db.migrate import apply_migrations
 from app.db.showcase import SHOWCASE_DIR, import_showcase
 from app.models import contract_schemas
 from app.providers.health import provider_statuses
+from app.research.kb_prebuilt import PREBUILT_KB_DIR, LoadOutcome, LoadResult, load_prebuilt
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 logger = logging.getLogger(__name__)
 EMPTY_KB = (
     "The knowledge base is empty, so new fighters can't be researched yet. "
     "Run `npm run ingest` once (it takes a few minutes), then restart."
+)
+PREBUILT_MISMATCH = (
+    "The prebuilt knowledge base in data/prebuilt-kb/ was built with a different embedding "
+    "model than the one set in your .env (EMBEDDINGS_MODEL), so it wasn't loaded: its vectors "
+    "wouldn't match your searches. Run `npm run ingest` once (about 30 minutes), then restart."
 )
 
 # At INFO these loggers print full request URLs, which include course endpoint hosts.
@@ -40,14 +46,15 @@ def create_app(
     settings: Settings | None = None,
     frontend_dist: Path = FRONTEND_DIST,
     showcase_dir: Path | None = SHOWCASE_DIR,
+    prebuilt_dir: Path = PREBUILT_KB_DIR,
 ) -> FastAPI:
     settings = settings or get_settings()
 
-    # At startup: load the showcase into an empty database, and in live mode say if the
-    # knowledge base still needs building. Neither step may stop the app from starting.
+    # At startup: load the showcase into an empty database, and in live mode load the prebuilt
+    # knowledge base or say if it still needs building. No step may stop the app from starting.
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-        _startup(settings, showcase_dir)
+        _startup(settings, showcase_dir, prebuilt_dir)
         yield
 
     app = FastAPI(title="Battle Royale", version="0.1.0", lifespan=lifespan)
@@ -80,21 +87,43 @@ def create_app(
     return app
 
 
-# Load the showcase if the database is empty, and warn about an empty knowledge base in live mode.
-def _startup(settings: Settings, showcase_dir: Path | None) -> None:
+# Load the showcase if the database is empty; in live mode, fill an empty knowledge base from the
+# prebuilt files (D-66), or warn that it needs `npm run ingest`.
+def _startup(settings: Settings, showcase_dir: Path | None, prebuilt_dir: Path) -> None:
     try:
         connection = connect(settings.data_dir / "app.db")
         try:
             apply_migrations(connection)
             if showcase_dir is not None:
                 import_showcase(connection, settings.data_dir / "media", showcase_dir)
-            if settings.provider_mode == "live" and not _has_passages(connection):
-                logger.warning(EMPTY_KB)
-                print(EMPTY_KB)
+            if settings.provider_mode == "live":
+                _fill_knowledge_base(connection, settings, prebuilt_dir)
         finally:
             connection.close()
     except (sqlite3.Error, OSError, ValueError) as error:
         logger.warning("Startup checks skipped (%s: %s).", type(error).__name__, error)
+
+
+# Load the prebuilt knowledge base into an empty one, and say plainly what happened.
+def _fill_knowledge_base(
+    connection: sqlite3.Connection, settings: Settings, prebuilt_dir: Path
+) -> None:
+    try:
+        result = load_prebuilt(connection, settings.embeddings_model, prebuilt_dir)
+    except (ValueError, KeyError, TypeError) as error:  # a damaged file: build it with ingest
+        logger.warning("The prebuilt knowledge base wasn't loaded (%s).", error)
+        result = LoadResult(LoadOutcome.MISSING)
+    if result.outcome is LoadOutcome.LOADED:
+        print(
+            f"Loaded the prebuilt knowledge base ({result.chunks} passages from "
+            f"{result.documents} articles). `npm run ingest` is only needed for fresh articles."
+        )
+    elif result.outcome is LoadOutcome.MODEL_MISMATCH and not _has_passages(connection):
+        logger.warning(PREBUILT_MISMATCH)
+        print(PREBUILT_MISMATCH)
+    elif not _has_passages(connection):
+        logger.warning(EMPTY_KB)
+        print(EMPTY_KB)
 
 
 # True when the knowledge base has at least one stored passage.

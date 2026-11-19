@@ -358,7 +358,7 @@ Rules:
 | `assets` | `prompt_hash` | generated media paths; reused across battles |
 
 - **Seed:** `simulation_seed = hash(matchup normalized, sheet_hash_0, sheet_hash_1, ENGINE_VERSION)`. Re-running a battle reproduces it exactly.
-- **Knowledge base build:** `uv run python -m scripts.ingest_seed` downloads Wikipedia/Wikidata text for seed fighters into `data/kb/`, parses, chunks (≈800 characters, 100 overlap), embeds, and stores. Raw text is not committed (size + license); seed stat sheets are.
+- **Knowledge base build:** `uv run python -m scripts.ingest_seed` downloads Wikipedia/Wikidata text for seed fighters into `data/kb/`, parses, chunks (≈800 characters, 100 overlap), embeds, and stores. Raw article text and HTML are not committed (size + license); seed stat sheets are, and so are the seed fighters' passages and vectors in `data/prebuilt-kb/` (D-66), which startup loads into an empty knowledge base in live mode when the embedding model matches, so a fresh setup can skip the ingest.
 - **Migrations:** numbered SQL files in `backend/app/db/migrations/`, applied at startup.
 - SQLite runs in WAL mode; one writer at a time is fine for a demo app.
 
