@@ -12,6 +12,14 @@ Three cases fail in the baseline and are recorded as known limits, not fixed (Mi
 
 None of the three is an "obvious" case, so the 80% held-out "obvious" target is unaffected.
 
+**Known limits of the research-built sheets (#425, Mike's ruling).** These are about sheets built by `--sheets research`, not the seed baseline above. Stored facts keep winning over extraction for the MVP; a stat changes only when a better source turns up, never to pass a case (D-58). Nothing here was tuned.
+
+- **Gray wolf mass:** one animaltraits row (22.68 kg) against the seed's 40 kg ("the mean body mass of the wolf is 40 kg"). With the grizzly's reach below, it keeps grizzly v 4 wolves (`edge-show-02`) on the wrong side.
+- **Grizzly reach:** 0.102 m, a claw's length (51-102 mm), against 0.6 m in the seed sheet.
+- **Horse attack force:** a category default (500 N) against 1,924 N in the seed sheet, so a sourced 450 kg horse is heavy and weak; crocodile v horse (doc-09) is close on research sheets and clear on seed sheets.
+- **Main battle tank mass:** the stored articles do not contain the "40-70 t" sentence the seed sheet quotes, so it stays a 3,000 kg default and dragon v tank (`edge-show-05`) stays wrong. A re-ingest of that one page was approved if the sheets owner agrees; if the sentence is still not found afterwards, this is a known limit too.
+- **After the MVP:** prefer a typical value over a single stored row, and add a prompt line so reach is not the length of a claw.
+
 ## Run 2026-11-19 13:11 — sheets: research
 
 Commit `4af0fdc` (the base: run with the #448 change, before it was committed) · runtime 15.3 s · traceability 89%
