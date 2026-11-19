@@ -31,7 +31,7 @@ from app.safety.wikidata import (
 )
 
 GEOGRAPHIC_LOCATION, LANDFORM, TAXON, FILM, HUMAN = "Q2221906", "Q271669", "Q16521", "Q11424", "Q5"
-CHARACTER, FIREARM = "Q95074", "Q12796"
+CHARACTER, FIREARM, DEITY = "Q95074", "Q12796", "Q178885"
 
 
 @pytest.fixture
@@ -178,10 +178,11 @@ async def test_injected_text_does_not_turn_a_moose_into_a_person(cache: Wikidata
 # --- Issue 2: "a vending machine" ------------------------------------------------------------
 
 
-def test_geographic_location_blocks_only_individuals() -> None:
+def test_individuals_only_classes_are_place_character_and_deity() -> None:
     class_map = load_class_map()
     assert class_map.version >= 6
-    assert class_map.individuals_only == {GEOGRAPHIC_LOCATION}
+    # character: #340; deity: #400 review (kinds such as "a valkyrie" stay allowed, D-38).
+    assert class_map.individuals_only == {GEOGRAPHIC_LOCATION, CHARACTER, DEITY}
     assert class_map.reasons[GEOGRAPHIC_LOCATION] == "out_of_scope"
 
 
@@ -474,9 +475,14 @@ async def test_an_extinct_animal_is_a_kind_and_the_monster_does_not_take_its_pla
     assert verdict.allowed, (name, verdict)
 
 
-async def test_a_fictional_monster_alone_still_blocks(cache: WikidataCache) -> None:
+async def test_a_fictional_monster_kind_alone_is_left_to_the_classifier(
+    cache: WikidataCache,
+) -> None:
+    # The D&D "stegosaurus" is a kind (it has a P279) that reaches "character" through
+    # monster -> fictional creature. Since #340, that no longer blocks at Wikidata;
+    # the classifier decides, same as "a stormtrooper".
     verdict = await check_names(["a stegosaurus"], lookup=stegosaurus_items("monster"), cache=cache)
-    assert (verdict.reason, verdict.layer) == ("copyrighted_character", "wikidata")
+    assert verdict.allowed, verdict
 
 
 def test_a_fossil_taxon_is_a_kind_but_not_a_common_word() -> None:
