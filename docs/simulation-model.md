@@ -64,6 +64,18 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `STRENGTH_SCALE_EXP` | 2/3 | Strength and damage scale as k^(2/3) when resized by k. | Muscle force follows cross-section area, so mass^(2/3): the square-cube law (Galileo 1638; Hill 1950, "The Dimensions of Animals and their Muscular Dynamics") |
 | `LENGTH_SCALE_EXP` | 1/3 | Size and reach scale as k^(1/3). | Geometric similarity: length = mass^(1/3) |
 | `SPEED_SCALE_EXP` | 1/6 | Top speed scales as k^(1/6). | Maximum running speed grows about mass^0.17 across mammals (Garland 1983, *J. Zoology*); simplified to 1/6 and applied to all movement. Garland also finds speed falls for the very largest animals, which this does not model |
+| `LOADOUTS` | per kit: force x1.5 / rate x0.8 / speed x0.95 (attack); armor x1.5 with speed x0.9 (defense); speed x1.25 with armor x0.8 (speed); small gains for balanced | One loadout's multipliers on the sheet's own values (#283, not wired into battles). | **Assumption**: new numbers with no source; the benchmark cannot check them (D-56) |
+| `ARMOR_FLOOR` | 0.05 | Lowest armor a fighter is treated as having when a loadout multiplies it, so one with none can still gain. | **Assumption** |
+| `PRIMARY_REFERENCE`, `PRIMARY_CLEAR_MARGIN` | attack 1,500 N/s, defense 0.4, speed 20 m/s; 1.2 | The scale that finds a fighter's primary attribute, and how far it must lead the next to count. | **Assumption**: typical strong values |
+| `PRIMARY_SYNERGY` | 0.6 | The matching loadout's gains grow by this share (a cheetah's speed gets even better). | **Assumption** |
+| `SPLIT_FOCUS_PENALTY`, `SPLIT_FOCUS_FLOOR` | 0.2, 0.4 | Each extra loadout beyond the first shrinks all gains by 20%, down to 40% of their size. | **Assumption** |
+| `LOADOUT_TIER_SCALE` | 1.0, 1.4, 1.8, 2.2, 2.6 for tiers 1 to 5 | A tier-up scales every change from 1 by this factor, so gains and costs both grow. | **Assumption** |
+| `LOADOUT_ARCHETYPES` | `free` 1.5 to 3.0 and `load` per tier, by kind of fighter | How much gear a kind of fighter carries free, and the weight each tier adds. | **Assumption** |
+| `ENCUMBRANCE_SPEED_PER_LOAD`, `ENCUMBRANCE_RATE_PER_LOAD` | 0.06, 0.03 | Each unit of load above the free load cuts top speed and attack rate by this much. | **Assumption** |
+| `ENCUMBRANCE_SPEED_FLOOR`, `ENCUMBRANCE_RATE_FLOOR` | 0.5, 0.6 | Speed and rate never drop below this share. | **Assumption** |
+| `RECKLESS_ARMOR_SHARE_PER_TIER` | 0.1 | Each attack tier above 3 cuts armor by this share. | **Assumption** |
+| `FRAGILE_FORCE_PER_TIER`, `FRAGILE_FORCE_FLOOR` | 0.04, 0.5 | Each speed tier above 3 cuts attack force by this share, to a floor of half. | **Assumption** |
+| `TOURNAMENT_ENTRY_POINTS`, `TOURNAMENT_POINTS_PER_WIN` | 2, 1 | Points to spend on loadouts at entry and after each round won. | **Assumption** (tournament is post-MVP, D-64) |
 
 ## Numbers and size (F03)
 
@@ -152,6 +164,24 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 **Certain results are not simulated.** Before running a fight, the engine asks whether the result is certain: if even the most damage possible (every fighter attacking as often as it can, every attack hitting, no healing) cannot kill a single fighter or push the other side past its morale limit before the fight must end, nothing can change. The fight is then a draw at 600 s, or, if a machine runs out of operating time first, a loss for that machine's side at that moment. This is exact, not an estimate: a test compares the shortcut with the full simulation on thousands of random fights with up to 12 fighters a side (0 differences found). Fights with more than 200 on a side are never shortcut, because swarm mode acts in coarse time steps and the bound would not be exact there; they are cheap to simulate anyway. A machine's operating-time stop is applied in order of operating time, and reported at the exact moment, in both modes. Swarm mode takes a last step at exactly 600 s so a stop between the last ordinary step and 600 s is not skipped; that step only checks for machine stops and does no fighting. It keeps hopeless stalemates cheap (for example 150 feeble attackers against a mountain, or machines that never dent an object, which used to cost tens of seconds). A venomous bite that could add up to a full dose within the bound also makes the result uncertain (D-44), so those fights are simulated. Objects whose spines really hurt attackers are always simulated, and the replay of a representative fight is always simulated in full so the log shows real events.
 
 **Calibration warning.** With these assumed constants a dragon built from the fixture sheet (6 t) cannot dent a 60 t tank with 80% armor in ten minutes. Showcase battle #5 (dragon vs main battle tank) will need its constants revisited once G09's real dragon sheet and the F07 benchmark exist.
+
+## Loadouts (proposal, #283; not wired into battles)
+
+A loadout is one choice per fighter that leans a way and costs something elsewhere, applied to a sheet by code before the engine runs (`simulation/loadouts.py`); the engine knows nothing about it, so a result is still a pure function of the sheets. There are four, each changing only attack force, attack rate, top speed and armor (the multipliers are `LOADOUTS` in `constants.py`, **assumptions**, not sourced figures):
+
+| Loadout | Attack force | Attack rate | Top speed | Armor |
+|---|---|---|---|---|
+| Attack | x1.5 | x0.8 | x0.95 | x1.0 |
+| Defense | x1.0 | x0.9 | x0.9 | x1.5 |
+| Speed | x0.9 | x1.0 | x1.25 | x0.8 |
+| Balanced | x1.08 | x1.0 | x0.96 | x1.1 |
+
+All four are multipliers on the fighter's own stat (armor from a floor of 0.05), so starting stats matter: a cheetah's speed loadout adds far more speed than a wolf's, and a rhino's armor loadout far more armor than a rabbit's. A fighter's **primary attribute** is what it is best at (attack force times rate against 1,500 N per second, armor against 0.4, speed against 20 m/s, `PRIMARY_REFERENCE`, an assumption), if it leads the next by 20%; otherwise it is a generalist and the balanced loadout is its match. The matching loadout's gains (not its costs) grow by 60% (`PRIMARY_SYNERGY`), and every loadout beyond the first shrinks all the gains by 20% (`SPLIT_FOCUS_PENALTY`, floored), so spreading points thin is not free. `backend/scripts/loadout_balance.py` compares kits with the same number of points and flags a dominant strategy; `loadout_preview.py` shows the odds change of each choice before a round, so enhancing a primary attribute pays extra.
+
+- **Number rule:** a changed sourced stat becomes `derived` (the note gives the base value, the multiplier and says the multiplier is an assumption); a changed estimate stays the estimate it was; armor becomes an `assumption`, kept within 0 to 1. The sheet hash changes with the loadout, so a cache key built from the sheet changes too. Names shown to users read "Gray wolf with an attack loadout"; image prompts never see it.
+- **No free upgrade:** every loadout lowers at least one stat, and no loadout is at least as good as another in all four, at every tier (a test checks it).
+- **Tiers and kits:** each loadout has five tiers (changes scaled by 1.0, 1.4, 1.8, 2.2, 2.6) and a fighter carries a kit: each round it adds a loadout or upgrades one by a tier. Gear has weight, so a heavy kit has negative traits (encumbrance slows it and its swing above a free load; attack above tier 3 is reckless; speed above tier 3 is fragile), all assumptions in `constants.py`. What the gear is, and how heavy it is, depends on the kind of fighter (a warrior's iron, a wolf's claws and hide, a horse's hooves, a bird's talons, a tank's plating: nine kinds, `LOADOUT_ARCHETYPES`), so a heavy kit slows a warrior far more than an animal. The items and how a fighter improves through the tournament are in [loadouts-design.md](loadouts-design.md).
+- **Not included:** critical hits (the engine has none; adding them is a new mechanic and an `ENGINE_VERSION` bump), firearms and explosives (D-07, D-38; the gear line is pre-modern and natural only, D-56), earned experience or money, and any request or API field. Inert objects have no loadout.
 
 ## The benchmark runner (F07)
 
