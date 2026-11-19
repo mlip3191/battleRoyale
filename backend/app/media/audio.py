@@ -27,7 +27,7 @@ import io
 import json
 import logging
 import wave
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal
@@ -40,6 +40,7 @@ from app.models.narration import Script
 from app.models.simulation import SimulationResult
 from app.models.stats import StatSheet
 from app.providers.base import TTS, MusicGen, ProviderName
+from app.providers.live.tts import speech_options
 from app.providers.registry import ProviderMode, get_provider, provider_mode
 from app.safety.media_names import safe_media_name
 
@@ -136,7 +137,11 @@ def spoken_lines(script: Script) -> list[str]:
     return [line.text.strip() for line in script.lines if line.text.strip()]
 
 
-def narration_request(script: Script, voice_id: str) -> AudioRequest:
+# The request for one script's file. options holds the fixed speech fields the TTS adapter sends
+# (model, and speed when not 1), so changing either makes a new file instead of reusing one.
+def narration_request(
+    script: Script, voice_id: str, options: Mapping[str, object] | None = None
+) -> AudioRequest:
     return AudioRequest(
         kind="narration_audio",
         script_kind=script.kind,
@@ -146,6 +151,7 @@ def narration_request(script: Script, voice_id: str) -> AudioRequest:
             "lines": spoken_lines(script),
             "voice_id": voice_id,
             "pause_s": LINE_PAUSE_S,
+            **(options or {}),
         },
     )
 
@@ -186,6 +192,7 @@ async def make_audio(
 ) -> list[Asset]:
     try:
         voice_id = announcer_voice()
+        options = speech_options(get_settings())
     except Exception as error:
         logger.warning("announcer voice unavailable (%s)", type(error).__name__)
         return []
@@ -196,7 +203,7 @@ async def make_audio(
             logger.warning("tts provider unavailable (%s)", type(error).__name__)
     jobs = [
         _bounded(
-            narration_request(script, voice_id),
+            narration_request(script, voice_id, options),
             functools.partial(_speak, script=script, voice_id=voice_id),
             provider,
             media_dir,
