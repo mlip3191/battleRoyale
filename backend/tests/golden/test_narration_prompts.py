@@ -3,6 +3,7 @@
 import pytest
 
 from app.narration.facts import build_facts, fact_lines
+from app.narration.templates import MAX_BEATS, MIN_BEATS
 from app.narration.writer import PROMPT_NAMES, build_messages, load_prompt
 from tests.narration_samples import samples
 
@@ -21,7 +22,8 @@ COMMON = [
 SPECIFIC = {
     "intro": ["between 4 and 8 lines", '"legend"', "called an estimate", "dead-serious"],
     "play_by_play": [
-        "between 8 and 20 lines", '"at_event"', "never go backwards", "never say a time",
+        f"between {MIN_BEATS} and {MAX_BEATS} lines", '"at_event"', "never go backwards",
+        "never say a time",
     ],
     "outro": ["{win_pct}", "{fair_fight}", "write NO numbers", "between 4 and 6 lines"],
 }  # fmt: skip
