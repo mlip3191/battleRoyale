@@ -27,14 +27,6 @@
   white-space: nowrap;
 }
 
-/* On a phone, a smaller logo keeps the bar on one line next to LIVE and Home. */
-@media (max-width: 30rem) {
-  .logo {
-    font-size: 1.2rem;
-    letter-spacing: 0.08em;
-  }
-}
-
 .headerRight {
   display: flex;
   align-items: center;
@@ -45,6 +37,7 @@
 .homeButton {
   display: inline-flex;
   align-items: center;
+  box-sizing: border-box; /* exactly the header's min-height, padding and border included */
   min-height: 2.75rem;
   padding: 0.3rem 0.9rem;
   font: 700 0.9rem var(--font-digits);
@@ -55,6 +48,22 @@
   background: var(--panel);
   border: 2px solid var(--neon);
   border-radius: 4px;
+}
+
+/* On a phone, a smaller logo keeps the bar on one line next to LIVE and Home. */
+@media (max-width: 30rem) {
+  .logo {
+    font-size: 1.05rem;
+    letter-spacing: 0.05em;
+  }
+
+  .headerRight {
+    gap: 0.5rem;
+  }
+
+  .homeButton {
+    padding: 0.3rem 0.6rem;
+  }
 }
 
 .lowerThird {
