@@ -22,6 +22,7 @@ from app.db.migrate import apply_migrations
 from app.db.showcase import SHOWCASE_DIR, import_showcase
 from app.models import contract_schemas
 from app.providers.health import provider_statuses
+from app.providers.live.tts import is_usable_voice
 from app.research.kb_prebuilt import PREBUILT_KB_DIR, LoadOutcome, LoadResult, load_prebuilt
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
@@ -34,6 +35,10 @@ PREBUILT_MISMATCH = (
     "The prebuilt knowledge base in data/prebuilt-kb/ was built with a different embedding "
     "model than the one set in your .env (EMBEDDINGS_MODEL), so it wasn't loaded: its vectors "
     "wouldn't match your searches. Run `npm run ingest` once (about 30 minutes), then restart."
+)
+PLACEHOLDER_VOICE = (
+    "ANNOUNCER_VOICE_ID is blank or still 'replace-me'; the announcer will use the TTS "
+    "service's default voice. Set it to 'default' in your .env."
 )
 
 # At INFO these loggers print full request URLs, which include course endpoint hosts.
@@ -87,9 +92,11 @@ def create_app(
     return app
 
 
-# Load the showcase if the database is empty; in live mode, fill an empty knowledge base from the
-# prebuilt files (D-66), or warn that it needs `npm run ingest`.
+# Load the showcase if the database is empty; in live mode, warn about a placeholder voice id and
+# fill an empty knowledge base from the prebuilt files (D-66), or warn that it needs an ingest.
 def _startup(settings: Settings, showcase_dir: Path | None, prebuilt_dir: Path) -> None:
+    if settings.provider_mode == "live" and not is_usable_voice(settings.announcer_voice_id):
+        logger.warning(PLACEHOLDER_VOICE)
     try:
         connection = connect(settings.data_dir / "app.db")
         try:

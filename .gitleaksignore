@@ -1,0 +1,2 @@
+# PM-approved (Mike, PR #443): decoy test key (placeholder words, not a real key) in an early commit of the live TTS unit test; the current test no longer trips the rule.
+c55f39ee96e7470571f33b7d554fd9c3e41c9706:backend/tests/unit/test_live_tts.py:generic-api-key:178

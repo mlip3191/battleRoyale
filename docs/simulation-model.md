@@ -64,6 +64,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `STRENGTH_SCALE_EXP` | 2/3 | Strength and damage scale as k^(2/3) when resized by k. | Muscle force follows cross-section area, so mass^(2/3): the square-cube law (Galileo 1638; Hill 1950, "The Dimensions of Animals and their Muscular Dynamics") |
 | `LENGTH_SCALE_EXP` | 1/3 | Size and reach scale as k^(1/3). | Geometric similarity: length = mass^(1/3) |
 | `SPEED_SCALE_EXP` | 1/6 | Top speed scales as k^(1/6). | Maximum running speed grows about mass^0.17 across mammals (Garland 1983, *J. Zoology*); simplified to 1/6 and applied to all movement. Garland also finds speed falls for the very largest animals, which this does not model |
+| `ESTIMATE_ANIMAL_*` | category `mammal`, body `living`, habitat `land`, weapons `teeth` | A name the legend lookup calls a `real_animal` fights as a living mammal built from the mammal category defaults (50 kg, 500 N, 12 m/s), so an unlisted animal fights back (#453). Anything else stays the inert `other` object. | **Assumption**: the `other` object default would make every animal harmless, and the mammal defaults are the nearest we have (`backend/app/research/estimate_sheet.py`) |
 
 ## Numbers and size (F03)
 
@@ -165,6 +166,10 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 ## Why probabilities are shown as "range"
 
 The 95% interval is a Wilson score interval on the share of runs won. Because every run draws different stats, the shares already blend in input uncertainty: when the stat ranges are narrow the fight's outcome is more predictable, so the win share moves toward 0 or 1 and the interval narrows (tested in `tests/property/test_simulation_engine.py`). The interval does *not* separately model uncertainty in the constants above.
+
+## When the verdict is "too close to call" (#476)
+
+The result's `outcome` is whichever of win 0, win 1 and draw happened most often, so a fight at 50% still has a "winner". The screens do not crown it: **a winner whose 95% win range reaches 50% is too close to call.** The comparison uses the number the viewer sees: the low end of the Wilson interval rounded to a whole percent, as the page prints it, so "range 50-58%" never sits next to "Winner:". The results page then says "Too close to call: slight edge X" instead of "Winner: X", and the broadcast reveal says "Too close to call! Slight edge: X". The odds, the range and the deciding-factor sentence are unchanged, no number changes, and a draw or no contest is shown as before. One rule, `isTooCloseToCall` in `frontend/src/components/Verdict.tsx`, is used by the results page, the broadcast reveal and the arena's end banner ("TOO CLOSE TO CALL!" instead of "X WINS!"). Not covered yet: the announcer's spoken outro ("Your winner: X!", a back-end narration template and prompt), which is a separate follow-up. This is also separate from the deciding factor's own "Too close to call" sentence, which comes from `MIN_EFFECT` in `decide.py` and means no single factor mattered. The wording is a first draft for Dillon to settle.
 
 ## Not modeled yet
 

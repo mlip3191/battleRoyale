@@ -79,6 +79,8 @@ async def legend_sheet(name: str) -> tuple[StatSheet | None, str]:
             outcome = await asyncio.wait_for(lore, LEGEND_BUDGET_S)
     except TimeoutError:
         return None, f"ran past the {LEGEND_BUDGET_S:.0f} s legend limit"
+    if outcome.not_a_legend:  # a plausible real fighter (#403): it fights on an estimate sheet
+        return None, "not a legend (fights on estimates)"
     if outcome.creature is None:
         return None, "blocked as nonsense" if outcome.blocked else "a service was unavailable"
     try:

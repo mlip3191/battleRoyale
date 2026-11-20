@@ -116,7 +116,13 @@ item's own "instance of", so the class "Roman legionary" is never a real person.
 classes (geographic location) count only for an item that is not a kind of thing: Paris and
 Times Square are places, but the kind "vending machine" (which Wikidata files under shop →
 workplace → geographic location) is not. Kinds of landforms ("a mountain") still block through
-landform.
+landform. "character" is `individuals_only` too (#340, D-38, D-60): a named character is one
+individual, so "a centaur" and "a harpy" (kinds that Wikidata files under mythological Greek
+character → mythical character → character) are allowed, while Cerberus and Medusa (the same
+path, but individuals) still block. Kinds from a franchise still block through "fictional
+species" (Pikachu, Dalek, Wookiee). "deity" is `individuals_only` as well (#400 review, D-38:
+named deities only): Zeus, Thor and Anubis still block, while kinds such as "a valkyrie" pass
+this layer and are left to the classifier.
 
 **Proper names:** a name reads as a proper name, judged on the user's casing, when it has no
 article or count ("Napoleon"), or when a word after "a", "the" or a number is capitalized ("a
@@ -265,6 +271,36 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
 
   A bare capitalized name ("Madonna", "Moose") still reads as a proper name and blocks here. If
   the live eval shows the classifier missing these, the fix is to tighten what counts as a kind.
+- **Kinds reach "character" only as individuals (#340).** Since `classes_version` 11 a kind
+  (anything with a "subclass of") is never blocked through "character"; that is what lets "a
+  centaur", "a harpy", "a zombie", "a ghost" and "an ogre" through. Kinds from a franchise must
+  reach "fictional species" within the walk to block here: Pikachu, Xenomorph, Dalek, Wookiee,
+  Hobbit and Cyberman do (checked live 2026-11-17), but "a stormtrooper" (fictional soldier →
+  character) now passes this layer and is left to the classifier. Named individuals with no
+  "subclass of" (Cerberus, Medusa, Mickey Mouse) are unchanged. Live, bare "Cerberus" and
+  "Medusa" pick other same-named items (for "Medusa", a ship), so the classifier blocks those cases
+  (cc-05, cc-06), as before. A named character that carries a stray "subclass of" claim now
+  counts as a kind here, so it relies on the classifier (or on "fictional species" when it is a
+  franchise kind). Kryptonian and Goomba are newly blocked here through "fictional species".
+- **Franchise kinds left to the classifier.** "a stormtrooper" and "a Minion" pass the Wikidata
+  layer; the live classifier blocked both on 2026-11-17 (cases cc-07, cc-08). Lowercase "a
+  minion" was also blocked by the classifier that day; it may mean a generic underling, so it is
+  not a keeper case.
+- **Deity kinds are allowed; named deities block (#400 review, D-38).** "a god", "an angel", "a
+  demon", "a valkyrie" and "a titan" are kinds (cases my-09 to my-13). Wikidata now blocks only
+  named deity individuals ("deity" is `individuals_only`); the classifier decides kinds. The
+  rule: a generic kind of supernatural being is allowed; a named deity ("Zeus", "Allah",
+  "Buddha", capitalized "God") and a human religious figure ("a prophet", "a saint", "the Pope")
+  stay blocked as deity (cases dt-04 to dt-09). On the live probe of 2026-11-17, before this
+  change, "a valkyrie" was blocked at Wikidata (its kind item reaches "deity", which then
+  applied to kinds) and "a god" was blocked by the classifier. A second live probe the same day,
+  after those fixes, allowed "a god" and "a valkyrie" as well as the angel, demon and titan.
+- **Plain human religious roles are allowed (D-65).** "a monk", "a priest", "a nun", "a rabbi",
+  "an imam" and "a shaman" are generic human types (cases ut-05 to ut-10); human religious
+  figures ("a prophet", "a saint", "the Pope") stay blocked as deity.
+- **A named deity with a stray "subclass of" relies on the classifier.** Because "deity" is
+  `individuals_only`, a named deity that Wikidata wrongly gives a "subclass of" claim counts as a
+  kind and passes the Wikidata layer, the same as a named character; the classifier blocks it.
 - **The attack-planning rule is a word list.** It catches clear phrasings only; the classifier
   covers the rest.
 - **A fighter subject is still read only in a few shapes.** "how a wolf would kill", "step by

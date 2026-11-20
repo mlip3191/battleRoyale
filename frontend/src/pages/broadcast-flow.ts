@@ -14,6 +14,7 @@ import {
   explainerOf,
   sideName,
   winRange,
+  isTooCloseToCall,
   winnerOf,
 } from "../components/Verdict.tsx";
 
@@ -196,7 +197,9 @@ export function verdictReveal(result: SimulationResult, names: string[]) {
   return {
     headline:
       winner !== null
-        ? `Winner: ${names[winner]}!`
+        ? isTooCloseToCall(result)
+          ? `Too close to call! Slight edge: ${names[winner]}`
+          : `Winner: ${names[winner]}!`
         : result.outcome === "draw"
           ? "It's a draw!"
           : "No contest!",

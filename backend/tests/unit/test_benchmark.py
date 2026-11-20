@@ -146,6 +146,21 @@ def test_a_second_run_keeps_the_first_below_it(tmp_path):
     assert text.count("# Benchmark results") == 1
 
 
+def test_the_known_limits_survive_every_run(tmp_path):
+    # #425: write_report rewrites everything above the first "## Run" from HEADER, so the D-58
+    # limits and the research-sheet limits must live in HEADER or the next run would erase them.
+    out = tmp_path / "results.md"
+    for day in (8, 9, 10):
+        run = run_report("research")
+        run.started = datetime(2026, 11, day, 9, 0)
+        bm.write_report(out, run)
+    text = out.read_text("utf-8")
+    assert "## Known limits (D-58)" in text
+    assert "Known limits of the research-built sheets" in text
+    assert text.index("Known limits of the research-built sheets") < text.index("## Run ")
+    assert text.count("Known limits of the research-built sheets") == 1
+
+
 # --- The runner (the CI check that it cannot silently break) ----------------------------
 
 

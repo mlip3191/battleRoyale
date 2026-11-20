@@ -18,8 +18,8 @@ SEED_SHEETS = Path(__file__).resolve().parents[2] / "data" / "seed" / "fighters"
 PHYSICAL = [s for s in StatName if s not in ASSUMABLE_STATS]
 SOURCED = ("extracted", "hand_verified")
 # Coverage fighters (M09 item 3), approved by Mike on #51: none is on the seed list or in
-# mythical.yaml. The app can't fight the non-mythical ones yet (#345), so the evaluation gives
-# each a profile here and runs the same research pipeline on its article.
+# mythical.yaml. In the app the non-mythical ones fight on all-estimate sheets (#345, #453), so
+# the evaluation gives each a profile here and runs the same research pipeline on its article.
 NEW_FIGHTERS = [
     SeedFighter("moose", "Moose", "Adult bull", "mammal", "living", "land", "Moose"),
     SeedFighter("polar-bear", "Polar bear", "Adult male", "mammal", "living", "land", "Polar bear"),
@@ -175,11 +175,12 @@ def coverage_markdown(
         f"Ten fighters on neither the seed list nor `mythical.yaml` (5 animals, 3 objects or "
         f"machines, 2 mythical creatures; {seconds:.0f} s). Counts are the 7 physical stats.",
         "",
-        "**The app can't fight the 8 non-mythical ones yet**: research only builds sheets for "
-        "seed-list fighters. Others fight on an all-estimate sheet in mock mode (#345, #401) "
-        "but are still refused live (#403). So their article was fetched on demand and run "
-        "through the same pipeline here, to show what research could add for them. The two "
-        "mythical creatures went through the app's real legend path.",
+        "**Research only builds sheets for seed-list fighters**, so in the app the 8 "
+        "non-mythical ones fight on all-estimate sheets: a real animal as a living fighter on "
+        "its category's defaults (#441, #453), an object or machine as an inert one (#345). "
+        "So their article was fetched on demand and run through the same pipeline here, to show "
+        "what research could add for them. The two mythical creatures went through the app's "
+        "real legend path.",
         "",
         *table,
     ]
@@ -289,8 +290,10 @@ async def run_coverage() -> str:
                 rows.append((found.display_name, "mythical", coverage_of(found)))
                 size = f", scaled to a {found.lore.size_analog}" if found.lore.size_analog else ""
                 analogs.append(f"{found.display_name}: built on a {found.lore.body_analog}{size}")
-            else:
-                rows.append((name, "mythical", "refused or unavailable"))
+            else:  # None is "not a legend" (#403) or mock mode; an outcome says refused or down
+                blocked = getattr(found, "blocked", False)
+                label = "refused" if blocked else "unavailable" if found else "not a legend"
+                rows.append((name, "mythical", label))
     finally:
         connection.close()
     return coverage_markdown(rows, analogs, time.perf_counter() - started)

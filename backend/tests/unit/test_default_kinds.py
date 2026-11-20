@@ -67,6 +67,37 @@ def test_the_code_table_matches_the_table_in_research_md() -> None:
     assert rows == DEFAULT_KINDS
 
 
+# #455: the last word of a seed name ("lion" for the African lion) is a bare kind too. Found in the
+# bug bash: "a lion vs a tiger" fought on estimates because "lion" reached no seed fighter.
+@pytest.mark.parametrize(
+    ("said", "seed_id"),
+    [
+        ("lion", "african-lion"),
+        ("lions", "african-lion"),
+        ("badger", "honey-badger"),
+        ("badgers", "honey-badger"),
+        ("knight", "medieval-knight"),
+        ("knights", "medieval-knight"),
+        ("legionary", "roman-legionary"),
+        ("legionaries", "roman-legionary"),
+        ("retriever", "golden-retriever"),
+        ("retrievers", "golden-retriever"),
+    ],
+)
+def test_a_bare_word_from_a_seed_name_reaches_its_fighter(said, seed_id) -> None:
+    assert default_kind(said) == seed_id
+    found = find_seed_fighter(said, None, f"a {said}")
+    assert found is not None and found.id == seed_id
+
+
+def test_a_named_kind_of_these_is_never_replaced() -> None:
+    assert find_seed_fighter("badger", "european", "a european badger") is None
+    assert default_kind("lion", variant="mountain") is None
+    assert find_seed_fighter("lion", None, "a mountain lion") is None
+    assert find_seed_fighter("knight", None, "a black knight") is None
+    assert find_seed_fighter("african lion", None, "an african lion").id == "african-lion"
+
+
 def test_the_note_names_the_pick() -> None:
     notes = default_kind_notes([request("bear"), request("elephant"), request("lizard")])
     assert notes == [
@@ -101,6 +132,11 @@ def test_every_default_reads_sensibly_in_the_note() -> None:
         "tank": "main battle tank",
         "truck": "pickup truck",
         "cactus": "saguaro cactus",
+        "lion": "African lion",
+        "badger": "honey badger",
+        "knight": "medieval knight",
+        "legionary": "Roman legionary",
+        "retriever": "golden retriever",
     }
 
 

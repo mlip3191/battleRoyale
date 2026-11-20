@@ -74,6 +74,25 @@ async def post_multipart(
     )
 
 
+# POST JSON and return the raw reply bytes (e.g. audio from TTS), with the same retries as
+# post_json. The reply is never parsed as JSON.
+async def post_bytes(
+    *,
+    provider: str,
+    base_url: str,
+    path: str,
+    api_key: str,
+    payload: dict[str, Any],
+    timeout_s: float,
+    client: httpx.AsyncClient | None = None,
+    retries: int = RETRIES,
+) -> bytes:
+    reply: bytes = await _request_json(
+        "POST", provider, base_url, path, api_key, payload, timeout_s, client, retries, raw=True
+    )
+    return reply
+
+
 # GET a JSON reply, with the same retries as post_json.
 async def get_json(
     *,
@@ -90,7 +109,8 @@ async def get_json(
     )
 
 
-# Send one request and return the parsed reply, retrying transient failures.
+# Send one request and return the parsed reply (or its raw bytes when raw is set), retrying
+# transient failures. Every live call goes through here, so scripts/eval_cost.py can count them.
 async def _request_json(
     method: str,
     provider: str,
@@ -102,6 +122,7 @@ async def _request_json(
     client: httpx.AsyncClient | None,
     retries: int = RETRIES,
     form: tuple[dict[str, str], dict[str, tuple[str, bytes, str]]] | None = None,
+    raw: bool = False,
 ) -> Any:
     headers = {"Authorization": f"Bearer {api_key}"}
     body: dict[str, Any] = (
@@ -124,7 +145,7 @@ async def _request_json(
                     "%s %s -> %s in %.0f ms", provider, path, response.status_code, elapsed_ms
                 )
                 if response.status_code < 400:
-                    return response.json()
+                    return response.content if raw else response.json()
                 problem = f"HTTP {response.status_code}"
                 status, detail = response.status_code, response.text[:DETAIL_CHARS]
                 if response.status_code not in RETRY_STATUSES:

@@ -110,9 +110,11 @@ def test_heads_from_the_quote_are_accepted_in_words_or_digits() -> None:
     assert heads_in_quote(3, "It had 3 heads.") and not heads_in_quote(4, quote)
 
 
-def test_a_missing_article_is_nonsense_and_asks_no_model() -> None:
-    chat = FakeChat()
-    assert run(chat, article=None) == NONSENSE and chat.calls == 0
+def test_a_missing_article_still_asks_the_model_and_a_wrong_answer_is_blocked() -> None:
+    # #403 (PM): with no article the model is asked with the name alone, so a made-up name with
+    # found false and no usable reason is still blocked.
+    chat = FakeChat({"found": False, "reason": "nonsense"})
+    assert run(chat, article=None) == NONSENSE and chat.calls == 1
 
 
 def test_an_outage_gives_no_sheet_rather_than_a_guess() -> None:

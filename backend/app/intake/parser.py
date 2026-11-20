@@ -24,6 +24,7 @@ from app.intake.rules import (
     map_terrain,
     normalize_entity,
     read_count,
+    terrain_in_text,
 )
 from app.intake.schema import Clarification, ParsedFighter, ParsedMatchup
 from app.models.matchup import FighterRequest, IntakeResult, Matchup
@@ -60,6 +61,19 @@ _BIG_NUMBERS = set(SCALES) | (set(MULTIPLIERS) - {"pair", "couple"})  # thousand
 NUMBER_WORDS = (
     (set(UNITS) - {"one"}) | _BIG_NUMBERS | {f"{w}s" for w in _BIG_NUMBERS} | {"zero"}
 )  # "hundreds", "thousands" count too
+# Model notes about its own output or about counts never reach the card (#475): the user should
+# only see notes about their matchup, and code owns counts (it writes its own "Assumed 1 ..."
+# note). Whole words, any case. Left out on purpose because real matchups use them: "field"
+# ("open field terrain"), "object" ("a toaster is an object"), "model" ("a model rocket"),
+# "output" ("power output"), "array" ("a solar array"), and "key".
+INTERNAL_NOTE = re.compile(
+    r"\b(?:"
+    r"schemas?|json|formats?|formatted|formatting|prompts?|instructions?|top[\s-]level"
+    r"|null|parse|parsed|parser|parsing|tokens?|language\s+model"
+    r"|counts?|counted|quantity|quantities|defaulted|numbers?"
+    r")\b",
+    re.I,
+)
 
 REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it another way?"
 COMMON_KIND_NOTE = "Still not sure which kind you meant, so we'll use the most common one."
@@ -295,9 +309,14 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
     return request, notes
 
 
-# Model notes worth showing: short, non-empty, number-free (number rule), a few at most.
+# Model notes worth showing: short, non-empty, number-free (number rule), only about the
+# matchup (no talk of the schema, format or counts, #475), a few at most.
 def _model_notes(parsed: ParsedMatchup) -> list[str]:
-    notes = [n.strip() for n in parsed.assumptions if n.strip() and not has_number(n)]
+    notes = [
+        n.strip()
+        for n in parsed.assumptions
+        if n.strip() and not has_number(n) and not INTERNAL_NOTE.search(n)
+    ]
     return [n[:MAX_NOTE_CHARS] for n in notes][:MAX_MODEL_ASSUMPTIONS]
 
 
@@ -388,7 +407,13 @@ def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -
         return vague(parsed)
     max_count = get_settings().sim_max_count
     built = [build_fighter(f, max_count) for f in parsed.fighters]
-    terrain, terrain_note = map_terrain(parsed.terrain)
+    typed_place = terrain_in_text(text)
+    terrain, terrain_note = map_terrain(parsed.terrain or typed_place)
+    if terrain == Terrain.ARENA and terrain_note is None and typed_place:
+        # a plain "arena" (or none) never hides a typed place; an unknown word keeps its note
+        typed, typed_note = map_terrain(typed_place)
+        if typed != Terrain.ARENA:
+            terrain, terrain_note = typed, typed_note
     notes = _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
     if terrain_note:
         notes.append(terrain_note)
