@@ -350,6 +350,30 @@ describe("notes and verdict", () => {
     );
   });
 
+  test("a winner just clear of 50% keeps the winner headline, and a straddling draw stays a draw (#476)", () => {
+    const clear = {
+      ...result,
+      outcome: "win_1" as const,
+      win_prob: [0.45, 0.55] as [number, number],
+      win_prob_ci95: [
+        [0.42, 0.48],
+        [0.52, 0.58],
+      ] as [[number, number], [number, number]],
+    };
+    expect(verdictReveal(clear, ["Kangaroo", "Ostrich"]).headline).toBe(
+      "Winner: Ostrich!",
+    );
+    const draw = {
+      ...result,
+      outcome: "draw" as const,
+      win_prob_ci95: [
+        [0.27, 0.33],
+        [0.27, 0.53],
+      ] as [[number, number], [number, number]],
+    };
+    expect(verdictReveal(draw, ["a", "b"]).headline).toBe("It's a draw!");
+  });
+
   test("draw and no contest have no winner's odds", () => {
     const names = ["a", "b"];
     expect(verdictReveal({ ...result, outcome: "draw" }, names)).toMatchObject({

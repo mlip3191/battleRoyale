@@ -16,6 +16,7 @@ import * as client from "../api/client.ts";
 import { NOT_FOUND } from "../api/useBattle.ts";
 import type { BattleRecord, StatSheet } from "../api/client.ts";
 import Results from "./Results.tsx";
+import { isTooCloseToCall } from "../components/Verdict.tsx";
 
 const state = vi.hoisted(() => ({
   value: { battle: null as unknown, error: null as string | null },
@@ -97,6 +98,40 @@ test("a winner whose win range includes 50% is too close to call (#476)", () => 
   });
   expect(verdict.textContent).not.toContain("Winner:");
   expect(verdict.textContent).toContain("50% - range 47-53%");
+});
+
+// #476: the rule compares the number the viewer sees (the low end, rounded to a whole percent).
+test("the rule uses the rounded low end: 0.50 and 0.504 are too close, 0.51 is clear (#476)", () => {
+  const withLow = (low: number) => ({
+    ...record.result!,
+    outcome: "win_1" as const,
+    win_prob: [0.45, 0.55] as [number, number],
+    win_prob_ci95: [
+      [0.42, 0.48],
+      [low, 0.58],
+    ] as [[number, number], [number, number]],
+    draw_prob: 0,
+  });
+  expect(isTooCloseToCall(withLow(0.5))).toBe(true);
+  expect(isTooCloseToCall(withLow(0.504))).toBe(true); // the page prints "range 50-58%"
+  expect(isTooCloseToCall(withLow(0.505))).toBe(false); // prints 51 (rounds up)
+  expect(isTooCloseToCall(withLow(0.52))).toBe(false);
+});
+
+test("a draw whose range straddles 50% is never too close to call (#476)", () => {
+  const draw = {
+    ...record.result!,
+    outcome: "draw" as const,
+    win_prob: [0.3, 0.3] as [number, number],
+    win_prob_ci95: [
+      [0.27, 0.33],
+      [0.27, 0.53],
+    ] as [[number, number], [number, number]],
+    draw_prob: 0.4,
+  };
+  expect(isTooCloseToCall(draw)).toBe(false);
+  show({ ...record, result: draw });
+  expect(screen.getByRole("region", { name: "It's a draw" })).toBeTruthy();
 });
 
 test("a winner just clear of 50% still gets the winner headline (#476)", () => {
