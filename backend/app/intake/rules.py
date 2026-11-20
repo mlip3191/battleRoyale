@@ -230,7 +230,11 @@ def _lookup_terrain(phrase: str) -> tuple[Terrain, bool] | None:
 # battlefield we know (#456). The model sometimes drops the place; this keeps "in a forest" from
 # silently becoming the arena. Only the very end of the text counts, up to three words, so a place
 # word inside a fighter's name ("a sea turtle vs a wolf") or "in a minute" is never the battlefield.
-_TRAILING_PLACE = re.compile(r"\s+((?:in|on|at|inside|into)(?:\s+[A-Za-z]+){1,3})\s*[.!?]?$", re.I)
+# Up to five words ("in the middle of the forest"), a hyphenated word ("rain-forest"), and any
+# trailing marks or a closing bracket ("in a forest!!", "in a forest :)", "(in a forest)").
+_TRAILING_PLACE = re.compile(
+    r"\s+\(?((?:in|on|at|inside|into)(?:\s+[A-Za-z]+(?:-[A-Za-z]+)?){1,5})[\s.!?,:;)\"'~]*$", re.I
+)
 
 
 def terrain_in_text(text: str) -> str | None:

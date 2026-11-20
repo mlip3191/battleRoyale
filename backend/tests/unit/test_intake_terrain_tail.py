@@ -41,6 +41,36 @@ def test_a_trailing_place_is_read_when_the_model_drops_it(text, expected) -> Non
     assert terrain_of(text, "") == expected  # an empty answer counts as dropped too
 
 
+# An audit found these missed: longer phrases, more than one trailing mark, a hyphenated place.
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("a bear vs a wolf in the middle of the forest", Terrain.FOREST),
+        ("a bear vs a wolf in the middle of a forest", Terrain.FOREST),
+        ("a bear vs a wolf on top of a mountain", Terrain.MOUNTAIN),
+        ("a bear vs a wolf on the side of a hill", Terrain.MOUNTAIN),
+        ("a bear vs a wolf in a dark spooky forest", Terrain.FOREST),
+        ("a bear vs a wolf in a forest!!", Terrain.FOREST),
+        ("a bear vs a wolf in a forest...", Terrain.FOREST),
+        ("a bear vs a wolf in a forest :)", Terrain.FOREST),
+        ("a bear vs a wolf (in a forest)", Terrain.FOREST),
+        ("a bear vs a wolf in a rain-forest", Terrain.FOREST),
+    ],
+)
+def test_longer_and_punctuated_places_are_read(text, expected) -> None:
+    assert terrain_of(text, None) == expected
+
+
+def test_a_model_answer_of_arena_does_not_hide_a_typed_battlefield() -> None:
+    # The model said "arena" but the user typed a forest: as in #416's answer step, the typed place
+    # wins.
+    assert terrain_of("a bear vs a wolf in a forest", "arena") == Terrain.FOREST
+    # An explicit arena in the text stays an arena, and a real model answer is never overridden.
+    assert terrain_of("a bear vs a wolf in the arena", "arena") == Terrain.ARENA
+    assert terrain_of("a bear vs a wolf in the arena", None) == Terrain.ARENA
+    assert terrain_of("a bear vs a wolf in a forest", "the snow") == Terrain.OPEN_FIELD
+
+
 def test_the_models_own_terrain_wins_when_it_gives_one() -> None:
     assert terrain_of("a bear vs a wolf in a forest", "the snow") == Terrain.OPEN_FIELD
 
