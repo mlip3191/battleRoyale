@@ -78,6 +78,8 @@ def display_name_for(name: str) -> str:
 def _as_default(value: StatValue, category: str, stat: StatName) -> StatValue:
     if value.is_estimate:
         return value
+    # `or value` keeps a non-estimate only if a default were ever missing; estimate_sheet's guard
+    # then raises, so a non-estimate can never reach a saved sheet.
     return category_default(category, stat) or value
 
 
