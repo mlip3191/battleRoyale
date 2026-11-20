@@ -2,7 +2,7 @@
 
 Does the GenAI actually work? Numbers from the real course endpoints, made by `backend/scripts/evaluate_ai.py`. Hosts and keys are never written here.
 
-Last run: 2026-11-17 with the code in commit `66e579e` (measured: 6. Benchmark: seed vs research-only sheets, 7. Cost and speed).
+Last run: 2026-11-19 on commit `f900d4c` (measured: 1. Extraction accuracy, 3. Coverage on new fighters, 6. Benchmark: seed vs research-only sheets).
 
 ## Summary
 
@@ -15,21 +15,21 @@ Measured on the live course endpoints on Nov 16–17, 2026. The parts that keep 
 ## 1. Extraction accuracy
 
 <!-- section:extraction -->
-_Measured 2026-11-17 with the code in commit `eca18b0`._
+_Measured 2026-11-19 on commit `f900d4c`._
 
 Each of the 15 hand-verified seed fighters was built again by the research pipeline alone (stored facts, then model extraction with verified quotes), ignoring its seed file, and every hand-verified stat was compared (51 values, 319 s).
 
 | Stat | within 10% | within 25% | wrong | estimate |
 |---|---|---|---|---|
-| attack_force_n | 1 | 0 | 1 | 7 |
+| attack_force_n | 2 | 0 | 0 | 7 |
 | endurance_s | 0 | 0 | 0 | 2 |
-| mass_kg | 3 | 1 | 8 | 2 |
+| mass_kg | 5 | 1 | 7 | 1 |
 | reach_m | 1 | 0 | 1 | 0 |
-| size_m | 8 | 3 | 1 | 2 |
-| top_speed_mps | 2 | 0 | 3 | 5 |
-| **All** | **15 (29%)** | **4 (8%)** | **14 (27%)** | **18 (35%)** |
+| size_m | 7 | 3 | 2 | 2 |
+| top_speed_mps | 3 | 0 | 2 | 5 |
+| **All** | **18 (35%)** | **4 (8%)** | **12 (24%)** | **17 (33%)** |
 
-Extraction answers rejected by code: 2, of which 0 failed the quote check (the number wasn't in the quote, or the quote wasn't in the passage). A rejected answer leaves the stat to a later level, so it shows up above as an estimate, never as a made-up number.
+Extraction answers rejected by code: 1, of which 0 failed the quote check (the number wasn't in the quote, or the quote wasn't in the passage). A rejected answer leaves the stat to a later level, so it shows up above as an estimate, never as a made-up number.
 
 Research does not use the fighter's variant (sex, age, or which speed), so some "more than 25% off" values compare different things, for example the lion's mass or the bald eagle's dive speed.
 
@@ -43,11 +43,9 @@ More than 25% off:
 - Gray wolf mass_kg: research 22.68, hand-verified 40
 - Gray wolf size_m: research 1.055, hand-verified 1.6
 - Honey badger mass_kg: research 12, hand-verified 9
-- Horse top_speed_mps: research 19.6556, hand-verified 13.33
 - House cat mass_kg: research 2.8848, hand-verified 5
 - Roman legionary reach_m: research 0.4375, hand-verified 0.59
-- Saltwater crocodile mass_kg: research 1100, hand-verified 770
-- Saltwater crocodile attack_force_n: research 34424, hand-verified 16414
+- Saltwater crocodile size_m: research 3.1, hand-verified 4.5
 <!-- /section -->
 
 ## 2. Retrieval
@@ -67,9 +65,9 @@ Not found in the top 5:
 ## 3. Coverage on new fighters
 
 <!-- section:coverage -->
-_Measured 2026-11-17 with the code in commit `eca18b0`._
+_Measured 2026-11-19 on commit `f900d4c`._
 
-Ten fighters on neither the seed list nor `mythical.yaml` (5 animals, 3 objects or machines, 2 mythical creatures; 246 s). Counts are the 7 physical stats.
+Ten fighters on neither the seed list nor `mythical.yaml` (5 animals, 3 objects or machines, 2 mythical creatures; 219 s). Counts are the 7 physical stats.
 
 **The app can't fight the 8 non-mythical ones yet**: research only builds sheets for seed-list fighters. Others fight on an all-estimate sheet in mock mode (#345, #401) but are still refused live (#403). So their article was fetched on demand and run through the same pipeline here, to show what research could add for them. The two mythical creatures went through the app's real legend path.
 
@@ -193,31 +191,29 @@ Misses:
 ## 6. Benchmark: seed vs research-only sheets
 
 <!-- section:benchmark -->
-_Measured 2026-11-17 with the code in commit `66e579e`._
+_Measured 2026-11-19 on commit `f900d4c`._
 
-The F07 benchmark ran on one commit with the hand-verified seed sheets, then 2 times with sheets built by the research pipeline alone (772 s in all). The simulation is seeded, so seed-sheet results repeat exactly; research-only sheets come from the live models, which aren't fully repeatable. A held-out matchup was never used to change a constant. D-58 records three known limits (cnt-05, cnt-04, doc-05; see `docs/benchmark-results.md`).
+The F07 benchmark ran on one commit with the hand-verified seed sheets, then 2 times with sheets built by the research pipeline alone (827 s in all). The simulation is seeded, so seed-sheet results repeat exactly; research-only sheets come from the live models, which aren't fully repeatable. A held-out matchup was never used to change a constant. D-58 records three known limits (cnt-05, cnt-04, doc-05; see `docs/benchmark-results.md`).
 
 | Set | Seed sheets | Research-only, run 1 | Research-only, run 2 |
 |---|---|---|---|
-| **Held-out** | 8/9 (89%), 1 skipped | 9/10 (90%) | 9/10 (90%) |
+| **Held-out** | 7/9 (78%), 1 skipped | 7/10 (70%) | 7/10 (70%) |
 | Held-out: obvious | 5/5 (100%) | 5/5 (100%) | 5/5 (100%) |
-| Held-out: documented | 1/2 (50%), 1 skipped | 3/3 (100%) | 3/3 (100%) |
-| Held-out: count | 2/2 (100%) | 1/2 (50%) | 1/2 (50%) |
-| Tuning | 15/16 (94%), 4 skipped | 16/20 (80%) | 18/20 (90%) |
+| Held-out: documented | 1/2 (50%), 1 skipped | 2/3 (67%) | 2/3 (67%) |
+| Held-out: count | 1/2 (50%) | 0/2 (0%) | 0/2 (0%) |
+| Tuning | 15/16 (94%), 4 skipped | 17/20 (85%) | 17/20 (85%) |
 
-In this run only cnt-05 and doc-05 fail, and only with seed sheets; cnt-01 is a new miss with research-only sheets. Seed sheets skip a matchup when a fighter has no hand-verified sheet yet (the hippopotamus on the held-out set). Matchups whose result depends on the sheets or the run:
+Matchups whose result depends on the sheets or the run:
 
 | Matchup | Set | Group | Seed sheets | Research-only, run 1 | Research-only, run 2 |
 |---|---|---|---|---|---|
 | cnt-03 | tuning | count | pass | FAIL | FAIL |
 | cnt-05 | tuning | count | FAIL | pass | pass |
 | doc-06 | tuning | documented | skipped | FAIL | FAIL |
-| doc-07 | tuning | documented | pass | FAIL | pass |
-| doc-08 | tuning | documented | skipped | FAIL | pass |
+| doc-08 | tuning | documented | skipped | FAIL | FAIL |
 | obv-04 | tuning | obvious | skipped | pass | pass |
 | obv-08 | tuning | obvious | skipped | pass | pass |
 | cnt-01 | held-out | count | pass | FAIL | FAIL |
-| doc-05 | held-out | documented | FAIL | pass | pass |
 | doc-10 | held-out | documented | skipped | pass | pass |
 <!-- /section -->
 
