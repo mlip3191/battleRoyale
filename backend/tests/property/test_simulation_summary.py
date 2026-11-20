@@ -266,6 +266,27 @@ def test_a_favorite_that_wins_against_the_ground_is_not_said_to_be_helped_by_it(
     assert text.startswith("Cat came out ahead in spite of the ground")
 
 
+# --- #458: a side with a count above 1 reads as a plural in every deciding-factor sentence ------
+
+
+def test_a_crowd_reads_as_a_plural_in_the_numbers_sentence_and_a_single_one_is_unchanged():
+    wolf, bear = make_sheet("Gray wolf"), make_sheet("Grizzly bear")
+    text = _explained("numbers", True, matchup_of(6, 1), [wolf, bear])
+    assert "6 gray wolves against 1 Grizzly bear" in text
+    alone = _explained("numbers", True, matchup_of(1, 1), [wolf, bear])
+    assert "1 Gray wolf against 1 Grizzly bear" in alone  # a count of 1 is unchanged
+
+
+def test_a_crowd_reads_as_a_plural_in_the_scaling_sentence() -> None:
+    from app.simulation.decide import _explain_scaling
+
+    wolf, bear = make_sheet("Gray wolf"), make_sheet("Grizzly bear")
+    fight = matchup_of(6, 1)
+    fight.fighters[0].size_reference = "bear"
+    text = _explain_scaling(fight, [wolf, bear], 0, True)
+    assert "6 gray wolves (" in text and "6 Gray wolf" not in text
+
+
 # --- #365: size that helps the smaller side says so, and how ------------------------------------
 
 
@@ -275,7 +296,7 @@ def test_size_that_helps_a_smaller_crowd_says_the_smaller_side_and_how():
     matchup = matchup_of(6, 1)  # the favorite (side 0) is the smaller side, and a crowd
     text = _explained(StatName.SIZE, True, matchup, [wolf, bear])
     assert text.startswith("Size decided it, in the smaller side's favor:")
-    assert "6 Gray wolf (1.6 m) against 1 Grizzly bear (2.4 m)" in text
+    assert "6 gray wolves (1.6 m) against 1 Grizzly bear (2.4 m)" in text  # #458: a crowd is plural
     assert "easier target" in text and "fit around it" in text
     assert sorted(numbers_in(text, [wolf, bear])) == [1.0, 1.6, 2.4, 6.0]
 
@@ -308,7 +329,7 @@ def test_a_crowd_against_a_slightly_bigger_foe_does_not_claim_more_attackers_fit
     small, big = make_sheet("small", size_m=1.6), make_sheet("big", size_m=2.0)
     text = _explained(StatName.SIZE, True, matchup_of(6, 1), [small, big])
     assert text == (
-        "Size decided it, in the smaller side's favor: 6 Small (1.6 m) against 1 Big (2 m). "
+        "Size decided it, in the smaller side's favor: 6 smalls (1.6 m) against 1 Big (2 m). "
         "A bigger body is an easier target."
     )
 

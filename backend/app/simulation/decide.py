@@ -16,6 +16,7 @@ from app.models.stats import ASSUMABLE_STATS, StatName, StatSheet
 from app.simulation import constants as c
 from app.simulation.fighters import effective_habitat, venom_resistance
 from app.simulation.terrain import modifier
+from app.text import counted_name
 
 if TYPE_CHECKING:
     from app.simulation.engine import RunOutcome
@@ -180,19 +181,26 @@ def decide(
     return Decision(shown, _explain(key, matchup, sheets, fav, signed >= 0))
 
 
+# A count and a name for a deciding-factor sentence: "6 gray wolves", and "1 Grizzly bear" as the
+# sheet writes it (a count of 1 is unchanged, #458).
+def _counted(count: int, display_name: str) -> str:
+    if count > 1:
+        return f"{count} {counted_name(display_name, count)}"
+    return f"{count} {display_name}"
+
+
 def _explain_scaling(matchup: Matchup, sheets: list[StatSheet], fav: int, helped: bool) -> str:
     """Size decided it because of the size references; quotes only sheet values and counts."""
 
     def side(i: int) -> str:
         fighter, sheet = matchup.fighters[i], sheets[i]
         mass = fmt(sheet.stats[StatName.MASS].value)
-        crowd = f"{fighter.count} " if fighter.count > 1 else ""
+        name = (
+            _counted(fighter.count, sheet.display_name) if fighter.count > 1 else sheet.display_name
+        )
         if fighter.size_reference:
-            return (
-                f"{crowd}{sheet.display_name} ({mass} kg normally, "
-                f"scaled to {fighter.size_reference} size)"
-            )
-        return f"{crowd}{sheet.display_name} ({mass} kg)"
+            return f"{name} ({mass} kg normally, scaled to {fighter.size_reference} size)"
+        return f"{name} ({mass} kg)"
 
     pair = f"{side(fav)} against {side(1 - fav)}"
     if helped:
@@ -262,7 +270,7 @@ def _explain(
     counts = (matchup.fighters[fav].count, matchup.fighters[foe].count)
 
     if key == "numbers":
-        pair = f"{counts[0]} {fav_name} against {counts[1]} {foe_name}"
+        pair = f"{_counted(counts[0], fav_name)} against {_counted(counts[1], foe_name)}"
         if not helped:
             return (
                 f"{fav_name} came out ahead in spite of the head count: {pair}. "
@@ -342,7 +350,8 @@ def _explain_smaller_side(
     counts = (matchup.fighters[fav].count, matchup.fighters[foe].count)
     crowd = max(counts) > 1  # head counts show why a crowd of small fighters benefits
     sides = [
-        f"{f'{n} ' if crowd else ''}{sheets[i].display_name} ({fmt(v)}{unit})"
+        f"{_counted(n, sheets[i].display_name) if crowd else sheets[i].display_name} "
+        f"({fmt(v)}{unit})"
         for i, n, v in ((fav, counts[0], values[0]), (foe, counts[1], values[1]))
     ]
     pair = f"{sides[0]} against {sides[1]}"
