@@ -1,16 +1,18 @@
 """A07 (#45): the live TTS adapter against a fake speech server (no network)."""
 
+import base64
 import io
 import json
 import wave
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
 from pydantic import SecretStr, ValidationError
 
-from app.config import Settings, use_settings
+from app.config import REPO_ROOT, Settings, use_settings
 from app.media import audio
 from app.models.narration import Script, ScriptLine
 from app.providers.live import http
@@ -20,6 +22,8 @@ from app.providers.live.tts import (
     audition_filename,
     is_stock_voice,
     is_usable_voice,
+    reference_clip,
+    reference_fingerprint,
     speech_options,
 )
 from app.providers.registry import ServiceConfig, get_provider
@@ -255,6 +259,174 @@ async def test_make_audio_hashes_the_speech_options_from_settings(tmp_path: Any)
     [asset] = await audio.make_audio([script], media_dir=tmp_path)
     options = {"model": MODEL, "speed": 0.75}
     assert asset.asset_id == audio.narration_request(script, "", options).asset_id
+
+
+# --- the reference voice (#45, D-67) ---------------------------------------------------------
+
+
+def clip_settings(tmp_path: Path, **overrides: Any) -> dict[str, Any]:
+    """Settings for a usable reference clip; overrides switch one gate off."""
+    consent = tmp_path / "consent.md"
+    consent.write_text("synthetic voice record", encoding="utf-8")
+    clip = tmp_path / "ref.wav"
+    clip.write_bytes(tiny_wav(16000))
+    values: dict[str, Any] = {
+        "announcer_voice_source": "cloned",
+        "announcer_voice_consent_file": consent,
+        "announcer_voice_ref_clip": clip,
+    }
+    return values | overrides
+
+
+async def test_a_usable_clip_is_sent_as_base64_ref_audio(tmp_path: Path) -> None:
+    server = Recorder()
+    settings = clip_settings(tmp_path)
+    assert await live_tts(server, **settings).speak("Hello", "default") == tiny_wav()
+    [body] = server.bodies()
+    assert base64.b64decode(body.pop("ref_audio")) == tiny_wav(16000)
+    assert body == {
+        "model": MODEL,
+        "input": "Hello",
+        "voice": "default",
+        "response_format": "wav",
+        "speed": 0.9,
+    }
+
+
+@pytest.mark.parametrize(
+    "gate",
+    ["stock_source", "no_consent", "missing_consent", "no_clip", "missing_clip", "empty", "mp3"],
+)
+async def test_without_every_gate_no_ref_audio_is_sent(tmp_path: Path, gate: str) -> None:
+    settings = clip_settings(tmp_path)
+    if gate == "stock_source":
+        settings["announcer_voice_source"] = "stock"
+    elif gate == "no_consent":
+        settings["announcer_voice_consent_file"] = None
+    elif gate == "missing_consent":
+        settings["announcer_voice_consent_file"] = tmp_path / "nope.md"
+    elif gate == "no_clip":
+        settings["announcer_voice_ref_clip"] = ""
+    elif gate == "missing_clip":
+        settings["announcer_voice_ref_clip"] = tmp_path / "nope.wav"
+    elif gate == "empty":
+        (tmp_path / "ref.wav").write_bytes(b"")
+    else:
+        (tmp_path / "ref.wav").write_bytes(b"ID3\x04fake mp3 bytes")
+    assert reference_clip(Settings(_env_file=None, **settings)) is None
+    assert reference_fingerprint(Settings(_env_file=None, **settings)) is None
+    server = Recorder()
+    await live_tts(server, **settings).speak("Hello", "default")
+    [body] = server.bodies()
+    assert "ref_audio" not in body
+
+
+@pytest.mark.parametrize(
+    "first",
+    [
+        httpx.Response(422, text="bad ref"),
+        httpx.Response(503),
+        httpx.Response(200, content=b"ID3\x04fake mp3 bytes"),
+    ],
+)
+async def test_a_failed_reference_voice_falls_back_to_the_plain_request(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, first: httpx.Response
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    bodies: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        bodies.append(body)
+        return first if "ref_audio" in body else httpx.Response(200, content=tiny_wav())
+
+    assert await live_tts(handler, **clip_settings(tmp_path)).speak("Hi", "default") == tiny_wav()
+    with_ref = [b for b in bodies if "ref_audio" in b]
+    assert len(with_ref) == (2 if first.status_code == 503 else 1)  # one retry on a busy server
+    assert bodies[-1] == {
+        "model": MODEL,
+        "input": "Hi",
+        "voice": "default",
+        "response_format": "wav",
+        "speed": 0.9,
+    }
+
+
+async def test_a_network_error_on_the_reference_voice_falls_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "ref_audio" in json.loads(request.content):
+            raise httpx.ConnectError("down")
+        return httpx.Response(200, content=tiny_wav())
+
+    assert await live_tts(handler, **clip_settings(tmp_path)).speak("Hi", "default") == tiny_wav()
+
+
+async def test_a_failed_fallback_still_raises(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    server = Recorder(httpx.Response(422, text="bad"))
+    with pytest.raises(ProviderError):
+        await live_tts(server, **clip_settings(tmp_path)).speak("Hi", "default")
+    assert ["ref_audio" in b for b in server.bodies()] == [True, False]
+
+
+def test_relative_and_blank_clip_paths_are_handled() -> None:
+    assert Settings(_env_file=None, announcer_voice_ref_clip="").announcer_voice_ref_clip is None
+    path = Settings(_env_file=None, announcer_voice_ref_clip="data/x.wav").announcer_voice_ref_clip
+    assert path is not None and path.is_absolute()
+
+
+def test_the_cache_key_changes_only_when_the_reference_voice_is_used(tmp_path: Path) -> None:
+    script = Script(kind="intro", lines=[ScriptLine(speaker="announcer", text="Hello!")])
+    options = speech_options(Settings(_env_file=None))
+    plain = audio.narration_request(script, "default", options)
+    assert "voice_ref" not in plain.request
+    fingerprint = reference_fingerprint(Settings(_env_file=None, **clip_settings(tmp_path)))
+    assert fingerprint is not None and len(fingerprint) == 16
+    with_ref = audio.narration_request(script, "default", options, fingerprint)
+    assert with_ref.request == plain.request | {"voice_ref": fingerprint}
+    assert with_ref.asset_id != plain.asset_id
+
+
+async def test_make_audio_hashes_the_clip_fingerprint(tmp_path: Path) -> None:
+    settings = clip_settings(tmp_path)
+    use_settings(mock_settings(data_dir=tmp_path, **settings))
+    script = Script(kind="intro", lines=[ScriptLine(speaker="announcer", text="Hello!")])
+    [asset] = await audio.make_audio([script], media_dir=tmp_path)
+    fingerprint = reference_fingerprint(Settings(_env_file=None, **settings))
+    options = {"model": MODEL, "speed": 0.9}
+    assert asset.asset_id == audio.narration_request(script, "", options, fingerprint).asset_id
+
+
+# The committed synthetic voice files (D-67).
+VOICE_DIR = REPO_ROOT / "data" / "voice"
+COMMITTED_CLIP = VOICE_DIR / "announcer-reference.wav"
+COMMITTED_RECORD = VOICE_DIR / "announcer-voice-record.md"
+
+
+def test_the_committed_reference_clip_and_record_are_usable() -> None:
+    assert COMMITTED_CLIP.stat().st_size < 1_000_000
+    with wave.open(str(COMMITTED_CLIP), "rb") as clip:
+        assert clip.getnchannels() == 1
+        assert clip.getframerate() == 24000
+        assert 0 < clip.getnframes() / clip.getframerate() < 15
+    record = COMMITTED_RECORD.read_text(encoding="utf-8")
+    assert "synthetic" in record and "Apache" in record
+
+
+def test_settings_with_the_committed_files_load_the_reference_clip() -> None:
+    settings = Settings(
+        _env_file=None,
+        announcer_voice_source="cloned",
+        announcer_voice_consent_file="data/voice/announcer-voice-record.md",
+        announcer_voice_ref_clip="data/voice/announcer-reference.wav",
+    )
+    assert reference_clip(settings) == COMMITTED_CLIP.read_bytes()
 
 
 # --- audition file names -------------------------------------------------------------------

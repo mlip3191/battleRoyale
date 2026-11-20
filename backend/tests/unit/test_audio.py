@@ -363,7 +363,7 @@ async def test_a_cloned_voice_with_consent_still_speaks_with_the_stock_voice_for
         announcer_voice_consent_file=consent_file,
     )
     assert audio.consent_on_file(settings)
-    assert audio.announcer_voice(settings) == STOCK_VOICE  # no clone call exists yet
+    assert audio.announcer_voice(settings) == STOCK_VOICE  # the stock id is always the fallback
 
 
 # --- the music prompt ---------------------------------------------------------------------------
