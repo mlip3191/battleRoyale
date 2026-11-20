@@ -58,6 +58,7 @@ _REFUSED: dict[str, float] = {}  # legend slug -> when it was refused (time.mono
 # (#445). Real refusals stay in _REFUSED only. Outages are never remembered.
 NOT_A_LEGEND_MEMORY_S = 600.0
 _NOT_A_LEGEND: dict[str, float] = {}  # legend slug -> when it was found not to be a legend
+_NOT_A_LEGEND_KIND: dict[str, str] = {}  # legend slug -> the fixed reason it gave (#453)
 # At most this many new legends are fetched and modeled at once, so many unknown names can't
 # flood Wikipedia and the chat model (#324). Waiting for a slot counts toward LEGEND_BUDGET_S.
 MAX_LEGEND_LOOKUPS = 2
@@ -205,7 +206,7 @@ async def _resolve_legend(
         logger.warning("Modeling the legend %r ran out of time.", name)
         return UNAVAILABLE
     if outcome.not_a_legend:  # a plausible real fighter (#403): an estimate sheet, and remembered
-        remember_not_a_legend(slug)
+        remember_not_a_legend(slug, outcome.kind)
         return None
     if outcome.creature is None:
         if outcome.blocked:
@@ -247,21 +248,33 @@ def recently_not_a_legend(slug: str) -> bool:
     if time.monotonic() - found_at < NOT_A_LEGEND_MEMORY_S:
         return True
     del _NOT_A_LEGEND[slug]
+    _NOT_A_LEGEND_KIND.pop(slug, None)
     return False
 
 
 # Remember a "not a legend" answer, dropping expired ones so the memory never grows without bound.
-def remember_not_a_legend(slug: str) -> None:
+def remember_not_a_legend(slug: str, kind: str | None = None) -> None:
     now = time.monotonic()
     for old in [name for name, at in _NOT_A_LEGEND.items() if now - at >= NOT_A_LEGEND_MEMORY_S]:
         del _NOT_A_LEGEND[old]
+        _NOT_A_LEGEND_KIND.pop(old, None)
     _NOT_A_LEGEND[slug] = now
+    if kind:
+        _NOT_A_LEGEND_KIND[slug] = kind
+    else:
+        _NOT_A_LEGEND_KIND.pop(slug, None)
+
+
+# The fixed reason remembered for a name that is not a legend ("real_animal"), or None.
+def not_a_legend_kind(slug: str) -> str | None:
+    return _NOT_A_LEGEND_KIND.get(slug) if recently_not_a_legend(slug) else None
 
 
 # Forget every remembered answer (tests start clean; a restart does the same in the app).
 def forget_refusals() -> None:
     _REFUSED.clear()
     _NOT_A_LEGEND.clear()
+    _NOT_A_LEGEND_KIND.clear()
 
 
 # This event loop's lookup limit (a semaphore belongs to one loop, and tests start new ones).

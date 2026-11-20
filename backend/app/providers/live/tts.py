@@ -2,9 +2,10 @@
 
 Every call asks for WAV (response_format "wav"), because app/media/audio.py can only join WAV
 lines; the service's default is MP3. The request sends the model, the text, the stock voice id,
-and the announcer's speed when it is not 1. The endpoint has no style or pitch field, so
-ANNOUNCER_VOICE_STYLE is never sent, and ref_audio (voice cloning) is never sent either
-(docs/providers.md).
+and the announcer's speed when it is not 1. A blank or "replace-me" voice id is left out, so the
+service's default voice reads the line instead of the call failing. The endpoint has no style or
+pitch field, so ANNOUNCER_VOICE_STYLE is never sent, and ref_audio (voice cloning) is never sent
+either (docs/providers.md).
 """
 
 import io
@@ -43,13 +44,11 @@ class LiveTTS:
         self.client = client
         self.options = speech_options(settings) | {"model": config.model}
 
-    # Return WAV bytes of text read in voice_id.
+    # Return WAV bytes of text read in voice_id (blank or placeholder ids use the service default).
     async def speak(self, text: str, voice_id: str) -> bytes:
-        payload = self.options | {
-            "input": text,
-            "voice": voice_id,
-            "response_format": RESPONSE_FORMAT,
-        }
+        payload = self.options | {"input": text, "response_format": RESPONSE_FORMAT}
+        if is_usable_voice(voice_id):
+            payload["voice"] = voice_id.strip()
         data = await post_bytes(
             provider="tts",
             base_url=self.config.base_url,
@@ -76,6 +75,11 @@ class LiveTTS:
         except (KeyError, TypeError) as error:
             raise ProviderError("Live 'tts' voice list had no data list.") from error
         return [voice for voice in voices if isinstance(voice.get("id"), str)]
+
+
+# False for a blank or "replace-me" voice id (422 risk); speak() skips it, startup warns.
+def is_usable_voice(voice_id: str) -> bool:
+    return bool(voice_id.strip()) and "replace-me" not in voice_id.lower()
 
 
 # True for a voice that ships with the service (not a user-uploaded clone).

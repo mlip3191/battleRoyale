@@ -13,7 +13,7 @@ from app.pipeline import stages
 from app.pipeline.stages import StageFailed
 from app.providers.live.http import ProviderError
 from app.research import lore, sheet_store
-from app.research.lore import NONSENSE, NOT_A_LEGEND, UNAVAILABLE
+from app.research.lore import NONSENSE, UNAVAILABLE, LoreOutcome
 from tests.unit.test_legend_cache import ScriptedChat
 from tests.unit.test_lore import FakeChat, answer, run
 from tests.unit.test_mythical_battles import go_live, matchup
@@ -30,7 +30,8 @@ def not_a_legend(reason: object) -> dict:
 @pytest.mark.parametrize("reason", ALLOWED)
 def test_a_real_animal_or_object_is_not_a_legend(reason: str) -> None:
     outcome = run(FakeChat(not_a_legend(reason)))
-    assert outcome == NOT_A_LEGEND and outcome.not_a_legend and not outcome.blocked
+    # #453: the outcome now carries the reason, so a real animal can fight as one
+    assert outcome == LoreOutcome(not_a_legend=True, kind=reason) and not outcome.blocked
 
 
 @pytest.mark.parametrize("reason", [*REFUSED, "sparkly", "", None, 7, ["real_animal"]])
@@ -50,7 +51,8 @@ def test_a_reason_cannot_rescue_an_answer_that_found_a_legend_but_failed_checks(
 @pytest.mark.parametrize("reason", ALLOWED)
 def test_no_article_and_a_harmless_reason_is_not_a_legend(reason: str) -> None:
     chat = FakeChat(not_a_legend(reason))
-    assert run(chat, article=None) == NOT_A_LEGEND and chat.calls == 1
+    assert run(chat, article=None) == LoreOutcome(not_a_legend=True, kind=reason)
+    assert chat.calls == 1
 
 
 @pytest.mark.parametrize("reason", [*REFUSED, "sparkly", None])
@@ -80,8 +82,8 @@ def test_the_model_is_told_there_is_no_article() -> None:
 
 
 def test_the_reason_ignores_case_and_surrounding_spaces() -> None:
-    assert lore.outcome_for_not_found(" Real_Animal ") == NOT_A_LEGEND
-    assert lore.outcome_for_not_found("OBJECT_OR_MACHINE") == NOT_A_LEGEND
+    assert lore.outcome_for_not_found(" Real_Animal ").kind == "real_animal"
+    assert lore.outcome_for_not_found("OBJECT_OR_MACHINE").kind == "object_or_machine"
     assert lore.outcome_for_not_found("real animal") == NONSENSE  # a different word, not a match
 
 

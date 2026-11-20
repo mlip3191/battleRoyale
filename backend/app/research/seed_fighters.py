@@ -102,6 +102,12 @@ DEFAULT_KINDS: dict[str, str] = {
     "tank": "main-battle-tank",
     "truck": "pickup-truck",
     "cactus": "saguaro-cactus",
+    # The last word of a seed name is a bare kind too (#455): "a lion" is the African lion.
+    "lion": "african-lion",
+    "badger": "honey-badger",
+    "knight": "medieval-knight",
+    "legionary": "roman-legionary",
+    "retriever": "golden-retriever",
 }
 
 
@@ -115,7 +121,10 @@ def default_kind(entity: str, variant: str | None = None, raw: str | None = None
     if slug in DEFAULT_KINDS:
         return DEFAULT_KINDS[slug]
     singular = slug[:-1] if slug.endswith("s") else None  # "bears", "sharks"
-    return DEFAULT_KINDS.get(singular) if singular else None
+    if singular and singular in DEFAULT_KINDS:
+        return DEFAULT_KINDS[singular]
+    ies = slug[:-3] + "y" if slug.endswith("ies") else None  # "legionaries"
+    return DEFAULT_KINDS.get(ies) if ies else None
 
 
 # A trailing place phrase ("in a forest", "on the ice") that rides along in a side's exact words

@@ -22,12 +22,17 @@ from app.db.migrate import apply_migrations
 from app.db.showcase import SHOWCASE_DIR, import_showcase
 from app.models import contract_schemas
 from app.providers.health import provider_statuses
+from app.providers.live.tts import is_usable_voice
 
 FRONTEND_DIST = REPO_ROOT / "frontend" / "dist"
 logger = logging.getLogger(__name__)
 EMPTY_KB = (
     "The knowledge base is empty, so new fighters can't be researched yet. "
     "Run `npm run ingest` once (it takes a few minutes), then restart."
+)
+PLACEHOLDER_VOICE = (
+    "ANNOUNCER_VOICE_ID is blank or still 'replace-me'; the announcer will use the TTS "
+    "service's default voice. Set it to 'default' in your .env."
 )
 
 # At INFO these loggers print full request URLs, which include course endpoint hosts.
@@ -80,8 +85,10 @@ def create_app(
     return app
 
 
-# Load the showcase if the database is empty, and warn about an empty knowledge base in live mode.
+# Live mode: warn about a placeholder voice id or empty knowledge base; load the showcase if empty.
 def _startup(settings: Settings, showcase_dir: Path | None) -> None:
+    if settings.provider_mode == "live" and not is_usable_voice(settings.announcer_voice_id):
+        logger.warning(PLACEHOLDER_VOICE)
     try:
         connection = connect(settings.data_dir / "app.db")
         try:
