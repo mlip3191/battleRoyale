@@ -14,8 +14,15 @@ fingerprint of the model name, never the name itself). Otherwise it says so and 
   SHA-256 of the joined bytes (it stores the vectors as float32; half precision halves the size
   without changing search results).
 
-To export again after a full live ingest (rarely: each export adds about 16 MB to git history):
-`uv run --directory backend python -m app.research.kb_prebuilt`
+The files never overwrite a knowledge base that already has passages. They hold passages and
+vectors only: the Wikidata facts a full `npm run ingest` also stores are not included, and stored
+facts are preferred over facts read from passages, so a few stat sheets can differ slightly from
+a fully ingested setup until you run `npm run ingest`.
+
+To export again (rarely: each export adds about 16 MB to git history), first re-parse every seed
+article with `uv run --directory backend python -m scripts.ingest_seed --refresh` in live mode,
+then run `uv run --directory backend python -m app.research.kb_prebuilt`. The export stops if any
+seed fighter has no passages, so a partial knowledge base is never committed.
 
 ## License
 

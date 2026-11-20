@@ -33,8 +33,9 @@ EMPTY_KB = (
 )
 PREBUILT_MISMATCH = (
     "The prebuilt knowledge base in data/prebuilt-kb/ was built with a different embedding "
-    "model than the one set in your .env (EMBEDDINGS_MODEL), so it wasn't loaded: its vectors "
-    "wouldn't match your searches. Run `npm run ingest` once (about 30 minutes), then restart."
+    "model than EMBEDDINGS_MODEL in your .env (or that setting is empty), so it wasn't loaded: "
+    "its vectors wouldn't match your searches. "
+    "Run `npm run ingest` once (about 30 minutes), then restart."
 )
 PLACEHOLDER_VOICE = (
     "ANNOUNCER_VOICE_ID is blank or still 'replace-me'; the announcer will use the TTS "

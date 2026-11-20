@@ -228,6 +228,17 @@ def test_export_leaves_out_fighters_off_the_list(tmp_path: Path) -> None:
     assert [d["fighter_id"] for d in manifest["documents"]] == ["duck"]
 
 
+# A seed fighter with no passages stops the export, so a partial knowledge base is never committed.
+def test_export_refuses_when_a_fighter_has_no_passages(tmp_path: Path) -> None:
+    source = ingested(tmp_path / "source.db")
+    try:
+        with pytest.raises(ValueError, match="no passages for goose.*--refresh"):
+            export_prebuilt(source, ["horse", "duck", "goose"], MODEL, tmp_path / "out")
+    finally:
+        source.close()
+    assert not (tmp_path / "out" / MANIFEST_FILE).exists()
+
+
 def test_a_knowledge_base_with_documents_is_never_overwritten(tmp_path: Path) -> None:
     own = ingested(tmp_path / "own.db", {"duck": TEXTS["duck"]})
     try:

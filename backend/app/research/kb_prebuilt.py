@@ -92,6 +92,7 @@ def export_prebuilt(
         raise ValueError("the knowledge base has no vector size; run `npm run ingest` first")
     size = int(size_row[0])
     documents, vectors = _collect(connection, sorted(set(fighter_ids)), size)
+    _require_every_fighter(documents, fighter_ids)
     blob = to_half(b"".join(vectors))
     manifest = {
         "format": FORMAT,
@@ -106,6 +107,16 @@ def export_prebuilt(
     text = json.dumps(manifest, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
     (folder / MANIFEST_FILE).write_bytes(text.encode("utf-8"))  # bytes: LF on every OS
     return len(vectors)
+
+
+# Refuse a partial export: every requested fighter must have at least one document.
+def _require_every_fighter(documents: list[dict[str, Any]], fighter_ids: list[str]) -> None:
+    missing = sorted(set(fighter_ids) - {document["fighter_id"] for document in documents})
+    if missing:
+        raise ValueError(
+            f"no passages for {', '.join(missing)}; run "
+            "`uv run --directory backend python -m scripts.ingest_seed --refresh` first"
+        )
 
 
 # Replace folder's vectors files with blob cut into numbered parts; returns their names in order.
