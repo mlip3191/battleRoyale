@@ -42,8 +42,9 @@ def evidence_is_valid(value_as_written: float, quote: str, passage: str) -> bool
     return number_in_quote(value_as_written, quote) and quote_in_passage(quote, passage)
 
 
-# What may sit between a number and its unit: an optional range end ("4-5 kg", "4 to 5 kg").
-RANGE_TAIL = r"(?:\s*(?:-|to)\s*\d[\d,]*(?:\.\d+)?)?\s*"
+# What may sit between a number and its unit: an optional range end ("4-5 kg", "4 to 5 kg"),
+# then spaces or one hyphen, as English joins a compound ("a 450-kilogram horse", #425).
+RANGE_TAIL = r"(?:\s*(?:-|to)\s*\d[\d,]*(?:\.\d+)?)?(?:\s*|-)"
 # Units this short are symbols ("m", "mm", "Mm", "kg", "N"), where case changes the meaning.
 SHORT_UNIT_CHARS = 3
 # Unit symbols that are also English words.
@@ -57,16 +58,18 @@ def number_has_unit_in_quote(value_as_written: float, unit: str, quote: str) -> 
     unit_text = normalize_text(unit)
     if not unit_text:
         return False
-    # A unit may not run on into another ("5 m/s" is not metres, "5 in the wild" not inches).
+    # A unit may not run on into another ("5 m/s" is not metres, "5 in the wild" not inches, and
+    # "5 m2" or "5-m3" are square and cubic metres, #450).
     # Short symbols match case exactly, so "5 Mm" is never millimetres; words like "Newtons"
     # may differ in case.
     flags = re.IGNORECASE if len(unit_text) > SHORT_UNIT_CHARS else 0
     # "in" is also a word, so as inches it can't be followed by another word ("5 in the wild").
-    word_after = r"(?!\s+[A-Za-z])" if unit_text.lower() in UNITS_THAT_ARE_WORDS else ""
+    # A hyphen joins it too ("3-in-1", "5-in-the-wild"), so those are not inches either (#425).
+    word_after = r"(?!\s+[A-Za-z]|\s*-\s*\w)" if unit_text.lower() in UNITS_THAT_ARE_WORDS else ""
     # One- and two-letter symbols take no plural, so "5 ms" is not metres nor "5 gs" grams.
     plural = "" if len(unit_text) <= 2 else r"(?:e?s)?"
     tail = re.compile(
-        RANGE_TAIL + re.escape(unit_text) + plural + r"(?![A-Za-z/²³])" + word_after, flags
+        RANGE_TAIL + re.escape(unit_text) + plural + r"(?![A-Za-z0-9/²³])" + word_after, flags
     )
     for found in NUMBER.finditer(text):
         number = float(found.group().replace(",", ""))

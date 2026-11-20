@@ -289,8 +289,10 @@ async def run_coverage() -> str:
                 rows.append((found.display_name, "mythical", coverage_of(found)))
                 size = f", scaled to a {found.lore.size_analog}" if found.lore.size_analog else ""
                 analogs.append(f"{found.display_name}: built on a {found.lore.body_analog}{size}")
-            else:
-                rows.append((name, "mythical", "refused or unavailable"))
+            else:  # None is "not a legend" (#403) or mock mode; an outcome says refused or down
+                blocked = getattr(found, "blocked", False)
+                label = "refused" if blocked else "unavailable" if found else "not a legend"
+                rows.append((name, "mythical", label))
     finally:
         connection.close()
     return coverage_markdown(rows, analogs, time.perf_counter() - started)

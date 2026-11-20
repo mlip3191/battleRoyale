@@ -9,11 +9,18 @@ import {
   within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from "vitest";
 import okResult from "../fixtures/intake-result.json";
 import * as client from "../api/client.ts";
 import { SHOWCASE } from "../api/fixtures.ts";
-import Home, { EXAMPLES, PLACEHOLDER } from "./Home.tsx";
+import Home, { EXAMPLES, PLACEHOLDER, START_LABEL } from "./Home.tsx";
 
 vi.mock("../api/client.ts", async (original) => ({
   ...(await original<typeof import("../api/client.ts")>()),
@@ -76,7 +83,7 @@ function ask(box: HTMLTextAreaElement, text: string) {
   fireEvent.keyDown(box, { key: "Enter" });
 }
 
-test("ok: Enter submits, shows the confirmation card, and FIGHT! starts the battle", async () => {
+test("ok: Enter submits, shows the confirmation card, and its start button starts the battle", async () => {
   api.postIntake.mockResolvedValue(ok);
   const box = open();
   ask(box, "a grizzly bear vs 6 gray wolves in a forest");
@@ -91,7 +98,7 @@ test("ok: Enter submits, shows the confirmation card, and FIGHT! starts the batt
     (screen.getByLabelText("Battlefield") as HTMLSelectElement).value,
   ).toBe("forest");
 
-  fireEvent.click(within(card).getByRole("button", { name: "FIGHT!" }));
+  fireEvent.click(within(card).getByRole("button", { name: START_LABEL }));
   expect(api.createBattle).toHaveBeenCalledWith(ok.matchup);
   expect(await screen.findByText("broadcast page")).toBeTruthy();
 });
@@ -110,7 +117,7 @@ test("changing the terrain changes the matchup sent to POST /api/battles", async
   fireEvent.change(screen.getByLabelText("Battlefield"), {
     target: { value: "water" },
   });
-  fireEvent.click(within(card).getByRole("button", { name: "FIGHT!" }));
+  fireEvent.click(within(card).getByRole("button", { name: START_LABEL }));
   expect(api.createBattle).toHaveBeenCalledWith({
     ...ok.matchup,
     terrain: "water",
@@ -183,6 +190,49 @@ test("example chips fill the box", () => {
   const box = open();
   fireEvent.click(screen.getByRole("button", { name: EXAMPLES[0] }));
   expect(box.value).toBe(EXAMPLES[0]);
+});
+
+// --- Cards that open below the fold (#462) ---
+
+// Stand in for scrollIntoView (jsdom has none) and remove it again after the test.
+function watchScrolling() {
+  const scroll = vi.fn();
+  Element.prototype.scrollIntoView = scroll;
+  onTestFinished(() => {
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  });
+  return scroll;
+}
+
+test("tonight's card scrolls into view, takes focus, and its button isn't a second FIGHT!", async () => {
+  const scroll = watchScrolling();
+  api.postIntake.mockResolvedValue(ok);
+  open();
+  fireEvent.click(screen.getByRole("button", { name: EXAMPLES[0] }));
+  fireEvent.click(screen.getByRole("button", { name: "FIGHT!" }));
+  const card = await screen.findByRole("region", { name: "Tonight's card" });
+  expect(document.activeElement).toBe(card);
+  expect(scroll).toHaveBeenCalledTimes(1);
+  expect(scroll.mock.contexts[0]).toBe(card);
+  expect(START_LABEL).toBe("Start the fight!");
+  expect(within(card).getByRole("button", { name: START_LABEL })).toBeTruthy();
+  expect(screen.getAllByRole("button", { name: "FIGHT!" })).toHaveLength(1);
+});
+
+test("the quick question scrolls into view and takes focus, with no smooth scroll under reduced motion", async () => {
+  const scroll = watchScrolling();
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn((query: string) => ({
+      matches: query === "(prefers-reduced-motion: reduce)",
+    })),
+  );
+  api.postIntake.mockResolvedValue(clarify);
+  ask(open(), "a bear vs 6 wolves");
+  const card = await screen.findByRole("region", { name: "Quick question" });
+  expect(document.activeElement).toBe(card);
+  expect(scroll.mock.contexts[0]).toBe(card);
+  expect(scroll).toHaveBeenCalledWith({ behavior: "auto", block: "start" });
 });
 
 // The fighters with a ready-made stat sheet in data/seed/fighters/ (singular or plural).
@@ -301,18 +351,18 @@ test("a failed answer keeps the question on screen with an error", async () => {
   ).toBe(false);
 });
 
-test("if starting the battle fails, the card shows an error and FIGHT! works again", async () => {
+test("if starting the battle fails, the card shows an error and its button works again", async () => {
   api.postIntake.mockResolvedValue(ok);
   api.createBattle.mockRejectedValue(new Error("offline"));
   ask(open(), "a grizzly bear vs 6 gray wolves");
   const card = await screen.findByRole("region", { name: "Tonight's card" });
-  fireEvent.click(within(card).getByRole("button", { name: "FIGHT!" }));
+  fireEvent.click(within(card).getByRole("button", { name: START_LABEL }));
   expect((await within(card).findByRole("alert")).textContent).toContain(
     "couldn't reach the studio",
   );
   expect(
     within(card)
-      .getByRole("button", { name: "FIGHT!" })
+      .getByRole("button", { name: START_LABEL })
       .hasAttribute("disabled"),
   ).toBe(false);
   expect(screen.queryByText("broadcast page")).toBeNull();

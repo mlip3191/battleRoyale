@@ -79,6 +79,23 @@ test("win % is shown with its range, plus the deciding-factor explainer", () => 
   );
 });
 
+// #463: a side that never wins can still have fighters standing, because some ran away alive.
+// The line says so, so "0%" next to "about 0.5 standing" isn't a contradiction.
+test("a side that never wins says its standing fighters include any that ran away (#463)", () => {
+  const result = {
+    ...record.result!,
+    win_prob: [0, 1] as [number, number],
+    draw_prob: 0,
+    mean_survivors: [0.48, 5.6] as [number, number],
+  };
+  show({ ...record, result });
+  const verdict = screen.getByRole("region", { name: "Winner: 6 gray wolves" });
+  expect(verdict.textContent).toContain(
+    "about 0.5 still standing at the end on average, including any that ran away",
+  );
+  expect(verdict.textContent).not.toContain("left standing");
+});
+
 test("averages over many runs are rounded to one decimal, and duration sits outside the draw row", () => {
   const result = {
     ...record.result!,
@@ -87,8 +104,12 @@ test("averages over many runs are rounded to one decimal, and duration sits outs
   };
   show({ ...record, result });
   const verdict = screen.getByRole("region", { name: "Winner: 6 gray wolves" });
-  expect(verdict.textContent).toContain("about 0.4 left standing on average");
-  expect(verdict.textContent).toContain("about 2.7 left standing on average");
+  expect(verdict.textContent).toContain(
+    "about 0.4 still standing at the end on average",
+  );
+  expect(verdict.textContent).toContain(
+    "about 2.7 still standing at the end on average",
+  );
   expect(verdict.textContent).toContain("Fights last about 41.2 s on average.");
   expect(verdict.textContent).not.toMatch(/2\.738|41\.237/);
   const draw = within(verdict).getByText("Draw").parentElement!;

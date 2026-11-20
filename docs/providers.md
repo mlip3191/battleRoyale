@@ -127,6 +127,20 @@ Base URL: `http://<host>:9008`
   - request keys: `{"model": "str", "input": "str"}`
   - reply: 25772 bytes of `audio/mpeg`
 
+**Hand-tested request shapes (A07, `backend/app/providers/live/tts.py`).** Added by hand, not by the smoke script (re-running `smoke_providers.py` rewrites this file, so copy this part back); checked against the service's own `/openapi.json`, `GET /info`, and real calls. The service is Chatterbox Multilingual V3, model `chatterbox-v3` (`TTS_MODEL`, which defaults to that).
+- `POST /v1/audio/speech` — JSON body; only `input` is required. Documented fields: `model`, `input`, `voice`, `language_id`, `ref_audio`, `response_format`, `speed`, `stream_format`, `exaggeration`, `cfg_weight`, `temperature`, `repetition_penalty`, `min_p`, `top_p`, `seed`, `chunk_size`, `chunk_silence_ms`. Input is limited to 4096 characters.
+- **The voice field is `voice`** (a string id, or an object `{"id": ...}`). `"voice": "default"` returns 200.
+- **`response_format: "wav"` returns `audio/wav`**: mono, 16-bit, 24000 Hz. Without it the reply is `audio/mpeg` (MP3). Allowed values: `mp3`, `wav`, `opus`, `aac`, `flac`, `pcm`. The adapter always asks for WAV, because the narration code joins lines as WAV only.
+- **`speed`** is a tempo multiplier applied after generation that keeps the pitch (1 = unchanged; `/info` says 0.25 to 4.0). The adapter sends `ANNOUNCER_VOICE_SPEED` (default 0.9, D-09's mild slowdown) unless it is 1.
+- **There is no style field and no pitch field**, so `ANNOUNCER_VOICE_STYLE` is not sent. `ref_audio` (voice cloning) is never sent: cloning needs written consent and is out of scope.
+- The adapter checks each reply is a readable WAV; anything else raises `ProviderError`. The model and speed are part of the narration cache key (`narration_request` in `backend/app/media/audio.py`), so changing either makes new files.
+- `GET /v1/voices` → `{"object", "data": [{"id", "object", "name", "created", "duration"}, ...]}`. On the shared endpoint almost every entry is a **user-uploaded clone or test voice from other classmates**; the only bundled stock voice is `id: "default"`, `name: "Bundled voice"`, `created: 0`, `duration: 0.0` (`GET /v1/voices/default` confirms it). Only stock voices (`default` or `created == 0`) are candidates for the announcer; never use a classmate's clone. Voice names are user-supplied (one holds an HTML payload), so treat them as untrusted text.
+  ```
+  curl -H "Authorization: Bearer <key>" -H "Content-Type: application/json" \
+       -d '{"model":"chatterbox-v3","input":"Hello","voice":"default","response_format":"wav","speed":0.9}' \
+       -o line.wav http://<host>:9008/v1/audio/speech
+  ```
+
 ## `music` — Music Generation
 
 Base URL: `http://<host>:9007`

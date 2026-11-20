@@ -674,6 +674,30 @@ HEADER = (
     "the engine models a standing fight (no chase, exhaustion or pack hunting over time). The pack "
     "rule is not adjusted from a held-out case.\n\n"
     'None of the three is an "obvious" case, so the 80% held-out "obvious" target is unaffected.\n'
+    "\n"
+    "**Known limits of the research-built sheets (#425, Mike's ruling).** These are about "
+    "sheets built by `--sheets research`, not the seed baseline above. Stored facts keep "
+    "winning over extraction for the MVP; a stat changes only when a better source turns "
+    "up, never to pass a case (D-58). Nothing here was tuned.\n\n"
+    "- **Gray wolf mass:** one animaltraits row (22.68 kg) against the seed's 40 kg (\"the "
+    "mean body mass of the wolf is 40 kg\"). With the grizzly's reach below, it keeps "
+    "grizzly v 4 wolves (`edge-show-02`) on the wrong side.\n"
+    "- **Grizzly reach:** 0.102 m, a claw's length (51-102 mm), against 0.6 m in the seed "
+    "sheet.\n"
+    "- **Horse attack force:** a category default (500 N) against 1,924 N in the seed "
+    "sheet, so a sourced 450 kg horse is heavy and weak; crocodile v horse (doc-09) is "
+    "close on research sheets and clear on seed sheets.\n"
+    "- **Main battle tank mass:** it stays a 3,000 kg default, so dragon v tank "
+    '(`edge-show-05`) stays wrong. The stored articles first lacked the "40-70 t" '
+    "sentence the seed sheet quotes. A one-page re-ingest (`ingest_seed --live --refresh "
+    "--only main-battle-tank`, Nov 19) put it back (115 to 183 chunks, the sentence is in "
+    "chunk 2480), but the mass search still does not return it: it ranks outside the top "
+    '100 of 183 candidates for the query "adult body mass weight kg lb weighs", and only '
+    'a query that repeats the passage\'s own words ("weighs tonnes t extreme weight") '
+    "reaches it. Tuning the search to fit one sentence would be tuning to pass a case, so "
+    "under D-58 it is recorded as a known limit.\n"
+    "- **After the MVP:** prefer a typical value over a single stored row, and add a "
+    "prompt line so reach is not the length of a claw.\n"
 )
 
 

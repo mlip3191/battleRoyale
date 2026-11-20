@@ -14,7 +14,8 @@ sheet store, so a later real sheet for the same name isn't shadowed by it.
 
 import re
 
-from app.models.stats import StatSheet, StatValue
+from app.models.stats import StatName, StatSheet, StatValue
+from app.research.defaults import category_default
 from app.research.seed_fighters import fighter_slug
 from app.research.sheet_hash import compute_sheet_hash
 from app.research.statsheet import FighterProfile, build_stat_sheet, media_name_for
@@ -25,22 +26,35 @@ ESTIMATE_HABITAT = "land"
 ESTIMATE_WEAPONS = ("none",)
 UNKNOWN_NAME = "Unknown fighter"  # when nothing in the typed name is a letter or digit
 ESTIMATE_NOTE = "Estimate: we have no stat sheet for this fighter. "
+# A fighter the legend lookup calls a real animal (#453) is a living land mammal with a bite, built
+# from the mammal defaults. The reason is one of a fixed list the model picks; code decides from
+# it alone, so no model text or number reaches the sheet. Anything else stays the inert object.
+ANIMAL_REASON = "real_animal"
+ESTIMATE_ANIMAL_CATEGORY = "mammal"
+ESTIMATE_ANIMAL_BODY = "living"
+ESTIMATE_ANIMAL_WEAPONS = ("teeth",)
 
 
-# The all-estimate sheet for `name` (the fighter as the user typed it, e.g. "wolverine").
-def estimate_sheet(name: str) -> StatSheet:
+# The all-estimate sheet for `name` (the fighter as the user typed it, e.g. "wolverine"). `kind` is
+# the legend lookup's fixed reason when it has one: "real_animal" gives a living animal, and
+# anything else (an object, mock mode, no reason) the inert object, as before.
+def estimate_sheet(name: str, kind: str | None = None) -> StatSheet:
     display = display_name_for(name)
+    animal = kind == ANIMAL_REASON
+    category = ESTIMATE_ANIMAL_CATEGORY if animal else ESTIMATE_CATEGORY
     profile = FighterProfile(
         fighter_id=fighter_slug(display),
         display_name=display,
-        media_name=media_name_for(display, ESTIMATE_CATEGORY),
-        category=ESTIMATE_CATEGORY,
-        body=ESTIMATE_BODY,
+        media_name=media_name_for(display, category),
+        category=category,
+        body=ESTIMATE_ANIMAL_BODY if animal else ESTIMATE_BODY,
         habitat=ESTIMATE_HABITAT,
-        weapons=ESTIMATE_WEAPONS,
+        weapons=ESTIMATE_ANIMAL_WEAPONS if animal else ESTIMATE_WEAPONS,
     )
     built = build_stat_sheet(profile)  # no facts, no extraction: code defaults only
-    stats = {stat: _labeled(value) for stat, value in built.stats.items()}
+    stats = {
+        stat: _labeled(_as_default(value, category, stat)) for stat, value in built.stats.items()
+    }
     not_estimates = [str(stat) for stat, value in stats.items() if not value.is_estimate]
     if not_estimates:  # the "other" defaults never derive, so this would be a code change
         raise ValueError(f"estimate sheet has non-estimate stats: {', '.join(not_estimates)}")
@@ -57,6 +71,16 @@ def display_name_for(name: str) -> str:
     if not cleaned:
         return UNKNOWN_NAME
     return cleaned[:1].upper() + cleaned[1:]
+
+
+# A value code derived from another estimate (a living animal's reach) becomes the category
+# default instead, so every physical stat of the sheet is a labeled estimate.
+def _as_default(value: StatValue, category: str, stat: StatName) -> StatValue:
+    if value.is_estimate:
+        return value
+    # `or value` keeps a non-estimate only if a default were ever missing; estimate_sheet's guard
+    # then raises, so a non-estimate can never reach a saved sheet.
+    return category_default(category, stat) or value
 
 
 # The same estimate, with a note that says plainly it is one.
