@@ -21,9 +21,10 @@ This is the consent and provenance record for the announcer's reference clip,
 - **License terms:** Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0), a
   permissive license that grants a "perpetual, worldwide, non-exclusive, no-charge,
   royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of,
-  publicly display, publicly perform, sublicense, and distribute the Work". It has no clause
-  that restricts how audio generated with the model is used, so using that audio in this
-  public course project is allowed. (The model weights themselves are not in the repo.)
+  publicly display, publicly perform, sublicense, and distribute the Work". Our reading of the
+  model card and the license: the card lists only Apache 2.0, and we found no term there that
+  restricts how audio generated with the model may be used, so we read it as allowing that
+  audio in this public course project. (The model weights themselves are not in the repo.)
 - **How it was used:** once, by hand, on a team member's own computer (CPU, float32, eager
   attention). The app never calls this tool: no SDK, package, or API for it is in the repo.
   At run time the app only sends this clip as the reference voice on the course TTS
@@ -42,7 +43,8 @@ This is the consent and provenance record for the announcer's reference clip,
 ## Processing
 
 1. Loudness-normalized to -16 LUFS integrated, -1.5 dBTP (ffmpeg `loudnorm`, two passes),
-   24 kHz mono. Full take: 20.72 s.
+   24 kHz mono. Full take: 20.72 s, 994,638 bytes, SHA-256
+   `a6db5717440b622010b72a2c619f3c18ef87b735d6c05c3dac0684ab613cf655` (kept off-repo).
 2. Trimmed for the repo on 2026-11-20 to the first 12.65 s (cut in the pause after
    "the polar bear!", with a 0.1 s fade-out), 16-bit PCM WAV, 24 kHz mono.
    The clip says: "Ladies and gentlemen! Welcome to the main event of the evening! In this

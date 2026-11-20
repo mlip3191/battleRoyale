@@ -1,6 +1,7 @@
 """A07 (#45): the live TTS adapter against a fake speech server (no network)."""
 
 import base64
+import hashlib
 import io
 import json
 import wave
@@ -16,8 +17,11 @@ from app.config import REPO_ROOT, Settings, use_settings
 from app.media import audio
 from app.models.narration import Script, ScriptLine
 from app.providers.live import http
+from app.providers.live import tts as tts_module
 from app.providers.live.http import ProviderError, post_bytes
 from app.providers.live.tts import (
+    REF_RETRIES,
+    REF_TIMEOUT_S,
     LiveTTS,
     audition_filename,
     is_stock_voice,
@@ -342,7 +346,7 @@ async def test_a_failed_reference_voice_falls_back_to_the_plain_request(
 
     assert await live_tts(handler, **clip_settings(tmp_path)).speak("Hi", "default") == tiny_wav()
     with_ref = [b for b in bodies if "ref_audio" in b]
-    assert len(with_ref) == (2 if first.status_code == 503 else 1)  # one retry on a busy server
+    assert len(with_ref) == 1  # REF_RETRIES = 0: even a busy server gets one reference try
     assert bodies[-1] == {
         "model": MODEL,
         "input": "Hi",
@@ -363,6 +367,71 @@ async def test_a_network_error_on_the_reference_voice_falls_back(
         return httpx.Response(200, content=tiny_wav())
 
     assert await live_tts(handler, **clip_settings(tmp_path)).speak("Hi", "default") == tiny_wav()
+
+
+async def test_a_reference_timeout_falls_back_after_one_try(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    bodies: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        bodies.append(body)
+        if "ref_audio" in body:
+            raise httpx.ReadTimeout("hung", request=request)
+        return httpx.Response(200, content=tiny_wav())
+
+    assert await live_tts(handler, **clip_settings(tmp_path)).speak("Hi", "default") == tiny_wav()
+    assert ["ref_audio" in b for b in bodies] == [True, False]
+
+
+async def test_after_one_reference_failure_the_show_skips_the_clip(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    bodies: list[dict[str, Any]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        bodies.append(body)
+        if "ref_audio" in body:
+            return httpx.Response(422, text="bad ref")
+        return httpx.Response(200, content=tiny_wav())
+
+    live = live_tts(handler, **clip_settings(tmp_path))
+    await live.speak("One", "default")
+    bodies.clear()
+    assert await live.speak("Two", "default") == tiny_wav()
+    assert len(bodies) == 1 and "ref_audio" not in bodies[0]
+
+
+async def test_the_reference_try_fits_the_per_file_budget(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[dict[str, Any]] = []
+
+    async def fake_post_bytes(**kwargs: Any) -> bytes:
+        calls.append(kwargs)
+        if "ref_audio" in kwargs["payload"]:
+            raise ProviderError("down")
+        return tiny_wav()
+
+    monkeypatch.setattr(tts_module, "post_bytes", fake_post_bytes)
+    live = live_tts(Recorder(), **clip_settings(tmp_path))
+    await live.speak("Hi", "default")
+    ref, stock = calls
+    assert ref["timeout_s"] <= REF_TIMEOUT_S and ref["retries"] == REF_RETRIES == 0
+    default_timeout = Settings(_env_file=None).provider_timeout_s
+    assert stock["timeout_s"] == default_timeout and "retries" not in stock
+    assert REF_TIMEOUT_S + default_timeout < audio.ITEM_TIMEOUT_S
+
+
+async def test_a_blank_voice_with_a_clip_sends_ref_audio_and_no_voice(tmp_path: Path) -> None:
+    server = Recorder()
+    await live_tts(server, **clip_settings(tmp_path)).speak("Hello", "")
+    [body] = server.bodies()
+    assert "ref_audio" in body and "voice" not in body
 
 
 async def test_a_failed_fallback_still_raises(
@@ -427,6 +496,14 @@ def test_settings_with_the_committed_files_load_the_reference_clip() -> None:
         announcer_voice_ref_clip="data/voice/announcer-reference.wav",
     )
     assert reference_clip(settings) == COMMITTED_CLIP.read_bytes()
+
+
+def test_the_record_names_the_sha256_of_the_committed_clip() -> None:
+    record = COMMITTED_RECORD.read_text(encoding="utf-8")
+    section = record.split("The file in the repo", 1)[1]
+    line = next(x for x in section.splitlines() if x.strip().startswith("- SHA-256:"))
+    written = line.split(":", 1)[1].strip().strip("`")
+    assert written == hashlib.sha256(COMMITTED_CLIP.read_bytes()).hexdigest()
 
 
 # --- audition file names -------------------------------------------------------------------

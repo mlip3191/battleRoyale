@@ -8,9 +8,9 @@ pitch field, so ANNOUNCER_VOICE_STYLE is never sent (docs/providers.md).
 
 Reference voice (#45, D-67, synthetic only): when ANNOUNCER_VOICE_SOURCE is "cloned", a consent
 file is on disk, and ANNOUNCER_VOICE_REF_CLIP names a readable WAV, each line is first requested
-with the clip added as base64 `ref_audio` (one retry). If that fails or the reply is not a WAV,
-the same line is requested again exactly as without a clip, so the show still gets the stock
-voice.
+with the clip added as base64 `ref_audio` (one try, a shorter timeout, no retry). If that fails
+or the reply is not a WAV, the same line is requested again exactly as without a clip, so the
+show still gets the stock voice, and the rest of that show skips the clip.
 """
 
 import base64
@@ -32,7 +32,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 RESPONSE_FORMAT = "wav"
-REF_RETRIES = 1  # the reference-voice try; the stock request after it keeps the normal retries
+REF_RETRIES = 0  # one reference-voice try; the stock request after it keeps the normal retries
+# A normal line takes about 5 s; a hung clip request must leave time for the stock fallback
+# inside the per-file limit (audio.ITEM_TIMEOUT_S).
+REF_TIMEOUT_S = 12.0
 FINGERPRINT_CHARS = 16  # hex characters of the clip's sha256 used in the audio cache key
 
 
@@ -66,16 +69,26 @@ class LiveTTS:
             payload["voice"] = voice_id.strip()
         if self.ref_audio is not None:
             try:
-                data = await self._post(payload | {"ref_audio": self.ref_audio}, REF_RETRIES)
-                return _checked_wav(data)
-            except (ProviderError, httpx.HTTPError) as error:
-                logger.warning(
-                    "reference voice failed (%s); using stock voice", type(error).__name__
+                timeout_s = min(self.timeout_s, REF_TIMEOUT_S)
+                data = await self._post(
+                    payload | {"ref_audio": self.ref_audio}, REF_RETRIES, timeout_s
                 )
+                return _checked_wav(data)
+            except (ProviderError, httpx.HTTPError) as error:  # a timeout arrives as ProviderError
+                # make_audio builds one adapter per show (get_provider returns a new one each
+                # call), so dropping the clip here means the rest of this show skips it.
+                if self.ref_audio is not None:
+                    self.ref_audio = None
+                    logger.warning(
+                        "reference voice failed (%s); the rest of this show uses the stock voice",
+                        type(error).__name__,
+                    )
         return _checked_wav(await self._post(payload))
 
     # POST one speech request and return the raw reply bytes.
-    async def _post(self, payload: dict[str, Any], retries: int | None = None) -> bytes:
+    async def _post(
+        self, payload: dict[str, Any], retries: int | None = None, timeout_s: float | None = None
+    ) -> bytes:
         extra = {} if retries is None else {"retries": retries}
         return await post_bytes(
             provider="tts",
@@ -83,7 +96,7 @@ class LiveTTS:
             path="/v1/audio/speech",
             api_key=self.config.api_key.get_secret_value(),
             payload=payload,
-            timeout_s=self.timeout_s,
+            timeout_s=self.timeout_s if timeout_s is None else timeout_s,
             client=self.client,
             **extra,
         )
