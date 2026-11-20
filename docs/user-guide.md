@@ -81,7 +81,7 @@ To use the real AI endpoints, run:
 npm run env:setup
 ```
 
-It asks two questions. Paste in the **course host** and the **course API key** from the course endpoint list. The key stays hidden while you type or paste it. Your answers are saved only in a file called `.env` on your computer, and the app switches to live mode.
+It asks two questions. Paste in the **course host** and the **course API key** from the course endpoint list. Both come from the course, not from this project: use the endpoint list in the course materials your instructor shared, and if you can't find it, ask your instructor or a teammate. The key stays hidden while you type or paste it. Your answers are saved only in a file called `.env` on your computer, and the app switches to live mode.
 
 ![Terminal showing npm run env:setup asking for the course host and a hidden API key, then saving to .env](images/user-guide/02-env-setup.png)
 
@@ -93,7 +93,7 @@ Never paste the key into a chat, an email, or a GitHub page. To check your setti
 npm run setup
 ```
 
-This downloads everything the app needs. It takes a minute or two the first time. Warnings such as "packages are looking for funding" or "vulnerabilities" are normal and can be ignored.
+This downloads everything the app needs. It takes a minute or two the first time. Warnings such as "packages are looking for funding", "vulnerabilities" or, on a Mac, `npm warn install-scripts … fsevents` are normal and can be ignored.
 
 ![Terminal showing npm run setup installing packages and finishing](images/user-guide/03-setup.png)
 
@@ -105,7 +105,7 @@ If you did step 3, run this once:
 npm run ingest
 ```
 
-It downloads the reference articles the app researches fighters from. It takes a while (about half an hour on a laptop), and it's quiet for long stretches, so let it run. Lines like "Parser skipped…" and "No trait match…" are normal. It's done when it prints a table and "Finished in … s". You only need it once, not every time you start the app. In mock mode (you skipped step 3) you don't need it.
+It downloads the reference articles the app researches fighters from. It takes a while (about half an hour on a laptop), and it's quiet for long stretches, so let it run. Lines like "Parser skipped…" and "No trait match…" are normal. It's done when it prints a table and "Finished in … s". A few more "No trait match…" lines may print after that; it's still done. You only need it once, not every time you start the app. In mock mode (you skipped step 3) you don't need it.
 
 ![Terminal showing npm run ingest finishing with a table: 30 fighters, 30 documents, 0 failures, then "Finished in 1814 s."](images/user-guide/03b-ingest.png)
 
@@ -166,7 +166,7 @@ While the app researches and simulates, a ticker shows what it's doing and a lis
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 
-Then the show starts: the announcer introduces the fighters, with captions on screen. The intro has its own **Start the fight** button (a second one, after the card's): click it when you're ready, or **Skip to verdict** to jump straight to the result. If a note says some effects are unavailable, the announcer voice couldn't be made this time; the captions always carry the show, and the fight still works.
+Then the show starts: the announcer introduces the fighters, with captions on screen. The intro has its own **Start the fight** button (a second one, after the card's): click it when you're ready, or **Skip to verdict** to jump straight to the result. A note may appear at the top. **"Some effects unavailable: …"** names the parts that used a stand-in this time (for example the voice or the music); **"Some commentary used the template script"** means the AI announcer was slow, so ready-made commentary was used. Either way the captions always carry the show, and the fight and its numbers are the same.
 
 ![The intro: Grizzly bear VS 6 gray wolves, an announcer caption, and Start the fight and Skip to verdict buttons](images/user-guide/10-intro.png)
 
@@ -174,7 +174,7 @@ The fight replays one of the simulated fights. The floating minus numbers are da
 
 ![The animated fight: a grizzly bear facing six wolves in a pixel-art forest, with a damage number above the bear](images/user-guide/11-fight.jpg)
 
-At the end, the verdict shows the winner, their win chance, and the reason in one line.
+At the end, the verdict shows the winner, their win chance, and the reason in one line. When the fight is nearly 50/50 (the win range reaches 50%), it says **"Too close to call"** with a slight edge to one side instead of crowning a winner, on the card, the reveal and the arena.
 
 ![The verdict: "Winner: 6 gray wolves!", win chance 78% with range 75–80% over 1,000 simulated fights, and the deciding factor: numbers decided it](images/user-guide/12-verdict.jpg)
 
@@ -223,7 +223,7 @@ The app politely turns some requests away, and tells you why:
 |---|---|---|
 | **Real people** (alive or historical) | It's not fair or kind to stage fights between real people. | "We keep real people out of the ring. Try a type of fighter instead, like a Roman legionary or a medieval knight." |
 | **Named characters**, from stories or from myth | They belong to their creators or their legends, and they have no real-world stats to look up. | "Named characters, from stories or from myth, sit this one out. Try a creature type instead, like a dragon or a giant robot." |
-| **Named deities** (Zeus, Thor) | No sources measure them, and they matter to many people. A generic kind, such as "an angel", is fine. | "Gods are above our pay grade. Try a mythical creature, like a griffin, instead." |
+| **Named deities** (Zeus, Thor) | No sources measure them, and they matter to many people. Generic kinds (a god, an angel) are allowed by the rules, but in live mode the app can't find stats for them yet, so the fight is called off (a known limit). | "Gods are above our pay grade. Try a mythical creature, like a griffin, instead." |
 | **Firearms and explosives** | The app keeps things PG. | "No firearms or explosives in this arena. Vehicles and machines are welcome, like a bulldozer." |
 | **Groups of people** (nations, armies, teams) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
 | **Abstract ideas, places, landforms, planets** | They aren't physical fighters with measurable stats. | A message explaining what kinds of fighters work. |
@@ -247,6 +247,7 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **No announcer voice** | Sound is optional, and the captions always carry the show. Click **Play sound**, check that **Mute** is off and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
 | **`npm run setup` ends with "not a git repository" or "git is not recognized"** | You downloaded the ZIP instead of cloning. The installs already finished, so you can ignore it and go on. |
 | **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and skipped [step 5](#step-5-build-the-knowledge-base-live-mode-only). Stop the app with Ctrl+C, run `npm run ingest` once, then `npm start` again. |
+| **"Some effects unavailable: research"** on the broadcast | The knowledge base wasn't built, so the app used estimates instead of looked-up stats. In live mode, stop the app with Ctrl+C, run `npm run ingest` once ([step 5](#step-5-build-the-knowledge-base-live-mode-only)), then `npm start` again. |
 | **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then run `npm run ingest` once and restart the app. |
 
 Still stuck? Run `npm run env:check`. It checks your settings file and says what to fix, without showing any secret values.
