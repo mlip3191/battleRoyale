@@ -15,7 +15,13 @@ from app.media import audio
 from app.models.narration import Script, ScriptLine
 from app.providers.live import http
 from app.providers.live.http import ProviderError, post_bytes
-from app.providers.live.tts import LiveTTS, audition_filename, is_stock_voice, speech_options
+from app.providers.live.tts import (
+    LiveTTS,
+    audition_filename,
+    is_stock_voice,
+    is_usable_voice,
+    speech_options,
+)
 from app.providers.registry import ServiceConfig, get_provider
 from tests.conftest import mock_settings
 
@@ -116,6 +122,21 @@ async def test_the_default_voice_id_is_still_sent() -> None:
     await live_tts(server).speak("Hello", "default")
     [body] = server.bodies()
     assert body["voice"] == "default"
+
+
+async def test_a_voice_id_with_stray_spaces_is_sent_trimmed() -> None:
+    server = Recorder()
+    await live_tts(server).speak("Hello", " default ")
+    [body] = server.bodies()
+    assert body["voice"] == "default"
+
+
+@pytest.mark.parametrize(
+    ("voice_id", "usable"),
+    [("default", True), (" default ", True), ("", False), ("  ", False), ("Replace-Me", False)],
+)
+def test_is_usable_voice_rejects_blank_and_placeholder_ids(voice_id: str, usable: bool) -> None:
+    assert is_usable_voice(voice_id) is usable
 
 
 @pytest.mark.parametrize("reply", [b"ID3\x04fake mp3 bytes", b"", b"RIFF\x00\x00"])

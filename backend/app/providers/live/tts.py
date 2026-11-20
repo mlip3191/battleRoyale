@@ -47,8 +47,8 @@ class LiveTTS:
     # Return WAV bytes of text read in voice_id (blank or placeholder ids use the service default).
     async def speak(self, text: str, voice_id: str) -> bytes:
         payload = self.options | {"input": text, "response_format": RESPONSE_FORMAT}
-        if _usable_voice(voice_id):
-            payload["voice"] = voice_id
+        if is_usable_voice(voice_id):
+            payload["voice"] = voice_id.strip()
         data = await post_bytes(
             provider="tts",
             base_url=self.config.base_url,
@@ -77,8 +77,8 @@ class LiveTTS:
         return [voice for voice in voices if isinstance(voice.get("id"), str)]
 
 
-# False for a blank or "replace-me" voice id, which would get a 422 and a silent show.
-def _usable_voice(voice_id: str) -> bool:
+# False for a blank or "replace-me" voice id (422 risk); speak() skips it, startup warns.
+def is_usable_voice(voice_id: str) -> bool:
     return bool(voice_id.strip()) and "replace-me" not in voice_id.lower()
 
 
