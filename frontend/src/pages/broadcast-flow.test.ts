@@ -333,6 +333,23 @@ describe("notes and verdict", () => {
     expect(v.why).toBe(result.deciding_factor_explainer);
   });
 
+  test("a winner whose win range includes 50% is too close to call (#476)", () => {
+    const close = {
+      ...result,
+      outcome: "win_1" as const,
+      win_prob: [0.5, 0.5] as [number, number],
+      win_prob_ci95: [
+        [0.47, 0.53],
+        [0.47, 0.53],
+      ] as [[number, number], [number, number]],
+    };
+    const v = verdictReveal(close, ["Kangaroo", "Ostrich"]);
+    expect(v.headline).toBe("Too close to call! Slight edge: Ostrich");
+    expect(v.odds).toBe(
+      "Win chance 50% - range 47-53%, over 1,000 simulated fights.",
+    );
+  });
+
   test("draw and no contest have no winner's odds", () => {
     const names = ["a", "b"];
     expect(verdictReveal({ ...result, outcome: "draw" }, names)).toMatchObject({

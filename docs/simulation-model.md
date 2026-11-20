@@ -167,6 +167,10 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 
 The 95% interval is a Wilson score interval on the share of runs won. Because every run draws different stats, the shares already blend in input uncertainty: when the stat ranges are narrow the fight's outcome is more predictable, so the win share moves toward 0 or 1 and the interval narrows (tested in `tests/property/test_simulation_engine.py`). The interval does *not* separately model uncertainty in the constants above.
 
+## When the verdict is "too close to call" (#476)
+
+The result's `outcome` is whichever of win 0, win 1 and draw happened most often, so a fight at 50% still has a "winner". The screens do not crown it: **a winner whose 95% win range reaches 50% (the low end of its Wilson interval is at most 0.5) is too close to call.** The results page then says "Too close to call: slight edge X" instead of "Winner: X", and the broadcast reveal says "Too close to call! Slight edge: X". The odds, the range and the deciding-factor sentence are unchanged, no number changes, and a draw or no contest is shown as before. One rule, `isTooCloseToCall` in `frontend/src/components/Verdict.tsx`, is used by both screens. The wording is a first draft for Dillon to settle.
+
 ## Not modeled yet
 
 Fatigue for living fighters (`endurance_s` only stops machines). A `no_contest` reports `habitat` (cannot reach) or `attack_force_n` (cannot hurt) as its deciding factor.
