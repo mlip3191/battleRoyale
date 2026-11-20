@@ -125,6 +125,8 @@ Open your web browser (Chrome, Edge, Safari or Firefox) and go to **http://local
 
 ![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button, example matchups and the showcase battles](images/user-guide/05-home.png)
 
+On the battle and results pages, a **Home** button in the top bar brings you back here.
+
 **To stop the app:** click the terminal window and press **Ctrl+C**. To start it again later, open a terminal in the same folder and run `npm start`. You don't need to repeat steps 1 to 5.
 
 ## 3. Use it
@@ -142,7 +144,7 @@ Good examples:
 
 Counts can be numbers or words ("a dozen house cats"), up to 10,000 per side. Size phrases like "horse-sized duck" work too: the app scales the duck up using both animals' real weights.
 
-**Fighters that work best today:** the app has hand-checked stat sheets for 15 fighters: African elephant, African lion, bald eagle, bulldozer, duck, gorilla, gray wolf, grizzly bear, honey badger, horse, house cat, king cobra, main battle tank, Roman legionary, and saltwater crocodile. Any other fighter still gets a battle, but its stats are estimates, not looked up. A name the app can't place, or one it isn't allowed to use, is called off with a friendly message instead.
+**Fighters that work best today:** the app has hand-checked stat sheets for 15 fighters: African elephant, African lion, bald eagle, bulldozer, duck, gorilla, gray wolf, grizzly bear, honey badger, horse, house cat, king cobra, main battle tank, Roman legionary, and saltwater crocodile. Any other fighter still gets a battle, but its stats are estimates, not looked up. An animal that isn't on the list fights back, but on generic estimated stats, so treat its result as a rough guess (a polar bear counts as about one gray wolf). A name the app can't place, or one it isn't allowed to use, is called off with a friendly message instead.
 
 ![The matchup "a bear vs 6 wolves in a forest" typed into the box](images/user-guide/06-typed.png)
 
@@ -164,7 +166,7 @@ While the app researches and simulates, a ticker shows what it's doing and a lis
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 
-Then the show starts: the announcer introduces the fighters, with captions on screen. Click **Start the fight** when you're ready, or **Skip to verdict** to jump straight to the result. If a note says some effects are unavailable, the announcer voice couldn't be made this time; the captions always carry the show, and the fight still works.
+Then the show starts: the announcer introduces the fighters, with captions on screen. The intro has its own **Start the fight** button (a second one, after the card's): click it when you're ready, or **Skip to verdict** to jump straight to the result. If a note says some effects are unavailable, the announcer voice couldn't be made this time; the captions always carry the show, and the fight still works.
 
 ![The intro: Grizzly bear VS 6 gray wolves, an announcer caption, and Start the fight and Skip to verdict buttons](images/user-guide/10-intro.png)
 
@@ -221,7 +223,7 @@ The app politely turns some requests away, and tells you why:
 |---|---|---|
 | **Real people** (alive or historical) | It's not fair or kind to stage fights between real people. | "We keep real people out of the ring. Try a type of fighter instead, like a Roman legionary or a medieval knight." |
 | **Named characters**, from stories or from myth | They belong to their creators or their legends, and they have no real-world stats to look up. | "Named characters, from stories or from myth, sit this one out. Try a creature type instead, like a dragon or a giant robot." |
-| **Named deities** (Zeus, Thor) | No sources measure them, and they matter to many people. A generic kind, like "a god" or "an angel", is fine. | "Gods are above our pay grade. Try a mythical creature, like a griffin, instead." |
+| **Named deities** (Zeus, Thor) | No sources measure them, and they matter to many people. A generic kind, such as "an angel", is fine. | "Gods are above our pay grade. Try a mythical creature, like a griffin, instead." |
 | **Firearms and explosives** | The app keeps things PG. | "No firearms or explosives in this arena. Vehicles and machines are welcome, like a bulldozer." |
 | **Groups of people** (nations, armies, teams) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
 | **Abstract ideas, places, landforms, planets** | They aren't physical fighters with measurable stats. | A message explaining what kinds of fighters work. |
