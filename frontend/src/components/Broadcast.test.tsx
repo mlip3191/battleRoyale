@@ -107,7 +107,9 @@ function renderHeaderAt(path: string) {
 test("the Home button shows on the battle and results pages and leads home", () => {
   for (const path of ["/battle/b1", "/battle/b1/results"]) {
     renderHeaderAt(path);
-    fireEvent.click(screen.getByRole("link", { name: "Home" }));
+    const home = screen.getByRole("link", { name: "Home" });
+    expect(home.getAttribute("href")).toBe("/");
+    fireEvent.click(home);
     expect(screen.getByText("Home page")).toBeTruthy();
     expect(screen.queryByRole("link", { name: "Home" })).toBeNull();
     cleanup();

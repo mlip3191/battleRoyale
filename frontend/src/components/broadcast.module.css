@@ -3,6 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-height: 2.75rem; /* the Home button's height, so the bar is the same on every page */
   padding: 0.75rem 1rem;
   background: var(--panel);
   border-bottom: 3px solid var(--neon);
@@ -23,6 +24,15 @@
   font-family: var(--font-digits);
   color: var(--hot);
   font-weight: 700;
+  white-space: nowrap;
+}
+
+/* On a phone, a smaller logo keeps the bar on one line next to LIVE and Home. */
+@media (max-width: 30rem) {
+  .logo {
+    font-size: 1.2rem;
+    letter-spacing: 0.08em;
+  }
 }
 
 .headerRight {
@@ -41,6 +51,7 @@
   color: var(--text);
   text-decoration: none;
   text-transform: uppercase;
+  white-space: nowrap;
   background: var(--panel);
   border: 2px solid var(--neon);
   border-radius: 4px;
