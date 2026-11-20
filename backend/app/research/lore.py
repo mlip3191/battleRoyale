@@ -9,7 +9,8 @@ the quote to say the creature is big (#391). Anything that fails is blocked as "
 outage gives no sheet, never a guess.
 
 When the model answers found false it also picks one reason from a fixed list (#403). Code maps
-the two harmless reasons (a real animal, an object or machine) to "not a legend", which falls
+the harmless reasons (a real animal, an object or machine, a generic kind of human or
+supernatural being) to "not a legend", which falls
 back to an all-estimate sheet (#401); every other reason, and a missing or invalid one, stays
 blocked. The model only picks a label; it never sets a number. A name with no Wikipedia article
 is asked about too, with the name alone and a marker in place of the article: found false goes
@@ -71,8 +72,9 @@ GIANT_ANALOGS = {
 }
 BIG_WORDS = r"big|large|huge|giant\w*|enormous|massive|colossal|monstrous|immense"
 NO_ARTICLE = "(no Wikipedia article was found)"  # sent in place of the article text (#403)
-# Why the model answers found false (#403). Only the first two mean "a plausible fighter, just not
-# a legend"; the rest, and anything else, are refusals. Fixed here and in prompts/lore_extract.md.
+# Why the model answers found false (#403). Only the first three (#444 added generic_kind) mean "a
+# plausible fighter, just not a legend"; the rest, and anything else, are refusals. Fixed here and
+# in prompts/lore_extract.md.
 NOT_A_LEGEND_REASONS = frozenset({"real_animal", "object_or_machine", "generic_kind"})
 REFUSAL_REASONS = frozenset({"person", "deity", "named_character", "weapon", "nonsense"})
 

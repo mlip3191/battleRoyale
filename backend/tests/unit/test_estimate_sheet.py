@@ -250,6 +250,12 @@ async def test_generic_kinds_fall_back_to_estimates_and_named_ones_stay_blocked(
             FighterRequest(entity=name, raw=f"a {name}")
         )
         assert estimated and sheet.display_name == name.capitalize()
+        from app.models.stats import Body
+
+        if name == "sword":  # an object stays an inert object
+            assert sheet.body == Body.INERT and sheet.category == ESTIMATE_CATEGORY
+        else:  # a generic kind fights as a living human archetype
+            assert sheet.body == Body.LIVING and sheet.category == "human_archetype"
     for name, reason in [("pope", "person"), ("zeus", "deity"), ("rifle", "weapon")]:
         go_live(monkeypatch, ScriptedChat({"found": False, "reason": reason}))
         with pytest.raises(StageFailed):

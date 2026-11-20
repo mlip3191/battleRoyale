@@ -8,8 +8,11 @@ with no stored facts and no model extraction, so each physical stat is its categ
 The category is "other" because nothing in code says what kind of thing an unknown fighter is:
 FighterRequest carries no category, and choosing one from the name would need a model. So the
 fighter is treated like the seed list's objects (an inert body on land with no weapon), and
-every stat is labeled `is_estimate` with a note saying so. This sheet is never cached in the
-sheet store, so a later real sheet for the same name isn't shadowed by it.
+every stat is labeled `is_estimate` with a note saying so. The one signal code does have is the
+legend lookup's fixed reason (#453, #444): `real_animal` gives a living mammal and `generic_kind`
+a living human archetype (see `estimate_sheet`); an object, mock mode or no reason stays inert.
+This sheet is never cached in the sheet store, so a later real sheet for the same name isn't
+shadowed by it.
 """
 
 import re

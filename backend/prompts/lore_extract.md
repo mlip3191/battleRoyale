@@ -50,7 +50,11 @@ fits the article best:
   priest, a monk, a samurai, a knight, a god, an angel, a demon, a valkyrie, a titan. A creature
   named in the plural or with a lower-case type word ("god", "gods", "angel") is a generic kind
   even when the article is about a particular figure of that name; a specific god's own name
-  (Zeus, Thor, Anubis, Odin) is always "deity", whatever its case.
+  (Zeus, Thor, Anubis, Odin, Satan, Lucifer, Buddha, Jesus, Allah) is always "deity", whatever
+  its case. A generic kind is NEVER a person defined by a firearm, an explosive or violence as a
+  crime (a gunman, sniper, terrorist, assassin, shooter, bomber, criminal, gangster) or by a hate
+  movement (a nazi): choose "person" for those. When unsure whether a human type qualifies,
+  choose "person".
 - "person": a real person (alive or historical), a named individual, a human religious figure
   (the Pope, a prophet, a saint), or a group of people (an army, a nation, a team).
 - "deity": one named god or goddess (Zeus, Thor, Anubis, Allah, a capitalized "God").
