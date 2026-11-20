@@ -28,7 +28,7 @@ A short summary of what testers said, with no names.
 
 ## Top 3 to fix before the freeze
 
-Sent to Mike on: ___ (due the evening of Sat Nov 21)
+Notes posted on #50 by 3 pm Sat Nov 21 (T-numbers only, no personal details); Mike picks the top 3 that evening.
 
 1.
 2.

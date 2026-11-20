@@ -4,7 +4,7 @@ We're testing the app with 3–5 people from outside the team (friends, family, 
 
 - **Who can test:** adults only (18+), or a parent's written consent for anyone younger.
 - **Length:** about 15 minutes per session. Each task gets about 3 minutes; after that, mark it "gave up" and move on.
-- **When:** by the afternoon of Sat Nov 21. Each facilitator sends their filled-in notes sheet to Dillon by 3 pm, and the top 3 go to Mike that evening.
+- **When:** by the afternoon of Sat Nov 21. Each facilitator posts their filled-in notes as a comment on issue #50 by 3 pm, and Mike picks the top 3 that evening. #50 is public: T-numbers only, no names or personal details.
 - **Who runs it:** one teammate as the facilitator. The facilitator reads the script, watches, and takes notes. They don't help unless the tester is stuck for more than a minute.
 - **Where:** in person at the facilitator's computer if you can. On a video call, give the tester remote control of your screen; if you drive the mouse for them, they can't discover hovering for a quote, Mute, or Skip, and the sound depends on the call. Run at least some sessions in person. Don't record video calls.
 - **Mode:** live mode (`npm run env:setup` done, `npm start`). Task 3 needs live mode, because mock mode never asks a clarifying question. If live mode is down, run in mock mode, skip task 3, and note it; for tasks 4 and 5, use one of the five showcase battles on the home page. A facilitator setting up live mode for the first time can follow [docs/onboarding.md](../onboarding.md).
@@ -13,8 +13,9 @@ We're testing the app with 3–5 people from outside the team (friends, family, 
 ## Before each session (2 minutes)
 
 1. Run `npm run doctor`, then start the app and open http://localhost:8000 in a fresh browser window.
-2. Play one example battle through to the verdict. This catches a live-mode outage or a called-off fighter before the tester arrives.
-3. Open a fresh browser window for the tester, and have a notes sheet ready (below), one per tester.
+2. Make sure the knowledge base is built: `npm run ingest` must have finished once on this computer (about 30 minutes; do it the day before, not just before a session). Without it, research falls back, off-list fighters get absurd estimates, and fights can end in a No Contest, which a tester would log as a product finding.
+3. Play one example battle through to the verdict. This catches a live-mode outage or a called-off fighter before the tester arrives. Also type one off-list matchup (for example "a tiger vs a goose"), because the examples use hand-checked fighters and won't show a setup problem. If the battle page says "Some effects unavailable: research", stop and fix setup (run `npm run ingest`) before the tester arrives.
+4. Open a fresh browser window for the tester, and have a notes sheet ready (below), one per tester.
 
 ## Script (read this out)
 
@@ -37,12 +38,15 @@ Read each task out, then watch. Don't point at the screen or name the button. Gi
 
 - **Animals off the fighter list fight back, on generic stats.** Since #441 and #453, a tiger, moose or penguin is no longer called off and fights as a living animal, but on generic mammal estimates, and every one of its stats is labeled an estimate. So an off-list matchup can look odd (a polar bear about as strong as one wolf, or "a lion vs a tiger" going to the lion 100% because only the lion has a real sheet); that's a known limit, so log the tester's reaction (question 3, trust), not a new bug. In task 4, watch whether the tester notices the estimate tags and what they make of them.
 - **Getting around.** There's a Home button in the top bar (#464). Tonight's card and the quick question scroll into view, and the card's button is "Start the fight!" (#467). The home page has five showcase battles.
-- **Two verdict bugs are fixed on main (Nov 20).** A verdict that contradicted itself ("WINNER: HONEY BADGER!" over "Duck came out ahead in spite of its size", #474) and a 50% coin flip shown as a winner (#476, now "Too close to call") are both merged. If a tester still sees either, check that your copy is up to date before logging it. Still open, log as known: "We assumed" can show internal model text (#475), and on a coin flip the spoken outro still says "Your winner: X!" while the banner says "Too close to call" (#482).
+- **Two verdict bugs are fixed on main (Nov 20).** A verdict that contradicted itself ("WINNER: HONEY BADGER!" over "Duck came out ahead in spite of its size", #474) and a 50% coin flip shown as a winner (#476, now "Too close to call") are both merged. If a tester still sees either, check that your copy is up to date before logging it. Still open, log as known: "We assumed" can show internal model text (#475), and on a coin flip the spoken outro still says "Your winner: X!" while the banner says "Too close to call" (#482). "Too close to call" now shows on the card, the reveal and the arena banner (#478): note how the tester reacts to it.
 - **The quick question's buttons all lead to a fight.** In task 3, "Grizzly" uses the hand-checked stat sheet; the others fight on estimates ("Polar" loses to the 6 wolves 99.7% of the time). Note which button they press, and suggest Grizzly only if they ask.
 - **Announcer voice: check it on the day. No music.** The live voice landed on Nov 19 (#443); music is cut. If your example battle says "Captions only this time, no announcer voice", check that `ANNOUNCER_VOICE_ID` in your `.env` is `default` as in `.env.example` (an older placeholder value makes the voice service refuse every line; #454 makes the app skip a placeholder). If the voice still isn't working, tell the tester up front that it's captions only, so "no sound" isn't logged as a new finding, and don't spend task time on Mute.
+- **Some fighters fail closed (#444, post-MVP).** "a god", "a priest" or "a sword" can end with "We don't have a stat sheet for ...". That's known: log the tester's reaction, not a new bug.
+- **Blank-circle sprites (#461).** After any mock-mode run on your computer, some fighters (gorilla, grizzly, lion) can show as blank circles in live mode. Check `data/media/sprites/` before the session, and log it as known if it shows up.
+- **Sound starts only on Play sound.** Nothing plays until the tester presses **Play sound** in the audio bar. Watch whether they find it on their own; don't point at it.
 - **Expect pauses.** Reading the matchup takes 7–15 seconds after pressing go (longer with a question), and a whole battle 20–50 seconds.
 
-**Fighter list** (show this only if a tester's own fight in task 2 is called off, or they're stuck for ideas). These have hand-checked stat sheets, and everyday names for them work too ("hippo", "t-rex", "dog"). Since #441, an animal that isn't on the list (tiger, moose, polar bear) fights on estimated stats instead of being called off. These notes go stale fast: re-run "a tiger vs a goose" on the day to confirm.
+**Fighter list** (show this only if a tester's own fight in task 2 is called off, or they're stuck for ideas). These are on the fighter list (12 have hand-checked stat sheets; the rest are built by research), and everyday names for them work too ("hippo", "dog"). Since #441, an animal that isn't on the list (tiger, moose, polar bear) fights on estimated stats instead of being called off. These notes go stale fast: re-run "a tiger vs a goose" on the day to confirm.
 
 > Grizzly bear · Gray wolf · African lion · House cat · Golden retriever · African elephant · Horse · Hippopotamus · Chimpanzee · Gorilla · Honey badger · House mouse · Bald eagle · Duck · Goose · Saltwater crocodile · King cobra · Great white shark · Army ant · Honey bee · Triceratops
 
@@ -102,4 +106,4 @@ Q5 missing:
 
 1. Write each problem in [findings.md](findings.md): which task, what happened, how many testers hit it ("x of N"), severity, and a suggested fix. No names or personal data.
 2. File one issue per finding with `/new-issue` (`type: bug` or `type: feature`, label `usability`).
-3. Send Mike the top 3 that should be fixed before the freeze, by the evening of Sat Nov 21. Rank by severity, then by testers affected, then by whether the fix is size S or M and can land by Nov 22.
+3. Post your notes on #50 by 3 pm on Sat Nov 21 (T-numbers only, no personal details); Mike picks the top 3 that should be fixed before the freeze that evening. Rank by severity, then by testers affected, then by whether the fix is size S or M and can land by Nov 22.
