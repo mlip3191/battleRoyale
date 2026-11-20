@@ -1,5 +1,12 @@
 // Home page, the intake desk (D03): type a matchup, answer one question if needed, start the battle.
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type RefObject,
+} from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ApiError,
@@ -45,6 +52,27 @@ export const TERRAINS = {
   urban: "City streets",
   mountain: "Mountain",
 } satisfies Record<Terrain, string>;
+
+// The card's own button, so it isn't a second "FIGHT!" next to the form's (#462).
+export const START_LABEL = "Start the fight!";
+
+// Bring a card that just appeared into view and put keyboard focus on it, so a first-time
+// user sees it even when it opens below the fold (#462). Smooth scrolling only when the
+// viewer hasn't asked for reduced motion. A layout effect, so it happens as the card mounts.
+function useReveal(ref: RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const reduced = window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    el.scrollIntoView?.({
+      behavior: reduced ? "auto" : "smooth",
+      block: "start",
+    });
+    el.focus({ preventScroll: true });
+  }, [ref]);
+}
 
 const OFFLINE =
   "We couldn't reach the studio. Check your connection and try again.";
@@ -227,6 +255,7 @@ export default function Home() {
       )}
       {result?.status === "clarify" && (
         <Clarify
+          key={result.pending_id ?? result.question}
           result={result}
           busy={step.kind === "result" && !!step.answering}
           error={step.kind === "result" ? step.error : undefined}
@@ -270,8 +299,15 @@ function Clarify({
   onAnswer: (answer: string) => void;
 }) {
   const [own, setOwn] = useState("");
+  const card = useRef<HTMLElement>(null);
+  useReveal(card);
   return (
-    <section className={styles.card} aria-labelledby="clarify-title">
+    <section
+      ref={card}
+      tabIndex={-1}
+      className={styles.card}
+      aria-labelledby="clarify-title"
+    >
       <h2 id="clarify-title">Quick question</h2>
       <p>{result.question}</p>
       {error && <ErrorPanel message={error} />}
@@ -322,6 +358,8 @@ function Confirm({
   const [starting, setStarting] = useState(false);
   const [failed, setFailed] = useState(false);
   const navigate = useNavigate();
+  const card = useRef<HTMLElement>(null);
+  useReveal(card);
 
   const fight = () => {
     setStarting(true);
@@ -335,7 +373,12 @@ function Confirm({
   };
 
   return (
-    <section className={styles.card} aria-labelledby="confirm-title">
+    <section
+      ref={card}
+      tabIndex={-1}
+      className={styles.card}
+      aria-labelledby="confirm-title"
+    >
       <h2 id="confirm-title">Tonight's card</h2>
       {message && <p>{message}</p>}
       <ul className={styles.sides}>
@@ -386,7 +429,7 @@ function Confirm({
         onClick={fight}
         disabled={starting}
       >
-        {starting ? "Ringing the bell…" : "FIGHT!"}
+        {starting ? "Ringing the bell…" : START_LABEL}
       </button>
     </section>
   );
