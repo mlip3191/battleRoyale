@@ -8,14 +8,20 @@ from typing import Any
 
 import httpx
 import pytest
-from pydantic import SecretStr
+from pydantic import SecretStr, ValidationError
 
 from app.config import Settings, use_settings
 from app.media import audio
 from app.models.narration import Script, ScriptLine
 from app.providers.live import http
 from app.providers.live.http import ProviderError, post_bytes
-from app.providers.live.tts import LiveTTS, audition_filename, is_stock_voice, speech_options
+from app.providers.live.tts import (
+    LiveTTS,
+    audition_filename,
+    is_stock_voice,
+    is_usable_voice,
+    speech_options,
+)
 from app.providers.registry import ServiceConfig, get_provider
 from tests.conftest import mock_settings
 
@@ -102,6 +108,37 @@ async def test_speed_one_is_left_out_and_no_style_pitch_or_cloning_is_sent() -> 
         assert field not in body
 
 
+@pytest.mark.parametrize("voice_id", ["", "   ", "replace-me", "REPLACE-ME-voice"])
+async def test_a_blank_or_placeholder_voice_id_is_left_out(voice_id: str) -> None:
+    server = Recorder()
+    await live_tts(server).speak("Hello", voice_id)
+    [body] = server.bodies()
+    assert "voice" not in body
+    assert body == {"model": MODEL, "input": "Hello", "response_format": "wav", "speed": 0.9}
+
+
+async def test_the_default_voice_id_is_still_sent() -> None:
+    server = Recorder()
+    await live_tts(server).speak("Hello", "default")
+    [body] = server.bodies()
+    assert body["voice"] == "default"
+
+
+async def test_a_voice_id_with_stray_spaces_is_sent_trimmed() -> None:
+    server = Recorder()
+    await live_tts(server).speak("Hello", " default ")
+    [body] = server.bodies()
+    assert body["voice"] == "default"
+
+
+@pytest.mark.parametrize(
+    ("voice_id", "usable"),
+    [("default", True), (" default ", True), ("", False), ("  ", False), ("Replace-Me", False)],
+)
+def test_is_usable_voice_rejects_blank_and_placeholder_ids(voice_id: str, usable: bool) -> None:
+    assert is_usable_voice(voice_id) is usable
+
+
 @pytest.mark.parametrize("reply", [b"ID3\x04fake mp3 bytes", b"", b"RIFF\x00\x00"])
 async def test_a_reply_that_is_not_a_wav_raises(reply: bytes) -> None:
     server = Recorder(httpx.Response(200, content=reply, headers={"content-type": "audio/mpeg"}))
@@ -183,6 +220,17 @@ def test_live_mode_builds_the_tts_adapter_with_the_default_model() -> None:
     settings = Settings(_env_file=None, **values)
     assert settings.tts_model == MODEL and settings.announcer_voice_speed == 0.9
     assert isinstance(get_provider("tts", settings), LiveTTS)
+
+
+@pytest.mark.parametrize("speed", [0.25, 4.0])
+def test_the_speed_accepts_the_ends_of_the_service_range(speed: float) -> None:
+    assert Settings(_env_file=None, announcer_voice_speed=speed).announcer_voice_speed == speed
+
+
+@pytest.mark.parametrize("speed", [0.2, 4.1])
+def test_a_speed_outside_the_service_range_is_rejected(speed: float) -> None:
+    with pytest.raises(ValidationError, match="announcer_voice_speed"):
+        Settings(_env_file=None, announcer_voice_speed=speed)
 
 
 def test_the_narration_cache_key_changes_with_the_speed_and_model() -> None:
