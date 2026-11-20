@@ -33,6 +33,10 @@ ANIMAL_REASON = "real_animal"
 ESTIMATE_ANIMAL_CATEGORY = "mammal"
 ESTIMATE_ANIMAL_BODY = "living"
 ESTIMATE_ANIMAL_WEAPONS = ("teeth",)
+# A generic kind of human or supernatural being the lookup does not call a legend (#444: a priest, a
+# samurai, "a god") is a living, human-sized fighter built from the human archetype defaults.
+GENERIC_KIND_REASON = "generic_kind"
+ESTIMATE_GENERIC_CATEGORY = "human_archetype"
 
 
 # The all-estimate sheet for `name` (the fighter as the user typed it, e.g. "wolverine"). `kind` is
@@ -41,13 +45,21 @@ ESTIMATE_ANIMAL_WEAPONS = ("teeth",)
 def estimate_sheet(name: str, kind: str | None = None) -> StatSheet:
     display = display_name_for(name)
     animal = kind == ANIMAL_REASON
-    category = ESTIMATE_ANIMAL_CATEGORY if animal else ESTIMATE_CATEGORY
+    generic = kind == GENERIC_KIND_REASON
+    living = animal or generic
+    category = (
+        ESTIMATE_ANIMAL_CATEGORY
+        if animal
+        else ESTIMATE_GENERIC_CATEGORY
+        if generic
+        else ESTIMATE_CATEGORY
+    )
     profile = FighterProfile(
         fighter_id=fighter_slug(display),
         display_name=display,
         media_name=media_name_for(display, category),
         category=category,
-        body=ESTIMATE_ANIMAL_BODY if animal else ESTIMATE_BODY,
+        body=ESTIMATE_ANIMAL_BODY if living else ESTIMATE_BODY,
         habitat=ESTIMATE_HABITAT,
         weapons=ESTIMATE_ANIMAL_WEAPONS if animal else ESTIMATE_WEAPONS,
     )

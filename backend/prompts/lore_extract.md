@@ -44,11 +44,21 @@ always better than a guess.
 When you answer found false, also give "reason": exactly one of these words, the one that
 fits the article best:
 - "real_animal": a real animal, breed or species (a moose, a pug, an okapi).
-- "object_or_machine": an ordinary object, tool, vehicle or machine (a forklift, a canoe).
-- "person": a real person or a group of people.
-- "deity": a god, goddess or any deity.
+- "object_or_machine": an ordinary object, tool, natural object, vehicle or machine (a forklift,
+  a canoe, a rock, a boulder, a tree, a sword), even when the article is a disambiguation page.
+- "generic_kind": a generic TYPE of human or supernatural being, never one named individual: a
+  priest, a monk, a samurai, a knight, a god, an angel, a demon, a valkyrie, a titan. A creature
+  named in the plural or with a lower-case type word ("god", "gods", "angel") is a generic kind
+  even when the article is about a particular figure of that name; a specific god's own name
+  (Zeus, Thor, Anubis, Odin) is always "deity", whatever its case.
+- "person": a real person (alive or historical), a named individual, a human religious figure
+  (the Pope, a prophet, a saint), or a group of people (an army, a nation, a team).
+- "deity": one named god or goddess (Zeus, Thor, Anubis, Allah, a capitalized "God").
 - "named_character": one particular named individual from myth or fiction.
-- "weapon": a firearm, explosive or other weapon.
+- "weapon": any firearm (a rifle, pistol, shotgun, machine gun, cannon), explosive (a bomb,
+  grenade, dynamite, a missile) or weapon of mass destruction. Always choose "weapon" for these.
+  A sword, a bow, a spear, an axe, a club or a vehicle is NOT a weapon here: choose
+  "object_or_machine".
 - "nonsense": anything else (a place, a film, a band, a list of meanings, gibberish, or when
   you are not sure).
 If the message says no Wikipedia article was found, answer found false and pick the reason

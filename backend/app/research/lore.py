@@ -73,7 +73,7 @@ BIG_WORDS = r"big|large|huge|giant\w*|enormous|massive|colossal|monstrous|immens
 NO_ARTICLE = "(no Wikipedia article was found)"  # sent in place of the article text (#403)
 # Why the model answers found false (#403). Only the first two mean "a plausible fighter, just not
 # a legend"; the rest, and anything else, are refusals. Fixed here and in prompts/lore_extract.md.
-NOT_A_LEGEND_REASONS = frozenset({"real_animal", "object_or_machine"})
+NOT_A_LEGEND_REASONS = frozenset({"real_animal", "object_or_machine", "generic_kind"})
 REFUSAL_REASONS = frozenset({"person", "deity", "named_character", "weapon", "nonsense"})
 
 
