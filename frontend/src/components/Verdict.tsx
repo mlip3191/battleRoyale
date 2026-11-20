@@ -77,6 +77,17 @@ export const average = (value: number) =>
 export const winnerOf = (result: SimulationResult) =>
   result.outcome === "win_0" ? 0 : result.outcome === "win_1" ? 1 : null;
 
+// A winner whose 95% win range reaches 50% is a coin flip, not a win (#476). One rule, used by
+// the results headline, the broadcast reveal and the arena end banner. It compares the number the
+// viewer sees (the low end rounded to a whole percent, as `winRange` prints it), so a page that
+// shows "range 50-58%" never sits next to "Winner:". See docs/simulation-model.md.
+export const isTooCloseToCall = (result: SimulationResult) => {
+  const winner = winnerOf(result);
+  return (
+    winner !== null && Math.round(result.win_prob_ci95[winner][0] * 100) <= 50
+  );
+};
+
 // The big headline, the odds per side, and why it went that way.
 export function VerdictBanner({
   result,
@@ -89,7 +100,9 @@ export function VerdictBanner({
   const explainer = explainerOf(result);
   const headline =
     winner !== null
-      ? `Winner: ${names[winner]}`
+      ? isTooCloseToCall(result)
+        ? `Too close to call: slight edge ${names[winner]}`
+        : `Winner: ${names[winner]}`
       : result.outcome === "draw"
         ? "It's a draw"
         : "No contest";
