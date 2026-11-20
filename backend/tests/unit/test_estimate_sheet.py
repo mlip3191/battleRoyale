@@ -197,3 +197,90 @@ async def test_a_seed_fighter_whose_build_failed_still_fails_the_battle(
         "failed",
         stages.NOT_FOUND.format(name="pickup truck"),
     )
+
+
+# --- #453: a real animal off the seed list fights as a living animal, not an inert object ------
+# The legend lookup's fixed reason (real_animal / object_or_machine) now reaches the estimate.
+# Code decides from that reason alone: no model text, no model number. Every stat stays a labeled
+# estimate from code defaults.
+
+
+def test_a_real_animal_estimate_is_a_living_fighter_with_a_bite() -> None:
+    from app.models.stats import Body
+
+    sheet = estimate_sheet("moose", "real_animal")
+    assert sheet.body == Body.LIVING and "teeth" in sheet.weapons and sheet.habitat == "land"
+    assert sheet.category == "mammal" and sheet.display_name == "Moose"
+    assert all(stat.is_estimate and stat.source is None for stat in sheet.stats.values())
+    assert sheet.stats[StatName.ATTACK_FORCE].value > 0
+    assert sheet.sheet_hash == compute_sheet_hash(sheet.stats)
+
+
+def test_an_object_or_no_reason_stays_inert_as_before() -> None:
+    from app.models.stats import Body
+
+    assert estimate_sheet("forklift", "object_or_machine") == estimate_sheet("forklift")
+    plain = estimate_sheet("forklift")
+    assert plain.body == Body.INERT and plain.category == ESTIMATE_CATEGORY
+    assert estimate_sheet("moose", None) == estimate_sheet("moose")  # mock mode: no reason
+    assert estimate_sheet("moose", "something else") == estimate_sheet("moose")  # fail closed
+
+
+def test_the_animal_estimate_is_the_mammal_category_default_and_nothing_else() -> None:
+    sheet = estimate_sheet("moose", "real_animal")
+    for stat, value in sheet.stats.items():
+        if stat in BEHAVIORAL:
+            continue
+        assert value.method == "category_default"
+        assert value.value == category_default("mammal", stat).value
+
+
+async def test_a_real_animal_that_is_not_a_legend_keeps_its_reason(monkeypatch) -> None:
+    from app.models.stats import Body
+    from app.research import sheet_store
+    from tests.unit.test_legend_cache import ScriptedChat
+    from tests.unit.test_mythical_battles import go_live
+
+    chat = ScriptedChat({"found": False, "reason": "real_animal"})
+    go_live(monkeypatch, chat)
+    request = FighterRequest(entity="moose", raw="a moose")
+    first, estimated = await stages.lookup_fighter_or_estimate(request)
+    again, _ = await stages.lookup_fighter_or_estimate(request)  # answered from the memory
+    assert estimated and first.body == Body.LIVING and again.body == Body.LIVING
+    assert chat.calls == 1 and sheet_store.not_a_legend_kind("moose") == "real_animal"
+
+
+async def test_an_object_that_is_not_a_legend_stays_inert(monkeypatch) -> None:
+    from app.models.stats import Body
+    from tests.unit.test_legend_cache import ScriptedChat
+    from tests.unit.test_mythical_battles import go_live
+
+    go_live(monkeypatch, ScriptedChat({"found": False, "reason": "object_or_machine"}))
+    sheet, estimated = await stages.lookup_fighter_or_estimate(
+        FighterRequest(entity="forklift", raw="a forklift")
+    )
+    assert estimated and sheet.body == Body.INERT
+
+
+def test_a_moose_v_a_forklift_is_no_longer_a_no_contest() -> None:
+    from app.simulation.engine import run
+
+    fight = matchup({"entity": "moose"}, {"entity": "forklift"})
+    sheets = [
+        estimate_sheet("moose", "real_animal"),
+        estimate_sheet("forklift", "object_or_machine"),
+    ]
+    assert run(fight, sheets, runs=100, explain=False).outcome == "win_0"
+
+
+def test_a_tiger_does_not_lose_to_a_small_bird_every_time() -> None:
+    # The bug bash's goose has no hand-verified sheet; the duck (a similar bird) stands in.
+    from app.models.stats import StatSheet
+    from app.simulation import benchmark as bm
+    from app.simulation.engine import run
+
+    duck = bm.seed_sheets().get(FighterRequest(entity="duck", raw="duck"))
+    assert isinstance(duck, StatSheet)
+    fight = matchup({"entity": "tiger"}, {"entity": "duck"})
+    result = run(fight, [estimate_sheet("tiger", "real_animal"), duck], runs=200, explain=False)
+    assert result.win_prob[1] < 1.0 and result.outcome != "no_contest"
