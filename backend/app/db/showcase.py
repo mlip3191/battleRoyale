@@ -1,7 +1,7 @@
 """Showcase battles (G08, #47): saved battles shipped in data/showcase/ for a fresh clone.
 
 The export copies chosen finished battles and the media they use out of the app database and
-data/media/; the import loads them back into an empty database at startup, with no endpoint
+data/media/; the import loads the ones a database is missing at startup, with no endpoint
 calls. data/showcase/ holds manifest.json (ids and titles, in home-page order), one JSON file
 per battle under battles/, and the media files under media/ with the same paths as data/media/.
 """
@@ -123,13 +123,15 @@ def load_manifest(showcase_dir: Path = SHOWCASE_DIR) -> list[ShowcaseBattle]:
     return [ShowcaseBattle.model_validate(row) for row in json.loads(path.read_text("utf-8"))]
 
 
-# Load the showcase into an empty database and copy its media; returns how many were loaded.
-# A database that already has battles is left alone, so nothing a user made is replaced.
+# Load every showcase battle the database doesn't have yet and copy its media; returns how many
+# were loaded. A battle already in the database (the same id) is never replaced, so nothing a user
+# made is touched, and a setup that already has other battles still gets the showcase (#47).
 def import_showcase(
     connection: sqlite3.Connection, media_dir: Path, showcase_dir: Path = SHOWCASE_DIR
 ) -> int:
-    rows = load_manifest(showcase_dir)
-    if not rows or connection.execute("SELECT 1 FROM battles LIMIT 1").fetchone():
+    present = {row[0] for row in connection.execute("SELECT battle_id FROM battles")}
+    rows = [row for row in load_manifest(showcase_dir) if row.battle_id not in present]
+    if not rows:
         return 0
     # Read and check every battle before saving any, so a missing or broken file leaves the
     # database empty (and the next start tries again) instead of half loaded.

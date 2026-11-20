@@ -48,7 +48,7 @@ def create_app(
 ) -> FastAPI:
     settings = settings or get_settings()
 
-    # At startup: load the showcase into an empty database, and in live mode say if the
+    # At startup: add any missing showcase battles, and in live mode say if the
     # knowledge base still needs building. Neither step may stop the app from starting.
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
