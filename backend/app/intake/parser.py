@@ -61,6 +61,19 @@ _BIG_NUMBERS = set(SCALES) | (set(MULTIPLIERS) - {"pair", "couple"})  # thousand
 NUMBER_WORDS = (
     (set(UNITS) - {"one"}) | _BIG_NUMBERS | {f"{w}s" for w in _BIG_NUMBERS} | {"zero"}
 )  # "hundreds", "thousands" count too
+# Model notes about its own output or about counts never reach the card (#475): the user should
+# only see notes about their matchup, and code owns counts (it writes its own "Assumed 1 ..."
+# note). Whole words, any case. Left out on purpose because real matchups use them: "field"
+# ("open field terrain"), "object" ("a toaster is an object"), "model" ("a model rocket"),
+# "output" ("power output"), "array" ("a solar array"), and "key".
+INTERNAL_NOTE = re.compile(
+    r"\b(?:"
+    r"schemas?|json|formats?|formatted|formatting|prompts?|instructions?|top[\s-]level"
+    r"|null|parse|parsed|parser|parsing|tokens?|language\s+model"
+    r"|counts?|counted|quantity|quantities|defaulted|numbers?"
+    r")\b",
+    re.I,
+)
 
 REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it another way?"
 COMMON_KIND_NOTE = "Still not sure which kind you meant, so we'll use the most common one."
@@ -296,9 +309,14 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
     return request, notes
 
 
-# Model notes worth showing: short, non-empty, number-free (number rule), a few at most.
+# Model notes worth showing: short, non-empty, number-free (number rule), only about the
+# matchup (no talk of the schema, format or counts, #475), a few at most.
 def _model_notes(parsed: ParsedMatchup) -> list[str]:
-    notes = [n.strip() for n in parsed.assumptions if n.strip() and not has_number(n)]
+    notes = [
+        n.strip()
+        for n in parsed.assumptions
+        if n.strip() and not has_number(n) and not INTERNAL_NOTE.search(n)
+    ]
     return [n[:MAX_NOTE_CHARS] for n in notes][:MAX_MODEL_ASSUMPTIONS]
 
 
