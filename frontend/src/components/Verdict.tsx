@@ -106,8 +106,10 @@ export function VerdictBanner({
               <dt>{names[side]}</dt>
               <dd className={styles.value}>{winRange(result, side)}</dd>
               <dd className={styles.muted}>
-                about {average(result.mean_survivors[side])} left standing on
-                average
+                {/* A fighter that ran away counts as standing, so a side that never wins
+                    can still show some (#463). */}
+                about {average(result.mean_survivors[side])} still standing at
+                the end on average, including any that ran away
               </dd>
             </div>
           ))}
