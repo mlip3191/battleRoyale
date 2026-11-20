@@ -25,6 +25,27 @@
   font-weight: 700;
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* An outline button like the page's others, so "go home" is visible on every page but home. */
+.homeButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.3rem 0.9rem;
+  font: 700 0.9rem var(--font-digits);
+  color: var(--text);
+  text-decoration: none;
+  text-transform: uppercase;
+  background: var(--panel);
+  border: 2px solid var(--neon);
+  border-radius: 4px;
+}
+
 .lowerThird {
   display: inline-block;
   margin: 1rem 0;
