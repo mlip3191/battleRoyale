@@ -382,3 +382,50 @@ def test_an_agreeing_sample_gives_the_same_sentence_as_before() -> None:
 
     decision = decide(matchup_of(1, 1), [alpha, bravo], base, simulate)
     assert "Alpha" in decision.explainer and "Bravo came out ahead" not in decision.explainer
+
+
+# --- #479: the stalemate and "wins comfortably" checks read the full run, not the sample ---------
+
+
+def _mixed(side0: int, side1: int, draws: int):
+    from app.simulation.engine import DRAW, RunOutcome
+
+    out = [RunOutcome(0, (1, 0), 10.0, []) for _ in range(side0)]
+    out += [RunOutcome(1, (0, 1), 10.0, []) for _ in range(side1)]
+    return out + [RunOutcome(DRAW, (1, 1), 10.0, []) for _ in range(draws)]
+
+
+def _same_as_base(base):
+    """A factor re-run that changes nothing, so no factor 'decides' and the fallback text shows."""
+
+    def simulate(variant, sheets, terrain, n, scaled, **extra):
+        return base[:n]
+
+    return simulate
+
+
+def _decide_text(base) -> str:
+    from app.simulation.decide import decide
+
+    alpha, bravo = make_sheet("Alpha", size_m=1.0), make_sheet("Bravo", size_m=3.0)
+    return decide(matchup_of(1, 1), [alpha, bravo], base, _same_as_base(base)).explainer
+
+
+def test_a_draw_heavy_sample_does_not_make_a_stalemate_when_the_full_run_has_a_winner() -> None:
+    # The first 200 runs are all draws, the other 800 go to Alpha: the full run is not a stalemate.
+    base = _mixed(0, 0, 200) + _mixed(800, 0, 0)
+    assert "stalemate" not in _decide_text(base).lower()
+
+
+def test_a_real_stalemate_is_still_called_one() -> None:
+    base = _mixed(50, 50, 900)  # mostly draws over every run
+    assert "stalemate" in _decide_text(base).lower()
+
+
+def test_wins_comfortably_follows_the_full_run_not_the_sample() -> None:
+    # The sample is Alpha 195 of 200 (0.975) but the full run is Alpha 850 of 1,000 (0.85).
+    base = _mixed(195, 5, 0) + _mixed(655, 145, 0)
+    assert "comfortably" not in _decide_text(base)
+    # And the reverse: a 0.85 sample (170 of 200) inside a 0.95 full run (950 of 1,000).
+    base = _mixed(170, 30, 0) + _mixed(780, 20, 0)
+    assert "comfortably" in _decide_text(base)
