@@ -154,9 +154,9 @@ If a fighter is vague, the app asks **one** question, such as *"Which type of be
 
 ### Check tonight's card and pick a battlefield
 
-The app shows how it read your matchup: each side, how many, and any assumptions it made. Pick a **Battlefield** from the list (arena, open field, forest, open water, shoreline, city streets or mountain), then click **FIGHT!** on the card.
+The page scrolls down to the card, which shows how the app read your matchup: each side, how many, and any assumptions it made. Pick a **Battlefield** from the list (arena, open field, forest, open water, shoreline, city streets or mountain), then click **Start the fight!** on the card.
 
-![The "Tonight's card" panel showing Bear (grizzly) vs 6 × Wolf (gray), the Battlefield set to Forest, and a FIGHT! button](images/user-guide/08-card.png)
+![The "Tonight's card" panel showing Bear (grizzly) vs 6 × Wolf (gray), the Battlefield set to Forest, and a Start the fight! button](images/user-guide/08-card.png)
 
 ### Watch the broadcast
 
