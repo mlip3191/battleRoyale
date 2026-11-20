@@ -107,11 +107,12 @@ class LoreOutcome:
     creature: Creature | None = None
     blocked: bool = False
     not_a_legend: bool = False
+    kind: str | None = None
+    """With not_a_legend: the fixed reason ("real_animal" or "object_or_machine") (#453)."""
 
 
 UNAVAILABLE = LoreOutcome()
 NONSENSE = LoreOutcome(blocked=True)
-NOT_A_LEGEND = LoreOutcome(not_a_legend=True)
 
 
 class _TextOnly(HTMLParser):
@@ -253,7 +254,7 @@ async def fetch_legend_article(client: httpx.AsyncClient, name: str) -> SourceDo
 # otherwise a block, so a missing, unknown or oddly typed reason fails closed.
 def outcome_for_not_found(reason: object) -> LoreOutcome:
     if isinstance(reason, str) and reason.strip().lower() in NOT_A_LEGEND_REASONS:
-        return NOT_A_LEGEND
+        return LoreOutcome(not_a_legend=True, kind=reason.strip().lower())  # the reason goes on
     return NONSENSE
 
 
