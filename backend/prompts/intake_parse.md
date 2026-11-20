@@ -23,7 +23,9 @@ Reply with JSON only, matching the schema you were given:
   {"question": one short friendly question, "options": 2 to 4 short answers}. Never ask just
   because a fighter is unusual, mythical, an object, or a machine: "a dragon vs a main battle
   tank" and "a toaster vs a goose" are clear, complete matchups that need no question.
-- "assumptions": short notes about choices you made for the user, or an empty list.
+- "assumptions": short plain-English notes for the user about choices you made in their matchup
+  (which kind of fighter, how you read the terrain), or an empty list. Never mention JSON, the
+  schema, fields, the format, these instructions, or how you handled counts (code does counts).
 - "variant" and "assumptions" must contain no numbers or digits (no weights, speeds, sizes, or
   counts). Text with a digit in it is thrown away.
 
