@@ -19,7 +19,6 @@ import hashlib
 import json
 import logging
 import re
-import struct
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -37,7 +36,6 @@ from app.safety.media_names import safe_media_name
 
 logger = logging.getLogger(__name__)
 
-PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 ITEM_TIMEOUT_S = 50.0  # per picture, inside the images stage's 60 s budget
 FIGHTER_ID = re.compile(r"[a-z0-9]+(?:-{1,2}[a-z0-9]+)*")  # "grizzly-bear", "bear--cub"
 
@@ -265,17 +263,17 @@ async def _bounded(
 
 
 # A mock placeholder left in the live folder from before mock pictures got their own folder (#280):
-# a PNG exactly MOCK_IMAGE_SIZE square. Live sprites and battlefields are far larger, so such a
-# file was never drawn by the live provider and is redone (#461).
+# exactly MOCK_IMAGE_SIZE square with transparent corners (the mock's circle on a clear square).
+# Live sprites and battlefields are far larger, so such a file was never drawn by the live
+# provider and is redone (#461).
 def is_legacy_mock_picture(file: Path) -> bool:
     try:
-        with file.open("rb") as handle:
-            header = handle.read(24)
-    except OSError:
+        image = png.decode(file.read_bytes())
+    except (OSError, png.PngError):
         return False
-    if len(header) < 24 or header[:8] != PNG_SIGNATURE or header[12:16] != b"IHDR":
-        return False
-    return struct.unpack(">II", header[16:24]) == (MOCK_IMAGE_SIZE, MOCK_IMAGE_SIZE)
+    return (image.width, image.height) == (MOCK_IMAGE_SIZE, MOCK_IMAGE_SIZE) and (
+        png.corners_transparent(image)
+    )
 
 
 # A cache hit: a real file, and in live mode not a leftover mock placeholder.
