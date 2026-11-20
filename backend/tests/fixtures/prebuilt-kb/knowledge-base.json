@@ -48,7 +48,10 @@
  ],
  "embedding_dim": 8,
  "embedding_model_sha256": "a2e5432b8ccdcfdb7cec4add299c6815f8e3d5e5bb36051534bafa6c3470fbe5",
- "format": 2,
+ "format": 3,
+ "vector_files": [
+  "vectors-1.f16"
+ ],
  "vector_type": "float16",
  "vectors_sha256": "e7c9296cc5d184df31193c440416b077c6ef0a7f88c1a9f407bfa1675f8a8779"
 }

@@ -8,8 +8,11 @@ fingerprint of the model name, never the name itself). Otherwise it says so and 
 
 - `knowledge-base.json`: each document's title, URL, license, retrieval date and content hash,
   and its passages (no article HTML).
-- `vectors.f16`: one little-endian float16 vector per passage, in the JSON's order (the app
-  stores them as float32; half precision halves the file without changing search results).
+- `vectors-1.f16`, `vectors-2.f16`, `vectors-3.f16`: one little-endian float16 vector per
+  passage, in the JSON's order, cut into parts under 4.5 MiB so each fits the pre-commit hook's
+  5 MB limit. The app joins them in the order `knowledge-base.json` lists them and checks the
+  SHA-256 of the joined bytes (it stores the vectors as float32; half precision halves the size
+  without changing search results).
 
 To export again after a full live ingest (rarely: each export adds about 16 MB to git history):
 `uv run --directory backend python -m app.research.kb_prebuilt`

@@ -94,7 +94,9 @@ def create_app(
 
 # Load the showcase if the database is empty; in live mode, warn about a placeholder voice id and
 # fill an empty knowledge base from the prebuilt files (D-66), or warn that it needs an ingest.
-def _startup(settings: Settings, showcase_dir: Path | None, prebuilt_dir: Path) -> None:
+def _startup(
+    settings: Settings, showcase_dir: Path | None, prebuilt_dir: Path | None = None
+) -> None:
     if settings.provider_mode == "live" and not is_usable_voice(settings.announcer_voice_id):
         logger.warning(PLACEHOLDER_VOICE)
     try:
@@ -111,12 +113,16 @@ def _startup(settings: Settings, showcase_dir: Path | None, prebuilt_dir: Path) 
         logger.warning("Startup checks skipped (%s: %s).", type(error).__name__, error)
 
 
-# Load the prebuilt knowledge base into an empty one, and say plainly what happened.
+# Load the prebuilt knowledge base into an empty one (none given: skip), and say what happened.
 def _fill_knowledge_base(
-    connection: sqlite3.Connection, settings: Settings, prebuilt_dir: Path
+    connection: sqlite3.Connection, settings: Settings, prebuilt_dir: Path | None
 ) -> None:
     try:
-        result = load_prebuilt(connection, settings.embeddings_model, prebuilt_dir)
+        result = (
+            load_prebuilt(connection, settings.embeddings_model, prebuilt_dir)
+            if prebuilt_dir is not None
+            else LoadResult(LoadOutcome.MISSING)
+        )
     except (ValueError, KeyError, TypeError) as error:  # a damaged file: build it with ingest
         logger.warning("The prebuilt knowledge base wasn't loaded (%s).", error)
         result = LoadResult(LoadOutcome.MISSING)

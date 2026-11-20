@@ -1,6 +1,7 @@
 """The prebuilt knowledge base (D-66, #438): export, load into an empty one, and the model check."""
 
 import asyncio
+import hashlib
 import json
 import sqlite3
 import struct
@@ -10,14 +11,14 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app.config import Settings
+from app.config import REPO_ROOT, Settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
 from app.main import PREBUILT_MISMATCH, create_app
 from app.providers.mock.text import MockEmbedder
 from app.research.kb_prebuilt import (
     MANIFEST_FILE,
-    VECTORS_FILE,
+    PART_MAX_BYTES,
     LoadOutcome,
     export_prebuilt,
     load_prebuilt,
@@ -83,6 +84,11 @@ def fresh(tmp_path: Path) -> Iterator[sqlite3.Connection]:
     connection = database(tmp_path / "fresh.db")
     yield connection
     connection.close()
+
+
+# Every file in folder by name, to compare whole exports.
+def files(folder: Path) -> dict[str, bytes]:
+    return {path.name: path.read_bytes() for path in sorted(folder.iterdir())}
 
 
 def top(connection: sqlite3.Connection, fighter_id: str) -> list[tuple[str, float]]:
@@ -182,8 +188,7 @@ def test_loading_and_exporting_again_gives_the_same_bytes(
 ) -> None:
     assert load_prebuilt(fresh, MODEL, FIXTURE).outcome is LoadOutcome.LOADED
     export_prebuilt(fresh, ["horse", "duck"], MODEL, tmp_path / "again")
-    for name in (MANIFEST_FILE, VECTORS_FILE):
-        assert (tmp_path / "again" / name).read_bytes() == (FIXTURE / name).read_bytes()
+    assert files(tmp_path / "again") == files(FIXTURE)
 
 
 def test_a_number_too_large_for_float16_is_refused() -> None:
@@ -198,8 +203,7 @@ def test_export_is_the_same_bytes_every_time_and_holds_no_model_name(tmp_path: P
         export_prebuilt(source, ["duck", "horse"], MODEL, tmp_path / "b")
     finally:
         source.close()
-    for name in (MANIFEST_FILE, VECTORS_FILE):
-        assert (tmp_path / "a" / name).read_bytes() == (tmp_path / "b" / name).read_bytes()
+    assert files(tmp_path / "a") == files(tmp_path / "b")
     manifest_bytes = (tmp_path / "a" / MANIFEST_FILE).read_bytes()
     assert MODEL.encode() not in manifest_bytes and b"\r\n" not in manifest_bytes
     assert json.loads(manifest_bytes)["embedding_model_sha256"] == model_fingerprint(MODEL)
@@ -211,8 +215,7 @@ def test_the_committed_fixture_matches_a_fresh_export(tmp_path: Path) -> None:
         export_prebuilt(source, ["horse", "duck"], MODEL, tmp_path / "out")
     finally:
         source.close()
-    for name in (MANIFEST_FILE, VECTORS_FILE):
-        assert (tmp_path / "out" / name).read_bytes() == (FIXTURE / name).read_bytes()
+    assert files(tmp_path / "out") == files(FIXTURE)
 
 
 def test_export_leaves_out_fighters_off_the_list(tmp_path: Path) -> None:
@@ -260,12 +263,12 @@ def test_a_damaged_vectors_file_is_refused_and_leaves_the_database_empty(
     folder = tmp_path / "damaged"
     folder.mkdir()
     (folder / MANIFEST_FILE).write_bytes((FIXTURE / MANIFEST_FILE).read_bytes())
-    vectors = bytearray((FIXTURE / VECTORS_FILE).read_bytes())
+    vectors = bytearray((FIXTURE / "vectors-1.f16").read_bytes())
     vectors[0] ^= 0xFF
-    (folder / VECTORS_FILE).write_bytes(bytes(vectors))
+    (folder / "vectors-1.f16").write_bytes(bytes(vectors))
     with pytest.raises(ValueError, match="fingerprint"):
         load_prebuilt(fresh, MODEL, folder)
-    (folder / VECTORS_FILE).write_bytes(bytes(vectors[:-4]))
+    (folder / "vectors-1.f16").write_bytes(bytes(vectors[:-4]))
     with pytest.raises(ValueError, match="one 8-number vector"):
         load_prebuilt(fresh, MODEL, folder)
     assert fresh.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 0
@@ -273,3 +276,67 @@ def test_a_damaged_vectors_file_is_refused_and_leaves_the_database_empty(
 
 def test_a_missing_folder_is_reported_as_missing(fresh: sqlite3.Connection, tmp_path: Path) -> None:
     assert load_prebuilt(fresh, MODEL, tmp_path / "none").outcome is LoadOutcome.MISSING
+
+
+# Split into small parts, the loader joins them back: same fingerprint, same search results.
+def test_vectors_split_into_parts_load_the_same_as_one_file(
+    tmp_path: Path, fresh: sqlite3.Connection
+) -> None:
+    source = ingested(tmp_path / "source.db")
+    try:
+        export_prebuilt(source, ["horse", "duck"], MODEL, tmp_path / "parts", part_bytes=24)
+    finally:
+        source.close()
+    manifest = json.loads((tmp_path / "parts" / MANIFEST_FILE).read_text(encoding="utf-8"))
+    whole = json.loads((FIXTURE / MANIFEST_FILE).read_text(encoding="utf-8"))
+    assert manifest["vector_files"] == ["vectors-1.f16", "vectors-2.f16", "vectors-3.f16"]
+    assert manifest["vectors_sha256"] == whole["vectors_sha256"]
+    joined = b"".join((tmp_path / "parts" / name).read_bytes() for name in manifest["vector_files"])
+    assert joined == (FIXTURE / "vectors-1.f16").read_bytes()
+    assert load_prebuilt(fresh, MODEL, tmp_path / "parts").outcome is LoadOutcome.LOADED
+    assert top(fresh, "horse")
+
+
+# A second, shorter export into the same folder leaves no stale last part behind.
+def test_exporting_again_replaces_the_old_parts(tmp_path: Path) -> None:
+    source = ingested(tmp_path / "source.db")
+    try:
+        export_prebuilt(source, ["horse", "duck"], MODEL, tmp_path / "out", part_bytes=24)
+        export_prebuilt(source, ["horse", "duck"], MODEL, tmp_path / "out")
+    finally:
+        source.close()
+    assert files(tmp_path / "out") == files(FIXTURE)
+
+
+def test_a_missing_or_path_like_part_is_refused_and_leaves_the_database_empty(
+    tmp_path: Path, fresh: sqlite3.Connection
+) -> None:
+    folder = tmp_path / "parts"
+    source = ingested(tmp_path / "source.db")
+    try:
+        export_prebuilt(source, ["horse", "duck"], MODEL, folder, part_bytes=24)
+    finally:
+        source.close()
+    (folder / "vectors-2.f16").unlink()
+    with pytest.raises(ValueError, match="vectors-2.f16 is missing"):
+        load_prebuilt(fresh, MODEL, folder)
+    manifest = json.loads((folder / MANIFEST_FILE).read_text(encoding="utf-8"))
+    manifest["vector_files"] = ["../vectors-1.f16"]
+    (folder / MANIFEST_FILE).write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(ValueError, match="unexpected vectors file"):
+        load_prebuilt(fresh, MODEL, folder)
+    assert fresh.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 0
+
+
+# The committed data: every file under the hook's 5 MiB limit, and the joined parts whole.
+def test_the_committed_prebuilt_files_fit_the_hook_and_match_their_fingerprint() -> None:
+    folder = REPO_ROOT / "data" / "prebuilt-kb"
+    if not (folder / MANIFEST_FILE).is_file():
+        pytest.skip("no prebuilt knowledge base in this checkout")
+    assert PART_MAX_BYTES < 5 * 1024 * 1024
+    assert all(path.stat().st_size <= 5 * 1024 * 1024 for path in folder.iterdir())
+    manifest = json.loads((folder / MANIFEST_FILE).read_text(encoding="utf-8"))
+    joined = b"".join((folder / name).read_bytes() for name in manifest["vector_files"])
+    assert hashlib.sha256(joined).hexdigest() == manifest["vectors_sha256"]
+    count = sum(len(document["chunks"]) for document in manifest["documents"])
+    assert len(joined) == count * manifest["embedding_dim"] * 2

@@ -37,7 +37,7 @@ MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM
 
 ## For the instructor
 
-Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 26 and uv; run `npm run env:setup` in a terminal and enter the course host and API key (or copy `.env.example` to `.env` and fill it in by hand; `npm run env:check` confirms either way); `npm run setup`; `npm run ingest` (builds the knowledge base, once); `npm start`; open http://localhost:8000. Showcase battles load automatically the first time the app starts. A full first-time guide is in `docs/user-guide.md`. With `PROVIDER_MODE=mock` the app runs without any endpoints.
+Only course-provided endpoints and public Wikipedia/Wikidata APIs are used, so no extra API keys are needed. To run (Windows or Mac, no Docker): install Node 26 and uv; run `npm run env:setup` in a terminal and enter the course host and API key (or copy `.env.example` to `.env` and fill it in by hand; `npm run env:check` confirms either way); `npm run setup`; `npm start`; open http://localhost:8000. Showcase battles and a prebuilt knowledge base (`data/prebuilt-kb/`, D-66) load automatically the first time the app starts; `npm run ingest` is only needed to refresh the articles, or if the app says your embedding model differs from the one that built it. A full first-time guide is in `docs/user-guide.md`. With `PROVIDER_MODE=mock` the app runs without any endpoints.
 
 If `npm run setup` stops on Windows with "failed to hardlink file" (os error 396), run it again with copying turned on: `$env:UV_LINK_MODE="copy"; npm run setup` in PowerShell (or `set "UV_LINK_MODE=copy" && npm run setup` in Command Prompt).
 

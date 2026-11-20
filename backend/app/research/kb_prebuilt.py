@@ -5,10 +5,13 @@ passages (chunks) and their vectors only: no article HTML, no model name, host, 
 no export time, so the same knowledge base always exports to the same bytes.
 
   knowledge-base.json  the documents and their passages, plus a manifest (format, vector size,
-                       a SHA-256 fingerprint of the embedding model name, the vectors' SHA-256)
-  vectors.f16          one little-endian float16 vector per passage, in the JSON's order. The
-                       database keeps float32; half precision halves the file and leaves the
-                       retrieval ranking unchanged (checked on the 15 retrieval cases, #438)
+                       a SHA-256 fingerprint of the embedding model name, the vectors files'
+                       names in order, and the SHA-256 of their joined bytes)
+  vectors-1.f16, ...   one little-endian float16 vector per passage, in the JSON's order, split
+                       into parts under 4.5 MiB so each stays under the pre-commit hook's 5 MB
+                       limit (Mike, #438); the loader joins them. The database keeps float32;
+                       half precision halves the size and leaves the retrieval ranking unchanged
+                       (checked on the 15 retrieval cases, #438)
 """
 
 import hashlib
@@ -30,8 +33,9 @@ from app.research.seed_fighters import load_seed_fighters
 
 PREBUILT_KB_DIR = REPO_ROOT / "data" / "prebuilt-kb"
 MANIFEST_FILE = "knowledge-base.json"
-VECTORS_FILE = "vectors.f16"
-FORMAT = 2
+VECTORS_GLOB = "vectors*.f16"  # every vectors file an export writes (and replaces)
+FORMAT = 3
+PART_MAX_BYTES = 9 * 512 * 1024  # 4.5 MiB: each part stays under the hook's 5 MiB file limit
 FLOAT_BYTES = 4  # float32, as the database stores each vector
 FILE_FLOAT_BYTES = 2  # float16, as the file stores it
 
@@ -75,7 +79,11 @@ def to_single(blob: bytes) -> bytes:
 
 # Write the given fighters' documents, passages and vectors to folder; returns the passage count.
 def export_prebuilt(
-    connection: sqlite3.Connection, fighter_ids: list[str], model_name: str, folder: Path
+    connection: sqlite3.Connection,
+    fighter_ids: list[str],
+    model_name: str,
+    folder: Path,
+    part_bytes: int = PART_MAX_BYTES,
 ) -> int:
     if not model_name.strip():
         raise ValueError("no embedding model name is set, so the file can't record a fingerprint")
@@ -91,14 +99,26 @@ def export_prebuilt(
         "embedding_dim": size,
         "embedding_model_sha256": model_fingerprint(model_name),
         "vectors_sha256": hashlib.sha256(blob).hexdigest(),
+        "vector_files": write_vector_parts(blob, folder, part_bytes),
         "chunks": len(vectors),
         "documents": documents,
     }
-    folder.mkdir(parents=True, exist_ok=True)
     text = json.dumps(manifest, ensure_ascii=False, indent=1, sort_keys=True) + "\n"
     (folder / MANIFEST_FILE).write_bytes(text.encode("utf-8"))  # bytes: LF on every OS
-    (folder / VECTORS_FILE).write_bytes(blob)
     return len(vectors)
+
+
+# Replace folder's vectors files with blob cut into numbered parts; returns their names in order.
+def write_vector_parts(blob: bytes, folder: Path, part_bytes: int = PART_MAX_BYTES) -> list[str]:
+    folder.mkdir(parents=True, exist_ok=True)
+    for old in folder.glob(VECTORS_GLOB):  # a shorter export must not leave a stale last part
+        old.unlink()
+    names: list[str] = []
+    for index, start in enumerate(range(0, max(len(blob), 1), part_bytes), start=1):
+        name = f"vectors-{index}.f16"
+        (folder / name).write_bytes(blob[start : start + part_bytes])
+        names.append(name)
+    return names
 
 
 # The documents (sorted by id) with their passages in order, and each passage's vector bytes.
@@ -135,7 +155,7 @@ def _collect(
 def load_prebuilt(
     connection: sqlite3.Connection, model_name: str, folder: Path = PREBUILT_KB_DIR
 ) -> LoadResult:
-    if not (folder / MANIFEST_FILE).is_file() or not (folder / VECTORS_FILE).is_file():
+    if not (folder / MANIFEST_FILE).is_file():
         return LoadResult(LoadOutcome.MISSING)
     if connection.execute("SELECT 1 FROM documents LIMIT 1").fetchone() is not None:
         return LoadResult(LoadOutcome.NOT_EMPTY)
@@ -147,19 +167,34 @@ def load_prebuilt(
     ):
         return LoadResult(LoadOutcome.MODEL_MISMATCH)
     size = int(manifest["embedding_dim"])
-    blob = (folder / VECTORS_FILE).read_bytes()
+    blob = _read_vector_parts(manifest, folder)
     _check_vectors(manifest, blob, size)
     _store(connection, manifest["documents"], to_single(blob), size)
     return LoadResult(LoadOutcome.LOADED, len(manifest["documents"]), int(manifest["chunks"]))
 
 
-# The vectors file must be whole, unchanged, and hold one vector per passage.
+# The manifest's vectors files, read in order and joined; a missing or path-like name is refused.
+def _read_vector_parts(manifest: dict[str, Any], folder: Path) -> bytes:
+    names = manifest.get("vector_files")
+    if not isinstance(names, list) or not names:
+        raise ValueError(f"{MANIFEST_FILE} doesn't list its vectors files")
+    parts: list[bytes] = []
+    for name in names:
+        if not isinstance(name, str) or Path(name).name != name or not name.endswith(".f16"):
+            raise ValueError(f"{MANIFEST_FILE} names an unexpected vectors file: {name!r}")
+        if not (folder / name).is_file():
+            raise ValueError(f"the vectors file {name} is missing from {folder.name}/")
+        parts.append((folder / name).read_bytes())
+    return b"".join(parts)
+
+
+# The joined vectors must be whole, unchanged, and hold one vector per passage.
 def _check_vectors(manifest: dict[str, Any], blob: bytes, size: int) -> None:
     count = sum(len(document["chunks"]) for document in manifest["documents"])
     if count != manifest["chunks"] or len(blob) != count * size * FILE_FLOAT_BYTES:
-        raise ValueError(f"{VECTORS_FILE} doesn't hold one {size}-number vector per passage")
+        raise ValueError(f"the vectors files don't hold one {size}-number vector per passage")
     if hashlib.sha256(blob).hexdigest() != manifest["vectors_sha256"]:
-        raise ValueError(f"{VECTORS_FILE} doesn't match the fingerprint in {MANIFEST_FILE}")
+        raise ValueError(f"the vectors files don't match the fingerprint in {MANIFEST_FILE}")
 
 
 # Write everything in one transaction, so a failure leaves the knowledge base empty.
