@@ -24,6 +24,7 @@ from app.intake.rules import (
     map_terrain,
     normalize_entity,
     read_count,
+    terrain_in_text,
 )
 from app.intake.schema import Clarification, ParsedFighter, ParsedMatchup
 from app.models.matchup import FighterRequest, IntakeResult, Matchup
@@ -388,7 +389,7 @@ def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -
         return vague(parsed)
     max_count = get_settings().sim_max_count
     built = [build_fighter(f, max_count) for f in parsed.fighters]
-    terrain, terrain_note = map_terrain(parsed.terrain)
+    terrain, terrain_note = map_terrain(parsed.terrain or terrain_in_text(text))
     notes = _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
     if terrain_note:
         notes.append(terrain_note)
