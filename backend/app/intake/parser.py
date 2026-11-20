@@ -24,6 +24,7 @@ from app.intake.rules import (
     map_terrain,
     normalize_entity,
     read_count,
+    terrain_in_text,
 )
 from app.intake.schema import Clarification, ParsedFighter, ParsedMatchup
 from app.models.matchup import FighterRequest, IntakeResult, Matchup
@@ -388,7 +389,13 @@ def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -
         return vague(parsed)
     max_count = get_settings().sim_max_count
     built = [build_fighter(f, max_count) for f in parsed.fighters]
-    terrain, terrain_note = map_terrain(parsed.terrain)
+    typed_place = terrain_in_text(text)
+    terrain, terrain_note = map_terrain(parsed.terrain or typed_place)
+    if terrain == Terrain.ARENA and terrain_note is None and typed_place:
+        # a plain "arena" (or none) never hides a typed place; an unknown word keeps its note
+        typed, typed_note = map_terrain(typed_place)
+        if typed != Terrain.ARENA:
+            terrain, terrain_note = typed, typed_note
     notes = _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
     if terrain_note:
         notes.append(terrain_note)
