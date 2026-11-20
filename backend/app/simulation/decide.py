@@ -100,6 +100,10 @@ def decide(
 ) -> Decision:
     """Find the deciding factor of a fight whose baseline outcomes are `base`."""
     fav = _favorite(base)  # the verdict's favorite, from every run: never the sample's (#474)
+    # The stalemate and "wins comfortably" checks below read the same full-run counts as the
+    # verdict (#479); only the factor re-runs use the sample.
+    full_runs = len(base)
+    full_wins = [sum(o.winner == side for o in base) for side in (0, 1)]
     n = min(c.DECIDING_RUNS, len(base))
     base = base[:n]  # the analysis re-runs only this many fights per factor
     base_won, base_left = _score(base, fav, matchup.fighters[fav].count)
@@ -168,14 +172,13 @@ def decide(
     shown = {"scaling": StatName.MASS, "venom": StatName.ATTACK_FORCE}.get(factor, key)
     if factor == "resistance":
         shown = StatName.ATTACK_FORCE
-    wins = [sum(o.winner == side for o in base) for side in (0, 1)]
     draws_from_venom = factor in ("venom", "resistance")  # a poisoned survivor makes a draw
-    if len(base) - wins[0] - wins[1] > max(wins) and not draws_from_venom:
+    if full_runs - full_wins[0] - full_wins[1] > max(full_wins) and not draws_from_venom:
         return Decision(shown, _explain_stalemate())  # most runs were draws: nobody "won"
     if size < c.MIN_EFFECT:
         if skipped:  # an unmeasured factor may be the one that mattered (#341)
             return Decision(shown, _explain_unmeasured())
-        if base_won >= 0.9:
+        if full_wins[fav] / full_runs >= 0.9:
             return Decision(shown, _explain_comfortable(sheets[fav].display_name))
         return Decision(shown, _explain_even())
     return Decision(shown, _explain(key, matchup, sheets, fav, signed >= 0))
