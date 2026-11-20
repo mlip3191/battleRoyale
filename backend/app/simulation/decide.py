@@ -99,9 +99,9 @@ def decide(
     scales: tuple[float, float] = (1.0, 1.0),
 ) -> Decision:
     """Find the deciding factor of a fight whose baseline outcomes are `base`."""
+    fav = _favorite(base)  # the verdict's favorite, from every run: never the sample's (#474)
     n = min(c.DECIDING_RUNS, len(base))
-    base = base[:n]
-    fav = _favorite(base)
+    base = base[:n]  # the analysis re-runs only this many fights per factor
     base_won, base_left = _score(base, fav, matchup.fighters[fav].count)
     skipped: set[str] = set()  # factors the caller would not run (#341); never named in the text
     cache: dict[str, tuple[float, float]] = {}  # factor -> (signed effect, size of effect)

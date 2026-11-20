@@ -66,7 +66,8 @@ class Settings(BaseSettings):
     announcer_voice_id: str = ""
     announcer_voice_style: str = ""  # not sent: the TTS endpoint has no style or pitch field
     # Tempo multiplier sent as the TTS `speed` field (1 = unchanged); D-09's mild slowdown.
-    announcer_voice_speed: float = 0.9
+    # Bounded to 0.25-4.0 inclusive, the range the course TTS service accepts.
+    announcer_voice_speed: float = Field(default=0.9, ge=0.25, le=4.0)
     announcer_voice_consent_file: Path | None = None
 
     # Simulation

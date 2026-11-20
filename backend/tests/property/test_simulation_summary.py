@@ -339,3 +339,46 @@ def test_a_size_reference_keeps_the_plain_sentence():
     small, big = make_sheet("small", size_m=1.0), make_sheet("big", size_m=2.4)
     text = _explained(StatName.SIZE, True, matchup_of(1, 1, ref_0="horse"), [small, big])
     assert text == "Size decided it: Small (1 m) against Big (2.4 m)."
+
+
+# --- #474: the deciding-factor sentence names the verdict's favorite, not the sample's ----------
+
+
+def _outcomes(wins_0: int, wins_1: int):
+    from app.simulation.engine import RunOutcome
+
+    out = [RunOutcome(0, (1, 0), 10.0, []) for _ in range(wins_0)]
+    return out + [RunOutcome(1, (0, 1), 10.0, []) for _ in range(wins_1)]
+
+
+def test_the_sentence_names_the_full_run_favorite_when_the_first_runs_disagree() -> None:
+    from app.simulation.decide import decide
+
+    alpha = make_sheet("Alpha", size_m=1.0)
+    bravo = make_sheet("Bravo", size_m=3.0)
+    # 1,000 runs: side 0 wins 520 and side 1 wins 480, so the verdict is Alpha. But the first 200
+    # (the sample the factor analysis re-runs) go 80 to 120 for Bravo.
+    base = _outcomes(80, 120) + _outcomes(440, 360)
+    assert sum(o.winner == 0 for o in base) > sum(o.winner == 1 for o in base)
+    assert sum(o.winner == 0 for o in base[:200]) < sum(o.winner == 1 for o in base[:200])
+
+    def simulate(variant, sheets, terrain, n, scaled, **extra):
+        return _outcomes(0, n)  # whatever is changed, Bravo takes every fight
+
+    decision = decide(matchup_of(1, 1), [alpha, bravo], base, simulate)
+    assert "Bravo came out ahead" not in decision.explainer
+    assert "Alpha" in decision.explainer
+
+
+def test_an_agreeing_sample_gives_the_same_sentence_as_before() -> None:
+    from app.simulation.decide import decide
+
+    alpha = make_sheet("Alpha", size_m=1.0)
+    bravo = make_sheet("Bravo", size_m=3.0)
+    base = _outcomes(150, 50) + _outcomes(600, 200)  # the sample and the full run both favor Alpha
+
+    def simulate(variant, sheets, terrain, n, scaled, **extra):
+        return _outcomes(0, n)
+
+    decision = decide(matchup_of(1, 1), [alpha, bravo], base, simulate)
+    assert "Alpha" in decision.explainer and "Bravo came out ahead" not in decision.explainer
