@@ -78,6 +78,11 @@ When a user names a kind of fighter without saying which one, we pick:
 | tank | `main-battle-tank` |
 | truck | `pickup-truck` |
 | cactus | `saguaro-cactus` |
+| lion | `african-lion` |
+| badger | `honey-badger` |
+| knight | `medieval-knight` |
+| legionary | `roman-legionary` |
+| retriever | `golden-retriever` |
 
 The rules behind the table:
 
