@@ -152,6 +152,47 @@ async def test_the_cache_key_includes_the_style_version(
     assert (tmp_path / "mock" / "sprites" / "gray-wolf-v999.png").is_file()
 
 
+# A mock placeholder left in the live folder before mock pictures got their own folder (#461).
+def _plant_legacy_placeholder(media: Path, name: str) -> Path:
+    legacy = media / "sprites" / f"{name}-{style.STYLE_VERSION}.png"
+    legacy.parent.mkdir(parents=True)
+    legacy.write_bytes(silhouette_png((200, 200, 200)))
+    return legacy
+
+
+async def test_live_mode_redraws_a_legacy_mock_placeholder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(images, "provider_mode", lambda service: "live")
+    legacy = _plant_legacy_placeholder(tmp_path, "gorilla")
+    fake = FakeImages()
+    asset = await images.make_sprite(sheet("gorilla"), provider=fake, media_dir=tmp_path)
+    assert [call[0] for call in fake.calls] == ["generate", "edit"]  # drawn, not reused
+    assert not asset.fallback and asset.url == f"/media/sprites/gorilla-{style.STYLE_VERSION}.png"
+    assert png.decode(legacy.read_bytes()).pixels.shape[:2] != (64, 64)  # replaced in place
+    again = await images.make_sprite(sheet("gorilla"), provider=fake, media_dir=tmp_path)
+    assert again == asset and len(fake.calls) == 2  # the live picture is now a normal cache hit
+
+
+async def test_live_mode_keeps_a_real_cached_picture(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(images, "provider_mode", lambda service: "live")
+    fake = FakeImages()
+    await images.make_sprite(sheet("gorilla"), provider=fake, media_dir=tmp_path)
+    await images.make_sprite(sheet("gorilla"), provider=fake, media_dir=tmp_path)
+    assert len(fake.calls) == 2  # drawn once only
+
+
+async def test_mock_mode_still_reuses_its_own_small_pictures(tmp_path: Path) -> None:
+    mock_file = tmp_path / "mock" / "sprites" / f"gorilla-{style.STYLE_VERSION}.png"
+    mock_file.parent.mkdir(parents=True)
+    mock_file.write_bytes(silhouette_png((200, 200, 200)))
+    fake = FakeImages()
+    asset = await images.make_sprite(sheet("gorilla"), provider=fake, media_dir=tmp_path)
+    assert fake.calls == [] and not asset.fallback
+
+
 async def test_force_redraws_a_cached_sprite(tmp_path: Path) -> None:
     fake = FakeImages()
     await images.make_sprite(sheet("duck"), provider=fake, media_dir=tmp_path)
