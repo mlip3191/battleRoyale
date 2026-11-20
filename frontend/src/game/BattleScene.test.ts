@@ -22,6 +22,7 @@ function stage(
   result: SimulationResult,
   counts: [number, number],
   reducedMotion: boolean,
+  tooClose = false,
 ) {
   const fighters = [
     { entity: "grizzly bear", count: counts[0] },
@@ -34,6 +35,7 @@ function stage(
     layouts: layoutStage(fighters, []),
     battlefieldUrl: null,
     outcome: result.outcome,
+    tooClose,
     reducedMotion,
     onEvent,
     onFinish,
@@ -281,6 +283,32 @@ describe("retreats", () => {
     const startX = wolves.map((w) => w.x);
     playAll(scene);
     expect(wolves.map((w) => w.x)).toEqual(startX);
+  });
+});
+
+describe("a coin-flip verdict (#476)", () => {
+  test("the arena end banner says too close to call instead of crowning the replayed winner", () => {
+    const { scene } = stage(result, [1, 6], false, true);
+    playAll(scene);
+    expect(scene.texts.some((t) => t.text === "TOO CLOSE TO CALL!")).toBe(true);
+    expect(
+      scene.texts.some(
+        (t) => t.text.endsWith("WIN!") || t.text.endsWith("WINS!"),
+      ),
+    ).toBe(false);
+  });
+
+  test("a clear winner keeps its WINS! banner", () => {
+    const { scene } = stage(result, [1, 6], false, false);
+    playAll(scene);
+    expect(scene.texts.some((t) => t.text === "6 GRAY WOLVES WIN!")).toBe(true);
+  });
+
+  test("a draw is still a draw, whatever the flag says", () => {
+    const draw = { ...result, outcome: "draw" as const };
+    const { scene } = stage(draw, [1, 6], false, true);
+    playAll(scene);
+    expect(scene.texts.some((t) => t.text === "IT'S A DRAW!")).toBe(true);
   });
 });
 
