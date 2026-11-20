@@ -15,6 +15,7 @@ import {
   uniqueSources,
 } from "./StatSheet.tsx";
 import styles from "./stat-sheet.module.css";
+import sheetCss from "./stat-sheet.module.css?raw";
 
 const sheets = (done as unknown as BattleRecord).stat_sheets;
 const [grizzly] = sheets;
@@ -348,4 +349,20 @@ test("the Sources section lists every unique source once, with title, URL, and l
 test("the Sources section says so when nothing was sourced", () => {
   render(<SourceList sheets={[toaster]} />);
   expect(screen.getByText(/every stat here is an estimate/)).toBeTruthy();
+});
+
+test("on a 360 px phone the table wraps long sources and the quote opens in place (#465)", () => {
+  showCards([grizzly]);
+  const table = screen.getByRole("table", {
+    name: `Stats for ${grizzly.display_name}`,
+  });
+  const fromCells = Array.from(table.querySelectorAll("tbody tr")).map(
+    (row) => row.querySelectorAll("td")[1],
+  );
+  expect(styles.from).toBeTruthy();
+  for (const cell of fromCells) expect(cell.className).toContain(styles.from);
+  // jsdom has no layout, so pin the two rules that keep the page from scrolling sideways.
+  expect(sheetCss).toMatch(/\.from\s*\{[^}]*overflow-wrap:\s*anywhere/);
+  const narrow = sheetCss.slice(sheetCss.indexOf("@media (max-width: 30rem)"));
+  expect(narrow).toMatch(/\.quote\s*\{[^}]*position:\s*static/);
 });

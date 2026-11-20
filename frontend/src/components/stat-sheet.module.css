@@ -49,6 +49,11 @@
   border-bottom: 1px solid var(--bg);
 }
 
+/* Long source titles and notes wrap anywhere, so the table fits a 360 px phone (#465). */
+.from {
+  overflow-wrap: anywhere;
+}
+
 .badge {
   position: relative;
 }
@@ -90,6 +95,15 @@
 .badge:hover .quote,
 .badge:focus-within .quote {
   display: block;
+}
+
+/* On a phone the quote opens in place under the link, so it can't push the page sideways (#465). */
+@media (max-width: 30rem) {
+  .quote {
+    position: static;
+    width: auto;
+    margin-top: 0.25rem;
+  }
 }
 
 .tag {

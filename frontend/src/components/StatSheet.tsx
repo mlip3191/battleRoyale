@@ -114,7 +114,7 @@ function StatRow({ name, stat }: { name: string; stat: StatValue }) {
       <td className={styles.value}>
         {formatExact(stat.value)} {stat.unit}
       </td>
-      <td>
+      <td className={styles.from}>
         {stat.source && (
           <SourceBadge source={stat.source} confidence={stat.confidence} />
         )}
