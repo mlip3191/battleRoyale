@@ -149,6 +149,24 @@ def test_the_fair_fight_message_keeps_a_proper_first_word_capitalized(monkeypatc
     assert search.result.message == "A fair fight needs 37 African elephants against 1 gray wolf."
 
 
+def test_a_fight_that_is_already_even_says_so_instead_of_suggesting_the_same_matchup(monkeypatch):
+    """#501: "a fair fight needs 1 gray wolf against 1 gray wolf" read as broken."""
+    fake_engine(monkeypatch, 1, logistic(1))  # the cat's win share is 50% at the count fought
+    search = fair_fight_search(matchup_of(1, 1), [wolf(), house_cat()], main_result(1))
+    assert search.result.count == 1
+    assert (
+        search.result.message
+        == "This fight is already about even: 1 house cat against 1 gray wolf."
+    )
+    assert "A fair fight needs" not in search.result.message
+
+
+def test_a_different_fair_count_still_gets_the_fair_fight_wording(monkeypatch):
+    fake_engine(monkeypatch, 1, logistic(37))
+    search = fair_fight_search(matchup_of(1, 1), [wolf(), house_cat()], main_result(1))
+    assert search.result.message.startswith("A fair fight needs 37 house cats")
+
+
 def test_the_search_shrinks_the_count_when_the_first_probe_is_already_too_strong():
     """A main result from a small fight, reused for a 300-cat matchup (cats win easily)."""
     small = run(matchup_of(1, 1), [house_cat(), wolf()], runs=200, explain=False)
@@ -167,7 +185,7 @@ def test_a_rough_answer_says_about_and_reports_the_real_win_share():
         found = fair_fight(matchup_of(cats, 1), [house_cat(), wolf()])
         assert found.count is not None
         outside = abs(found.win_prob_at_count - 0.5) > c.FAIR_TOLERANCE
-        assert ("about" in found.message) == outside
+        assert ("needs about" in found.message) == outside  # not "already about even" (#501)
         rough += outside
     assert rough >= 1
 
