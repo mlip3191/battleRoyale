@@ -30,6 +30,7 @@ from app.narration.templates import template_scripts
 from app.pipeline import challenger as next_challenger
 from app.providers.registry import get_provider
 from app.research.estimate_sheet import estimate_sheet
+from app.research.on_demand import researched_or_estimate
 from app.research.seed_fighters import fighter_slug, find_seed_fighter
 from app.research.sheet_store import (
     not_a_legend_kind,
@@ -164,7 +165,9 @@ async def lookup_fighter_or_estimate(fighter: FighterRequest) -> tuple[StatSheet
     kind = not_a_legend_kind(slug)  # a real animal fights as one (#453)
     category, size_class = not_a_legend_shape(slug)  # of its kind and size (#517)
     name = _typed_name(fighter.entity, fighter.variant)
-    return estimate_sheet(name, kind, category=category, size_class=size_class), True
+    estimate = estimate_sheet(name, kind, category=category, size_class=size_class)
+    sheet = await researched_or_estimate(estimate, kind, size_class)  # live research (#518)
+    return sheet, all(value.is_estimate for value in sheet.stats.values())
 
 
 # A fighter's sheet for a battle: found, or the all-estimate fallback (see the function above).
