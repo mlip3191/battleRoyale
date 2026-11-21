@@ -20,6 +20,9 @@ can still play it, but not under the reference or stock key. A later show whose 
 works again then misses the reference key and gets the cloned voice. A provider that reports no
 voice (the mocks) is taken as speaking the voice that was asked for.
 
+Counts of 3+ digits are sent to TTS in words ("128" -> "one hundred twenty-eight",
+app/media/spoken_numbers.py, #502); the captions and saved scripts keep the digits.
+
 Files are cached under <data_dir>/media/audio/ by a hash of the full request, so a repeat makes
 no provider call (a cache hit needs a non-empty file). In mock mode they go under
 <data_dir>/media/mock/audio/ instead, so mock audio is never reused live (app/media/files.py).
@@ -42,6 +45,7 @@ from typing import Literal
 
 from app.config import Settings, get_settings
 from app.media import files
+from app.media.spoken_numbers import speech_text
 from app.models.matchup import Matchup
 from app.models.media import Asset
 from app.models.narration import Script
@@ -143,9 +147,15 @@ def announcer_voice(settings: Settings | None = None) -> str:
 # --- requests -----------------------------------------------------------------------------------
 
 
-# The text spoken for one script: its non-blank lines, in order.
+# The text spoken for one script: its non-blank lines, in order, exactly as captioned.
 def spoken_lines(script: Script) -> list[str]:
     return [line.text.strip() for line in script.lines if line.text.strip()]
+
+
+# The same lines as sent to the speech service: counts of 3+ digits in words, so "128 geese" is
+# not misread as "28 geese" (#502). Only the voice hears this; captions keep the digits.
+def speech_lines(script: Script) -> list[str]:
+    return [speech_text(text) for text in spoken_lines(script)]
 
 
 # The request for one script's file. options holds the fixed speech fields the TTS adapter sends
@@ -161,7 +171,7 @@ def narration_request(
     request: dict[str, object] = {
         "version": AUDIO_VERSION,
         "script_kind": script.kind,
-        "lines": spoken_lines(script),
+        "lines": speech_lines(script),  # what is spoken, so a "128" spoken as digits is not reused
         "voice_id": voice_id,
         "pause_s": LINE_PAUSE_S,
         **(options or {}),
@@ -269,7 +279,7 @@ async def make_music(
 # which voice spoke (live TTS), the joined file says it too; lines in two voices are tagged
 # "mixed" so they are not cached under the reference or stock key.
 async def _speak(tts: TTS, script: Script, voice_id: str) -> bytes:
-    clips = [await tts.speak(text, voice_id) for text in spoken_lines(script)]
+    clips = [await tts.speak(text, voice_id) for text in speech_lines(script)]
     voices = {getattr(clip, "voice", None) for clip in clips}
     joined = await asyncio.to_thread(join_wavs, clips, LINE_PAUSE_S)
     if voices == {None}:
