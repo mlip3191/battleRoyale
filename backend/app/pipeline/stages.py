@@ -11,6 +11,7 @@ and no legend fights on an all-estimate sheet from code defaults (#345) and is l
 import asyncio
 import hashlib
 import logging
+import time
 from dataclasses import dataclass, field
 from typing import cast
 
@@ -45,6 +46,8 @@ logger = logging.getLogger(__name__)
 
 # Time limit per stage in seconds, from the ARCHITECTURE §4 stage budget table (research uses
 # the new-fighter budget). The orchestrator reads it on every call, so tests can shrink it.
+# On-demand research (#518) leaves this much of the research stage for the rest of it.
+RESEARCH_MARGIN_S = 3.0
 STAGE_BUDGETS_S: dict[str, float] = {
     "research": 45.0,
     # 15 s, not 3 s (D-63, #359): 1,000 runs plus the deciding-factor analysis took up to 6.9 s
@@ -158,6 +161,7 @@ async def find_fighter(fighter: FighterRequest) -> StatSheet | None:
 # The second value is True for the estimate. A block or failure from find_fighter still raises,
 # so the estimate never gets past a safety block. The estimate is not cached in the sheet store.
 async def lookup_fighter_or_estimate(fighter: FighterRequest) -> tuple[StatSheet, bool]:
+    deadline = time.monotonic() + STAGE_BUDGETS_S["research"] - RESEARCH_MARGIN_S
     sheet = await find_fighter(fighter)
     if sheet is not None:
         return sheet, False
@@ -166,7 +170,11 @@ async def lookup_fighter_or_estimate(fighter: FighterRequest) -> tuple[StatSheet
     category, size_class = not_a_legend_shape(slug)  # of its kind and size (#517)
     name = _typed_name(fighter.entity, fighter.variant)
     estimate = estimate_sheet(name, kind, category=category, size_class=size_class)
-    sheet = await researched_or_estimate(estimate, kind, size_class)  # live research (#518)
+    if fighter.variant:  # an adult's article would give a "baby moose" the wrong numbers
+        return estimate, True
+    sheet = await researched_or_estimate(  # live research (#518), within the stage's time
+        estimate, kind, size_class, title=fighter.entity, deadline=deadline
+    )
     return sheet, all(value.is_estimate for value in sheet.stats.values())
 
 

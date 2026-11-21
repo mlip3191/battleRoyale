@@ -9,11 +9,14 @@ is a bird even when the lookup's label said otherwise. Each extracted stat repla
 estimate's value; every other stat stays the labeled estimate (with its #517 size class). A
 sheet with at least one sourced stat is cached, so later battles reuse it.
 
-The battle waits at most ON_DEMAND_RESEARCH_S. If the build takes longer, the battle fights on the
-estimate and the build carries on in the background, so the next battle gets the researched
-sheet. A name that gave nothing is not tried again for NOTHING_FOUND_MEMORY_S. Researched sheets
-had no safety check of their own, so like legends they are never listed in fighter search or
-offered as the next challenger (sheet_store.search_fighters, challenger.cached_sheets).
+The battle waits at most ON_DEMAND_RESEARCH_S, and never past the research stage's deadline
+(the legend lookup before it can use most of the stage). If the build takes longer, the battle
+fights on the estimate and the build carries on in the background, so the next battle gets the
+researched sheet. A name that gave no sourced stat is not tried again for
+NOTHING_FOUND_MEMORY_S, and an article without an animal taxobox gives nothing, so a name that
+lands on an unrelated page never lends it its numbers. Researched sheets had no safety check of
+their own, so like legends they are never listed in fighter search or offered as the next
+challenger (sheet_store.search_fighters, challenger.cached_sheets).
 """
 
 import asyncio
@@ -69,10 +72,19 @@ TAXOBOX_CLASS = re.compile(
 
 
 # The researched sheet for an unlisted fighter if there is one in time, else its estimate.
+# `title` is the article to read (the fighter as typed, without a variant); `deadline` is the
+# time.monotonic() by which the battle must have its sheet, so the wait never overruns the stage.
 async def researched_or_estimate(
-    estimate: StatSheet, kind: str | None, size_class: str | None = None
+    estimate: StatSheet,
+    kind: str | None,
+    size_class: str | None = None,
+    *,
+    title: str | None = None,
+    deadline: float | None = None,
 ) -> StatSheet:
     if kind not in RESEARCHED_KINDS or _recently_found_nothing(estimate.fighter_id):
+        return estimate
+    if get_settings().provider_mode == "mock":  # no article can be fetched
         return estimate
     connection = connect()
     try:
@@ -82,48 +94,58 @@ async def researched_or_estimate(
         connection.close()
     if cached is not None and cached.category != "mythical":
         return cached
-    if get_settings().provider_mode == "mock":  # no article can be fetched
-        return estimate
     build = _BUILDS.get(estimate.fighter_id)
     if build is None:
-        build = asyncio.create_task(_build(estimate, kind, size_class))
+        article = title or estimate.display_name
+        build = asyncio.create_task(_build(estimate, kind, size_class, article))
         _BUILDS[estimate.fighter_id] = build
         build.add_done_callback(lambda _: _BUILDS.pop(estimate.fighter_id, None))
+    wait = ON_DEMAND_RESEARCH_S
+    if deadline is not None:
+        wait = min(wait, deadline - time.monotonic())
     try:
-        sheet = await asyncio.wait_for(asyncio.shield(build), ON_DEMAND_RESEARCH_S)
+        if wait <= 0:  # no time left this battle; the build still runs for the next one
+            raise TimeoutError
+        sheet = await asyncio.wait_for(asyncio.shield(build), wait)
     except TimeoutError:
         logger.info("Research for %s is still running; fighting on estimates.", estimate.fighter_id)
         return estimate
     return sheet or estimate
 
 
-# Fetch, store and extract the fighter's article; the merged sheet, cached, or None.
-async def _build(estimate: StatSheet, kind: str | None, size_class: str | None) -> StatSheet | None:
+# Fetch, store and extract the fighter's article; the merged sheet, cached, or None. A sheet
+# with no sourced stat (only a better animal kind) is used for this battle but counts as nothing
+# found, so later battles don't redo the whole build.
+async def _build(
+    estimate: StatSheet, kind: str | None, size_class: str | None, title: str
+) -> StatSheet | None:
     try:
-        sheet = await asyncio.wait_for(_research(estimate, kind, size_class), BUILD_LIMIT_S)
+        sheet = await asyncio.wait_for(_research(estimate, kind, size_class, title), BUILD_LIMIT_S)
     except Exception as error:  # noqa: BLE001 - research is a bonus: any failure means estimates
         logger.warning("On-demand research for %s failed: %s", estimate.fighter_id, error)
         sheet = None
-    if sheet is None:
+    if sheet is None or all(value.is_estimate for value in sheet.stats.values()):
         _remember_nothing_found(estimate.fighter_id)
     return sheet
 
 
-# The work of _build, on its own database connection: Wikidata facts, the taxobox's animal kind,
-# the article's passages, then extraction. Only a sheet with a sourced stat is saved.
+# The work of _build, on its own database connection: the taxobox's animal kind, Wikidata facts,
+# the article's passages, then extraction. An article with no animal taxobox gives nothing (it
+# may not be about this animal). Only a sheet with a sourced stat is saved.
 async def _research(
-    estimate: StatSheet, kind: str | None, size_class: str | None
+    estimate: StatSheet, kind: str | None, size_class: str | None, title: str
 ) -> StatSheet | None:
     client = legend_client()
     if client is None:
         return None
-    title = estimate.display_name
     connection = connect()
     try:
         apply_migrations(connection)
         async with client:
-            await _store_wikidata_facts(connection, client, estimate.fighter_id, title)
             animal_kind = await _taxobox_kind(client, title)
+            if animal_kind is None:
+                return None
+            await _store_wikidata_facts(connection, client, estimate.fighter_id, title)
             await ingest_on_demand(
                 connection,
                 client,
@@ -133,13 +155,15 @@ async def _research(
                 title,
             )
         base = estimate
-        if animal_kind is not None and animal_kind != estimate.category:
-            base = estimate_sheet(title, kind, category=animal_kind, size_class=size_class)
+        if animal_kind != estimate.category:
+            base = estimate_sheet(
+                estimate.display_name, kind, category=animal_kind, size_class=size_class
+            )
         providers = (get_provider("chat"), get_provider("embedder"), get_provider("reranker"))
         built = await build_sheet_with_evidence(connection, providers, profile_of(base))
         sheet = merged(base, built)
         if sheet is None:
-            return base if base is not estimate else None  # a better kind, but nothing sourced
+            return base if base is not estimate else None  # a better kind, nothing sourced
         save_sheet(connection, sheet)
         return sheet
     finally:
