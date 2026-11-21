@@ -97,15 +97,17 @@ This downloads everything the app needs. It takes a minute or two the first time
 
 ![Terminal showing npm run setup installing packages and finishing](images/user-guide/03-setup.png)
 
-### Step 5: Build the knowledge base (live mode only)
+### Step 5 (optional): Rebuild the knowledge base
 
-If you did step 3, run this once:
+You can usually skip this step. The app comes with a ready-made knowledge base (the reference articles it researches fighters from), and in live mode it loads it the first time it starts: at step 6 the terminal says "Loaded the prebuilt knowledge base (3299 passages from 30 articles)". In mock mode (you skipped step 3) it isn't needed at all.
+
+Run this only if the app says the prebuilt knowledge base was built with a different embedding model than yours, or you want fresh copies of the articles:
 
 ```bash
 npm run ingest
 ```
 
-It downloads the reference articles the app researches fighters from. It takes a while (about half an hour on a laptop), and it's quiet for long stretches, so let it run. Lines like "Parser skipped…" and "No trait match…" are normal. It's done when it prints a table and "Finished in … s". A few more "No trait match…" lines may print after that; it's still done. You only need it once, not every time you start the app. In mock mode (you skipped step 3) you don't need it.
+It downloads the reference articles the app researches fighters from. It takes a while (about half an hour on a laptop), and it's quiet for long stretches, so let it run. Lines like "Parser skipped…" and "No trait match…" are normal. It's done when it prints a table and "Finished in … s". A few more "No trait match…" lines may print after that; it's still done. You only need it once, not every time you start the app.
 
 ![Terminal showing npm run ingest finishing with a table: 30 fighters, 30 documents, 0 failures, then "Finished in 1814 s."](images/user-guide/03b-ingest.png)
 
@@ -246,8 +248,8 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **The page looks old or a button does nothing after you update the code** | Stop the app with Ctrl+C, run `npm run setup` and then `npm start` again, and refresh the browser page. |
 | **No announcer voice** | Sound is optional, and the captions always carry the show. Click **Play sound**, check that **Mute** is off and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
 | **`npm run setup` ends with "not a git repository" or "git is not recognized"** | You downloaded the ZIP instead of cloning. The installs already finished, so you can ignore it and go on. |
-| **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and skipped [step 5](#step-5-build-the-knowledge-base-live-mode-only). Stop the app with Ctrl+C, run `npm run ingest` once, then `npm start` again. |
-| **"Some effects unavailable: research"** on the broadcast | The knowledge base wasn't built, so the app used estimates instead of looked-up stats. In live mode, stop the app with Ctrl+C, run `npm run ingest` once ([step 5](#step-5-build-the-knowledge-base-live-mode-only)), then `npm start` again. |
-| **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then run `npm run ingest` once and restart the app. |
+| **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and the prebuilt knowledge base didn't load (the message just above says why, usually a different embedding model). Stop the app with Ctrl+C, run `npm run ingest` once ([step 5](#step-5-optional-rebuild-the-knowledge-base)), then `npm start` again. |
+| **"Some effects unavailable: research"** on the broadcast | The knowledge base is empty (the prebuilt one didn't load), so the app used estimates instead of looked-up stats. In live mode, stop the app with Ctrl+C, run `npm run ingest` once ([step 5](#step-5-optional-rebuild-the-knowledge-base)), then `npm start` again. |
+| **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then restart the app; it loads the prebuilt knowledge base on its first live start. |
 
 Still stuck? Run `npm run env:check`. It checks your settings file and says what to fix, without showing any secret values.
