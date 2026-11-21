@@ -186,3 +186,22 @@ export function sideTitle(layout: Pick<SideLayout, "name" | "count">) {
   if (layout.count <= 1) return layout.name.toUpperCase();
   return `${layout.count.toLocaleString("en-US")} ${pluralOf(layout.name)}`.toUpperCase();
 }
+
+// The health bar under each side's name (#503). It is driven only by the replay log's knock-outs
+// and escapes: the share of the side's fighters still in the fight. The log has no hit points per
+// fighter, so a lone fighter's bar stays full until it falls or flees.
+export const HEALTH_BAR = { y: 96, width: 260, height: 14 } as const;
+
+// How full a side's bar is, 0 to 1: fighters still standing over the side's total; empty once the
+// side has fled.
+export function healthFraction(alive: number, count: number, gone: boolean) {
+  if (gone || count <= 0) return 0;
+  return Math.min(1, Math.max(0, alive / count));
+}
+
+// The words under a crowd's bar ("3 of 6 standing"); a lone fighter has none.
+export function healthLabel(alive: number, count: number, gone: boolean) {
+  if (count <= 1) return "";
+  const left = gone ? 0 : Math.max(0, alive);
+  return `${left.toLocaleString("en-US")} of ${count.toLocaleString("en-US")} standing`;
+}
