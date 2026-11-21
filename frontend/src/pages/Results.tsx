@@ -1,5 +1,5 @@
-// The results page (D04): the verdict, each fighter's stat sheet with sources, the fair fight,
-// the next challenger, and every source used. Every number on it comes from the battle record.
+// The results page (D04): the verdict, the fair fight, the next challenger, each fighter's stat
+// sheet with sources, and every source used. Every number on it comes from the battle record.
 import { Link, useParams } from "react-router-dom";
 import { NOT_FOUND, useBattle } from "../api/useBattle.ts";
 import {
@@ -57,14 +57,7 @@ export default function Results() {
           message="The fight finished, but its result is missing. Try running the matchup again."
         />
       )}
-      {battle && battle.stat_sheets.length > 0 && (
-        <section aria-labelledby="tape-title">
-          <h2 id="tape-title">Tale of the tape</h2>
-          {battle.stat_sheets.map((sheet) => (
-            <StatSheetCard key={sheet.fighter_id} sheet={sheet} />
-          ))}
-        </section>
-      )}
+      {/* Right after the verdict, so "Fight them!" isn't buried under the stat sheets (#504). */}
       {/* A no-contest has no fair count to find (the sides can't engage). */}
       {battle?.fair_fight && result?.outcome !== "no_contest" && (
         <FairFightCard fairFight={battle.fair_fight} matchup={battle.matchup} />
@@ -75,6 +68,14 @@ export default function Results() {
           matchup={battle.matchup}
           winner={winner}
         />
+      )}
+      {battle && battle.stat_sheets.length > 0 && (
+        <section aria-labelledby="tape-title">
+          <h2 id="tape-title">Tale of the tape</h2>
+          {battle.stat_sheets.map((sheet) => (
+            <StatSheetCard key={sheet.fighter_id} sheet={sheet} />
+          ))}
+        </section>
       )}
       {battle && battle.stat_sheets.length > 0 && (
         <SourceList sheets={battle.stat_sheets} />
