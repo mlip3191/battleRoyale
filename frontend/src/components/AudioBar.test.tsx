@@ -31,7 +31,7 @@ test("no tracks: no controls at all", () => {
   expect(container.innerHTML).toBe("");
 });
 
-test("nothing plays on its own; Sound off starts both tracks and Pause stops them", async () => {
+test("nothing plays on its own; clicking Sound off starts both tracks, and clicking Sound on stops them", async () => {
   render(<AudioBar narration="/media/a.mp3" music="/media/m.mp3" />);
   expect(play).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
@@ -41,7 +41,7 @@ test("nothing plays on its own; Sound off starts both tracks and Pause stops the
   expect(screen.getByRole("button", { name: "Sound off" })).toBeTruthy();
 });
 
-test("the browser refusing to play: no error, and the button stays on Sound off", async () => {
+test("the browser refusing to play: no error, and the button stays on Sound off (no retry later)", async () => {
   play.mockImplementationOnce(() => Promise.reject(new Error("blocked")));
   render(<AudioBar narration="/media/a.mp3" music={null} />);
   fireEvent.click(screen.getByRole("button", { name: "Sound off" }));

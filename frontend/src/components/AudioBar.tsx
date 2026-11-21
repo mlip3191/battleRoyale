@@ -78,7 +78,11 @@ export default function AudioBar({
       autoStarted.current = true;
       if (!savedOff()) soundOn.current = true;
     }
-    if (soundOn.current) void startAll(tracks).then(setPlaying);
+    if (soundOn.current)
+      void startAll(tracks).then((on) => {
+        if (tracks.length > 0 && !on) soundOn.current = false; // refused: don't keep retrying
+        setPlaying(on);
+      });
     return () => tracks.forEach((t) => !t.paused && t.pause());
   }, [narration, music, startSound]);
 
