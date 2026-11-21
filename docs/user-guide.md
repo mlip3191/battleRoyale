@@ -226,14 +226,13 @@ The app politely turns some requests away, and tells you why:
 |---|---|---|
 | **Real people** (alive or historical) | It's not fair or kind to stage fights between real people. | "We keep real people out of the ring. Try a type of fighter instead, like a Roman legionary or a medieval knight." |
 | **Named characters**, from stories or from myth | They belong to their creators or their legends, and they have no real-world stats to look up. | "Named characters, from stories or from myth, sit this one out. Try a creature type instead, like a dragon or a giant robot." |
-| **Named deities** (Zeus, Thor) | No sources measure them, and they matter to many people. Generic kinds (a god, an angel) are allowed by the rules, but in live mode the app can't find stats for them yet, so the fight is called off (a known limit). | "Gods are above our pay grade. Try a mythical creature, like a griffin, instead." |
-| **Firearms and explosives** | The app keeps things PG. | "No firearms or explosives in this arena. Vehicles and machines are welcome, like a bulldozer." |
-| **Groups of people** (nations, armies, teams) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
+| **Gods and figures of living religions** (Allah, Jesus, Shiva, the Pope) | They matter to many people. Gods of mythology (Zeus, Thor) and generic kinds (a god, an angel) can fight (D-69). | "Gods of living religions are above our pay grade. Try a god of myth, like Zeus, or a mythical creature, like a griffin." |
+| **Groups of people** (nations, teams, bands) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
 | **Abstract ideas, places, landforms, planets** | They aren't physical fighters with measurable stats. | A message explaining what kinds of fighters work. |
 | **More than two sides** | The arena only fits two sides for now. | It offers each pair as a two-sided matchup. Group a pack into one side, like "3 wolves". |
 | **More than 10,000 on a side, or fractions** | It keeps the simulation fast and the fighters whole. | It lowers the count to 10,000 and says so on tonight's card, or asks how many whole fighters you meant. |
 
-**What does work:** animals, historical fighter types (a Roman legionary, a medieval knight), objects, plants, vehicles and machines (a bulldozer, a tank), and mythical creature types (a dragon, a griffin). A mythical creature is modeled on the real animals its legends compare it to, and every one of its stats is tagged as an assumption.
+**What does work:** animals, historical fighter types (a Roman legionary, a medieval knight), military units (US Navy SEALs, who fight with a rifle), objects and weapons (a toaster, a sword, a grenade), plants, vehicles and machines (a bulldozer, a tank), gods of mythology (Zeus), and mythical creature types (a dragon, a griffin). Fighters off our list fight on labeled estimates. A mythical creature is modeled on the real animals its legends compare it to, and every one of its stats is tagged as an assumption.
 
 The show is PG: knockouts and retreats, no blood or gore.
 

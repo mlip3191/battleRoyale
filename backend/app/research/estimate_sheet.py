@@ -19,6 +19,7 @@ import re
 
 from app.models.stats import StatName, StatSheet, StatValue
 from app.research.defaults import category_default
+from app.research.ranges import range_for
 from app.research.seed_fighters import fighter_slug
 from app.research.sheet_hash import compute_sheet_hash
 from app.research.statsheet import FighterProfile, build_stat_sheet, media_name_for
@@ -40,6 +41,19 @@ ESTIMATE_ANIMAL_WEAPONS = ("teeth",)
 # samurai, "a god") is a living, human-sized fighter built from the human archetype defaults.
 GENERIC_KIND_REASON = "generic_kind"
 ESTIMATE_GENERIC_CATEGORY = "human_archetype"
+# D-69: a god of mythology (Zeus, Thor) fights like a generic kind, with no special powers yet, and
+# a military unit (US Navy SEALs) is a human archetype with a firearm: a ranged attack whose
+# reach, force and rate are these judgment values, labeled estimates like every other stat here.
+MYTH_DEITY_REASON = "myth_deity"
+ARMED_UNIT_REASON = "armed_unit"
+HUMAN_REASONS = frozenset({GENERIC_KIND_REASON, MYTH_DEITY_REASON, ARMED_UNIT_REASON})
+ARMED_WEAPONS = ("weapon_ranged",)
+FIREARM_NOTE = "Firearm assumption (D-69): a judgment value for a rifle, not a sourced number. "
+FIREARM_STATS = {
+    StatName.REACH: 300.0,  # m: fires from the opening distance (10 m) onward
+    StatName.ATTACK_FORCE: 7000.0,  # N-equivalent: about two hits stop a 70 kg human
+    StatName.ATTACK_RATE: 1.0,  # aimed shots per second
+}
 
 
 # The all-estimate sheet for `name` (the fighter as the user typed it, e.g. "wolverine"). `kind` is
@@ -48,7 +62,8 @@ ESTIMATE_GENERIC_CATEGORY = "human_archetype"
 def estimate_sheet(name: str, kind: str | None = None) -> StatSheet:
     display = display_name_for(name)
     animal = kind == ANIMAL_REASON
-    generic = kind == GENERIC_KIND_REASON
+    generic = kind in HUMAN_REASONS
+    armed = kind == ARMED_UNIT_REASON
     living = animal or generic
     category = (
         ESTIMATE_ANIMAL_CATEGORY
@@ -64,12 +79,14 @@ def estimate_sheet(name: str, kind: str | None = None) -> StatSheet:
         category=category,
         body=ESTIMATE_ANIMAL_BODY if living else ESTIMATE_BODY,
         habitat=ESTIMATE_HABITAT,
-        weapons=ESTIMATE_ANIMAL_WEAPONS if animal else ESTIMATE_WEAPONS,
+        weapons=ESTIMATE_ANIMAL_WEAPONS if animal else ARMED_WEAPONS if armed else ESTIMATE_WEAPONS,
     )
     built = build_stat_sheet(profile)  # no facts, no extraction: code defaults only
     stats = {
         stat: _labeled(_as_default(value, category, stat)) for stat, value in built.stats.items()
     }
+    if armed:
+        stats.update({stat: _firearm(stat, stats[stat], v) for stat, v in FIREARM_STATS.items()})
     not_estimates = [str(stat) for stat, value in stats.items() if not value.is_estimate]
     if not_estimates:  # the "other" defaults never derive, so this would be a code change
         raise ValueError(f"estimate sheet has non-estimate stats: {', '.join(not_estimates)}")
@@ -96,6 +113,14 @@ def _as_default(value: StatValue, category: str, stat: StatName) -> StatValue:
     # `or value` keeps a non-estimate only if a default were ever missing; estimate_sheet's guard
     # then raises, so a non-estimate can never reach a saved sheet.
     return category_default(category, stat) or value
+
+
+# A human estimate's stat replaced by the firearm value, still a labeled estimate (D-69).
+def _firearm(stat: StatName, value: StatValue, firearm: float) -> StatValue:
+    low, high = range_for(stat, firearm, value.confidence)  # the same spread as any estimate
+    return value.model_copy(
+        update={"value": firearm, "low": low, "high": high, "note": ESTIMATE_NOTE + FIREARM_NOTE}
+    )
 
 
 # The same estimate, with a note that says plainly it is one.

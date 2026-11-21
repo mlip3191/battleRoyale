@@ -19,7 +19,7 @@ from tests.unit.test_lore import FakeChat, answer, run
 from tests.unit.test_mythical_battles import go_live, matchup
 
 NOT_FOUND = {"found": False, "body_analog": None, "quote": None}
-ALLOWED = ["real_animal", "object_or_machine", "generic_kind"]  # #444 adds generic_kind
+ALLOWED = ["real_animal", "object_or_machine", "generic_kind", "armed_unit", "myth_deity"]
 REFUSED = ["person", "deity", "named_character", "weapon", "nonsense"]
 
 

@@ -829,6 +829,8 @@ def kind_beats_name(query: str, check: NameCheck) -> bool:
 # "the Police", "Metallica" (its rival is a bare moth genus, not a common word); not "the Grizzly
 # Bear". A name typed as "the" + a proper name also searches "the " + its query (#316), so "the
 # Who", "the Cure" and "the Animals" block; "Who", "WHO", "the who" and "the animals" do not.
+# Reasons in `ignore` don't block, and the other names are still checked (D-69: a god or a weapon
+# typed first must not hide a real person typed second).
 async def check_names(
     names: Sequence[str],
     *,
@@ -836,6 +838,7 @@ async def check_names(
     cache: WikidataCache | None = None,
     class_map: ClassMap | None = None,
     model_written: Collection[str] = (),
+    ignore: Collection[str] = (),
 ) -> SafetyVerdict:
     proper_by_query: dict[str, bool] = {}
     typed_by_query: dict[str, list[str]] = {}
@@ -873,10 +876,10 @@ async def check_names(
         if check.kind_qid is not None and (
             not proper or (lowercase_name and kind_beats_name(query, check))
         ):
-            if check.kind_reason is not None:
+            if check.kind_reason is not None and check.kind_reason not in ignore:
                 return blocked(check.kind_reason, "wikidata")
             continue
-        if check.reason is None:
+        if check.reason is None or check.reason in ignore:  # skipped, so later names still count
             continue
         if check.reason == "real_person" and not proper:
             continue

@@ -190,7 +190,11 @@ def wait_until_finished(client: TestClient, battle_id: str) -> BattleRecord:
     raise AssertionError(f"battle {battle_id} never finished")
 
 
-@pytest.mark.parametrize("reason", BLOCKED_REASONS)
+# "weapon" is retired (D-69): weapons are allowed fighters, so that label no longer blocks.
+LIVE_REASONS = [reason for reason in BLOCKED_REASONS if reason != "weapon"]
+
+
+@pytest.mark.parametrize("reason", LIVE_REASONS)
 def test_each_blocked_reason_gets_intakes_reply_and_starts_no_battle(
     client: TestClient, store: CountingStore, reason: str
 ) -> None:
@@ -201,7 +205,7 @@ def test_each_blocked_reason_gets_intakes_reply_and_starts_no_battle(
 
 @pytest.mark.parametrize(
     ("fighter", "reason"),
-    [("a toddler", "minor"), ("Zeus", "deity")],  # code rules; the Wikidata name check
+    [("a toddler", "minor"), ("Allah", "deity")],  # code rules (a living religion, D-69)
 )
 def test_rules_and_wikidata_blocks_also_stop_the_battle(
     client: TestClient, store: CountingStore, fighter: str, reason: str

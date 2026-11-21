@@ -27,7 +27,7 @@ from app.research.lore import (
     NONSENSE,
     UNAVAILABLE,
     LoreOutcome,
-    is_generic_supernatural,
+    code_kind,
     lore_for,
 )
 from app.research.mythical import build_mythical_sheet, find_creature
@@ -200,8 +200,9 @@ async def _resolve_legend(
         return NONSENSE
     if recently_not_a_legend(slug):
         return None  # asked a moment ago: still a plausible real fighter, so an estimate sheet
-    if is_generic_supernatural(name):  # "a god" (D-65): a generic kind, in mock mode too (#444)
-        remember_not_a_legend(slug, "generic_kind")
+    kind = code_kind(name)  # "a god" (#444) or "navy seal" (D-69): known kinds, in mock mode too
+    if kind is not None:
+        remember_not_a_legend(slug, kind)
         return None
     client = legend_client()
     if client is None:

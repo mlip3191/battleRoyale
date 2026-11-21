@@ -126,8 +126,8 @@ EXAMPLES = [
     (("a dog named Napoleon", "dog"), None),
     (("the emperor", "emperor"), None),
     (("Robo-Tron", "robo-tron"), "copyrighted_character"),
-    (("Zeus", "zeus"), "deity"),
-    (("an assault rifle", "assault rifle"), "weapon"),
+    (("Zeus", "zeus"), None),  # D-69: Wikidata's deity and weapon answers don't block
+    (("an assault rifle", "assault rifle"), None),
     (("the Moon", "moon"), "out_of_scope"),
     (("a Canadian goose", "canada goose"), None),
     (("a German Shepherd", "german shepherd"), None),
@@ -241,8 +241,36 @@ async def test_a_repeat_check_through_the_gate_makes_no_wikidata_request(
     cache: WikidataCache,
 ) -> None:
     lookup = CountingLookup()
-    first = await gate("check_matchup", ("Zeus", "zeus", None), cache, lookup=lookup)
+    first = await gate("check_matchup", ("Napoleon", "napoleon", None), cache, lookup=lookup)
     calls = lookup.calls
-    second = await gate("check_matchup", ("Zeus", "zeus", None), cache, lookup=lookup)
-    assert first == second and first.reason == "deity"
+    second = await gate("check_matchup", ("Napoleon", "napoleon", None), cache, lookup=lookup)
+    assert first == second and first.reason == "real_person"
     assert calls > 0 and lookup.calls == calls
+
+
+# D-69: Wikidata's deity and weapon answers don't block, but they must not hide a real block on
+# the other side, in either order (Zeus or a rifle typed first used to mask Napoleon).
+@pytest.mark.parametrize("entry", ENTRIES)
+@pytest.mark.parametrize(
+    "allowed", [("Zeus", "zeus", None), ("an assault rifle", "assault rifle", None)]
+)
+async def test_a_god_or_weapon_never_hides_a_real_person_on_the_other_side(
+    entry: str, allowed: tuple[str, str, None], cache: WikidataCache
+) -> None:
+    person = ("Napoleon", "napoleon", None)
+    for sides in ((allowed, person), (person, allowed)):
+        m = matchup(*sides)
+        lookup = MockWikidataLookup()
+        if entry == "check_matchup":
+            verdict = await check_matchup(
+                m, chat=StandInClassifier(), wikidata_lookup=lookup, wikidata_cache=cache
+            )
+        else:
+            verdict = await check_parsed_sides(
+                m.fighters,
+                m.raw_text,
+                chat=StandInClassifier(),
+                wikidata_lookup=lookup,
+                wikidata_cache=cache,
+            )
+        assert (verdict.reason, verdict.layer) == ("real_person", "wikidata"), sides

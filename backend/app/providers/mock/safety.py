@@ -44,33 +44,11 @@ MOCK_BLOCKED_WORDS: dict[str, tuple[str, ...]] = {
         "mickey mouse",
         "shrek",
     ),
+    # D-69: gods of mythology (Zeus, Thor) and weapons are allowed fighters. Living religions'
+    # named figures are in the code rules (blocklist.yaml); these are human religious figures.
     "deity": (
-        "zeus",
-        "odin",
-        "thor",
-        "poseidon",
-        "hades",
-        "anubis",
-    ),
-    "weapon": (
-        "gun",
-        "handgun",
-        "pistol",
-        "revolver",
-        "rifle",
-        "shotgun",
-        "machine gun",
-        "ak-47",
-        "ak47",
-        "ar-15",
-        "ar15",
-        "uzi",
-        "glock",
-        "grenade",
-        "bomb",
-        "dynamite",
-        "bazooka",
-        "rocket launcher",
+        "pope",
+        "prophet",
     ),
 }
 

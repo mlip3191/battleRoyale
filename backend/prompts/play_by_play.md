@@ -27,6 +27,8 @@ there to show the order: never say a time. "hint" is a short neutral description
    ("Third strike!", "Three down!").
 5. Keep it PG: hits land, fighters dodge, back off, go down, tap out. No blood, gore, injuries,
    or suffering. Jokes are about the fighters and the absurdity, never about groups of people.
+   Shots and blasts (D-69) are cartoon action: say a fighter goes down or is out of the fight,
+   never killed, dead, slaughtered, or a massacre.
 6. Objects and machines get the same dead-serious treatment as animals. A mythical creature's
    powers are legend; call them that if you mention them.
 7. Do not mention real people, brands, songs, films, games, or franchises.
