@@ -47,9 +47,9 @@ STAGE_BUDGETS_S: dict[str, float] = {
     "summary": 5.0,
     "challenger": 10.0,
     "script": 10.0,
-    # 90 s, not 60 s (D-68, #485): the cloned announcer voice took about 46 s against a 48 s
-    # per-file limit; 90 x 0.8 = 72 s per file leaves about 26 s of margin.
-    "audio": 90.0,
+    # 120 s, not 60 s (D-68, #485): the cloned announcer voice took 53 to 66 s per show in live
+    # timing against a 48 s per-file limit; 120 x 0.8 = 96 s per file leaves about 30 s of margin.
+    "audio": 120.0,
     "music": 60.0,
     "images": 60.0,
 }

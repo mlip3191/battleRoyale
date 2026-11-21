@@ -6,8 +6,9 @@ Kept in its own file because test_pipeline_stages shrinks the stage budgets.
 from app.media import audio
 from app.pipeline import stages
 
-# Live timing of one show with the reference clip (#480 review): about 46 s of audio.
-MEASURED_WITH_CLIP_S = 46.0
+# Live timing of one 23-line show with the reference clip (#485): 66.0 s and 53.1 s; the slower
+# run is the one to clear. (The #480 review measured about 46 s for a 20-line show.)
+MEASURED_WITH_CLIP_S = 66.0
 WANTED_MARGIN_S = 20.0
 
 

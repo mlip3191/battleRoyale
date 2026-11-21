@@ -50,7 +50,7 @@ from app.safety.media_names import safe_media_name
 logger = logging.getLogger(__name__)
 
 AUDIO_VERSION = "a1"  # bump when the way files are made changes, so old caches are not reused
-ITEM_TIMEOUT_S = 72.0  # per file (90 s audio budget x 0.8, D-68); the stage passes its own share
+ITEM_TIMEOUT_S = 96.0  # per file (120 s audio budget x 0.8, D-68); the stage passes its own share
 LINE_PAUSE_S = 0.4  # silence between two spoken lines
 MUSIC_SECONDS = 30.0
 MUSIC_STYLE = "upbeat retro sports-broadcast theme, brass and synth"
