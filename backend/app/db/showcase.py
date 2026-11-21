@@ -134,7 +134,7 @@ def import_showcase(
     if not rows:
         return 0
     # Read and check every battle before saving any, so a missing or broken file leaves the
-    # database empty (and the next start tries again) instead of half loaded.
+    # database as it was (and the next start tries again) instead of half loaded.
     records = [_read_battle(row.battle_id, showcase_dir) for row in rows]
     try:
         for record in records:
