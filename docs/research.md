@@ -150,15 +150,15 @@ Used only when no evidence is found (`method: category_default`, `is_estimate: t
 
 Objects and plants last the full 600-second fight limit and cannot attack unless their sheet says otherwise (a saguaro has `spines`).
 
-**Unlisted fighters: animal kind and size class (#517).** An estimate sheet for a name off the seed list starts from these defaults. When the legend lookup says it is a `real_animal`, it also picks the animal's kind from a fixed list (`ANIMAL_CATEGORIES` in `lore.py`), so an ostrich gets the bird defaults and a beak and a shark lives in water (`ANIMAL_KINDS` in `estimate_sheet.py`: mammal, reptile and fish bite, a bird and a mollusk peck, an insect and an arachnid sting; a fish and a mollusk live in water, an amphibian on land and in water). For a living animal, generic kind or god of mythology it also picks a size class, and code scales the defaults by a mass factor, with length and reach by its cube root and attack force by its two-thirds power (square-cube, as for legends). Soldiers (`armed_unit`) stay human-sized. A missing or unknown label means the medium mammal, as before. The model only picks words; every number comes from these tables, and every stat stays a labeled estimate. **The factors are judgment values, not sourced:**
+**Unlisted fighters: animal kind and size class (#517).** An estimate sheet for a name off the seed list starts from these defaults. When the legend lookup says it is a `real_animal`, it also picks the animal's kind from a fixed list (`ANIMAL_CATEGORIES` in `lore.py`), so an ostrich gets the bird defaults and a beak and a shark lives in water (`ANIMAL_KINDS` in `estimate_sheet.py`: mammal, reptile and fish bite, a bird and a mollusk peck, an insect and an arachnid sting; a fish and a mollusk live in water, an amphibian on land and in water). For a living animal, generic kind or god of mythology it also picks a size class. A size class means the same weight for every kind (`SIZE_MASSES`), because the prompt defines it by everyday size, not "big for a bird". Code scales the kind's defaults to that weight, with length and reach by the cube root of the mass factor and attack force by its two-thirds power (square-cube, as for legends). A kind whose own default already falls in the class's band keeps it: the band runs to the geometric midpoint with each neighboring class, so a medium mammal stays 50 kg, a medium person 70 kg and a tiny fly its 0.1 g default. Speed is not scaled. Soldiers (`armed_unit`) stay human-sized. A missing or unknown label means the medium mammal, as before. The model only picks words; every number comes from these tables, and every stat stays a labeled estimate. **The weights are judgment values, not sourced:**
 
-| Size class | Mass factor | A mammal becomes |
-|---|---|---|
-| tiny (mouse-sized) | 0.001 | 0.05 kg |
-| small (cat-sized) | 0.05 | 2.5 kg |
-| medium (person-sized) | 1 | 50 kg |
-| large (horse- or bear-sized) | 10 | 500 kg |
-| huge (elephant-sized) | 100 | 5,000 kg |
+| Size class | Weight | Band kept as is | For example |
+|---|---|---|---|
+| tiny (mouse-sized or smaller) | 0.05 kg | under 0.35 kg | a field mouse 0.05 kg; a tarantula keeps the arachnid 2 g, a fly the insect 0.1 g, a frog the amphibian 0.2 kg |
+| small (cat-sized) | 2.5 kg | 0.35 to 16 kg | a house cat 2.5 kg; a hawk keeps the bird 2 kg, a pike the fish 10 kg |
+| medium (person-sized) | 50 kg | 16 to 160 kg | an ostrich 50 kg (not the bird 2 kg); a wolf keeps the mammal 50 kg, a cobra the reptile 20 kg, a priest the human 70 kg |
+| large (horse- or bear-sized) | 500 kg | 160 to 1,600 kg | a moose, a crocodile or a tuna 500 kg |
+| huge (elephant-sized or bigger) | 5,000 kg | 1,600 kg and up | an elephant, a whale shark or a titan 5,000 kg |
 
 ## The three behavioral stats
 

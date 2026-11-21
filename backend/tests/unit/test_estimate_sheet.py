@@ -444,10 +444,10 @@ def test_only_the_exact_military_words_skip_the_lookup() -> None:
 
 def test_the_label_lists_match_the_tables_that_turn_them_into_numbers() -> None:
     from app.research import lore
-    from app.research.estimate_sheet import ANIMAL_KINDS, SIZE_FACTORS
+    from app.research.estimate_sheet import ANIMAL_KINDS, SIZE_MASSES
 
     assert set(ANIMAL_KINDS) == lore.ANIMAL_CATEGORIES
-    assert set(SIZE_FACTORS) == lore.SIZE_CLASSES
+    assert set(SIZE_MASSES) == lore.SIZE_CLASSES
     for kind in ANIMAL_KINDS:
         category_default(kind, StatName.MASS)  # raises for a category with no defaults
 
@@ -489,9 +489,24 @@ def test_odd_labels_fall_back_to_a_medium_mammal_and_soldiers_stay_human_sized()
         seal.stats[StatName.MASS].value == category_default("human_archetype", StatName.MASS).value
     )
     titan = estimate_sheet("titan", "generic_kind", size_class="huge")
-    assert titan.stats[StatName.MASS].value == pytest.approx(
-        category_default("human_archetype", StatName.MASS).value * 100
-    )
+    assert titan.stats[StatName.MASS].value == pytest.approx(5000.0)
+    priest = estimate_sheet("priest", "generic_kind", size_class="medium")
+    assert priest.stats[StatName.MASS].value == pytest.approx(70.0)  # a person stays a person
+
+
+def test_a_size_class_means_the_same_weight_for_every_kind() -> None:
+    # The prompt's size words are absolute (person-sized), so a medium bird is not a 2 kg bird.
+    def mass(name: str, category: str, size_class: str) -> float:
+        sheet = estimate_sheet(name, "real_animal", category=category, size_class=size_class)
+        return sheet.stats[StatName.MASS].value
+
+    assert mass("ostrich", "bird", "medium") == pytest.approx(50.0)
+    assert mass("great white shark", "fish", "huge") == pytest.approx(5000.0)
+    assert mass("cobra", "reptile", "medium") == pytest.approx(20.0)  # its default already fits
+    # tiny is "mouse-sized or smaller": an already tiny kind keeps its own default
+    assert mass("tarantula", "arachnid", "tiny") == pytest.approx(0.002)
+    assert mass("house fly", "insect", "tiny") == pytest.approx(0.0001)
+    assert mass("dung beetle", "insect", "small") == pytest.approx(2.5)
 
 
 async def test_the_lookup_labels_shape_the_battle_sheet_and_are_remembered(monkeypatch) -> None:
@@ -507,8 +522,6 @@ async def test_the_lookup_labels_shape_the_battle_sheet_and_are_remembered(monke
     first, estimated = await stages.lookup_fighter_or_estimate(fighter)
     again, _ = await stages.lookup_fighter_or_estimate(fighter)
     assert estimated and first.category == "bird" and first.weapons == ["beak"]
-    assert first.stats[StatName.MASS].value == pytest.approx(
-        category_default("bird", StatName.MASS).value * 100
-    )
+    assert first.stats[StatName.MASS].value == pytest.approx(5000.0)  # huge, whatever its kind
     assert again == first and chat.calls == 1  # remembered, not asked again
     assert sheet_store.not_a_legend_shape("ostrich") == ("bird", "huge")
