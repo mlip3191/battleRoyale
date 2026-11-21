@@ -13,11 +13,11 @@ import pytest
 from app.models.simulation import SimulationResult
 from app.narration.facts import NarrationFacts, build_facts
 from app.narration.templates import template_scripts
-from app.narration.writer import ScriptRejected, read_reply, required_placeholders
+from app.narration.writer import ScriptRejected, _task_lines, read_reply, required_placeholders
 from tests.narration_samples import Sample, samples
 
 SAMPLE: Sample = {s.key: s for s in samples()}["grizzly-vs-gorilla"]
-CROWNS = re.compile(r"\bwinner\b|takes the win|\bwon\b", re.I)
+CROWNS = re.compile(r"\bwinner\b|takes the win|\bwon\b|\bwins\b", re.I)
 
 
 # The sample result with the winner's 95% low end set (the high end stays above it).
@@ -113,3 +113,13 @@ def test_a_close_outro_that_names_a_slight_edge_is_accepted() -> None:
     )
     assert script.fallback is False
     assert not CROWNS.search(" ".join(line.text for line in script.lines))
+
+
+# The model's task text says so when the verdict is too close, and not when it is a clear win.
+def test_the_task_text_tells_the_model_when_it_is_too_close() -> None:
+    log = _result(0.504).representative_log
+    close = " ".join(_task_lines("outro", _facts(0.504), log))
+    clear = " ".join(_task_lines("outro", _facts(0.506), log))
+    assert "TOO CLOSE TO CALL" in close and "slight edge" in close
+    assert "not a winner" in close  # the softened placeholder help
+    assert "TOO CLOSE TO CALL" not in clear and "not a winner" not in clear

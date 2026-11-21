@@ -232,8 +232,9 @@ def _allowed(
     return AllowedNumbers(frozenset(values), frozenset(percents), frozenset(odds))
 
 
-# The same rule as the front end's isTooCloseToCall: the winner's 95% low end, rounded half up to
-# a whole percent (as the page prints it), is 50 or less. Only a win can be too close.
+# The same rule as the front end's isTooCloseToCall (frontend/src/components/Verdict.tsx): the
+# winner's 95% low end, rounded half up to a whole percent (as the page prints it), is 50 or
+# less. Only a win can be too close. Change both together; the 0.504 / 0.506 test pins it.
 def is_too_close(result: SimulationResult) -> bool:
     if result.outcome not in ("win_0", "win_1"):
         return False
