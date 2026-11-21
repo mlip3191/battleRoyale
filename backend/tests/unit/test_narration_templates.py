@@ -518,3 +518,25 @@ def test_fmt_tiny_values_never_use_scientific_notation() -> None:
     said = fmt(2.5e-6)
     assert said == "0.0000025"
     assert "e" not in said and "E" not in said
+
+
+# #527 (follow-up to #501): when the fair count is the count just fought, the outro says the fight
+# is already about even instead of suggesting the same matchup.
+@pytest.mark.parametrize(
+    ("fought", "fair", "said"),
+    [
+        (1, 1, "Want a fair fight? It's already about even, winning 49% of the time."),
+        (1, 3, "Want a fair fight? About 3 gorillas make it a coin flip, winning 49% of the time."),
+        (3, 3, "Want a fair fight? It's already about even, winning 49% of the time."),
+    ],
+)
+def test_fair_fight_line_says_already_even_for_the_count_just_fought(
+    fought: int, fair: int, said: str
+) -> None:
+    fair_fight = FAIR.model_copy(update={"varied_side": 1, "count": fair})
+    facts = build_facts(
+        [_sheet("stat-sheet.json"), _sheet("gorilla.json")], RESULT, fair_fight, counts=(1, fought)
+    )
+    text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
+    assert text == said
+    assert find_unsupported_numbers(text, facts.allowed) == []
