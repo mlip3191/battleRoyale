@@ -216,6 +216,52 @@ def test_a_real_animal_estimate_is_a_living_fighter_with_a_bite() -> None:
     assert sheet.sheet_hash == compute_sheet_hash(sheet.stats)
 
 
+# --- #444: a generic kind of person or supernatural being (a priest, a samurai, "a god") -------
+
+
+def test_a_generic_kind_estimate_is_a_living_human_sized_fighter() -> None:
+    from app.models.stats import Body
+
+    sheet = estimate_sheet("priest", "generic_kind")
+    assert sheet.body == Body.LIVING and sheet.category == "human_archetype"
+    assert all(stat.is_estimate and stat.source is None for stat in sheet.stats.values())
+    for stat, value in sheet.stats.items():
+        if stat not in BEHAVIORAL:
+            assert value.method == "category_default"
+            assert value.value == category_default("human_archetype", stat).value
+
+
+async def test_generic_kinds_fall_back_to_estimates_and_named_ones_stay_blocked(
+    monkeypatch,
+) -> None:
+    from app.pipeline.stages import StageFailed
+    from tests.unit.test_legend_cache import ScriptedChat
+    from tests.unit.test_mythical_battles import go_live
+
+    # the model's fixed reasons for each name; code only maps them
+    for name, reason in [
+        ("priest", "generic_kind"),
+        ("monk", "generic_kind"),
+        ("god", "generic_kind"),
+        ("sword", "object_or_machine"),
+    ]:
+        go_live(monkeypatch, ScriptedChat({"found": False, "reason": reason}))
+        sheet, estimated = await stages.lookup_fighter_or_estimate(
+            FighterRequest(entity=name, raw=f"a {name}")
+        )
+        assert estimated and sheet.display_name == name.capitalize()
+        from app.models.stats import Body
+
+        if name == "sword":  # an object stays an inert object
+            assert sheet.body == Body.INERT and sheet.category == ESTIMATE_CATEGORY
+        else:  # a generic kind fights as a living human archetype
+            assert sheet.body == Body.LIVING and sheet.category == "human_archetype"
+    for name, reason in [("pope", "person"), ("zeus", "deity"), ("rifle", "weapon")]:
+        go_live(monkeypatch, ScriptedChat({"found": False, "reason": reason}))
+        with pytest.raises(StageFailed):
+            await stages.lookup_fighter_or_estimate(FighterRequest(entity=name, raw=name))
+
+
 def test_an_object_or_no_reason_stays_inert_as_before() -> None:
     from app.models.stats import Body
 
@@ -284,3 +330,41 @@ def test_a_tiger_does_not_lose_to_a_small_bird_every_time() -> None:
     fight = matchup({"entity": "tiger"}, {"entity": "duck"})
     result = run(fight, [estimate_sheet("tiger", "real_animal"), duck], runs=200, explain=False)
     assert result.win_prob[1] < 1.0 and result.outcome != "no_contest"
+
+
+async def test_a_bare_god_or_angel_is_a_generic_kind_without_asking_the_model(monkeypatch) -> None:
+    from app.models.stats import Body
+    from tests.unit.test_legend_cache import ScriptedChat
+    from tests.unit.test_mythical_battles import go_live
+
+    # the article for "God" is about one figure, so the model would say deity; code never asks
+    chat = ScriptedChat({"found": False, "reason": "deity"})
+    go_live(monkeypatch, chat)
+    for name in ("god", "angel", "demons"):
+        sheet, estimated = await stages.lookup_fighter_or_estimate(
+            FighterRequest(entity=name, raw=f"a {name}")
+        )
+        assert estimated and sheet.body == Body.LIVING and sheet.category == "human_archetype"
+    assert chat.calls == 0
+
+
+async def test_a_bare_god_is_a_living_fighter_in_mock_mode_too() -> None:
+    from app.models.stats import Body
+
+    sheet, estimated = await stages.lookup_fighter_or_estimate(
+        FighterRequest(entity="god", raw="a god")
+    )
+    assert estimated and sheet.body == Body.LIVING
+
+
+async def test_a_spartan_warrior_fights_as_a_generic_human(monkeypatch) -> None:
+    from app.models.stats import Body
+    from tests.unit.test_legend_cache import ScriptedChat
+    from tests.unit.test_mythical_battles import go_live
+
+    go_live(monkeypatch, ScriptedChat({"found": False, "reason": "generic_kind"}))
+    sheet, estimated = await stages.lookup_fighter_or_estimate(
+        FighterRequest(entity="spartan warrior", raw="100 spartan warriors")
+    )
+    assert estimated and sheet.body == Body.LIVING and sheet.category == "human_archetype"
+    assert all(stat.is_estimate for stat in sheet.stats.values())

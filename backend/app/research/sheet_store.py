@@ -23,7 +23,13 @@ from app.models.api import FighterMatch
 from app.models.stats import StatSheet
 from app.providers.base import ChatLLM, Embedder, Reranker
 from app.research.extract import build_sheet_with_evidence
-from app.research.lore import NONSENSE, UNAVAILABLE, LoreOutcome, lore_for
+from app.research.lore import (
+    NONSENSE,
+    UNAVAILABLE,
+    LoreOutcome,
+    is_generic_supernatural,
+    lore_for,
+)
 from app.research.mythical import build_mythical_sheet, find_creature
 from app.research.seed_fighters import (
     SEED_SHEETS_DIR,
@@ -194,6 +200,9 @@ async def _resolve_legend(
         return NONSENSE
     if recently_not_a_legend(slug):
         return None  # asked a moment ago: still a plausible real fighter, so an estimate sheet
+    if is_generic_supernatural(name):  # "a god" (D-65): a generic kind, in mock mode too (#444)
+        remember_not_a_legend(slug, "generic_kind")
+        return None
     client = legend_client()
     if client is None:
         return None
