@@ -704,7 +704,7 @@ HEADER = (
 
 
 BASELINE_HEADING = "## Baseline (seed sheets)"
-BASELINE = re.compile(r"(?ms)^## Baseline \(seed sheets\).*?(?=^## Run |\Z)")
+BASELINE = re.compile(rf"(?ms)^{re.escape(BASELINE_HEADING)}.*?(?=^## Run |\Z)")
 
 
 # A full seed-sheet run (hand-verified sheets, held-out set included) becomes the pinned baseline.
