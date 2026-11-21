@@ -68,6 +68,15 @@ test("unmounting destroys the Phaser game exactly once", async () => {
   expect(games[0].destroy).toHaveBeenCalledWith(true);
 });
 
+test("scrolling over the arena scrolls the page (#521)", async () => {
+  render(stageEl());
+  await sceneOf();
+  expect(games[0].config.input).toEqual({
+    mouse: { preventDefaultWheel: false },
+    touch: { capture: false },
+  });
+});
+
 test("StrictMode's double mount leaves exactly one game", async () => {
   const view = render(<StrictMode>{stageEl()}</StrictMode>);
   await sceneOf();
