@@ -135,7 +135,7 @@ On the battle and results pages, a **Home** button in the top bar brings you bac
 
 ### Type a matchup
 
-Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under **Try one of these**, below the box: it fills in the box, and then you click **FIGHT!**. An example starts a new fight, researched and simulated live, so it takes up to a minute or so.
+Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under **Try one of these**, below the box: it fills in the box, and then you click **FIGHT!**. An example starts a new fight, researched and simulated live, so it takes about a minute or two.
 
 Good examples:
 
