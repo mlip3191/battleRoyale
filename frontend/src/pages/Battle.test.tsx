@@ -10,7 +10,7 @@ import {
   within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import running from "../fixtures/battle-record-running.json";
 import done from "../fixtures/battle-record-done.json";
 import type { Asset, BattleRecord } from "../api/client.ts";
@@ -44,8 +44,16 @@ vi.mock("../game/PhaserStage.tsx", () => ({
 }));
 const stageProps = () => stage.props as PhaserStageProps;
 
+// jsdom can't play sound; the fight starting now turns it on (#499), so stand in for play/pause.
+beforeEach(() => {
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+});
+
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
+  localStorage.clear();
   vi.useRealTimers();
   stage.props = null;
 });
@@ -445,7 +453,7 @@ test("audio: narration and music get one set of labelled sound controls", () => 
   show(done);
   const bar = screen.getByRole("group", { name: "Sound controls" });
   expect(bar.querySelectorAll("audio")).toHaveLength(2);
-  expect(within(bar).getByRole("button", { name: "Play sound" })).toBeTruthy();
+  expect(within(bar).getByRole("button", { name: "Sound off" })).toBeTruthy();
   expect(within(bar).getByRole("slider", { name: "Volume" })).toBeTruthy();
 });
 
@@ -528,8 +536,8 @@ test("audio: sound turned on in the intro carries into the fight's announcer fil
   try {
     show(perScript());
     expect(play).not.toHaveBeenCalled(); // nothing plays until asked
-    fireEvent.click(button("Play sound"));
-    await screen.findByRole("button", { name: "Pause sound" });
+    fireEvent.click(button("Sound off"));
+    await screen.findByRole("button", { name: "Sound on" });
     play.mockClear();
     startFight();
     await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
@@ -538,7 +546,7 @@ test("audio: sound turned on in the intro carries into the fight's announcer fil
       "/media/audio/b1-play_by_play.mp3",
       MUSIC,
     ]);
-    expect(button("Pause sound")).toBeTruthy();
+    expect(button("Sound on")).toBeTruthy();
   } finally {
     vi.restoreAllMocks();
   }
@@ -593,4 +601,21 @@ test("results page links back to this battle's broadcast", () => {
   show(done, null, "/battle/b1/results");
   const link = screen.getByRole("link", { name: "Back to the broadcast" });
   expect(link.getAttribute("href")).toBe("/battle/b1");
+});
+
+test("audio: Start the fight turns the sound on by itself (#499)", async () => {
+  const play = vi
+    .spyOn(HTMLMediaElement.prototype, "play")
+    .mockResolvedValue(undefined);
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+  try {
+    show(perScript());
+    expect(play).not.toHaveBeenCalled(); // the intro stays quiet until the viewer starts the fight
+    startFight();
+    await screen.findByRole("button", { name: "Sound on" });
+    expect(play).toHaveBeenCalled();
+  } finally {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  }
 });
