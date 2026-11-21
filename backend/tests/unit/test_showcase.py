@@ -1,10 +1,11 @@
-"""G08 (#47): showcase battles export to data/showcase/, load into an empty database at startup,
+"""G08 (#47): showcase battles export to data/showcase/, load at startup (missing ones only),
 and list on GET /api/battles?showcase=true."""
 
 import json
 import logging
 import sqlite3
 from collections.abc import AsyncIterator, Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -79,15 +80,35 @@ def test_the_title_defaults_to_the_fighters_names(source, tmp_path: Path) -> Non
     assert load_manifest(tmp_path / "showcase")[0].title == " vs ".join(names)
 
 
-def test_import_skips_a_database_that_already_has_battles(source, tmp_path: Path) -> None:
+# A setup that already has its own battles still gets the showcase, and keeps its own (#47).
+def test_import_adds_the_missing_showcase_battles_and_keeps_the_users_own(
+    source, tmp_path: Path
+) -> None:
     connection, media = source
     out = tmp_path / "showcase"
     export_showcase(connection, [("b-7f3k2q", None)], media, out)
     busy = database(tmp_path / "busy.db")
     try:
         saved.save(busy, record("b-mine"), cache_key=None)
+        assert import_showcase(busy, tmp_path / "m", out) == 1
+        assert saved.get(busy, "b-7f3k2q") is not None and saved.get(busy, "b-mine") is not None
+        assert import_showcase(busy, tmp_path / "m", out) == 0  # the next start adds nothing
+    finally:
+        busy.close()
+
+
+# A showcase battle the database already holds is never replaced, even if it was changed.
+def test_import_never_replaces_a_battle_with_the_same_id(source, tmp_path: Path) -> None:
+    connection, media = source
+    out = tmp_path / "showcase"
+    export_showcase(connection, [("b-7f3k2q", None)], media, out)
+    mine = record("b-7f3k2q").model_copy(update={"created_at": datetime(2020, 1, 1, tzinfo=UTC)})
+    busy = database(tmp_path / "busy.db")
+    try:
+        saved.save(busy, mine, cache_key=None)
         assert import_showcase(busy, tmp_path / "m", out) == 0
-        assert saved.get(busy, "b-7f3k2q") is None
+        kept = saved.get(busy, "b-7f3k2q")
+        assert kept is not None and kept.created_at == mine.created_at
     finally:
         busy.close()
 

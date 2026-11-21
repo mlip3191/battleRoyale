@@ -8,6 +8,7 @@ Side counts: SimulationResult has no per-side fighter count, so `counts` is an o
 (from the Matchup); without it, a side's count is the largest group_size seen in the log.
 """
 
+import math
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -118,6 +119,7 @@ class NarrationFacts:
     fair_win_pct: int | None
     fair_side: int | None
     allowed: AllowedNumbers
+    too_close: bool = False  # the winner's 95% range reaches 50%: a near coin flip (#482)
 
 
 def safe_name(name: str, side: int) -> str:
@@ -230,6 +232,16 @@ def _allowed(
     return AllowedNumbers(frozenset(values), frozenset(percents), frozenset(odds))
 
 
+# The same rule as the front end's isTooCloseToCall (frontend/src/components/Verdict.tsx): the
+# winner's 95% low end, rounded half up to a whole percent (as the page prints it), is 50 or
+# less. Only a win can be too close. Change both together; the 0.504 / 0.506 test pins it.
+def is_too_close(result: SimulationResult) -> bool:
+    if result.outcome not in ("win_0", "win_1"):
+        return False
+    low = result.win_prob_ci95[int(result.outcome[-1])][0]
+    return math.floor(low * 100 + 0.5) <= 50
+
+
 def build_facts(
     sheets: Sequence[StatSheet],
     result: SimulationResult,
@@ -258,6 +270,7 @@ def build_facts(
         fair_win_pct=pct(fair_p) if has_fair and fair_p is not None else None,
         fair_side=fair_fight.varied_side if has_fair and fair_fight is not None else None,
         allowed=_allowed(sheets, result, fair_fight, side_counts),
+        too_close=is_too_close(result),
     )
 
 
