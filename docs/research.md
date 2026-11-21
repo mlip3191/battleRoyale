@@ -150,6 +150,16 @@ Used only when no evidence is found (`method: category_default`, `is_estimate: t
 
 Objects and plants last the full 600-second fight limit and cannot attack unless their sheet says otherwise (a saguaro has `spines`).
 
+**Unlisted fighters: animal kind and size class (#517).** An estimate sheet for a name off the seed list starts from these defaults. When the legend lookup says it is a `real_animal`, it also picks the animal's kind from a fixed list (`ANIMAL_CATEGORIES` in `lore.py`), so an ostrich gets the bird defaults and a beak and a shark lives in water (`ANIMAL_KINDS` in `estimate_sheet.py`: mammal, reptile and fish bite, a bird and a mollusk peck, an insect and an arachnid sting; a fish and a mollusk live in water, an amphibian on land and in water). For a living animal, generic kind or god of mythology it also picks a size class, and code scales the defaults by a mass factor, with length and reach by its cube root and attack force by its two-thirds power (square-cube, as for legends). Soldiers (`armed_unit`) stay human-sized. A missing or unknown label means the medium mammal, as before. The model only picks words; every number comes from these tables, and every stat stays a labeled estimate. **The factors are judgment values, not sourced:**
+
+| Size class | Mass factor | A mammal becomes |
+|---|---|---|
+| tiny (mouse-sized) | 0.001 | 0.05 kg |
+| small (cat-sized) | 0.05 | 2.5 kg |
+| medium (person-sized) | 1 | 50 kg |
+| large (horse- or bear-sized) | 10 | 500 kg |
+| huge (elephant-sized) | 100 | 5,000 kg |
+
 ## The three behavioral stats
 
 No source measures these, so they are `assumption` values set from the rubrics below. Every `note` uses the same pattern, `<stat> level <N or M>: <reason>`, where the stat is `aggression`, `group tactics`, `armor`, or `durability`. For example: `aggression level 4: territorial apex predator`. Pick the level first; the value follows from it.

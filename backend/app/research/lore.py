@@ -81,6 +81,14 @@ NOT_A_LEGEND_REASONS = frozenset(
 # "weapon" stays a refusal here on purpose: since D-69 the prompt says it is unused (a weapon is
 # object_or_machine), so an answer of "weapon" is a stray one and failing closed is the safe side.
 REFUSAL_REASONS = frozenset({"person", "deity", "named_character", "weapon", "nonsense"})
+# With a not-a-legend answer the model may also pick, from fixed lists, what kind of animal it is
+# and how big a living fighter is (#517). Code turns the labels into numbers (estimate_sheet.py);
+# a missing or unknown label means today's defaults (a medium mammal).
+ANIMAL_CATEGORIES = frozenset(
+    {"mammal", "bird", "reptile", "amphibian", "fish", "insect", "arachnid", "mollusk"}
+)
+SIZE_CLASSES = frozenset({"tiny", "small", "medium", "large", "huge"})
+SIZED_REASONS = frozenset({"real_animal", "generic_kind", "myth_deity"})  # soldiers stay human
 # Generic supernatural kinds D-65 allows. Their Wikipedia article ("God") is about one named
 # figure, so the lookup would answer "deity"; code calls them generic_kind without asking (#444).
 # Intake lowercases the name, so a capitalized "God" (a named deity, D-65) is stopped there.
@@ -111,6 +119,11 @@ class LoreReply(BaseModel):
     """Only with found false: why (real_animal, object_or_machine, generic_kind, armed_unit,
     myth_deity, person, deity, named_character, weapon or nonsense). Code checks it; anything
     else is a refusal."""
+    category: Any = None  # Any for the same reason: an odd label falls back, never raises
+    """Only with real_animal: mammal, bird, reptile, amphibian, fish, insect, arachnid or
+    mollusk."""
+    size_class: Any = None
+    """Only with found false, for a living fighter: tiny, small, medium, large or huge."""
 
 
 @dataclass(frozen=True)
@@ -124,6 +137,10 @@ class LoreOutcome:
     kind: str | None = None
     """With not_a_legend: the fixed reason ("real_animal", "object_or_machine", "generic_kind",
     "armed_unit" or "myth_deity") (#453, #444, D-69)."""
+    category: str | None = None
+    """With real_animal: the kind of animal from ANIMAL_CATEGORIES, or None (#517)."""
+    size_class: str | None = None
+    """With a sized reason: tiny to huge from SIZE_CLASSES, or None (#517)."""
 
 
 UNAVAILABLE = LoreOutcome()
@@ -286,11 +303,27 @@ def code_kind(name: str) -> str | None:
 
 
 # What a found-false answer means: "not a legend" only for a stated harmless reason (#403),
-# otherwise a block, so a missing, unknown or oddly typed reason fails closed.
-def outcome_for_not_found(reason: object) -> LoreOutcome:
-    if isinstance(reason, str) and reason.strip().lower() in NOT_A_LEGEND_REASONS:
-        return LoreOutcome(not_a_legend=True, kind=reason.strip().lower())  # the reason goes on
-    return NONSENSE
+# otherwise a block, so a missing, unknown or oddly typed reason fails closed. The animal kind
+# and size class are kept only when they are on their fixed lists and fit the reason (#517).
+def outcome_for_not_found(
+    reason: object, category: object = None, size_class: object = None
+) -> LoreOutcome:
+    kind = _label(reason, NOT_A_LEGEND_REASONS)
+    if kind is None:
+        return NONSENSE
+    return LoreOutcome(
+        not_a_legend=True,
+        kind=kind,  # the reason goes on
+        category=_label(category, ANIMAL_CATEGORIES) if kind == "real_animal" else None,
+        size_class=_label(size_class, SIZE_CLASSES) if kind in SIZED_REASONS else None,
+    )
+
+
+# A label from a fixed list, case and spaces aside, or None for anything else.
+def _label(value: object, allowed: frozenset[str]) -> str | None:
+    if isinstance(value, str) and value.strip().lower() in allowed:
+        return value.strip().lower()
+    return None
 
 
 # The creature for a legend not in mythical.yaml, a block, "not a legend", or nothing when a
@@ -308,7 +341,7 @@ async def lore_for(name: str, client: httpx.AsyncClient, chat: ChatLLM) -> LoreO
     if reply is None:
         return UNAVAILABLE
     if not reply.found:
-        return outcome_for_not_found(reply.reason)
+        return outcome_for_not_found(reply.reason, reply.category, reply.size_class)
     if article is None:  # a legend claimed with no article: no text to check a quote against
         return NONSENSE
     source = {
