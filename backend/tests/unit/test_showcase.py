@@ -1,9 +1,11 @@
-"""G08 (#47): showcase battles export to data/showcase/, load into an empty database at startup,
+"""G08 (#47): showcase battles export to data/showcase/, load at startup (missing ones only),
 and list on GET /api/battles?showcase=true."""
 
 import json
+import logging
 import sqlite3
 from collections.abc import AsyncIterator, Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -15,7 +17,7 @@ from app.db import battles as saved
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
 from app.db.showcase import export_showcase, import_showcase, load_manifest, showcase_rows
-from app.main import create_app
+from app.main import PLACEHOLDER_VOICE, _startup, create_app
 from app.models.battle import BattleRecord
 
 FIXTURE = Path(__file__).parents[1] / "fixtures" / "contracts" / "battle-record-done.json"
@@ -78,15 +80,35 @@ def test_the_title_defaults_to_the_fighters_names(source, tmp_path: Path) -> Non
     assert load_manifest(tmp_path / "showcase")[0].title == " vs ".join(names)
 
 
-def test_import_skips_a_database_that_already_has_battles(source, tmp_path: Path) -> None:
+# A setup that already has its own battles still gets the showcase, and keeps its own (#47).
+def test_import_adds_the_missing_showcase_battles_and_keeps_the_users_own(
+    source, tmp_path: Path
+) -> None:
     connection, media = source
     out = tmp_path / "showcase"
     export_showcase(connection, [("b-7f3k2q", None)], media, out)
     busy = database(tmp_path / "busy.db")
     try:
         saved.save(busy, record("b-mine"), cache_key=None)
+        assert import_showcase(busy, tmp_path / "m", out) == 1
+        assert saved.get(busy, "b-7f3k2q") is not None and saved.get(busy, "b-mine") is not None
+        assert import_showcase(busy, tmp_path / "m", out) == 0  # the next start adds nothing
+    finally:
+        busy.close()
+
+
+# A showcase battle the database already holds is never replaced, even if it was changed.
+def test_import_never_replaces_a_battle_with_the_same_id(source, tmp_path: Path) -> None:
+    connection, media = source
+    out = tmp_path / "showcase"
+    export_showcase(connection, [("b-7f3k2q", None)], media, out)
+    mine = record("b-7f3k2q").model_copy(update={"created_at": datetime(2020, 1, 1, tzinfo=UTC)})
+    busy = database(tmp_path / "busy.db")
+    try:
+        saved.save(busy, mine, cache_key=None)
         assert import_showcase(busy, tmp_path / "m", out) == 0
-        assert saved.get(busy, "b-7f3k2q") is None
+        kept = saved.get(busy, "b-7f3k2q")
+        assert kept is not None and kept.created_at == mine.created_at
     finally:
         busy.close()
 
@@ -167,6 +189,48 @@ def test_startup_loads_the_showcase_and_warns_about_an_empty_knowledge_base(
         assert saved.get(loaded, "b-7f3k2q") is not None
     finally:
         loaded.close()
+
+
+# The logged messages that are about the announcer voice id.
+def voice_warnings(caplog: pytest.LogCaptureFixture) -> list[str]:
+    return [r.getMessage() for r in caplog.records if "ANNOUNCER_VOICE_ID" in r.getMessage()]
+
+
+# #45: live mode warns once at startup when the voice id is blank or a placeholder.
+@pytest.mark.parametrize(
+    ("mode", "voice_id", "warns"),
+    [
+        ("live", "replace-me", True),
+        ("live", "", True),
+        ("live", "default", False),
+        ("mock", "replace-me", False),
+    ],
+)
+def test_startup_warns_about_a_placeholder_voice_id_in_live_mode(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, mode: str, voice_id: str, warns: bool
+) -> None:
+    settings = Settings(
+        _env_file=None, provider_mode=mode, data_dir=tmp_path, announcer_voice_id=voice_id
+    )
+    with caplog.at_level(logging.WARNING, logger="app.main"):
+        _startup(settings, None)
+    warnings = voice_warnings(caplog)
+    assert warnings == ([PLACEHOLDER_VOICE] if warns else [])
+
+
+# The voice warning still fires when the database step fails (data_dir is a file, not a folder).
+def test_the_voice_warning_fires_even_when_the_database_step_fails(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    not_a_folder = tmp_path / "file"
+    not_a_folder.write_text("x")
+    settings = Settings(
+        _env_file=None, provider_mode="live", data_dir=not_a_folder, announcer_voice_id=""
+    )
+    with caplog.at_level(logging.WARNING, logger="app.main"):
+        _startup(settings, None)
+    assert voice_warnings(caplog) == [PLACEHOLDER_VOICE]
+    assert "Startup checks skipped" in caplog.text
 
 
 def test_a_manifest_id_that_points_outside_the_folder_is_refused(source, tmp_path: Path) -> None:

@@ -326,7 +326,9 @@ def test_draw_share_the_guard_rejects_gets_a_number_free_line() -> None:
 
 
 def test_side_zero_win_names_the_bear() -> None:
-    result = RESULT.model_copy(update={"outcome": "win_0"})
+    # A clear win: side 0's 95% range sits well above 50% (the fixture's 35-41% would be too close).
+    clear = [[0.60, 0.66], RESULT.win_prob_ci95[1]]
+    result = RESULT.model_copy(update={"outcome": "win_0", "win_prob_ci95": clear})
     facts = _facts("bear-vs-wolves", result)
     outro = outro_script(facts)
     assert outro.lines[0].text.startswith("Your winner: Grizzly bear")

@@ -28,18 +28,28 @@ export function SkipLink() {
 }
 
 // Top bar with the show's name; the logo links home. "LIVE" shows only during a broadcast.
+// Off the home page, a visible Home button leads back too, since the logo doesn't look clickable.
 export function Header() {
-  const onAir = /^\/battle\/[^/]+\/?$/.test(useLocation().pathname);
+  const { pathname } = useLocation();
+  const onAir = /^\/battle\/[^/]+\/?$/.test(pathname);
+  const atHome = pathname === "/";
   return (
     <header className={styles.header}>
       <Link to="/" className={styles.logo}>
         BATTLE ROYALE
       </Link>
-      {onAir && (
-        <span className={styles.live} aria-hidden="true">
-          ● LIVE
-        </span>
-      )}
+      <div className={styles.headerRight}>
+        {onAir && (
+          <span className={styles.live} aria-hidden="true">
+            ● LIVE
+          </span>
+        )}
+        {!atHome && (
+          <Link to="/" className={styles.homeButton}>
+            Home
+          </Link>
+        )}
+      </div>
     </header>
   );
 }

@@ -226,6 +226,25 @@ def _lookup_terrain(phrase: str) -> tuple[Terrain, bool] | None:
     return (exact or hits or [None])[0]
 
 
+# The text's trailing place phrase, "... in a forest" -> "in a forest", but only when it names a
+# battlefield we know (#456). The model sometimes drops the place; this keeps "in a forest" from
+# silently becoming the arena. Only the very end of the text counts, up to three words, so a place
+# word inside a fighter's name ("a sea turtle vs a wolf") or "in a minute" is never the battlefield.
+# Up to five words ("in the middle of the forest"), a hyphenated word ("rain-forest"), and any
+# trailing marks or a closing bracket ("in a forest!!", "in a forest :)", "(in a forest)").
+_TRAILING_PLACE = re.compile(
+    r"\s+\(?((?:in|on|at|inside|into)(?:\s+[A-Za-z]+(?:-[A-Za-z]+)?){1,5})[\s.!?,:;)\"'~]*$", re.I
+)
+
+
+def terrain_in_text(text: str) -> str | None:
+    found = _TRAILING_PLACE.search(text)
+    if found is None:
+        return None
+    words = [w for w in re.findall(r"[a-z]+", found.group(1).lower()) if w not in TERRAIN_FILLER]
+    return found.group(1) if words and _lookup_terrain(" ".join(words)) else None
+
+
 # The user's terrain words -> a Terrain, plus an assumption when it isn't an exact match.
 def map_terrain(phrase: str | None) -> tuple[Terrain, str | None]:
     found = re.findall(r"[a-z]+", (phrase or "").lower().replace("_", " "))

@@ -26,6 +26,7 @@ export interface BattleSceneOptions {
   layouts: [SideLayout, SideLayout];
   battlefieldUrl: string | null;
   outcome: SimulationResult["outcome"];
+  tooClose?: boolean; // a winner too close to call (#476): the end banner must not crown anyone
   reducedMotion: boolean;
   onEvent: (index: number) => void; // every event index, once, in order
   onFinish: () => void; // the last event was reached
@@ -430,7 +431,9 @@ export function createBattleScene(P: typeof Phaser) {
 
     private endText(beat: Beat) {
       if (beat.winner !== null)
-        return winnerBanner(this.opts.layouts[beat.winner]);
+        return this.opts.tooClose
+          ? "TOO CLOSE TO CALL!"
+          : winnerBanner(this.opts.layouts[beat.winner]);
       return this.opts.outcome === "no_contest" ? "NO CONTEST" : "IT'S A DRAW!";
     }
 

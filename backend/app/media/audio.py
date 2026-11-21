@@ -9,8 +9,16 @@ by app/safety/media_names.py) plus fixed sports-broadcast wording. Never from di
 anything the user typed; an unsafe name is left out of the prompt.
 
 Voice consent: a cloned announcer voice needs a consent file on disk. Without one, cloning is
-refused and the stock voice (ANNOUNCER_VOICE_ID) is used. There is no clone call yet, so the
-stock voice is used either way for now.
+refused and the stock voice (ANNOUNCER_VOICE_ID) is used. With consent and a readable reference
+clip (ANNOUNCER_VOICE_REF_CLIP, a synthetic voice, #45, D-67), the live TTS adapter sends the
+clip as `ref_audio` and falls back to the stock voice if that fails. The clip's fingerprint is
+then part of the narration cache key, but the request alone does not say which voice spoke, so
+the save path follows what the adapter reports (SpokenWav.voice, #483): a file spoken all in the
+reference voice is saved under the reference key, one spoken all in the stock voice under the
+stock key (no fingerprint), and a file mixing the two is saved under a one-off key so this show
+can still play it, but not under the reference or stock key. A later show whose reference voice
+works again then misses the reference key and gets the cloned voice. A provider that reports no
+voice (the mocks) is taken as speaking the voice that was asked for.
 
 Files are cached under <data_dir>/media/audio/ by a hash of the full request, so a repeat makes
 no provider call (a cache hit needs a non-empty file). In mock mode they go under
@@ -40,14 +48,14 @@ from app.models.narration import Script
 from app.models.simulation import SimulationResult
 from app.models.stats import StatSheet
 from app.providers.base import TTS, MusicGen, ProviderName
-from app.providers.live.tts import speech_options
+from app.providers.live.tts import SpokenWav, reference_fingerprint, speech_options
 from app.providers.registry import ProviderMode, get_provider, provider_mode
 from app.safety.media_names import safe_media_name
 
 logger = logging.getLogger(__name__)
 
 AUDIO_VERSION = "a1"  # bump when the way files are made changes, so old caches are not reused
-ITEM_TIMEOUT_S = 48.0  # per file; the stage passes its own share of the stage budget
+ITEM_TIMEOUT_S = 96.0  # per file (120 s audio budget x 0.8, D-68); the stage passes its own share
 LINE_PAUSE_S = 0.4  # silence between two spoken lines
 MUSIC_SECONDS = 30.0
 MUSIC_STYLE = "upbeat retro sports-broadcast theme, brass and synth"
@@ -117,15 +125,18 @@ def consent_on_file(settings: Settings) -> bool:
     return path is not None and path.is_file()
 
 
-# The voice id to speak with. A cloned voice without consent is refused; with consent there is
-# still no clone call yet, so the stock voice is used in every case for now.
+# The voice id to speak with: always the stock voice id. A cloned voice without consent is
+# refused; with consent and a usable reference clip, the TTS adapter adds the clip to each request
+# and this stock voice is the fallback.
 def announcer_voice(settings: Settings | None = None) -> str:
     settings = settings or get_settings()
     if settings.announcer_voice_source.strip().lower() == "cloned":
         if not consent_on_file(settings):
             logger.warning("cloned announcer voice refused: no consent file; using stock voice")
+        elif reference_fingerprint(settings) is None:
+            logger.warning("announcer reference clip not usable; using stock voice")
         else:
-            logger.info("cloned announcer voice not available yet; using stock voice")
+            logger.info("announcer reference voice in use; stock voice is the fallback")
     return settings.announcer_voice_id
 
 
@@ -139,21 +150,25 @@ def spoken_lines(script: Script) -> list[str]:
 
 # The request for one script's file. options holds the fixed speech fields the TTS adapter sends
 # (model, and speed when not 1), so changing either makes a new file instead of reusing one.
+# voice_ref is the reference clip's fingerprint when one is in use; it is left out otherwise, so
+# stock-voice requests (and their cached files) stay exactly as before.
 def narration_request(
-    script: Script, voice_id: str, options: Mapping[str, object] | None = None
+    script: Script,
+    voice_id: str,
+    options: Mapping[str, object] | None = None,
+    voice_ref: str | None = None,
 ) -> AudioRequest:
-    return AudioRequest(
-        kind="narration_audio",
-        script_kind=script.kind,
-        request={
-            "version": AUDIO_VERSION,
-            "script_kind": script.kind,
-            "lines": spoken_lines(script),
-            "voice_id": voice_id,
-            "pause_s": LINE_PAUSE_S,
-            **(options or {}),
-        },
-    )
+    request: dict[str, object] = {
+        "version": AUDIO_VERSION,
+        "script_kind": script.kind,
+        "lines": spoken_lines(script),
+        "voice_id": voice_id,
+        "pause_s": LINE_PAUSE_S,
+        **(options or {}),
+    }
+    if voice_ref is not None:
+        request["voice_ref"] = voice_ref
+    return AudioRequest(kind="narration_audio", script_kind=script.kind, request=request)
 
 
 # The music prompt: fixed broadcast wording plus each side's safe media_name (unsafe ones left
@@ -193,6 +208,7 @@ async def make_audio(
     try:
         voice_id = announcer_voice()
         options = speech_options(get_settings())
+        voice_ref = reference_fingerprint(get_settings())
     except Exception as error:
         logger.warning("announcer voice unavailable (%s)", type(error).__name__)
         return []
@@ -203,11 +219,12 @@ async def make_audio(
             logger.warning("tts provider unavailable (%s)", type(error).__name__)
     jobs = [
         _bounded(
-            narration_request(script, voice_id, options),
+            narration_request(script, voice_id, options, voice_ref),
             functools.partial(_speak, script=script, voice_id=voice_id),
             provider,
             media_dir,
             timeout_s,
+            stock=None if voice_ref is None else narration_request(script, voice_id, options),
         )
         for script in scripts
         if spoken_lines(script)
@@ -248,30 +265,49 @@ async def make_music(
 # --- helpers -----------------------------------------------------------------------------------
 
 
-# Speak each line in turn, then join them with a short pause between lines.
+# Speak each line in turn, then join them with a short pause between lines. If the provider says
+# which voice spoke (live TTS), the joined file says it too; lines in two voices are tagged
+# "mixed" so they are not cached under the reference or stock key.
 async def _speak(tts: TTS, script: Script, voice_id: str) -> bytes:
     clips = [await tts.speak(text, voice_id) for text in spoken_lines(script)]
-    return await asyncio.to_thread(join_wavs, clips, LINE_PAUSE_S)
+    voices = {getattr(clip, "voice", None) for clip in clips}
+    joined = await asyncio.to_thread(join_wavs, clips, LINE_PAUSE_S)
+    if voices == {None}:
+        return joined
+    if len(voices) == 1:
+        [voice] = voices
+        return SpokenWav(joined, voice)
+    return SpokenWav(joined, "mixed")
 
 
 # The cached file if there is one (in this provider mode's folder), else make it within the time
-# limit and save it. Anything going wrong gives None and caches nothing.
+# limit and save it. Anything going wrong gives None and caches nothing. `stock` is the request
+# without the reference clip: a file the provider says was spoken in the stock voice is saved
+# under it instead, never under the reference key.
 async def _bounded[P](
     request: AudioRequest,
     make: Callable[[P], Awaitable[bytes]],
     provider: P | None,
     media_dir: Path | None,
     timeout_s: float,
+    stock: AudioRequest | None = None,
 ) -> Asset | None:
     try:
-        request = replace(request, mode=provider_mode(PROVIDER_FOR[request.kind]))
-        file = (media_dir or files.media_root()) / request.cached_path
-        if files.is_cached(file):
+        mode = provider_mode(PROVIDER_FOR[request.kind])
+        request = replace(request, mode=mode)
+        root = media_dir or files.media_root()
+        if files.is_cached(root / request.cached_path):
             return request.asset()
         if provider is None:
             raise RuntimeError("no provider")
         data = await asyncio.wait_for(make(provider), timeout_s)
-        await asyncio.to_thread(files.save, file, data)
+        voice = getattr(data, "voice", None)
+        if stock is not None and voice == "stock":
+            request = replace(stock, mode=mode)
+        elif voice == "mixed":
+            # Serve this show, but do not reuse the file as cloned or as stock.
+            request = replace(request, request={**request.request, "spoken": "mixed"})
+        await asyncio.to_thread(files.save, root / request.cached_path, data)
     except Exception as error:
         logger.warning("audio %s not made (%s)", request.asset_id, type(error).__name__)
         return None

@@ -11,6 +11,12 @@ In this order: the verdict, the win probability, the deciding factor, the fair-f
 sign-off. If {deciding_factor} is not in the list of placeholders, no single factor decided the
 fight: say so in one line, and do not name any stat or circumstance as the reason.
 
+## When the message says the verdict is too close to call
+The simulation's win range reaches 50%, so the page says "Too close to call". Do the same:
+call it a near coin flip with a slight edge for the fighter "{winner}" names, if you name one.
+Never say "winner", "won", "wins", or "takes the win" in that case, and you do not have to use
+"{winner}". Still use "{win_pct}", the deciding-factor line, and the fair-fight line.
+
 ## Placeholders: you write NO numbers at all
 The code fills in every number and the verdict. Write the placeholders exactly as listed in the
 message, in curly braces, for example "{winner}" or "{win_pct}". The message lists the only

@@ -24,7 +24,10 @@ from tests.property.sim_helpers import make_sheet, matchup_of
 # The fingerprint of the explainer text at each engine version. When the test below fails, the
 # wording changed: bump ENGINE_VERSION in constants.py and record the new fingerprint here.
 # Any new ENGINE_VERSION needs an entry here; if only the version moved, copy the same fingerprint.
-TEXT_AT_VERSION = {13: "8301a424be2d0ee8135258e2be0c8dc31c4ff1bb3aedc3a26499053a1dec2cdf"}
+# 13 was updated on purpose for #458 (a crowd reads "6 gray wolves", not "6 Gray wolf"): the PM
+# chose to keep ENGINE_VERSION at 13, because a reseed the day before the bug bash would move
+# results measured on 13 (as #423's bump moved cnt-04 from 288 to 320). Only new battles get it.
+TEXT_AT_VERSION = {13: "6b42badc4bb2bcc93a1742c6971216d8d74d3b5d21213b077d1ee198acbf2200"}
 
 
 # One sample of every template: each factor, helped or not, for the smaller and bigger side.

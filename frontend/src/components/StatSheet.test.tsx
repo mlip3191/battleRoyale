@@ -15,6 +15,7 @@ import {
   uniqueSources,
 } from "./StatSheet.tsx";
 import styles from "./stat-sheet.module.css";
+import css from "./stat-sheet.module.css?raw";
 
 const sheets = (done as unknown as BattleRecord).stat_sheets;
 const [grizzly] = sheets;
@@ -348,4 +349,53 @@ test("the Sources section lists every unique source once, with title, URL, and l
 test("the Sources section says so when nothing was sourced", () => {
   render(<SourceList sheets={[toaster]} />);
   expect(screen.getByText(/every stat here is an estimate/)).toBeTruthy();
+});
+
+// The stylesheet's narrow-screen block (jsdom has no layout, so the rules themselves are checked).
+const phoneRules = () => {
+  const start = css.indexOf("@media (max-width: 30rem)");
+  expect(start).toBeGreaterThan(-1);
+  let depth = 0;
+  for (let i = css.indexOf("{", start); i < css.length; i++) {
+    if (css[i] === "{") depth++;
+    if (css[i] === "}" && --depth === 0) return css.slice(start, i + 1);
+  }
+  throw new Error("the narrow-screen block never closes");
+};
+
+test("on a phone each stat stacks under its name, so the table never scrolls the page sideways (#465)", () => {
+  // Long words in a source title or note may break anywhere, at every width.
+  expect(css).toMatch(/\.table td\s*{\s*overflow-wrap:\s*anywhere;/);
+  const phone = phoneRules();
+  // Name and value share a line; where it comes from takes the full width below them.
+  expect(phone).toMatch(/\.table tr\s*{[^}]*display:\s*grid;/);
+  expect(phone).toMatch(
+    /\.table td:last-child\s*{[^}]*grid-column:\s*1 \/ -1;/,
+  );
+  // The column headings are hidden visually but stay for screen readers (clipped, not removed).
+  expect(phone).toMatch(/\.table thead\s*{[^}]*clip-path:\s*inset\(50%\);/);
+  expect(phone).not.toMatch(/display:\s*none/);
+  // The quote under a source link fits the screen, padding included.
+  expect(phone).toMatch(
+    /\.quote\s*{[^}]*box-sizing:\s*border-box;[^}]*width:\s*min\(22rem, 75vw\);/,
+  );
+});
+
+test("the stacked layout keeps every heading, stat, tag and source link (#465)", () => {
+  showCards([grizzly]);
+  const table = screen.getByRole("table", {
+    name: `Stats for ${grizzly.display_name}`,
+  });
+  const headings = within(table)
+    .getAllByRole("columnheader")
+    .map((h) => h.textContent);
+  expect(headings).toEqual(["Stat", "Value", "Where it comes from"]);
+  const rows = statRows(grizzly.display_name);
+  expect(rows).toHaveLength(Object.keys(grizzly.stats).length);
+  for (const row of rows) {
+    expect(within(row).getByRole("rowheader")).toBeTruthy();
+    expect(within(row).getAllByRole("cell")).toHaveLength(2);
+  }
+  const sourced = Object.values(grizzly.stats).filter((s) => s.source).length;
+  expect(within(table).getAllByRole("link")).toHaveLength(sourced);
 });

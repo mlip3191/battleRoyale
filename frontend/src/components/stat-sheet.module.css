@@ -49,6 +49,51 @@
   border-bottom: 1px solid var(--bg);
 }
 
+/* A long word in a source title or note may break, so the table never pushes the page wider
+   than the screen (#465). */
+.table td {
+  overflow-wrap: anywhere;
+}
+
+/* On a phone the three columns don't fit, so each stat stacks: name and value on one line,
+   where it comes from below them (#465). The column headings stay for screen readers. */
+@media (max-width: 30rem) {
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .table tr {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    border-bottom: 1px solid var(--bg);
+  }
+
+  .table th,
+  .table td {
+    border-bottom: none;
+  }
+
+  .table td:last-child {
+    grid-column: 1 / -1;
+    padding-top: 0;
+  }
+
+  .card {
+    padding: 0.75rem 0.85rem;
+  }
+
+  /* The quote opens under the source link, so keep it inside the screen too. */
+  .quote {
+    box-sizing: border-box;
+    width: min(22rem, 75vw);
+  }
+}
+
 .badge {
   position: relative;
 }

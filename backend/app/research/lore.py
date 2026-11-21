@@ -115,7 +115,6 @@ class LoreOutcome:
 
 UNAVAILABLE = LoreOutcome()
 NONSENSE = LoreOutcome(blocked=True)
-NOT_A_LEGEND = LoreOutcome(not_a_legend=True)  # with no reason (a bare "not a legend")
 
 
 class _TextOnly(HTMLParser):

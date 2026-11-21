@@ -127,7 +127,7 @@ Stages run in the orchestrator (`pipeline/`). Each stage records `pending | runn
 | 2 Research | ≤ 0.5 s | ≤ 45 s | fall back to seed sheet or all-estimate sheet with a banner; size-reference entities are researched too |
 | 3 Simulate (1,000 runs) | ≤ 15 s limit; about 1.5–6.9 s on a laptop for a showcase fight (D-63) | — | must not fail; it is pure code |
 | 4–5 Scripts | ≤ 10 s | — | template-based fallback script |
-| 5 Audio + music | ≤ 60 s | — | captions only / no music |
+| 5 Audio + music | audio ≤ 120 s (D-68), music ≤ 60 s | — | captions only / no music |
 | 6 Images | ≤ 60 s (cached per fighter) | — | placeholder shapes in the fighter's color |
 | 7 Fair fight | ≤ 5 s | — | "no fair fight within limits" |
 | 8 Next challenger | ≤ 10 s | — | candidates come only from seed/cached fighters (no new research), so the budget holds; fallback: closest odds from the seed list |
@@ -358,7 +358,7 @@ Rules:
 | `assets` | `prompt_hash` | generated media paths; reused across battles |
 
 - **Seed:** `simulation_seed = hash(matchup normalized, sheet_hash_0, sheet_hash_1, ENGINE_VERSION)`. Re-running a battle reproduces it exactly.
-- **Knowledge base build:** `uv run python -m scripts.ingest_seed` downloads Wikipedia/Wikidata text for seed fighters into `data/kb/`, parses, chunks (≈800 characters, 100 overlap), embeds, and stores. Raw text is not committed (size + license); seed stat sheets are.
+- **Knowledge base build:** `uv run python -m scripts.ingest_seed` downloads Wikipedia/Wikidata text for seed fighters into `data/kb/`, parses, chunks (≈800 characters, 100 overlap), embeds, and stores. Raw article text and HTML are not committed (size + license); seed stat sheets are, and so are the seed fighters' passages and vectors in `data/prebuilt-kb/` (D-66), which startup loads into an empty knowledge base in live mode when the embedding model matches, so a fresh setup can skip the ingest.
 - **Migrations:** numbered SQL files in `backend/app/db/migrations/`, applied at startup.
 - SQLite runs in WAL mode; one writer at a time is fine for a demo app.
 

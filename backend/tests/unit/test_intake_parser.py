@@ -408,6 +408,77 @@ async def test_model_assumptions_with_a_digit_are_dropped_but_code_notes_stay() 
     assert "Assumed 1 moose" in notes and "10,000" in notes and "volcano" in notes
 
 
+# One-matchup reply ("a toaster vs a goose") carrying the given model notes.
+async def _notes_for(model_notes: list[str]) -> list[str]:
+    text = "a toaster vs a goose"
+    reply = {
+        "fighters": [
+            {"raw": "a toaster", "entity": "toaster"},
+            {"raw": "a goose", "entity": "goose"},
+        ],
+        "assumptions": model_notes,
+    }
+    result = await parse_matchup(text, chat=CannedChat({text: [reply]}))
+    assert result.status == "ok" and result.matchup is not None
+    return result.matchup.assumptions
+
+
+# Issue #475: the model's notes about counts and its own schema never reach the card.
+async def test_issue_475_schema_notes_are_dropped_but_the_code_count_note_stays() -> None:
+    text = "50 ducks vs a honey badger"
+    leaked = [
+        "Counts defaulted to one for unspecified quantities like 'a'.",
+        "Numbers moved to top level per updated schema note.",
+    ]
+    reply = {
+        "fighters": [
+            {"raw": "50 ducks", "entity": "duck"},
+            # Raw without the "a", as on the issue's card, so code writes its own count note.
+            {"raw": "honey badger", "entity": "honey badger"},
+        ],
+        "assumptions": leaked,
+    }
+    result = await parse_matchup(text, chat=CannedChat({text: [reply]}))
+    assert result.status == "ok" and result.matchup is not None
+    notes = result.matchup.assumptions
+    assert not any(note in notes for note in leaked)
+    assert not any("schema" in n.lower() or "defaulted" in n.lower() for n in notes)
+    assert "Assumed 1 honey badger, since no number was given." in notes
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "Numbers moved to top level per updated schema note.",
+        "Returned the answer as JSON.",
+        "Left the variant null as the format asks.",
+        "Followed the prompt instructions for the terrain.",
+        "Used the top-level terrain key.",
+        "Parsed the request into fighters.",
+        "Counts defaulted to one.",
+        "Quantity was not given for the goose.",
+        "Formatted the fighters as a list.",
+    ],
+)
+async def test_model_notes_about_the_output_or_counts_are_dropped(note: str) -> None:
+    assert note not in await _notes_for([note])
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "Treated ice as open field terrain.",
+        "Assumed an adult male grizzly bear.",
+        "Read 'the snow' as tundra.",
+        "Assumed a standard house cat.",
+        "Treated the toaster as an ordinary kitchen object.",
+        "Assumed a domestic goose, not a wild one.",
+    ],
+)
+async def test_model_notes_about_the_matchup_survive(note: str) -> None:
+    assert note in await _notes_for([note])
+
+
 # PR #140 review: two sides copied from the same words are rejected, then retried.
 async def test_two_sides_with_the_same_raw_are_retried() -> None:
     text = "a goose vs a toaster"

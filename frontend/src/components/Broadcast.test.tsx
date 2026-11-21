@@ -1,8 +1,9 @@
 // The shared broadcast pieces: the ticker's live region and the decorative banner option.
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, expect, test, vi } from "vitest";
-import { LoadingTicker, LowerThird } from "./Broadcast.tsx";
+import { Header, LoadingTicker, LowerThird } from "./Broadcast.tsx";
 import css from "./broadcast.module.css?raw";
 
 afterEach(cleanup);
@@ -88,4 +89,38 @@ test("reduced motion: the ticker wraps instead of crawling, and its pause button
   expect(css).toMatch(
     /\.paused \.tickerText\s*{\s*animation-play-state:\s*paused/,
   );
+});
+
+// The top bar at a given path, with a stand-in home page to land on.
+function renderHeaderAt(path: string) {
+  render(
+    <MemoryRouter initialEntries={[path]}>
+      <Header />
+      <Routes>
+        <Route path="/" element={<p>Home page</p>} />
+        <Route path="*" element={<p>Other page</p>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
+test("the Home button shows on the battle and results pages and leads home", () => {
+  for (const path of ["/battle/b1", "/battle/b1/results"]) {
+    renderHeaderAt(path);
+    const home = screen.getByRole("link", { name: "Home" });
+    expect(home.getAttribute("href")).toBe("/");
+    fireEvent.click(home);
+    expect(screen.getByText("Home page")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Home" })).toBeNull();
+    cleanup();
+  }
+});
+
+test("the home page has no Home button, and LIVE still shows during a broadcast", () => {
+  renderHeaderAt("/");
+  expect(screen.queryByRole("link", { name: "Home" })).toBeNull();
+  cleanup();
+  renderHeaderAt("/battle/b1");
+  expect(screen.getByText("● LIVE")).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Home" })).toBeTruthy();
 });

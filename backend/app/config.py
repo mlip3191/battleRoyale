@@ -66,8 +66,11 @@ class Settings(BaseSettings):
     announcer_voice_id: str = ""
     announcer_voice_style: str = ""  # not sent: the TTS endpoint has no style or pitch field
     # Tempo multiplier sent as the TTS `speed` field (1 = unchanged); D-09's mild slowdown.
-    announcer_voice_speed: float = 0.9
+    # Bounded to 0.25-4.0 inclusive, the range the course TTS service accepts.
+    announcer_voice_speed: float = Field(default=0.9, ge=0.25, le=4.0)
     announcer_voice_consent_file: Path | None = None
+    # Synthetic reference WAV sent as `ref_audio` when the source is cloned and consent is on file.
+    announcer_voice_ref_clip: Path | None = None
 
     # Simulation
     sim_runs: int = 1000
@@ -79,7 +82,9 @@ class Settings(BaseSettings):
     hf_token: SecretStr | None = None
 
     # Resolve relative paths against the repo root, not the current folder.
-    @field_validator("data_dir", "announcer_voice_consent_file", mode="after")
+    @field_validator(
+        "data_dir", "announcer_voice_consent_file", "announcer_voice_ref_clip", mode="after"
+    )
     @classmethod
     def _resolve_from_repo_root(cls, value: Path | None) -> Path | None:
         if value is None or value.is_absolute():
@@ -87,7 +92,7 @@ class Settings(BaseSettings):
         return (REPO_ROOT / value).resolve()
 
     # Treat a blank optional path in .env as "not set".
-    @field_validator("announcer_voice_consent_file", mode="before")
+    @field_validator("announcer_voice_consent_file", "announcer_voice_ref_clip", mode="before")
     @classmethod
     def _blank_path_is_none(cls, value: object) -> object:
         return None if value == "" else value
