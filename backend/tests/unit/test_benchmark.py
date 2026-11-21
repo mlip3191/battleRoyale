@@ -612,7 +612,7 @@ def test_a_newer_full_seed_run_replaces_the_pinned_baseline(tmp_path):
     _write(out, "seed", 3)
     text = out.read_text("utf-8")
     assert "## Baseline (seed sheets): run 2026-11-03 09:00" in text
-    assert "run 2026-11-01" not in text.split("## Run ")[0]
+    assert "## Baseline (seed sheets): run 2026-11-01" not in text  # the old baseline is gone
     assert text.count("## Baseline (seed sheets)") == 1
 
 
