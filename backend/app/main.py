@@ -59,8 +59,8 @@ def create_app(
 ) -> FastAPI:
     settings = settings or get_settings()
 
-    # At startup: load the showcase into an empty database, and in live mode load the prebuilt
-    # knowledge base or say if it still needs building. No step may stop the app from starting.
+    # At startup: add any missing showcase battles, and in live mode load the prebuilt knowledge
+    # base or say if it still needs building. No step may stop the app from starting.
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         _startup(settings, showcase_dir, prebuilt_dir)
@@ -96,8 +96,8 @@ def create_app(
     return app
 
 
-# Load the showcase if the database is empty; in live mode, warn about a placeholder voice id and
-# fill an empty knowledge base from the prebuilt files (D-66), or warn that it needs an ingest.
+# Add any missing showcase battles; in live mode, warn about a placeholder voice id and fill an
+# empty knowledge base from the prebuilt files (D-66), or warn that it needs an ingest.
 def _startup(
     settings: Settings, showcase_dir: Path | None, prebuilt_dir: Path | None = None
 ) -> None:
