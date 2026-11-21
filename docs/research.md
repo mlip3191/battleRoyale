@@ -155,8 +155,8 @@ Objects and plants last the full 600-second fight limit and cannot attack unless
 | Size class | Weight | Band kept as is | For example |
 |---|---|---|---|
 | tiny (mouse-sized or smaller) | 0.05 kg | under 0.35 kg | a field mouse 0.05 kg; a tarantula keeps the arachnid 2 g, a fly the insect 0.1 g, a frog the amphibian 0.2 kg |
-| small (cat-sized) | 2.5 kg | 0.35 to 16 kg | a house cat 2.5 kg; a hawk keeps the bird 2 kg, a pike the fish 10 kg |
-| medium (person-sized) | 50 kg | 16 to 160 kg | an ostrich 50 kg (not the bird 2 kg); a wolf keeps the mammal 50 kg, a cobra the reptile 20 kg, a priest the human 70 kg |
+| small (cat-sized) | 2.5 kg | 0.35 to 11 kg | a house cat 2.5 kg; a hawk keeps the bird 2 kg, a pike the fish 10 kg |
+| medium (person-sized) | 50 kg | 11 to 160 kg | an ostrich 50 kg (not the bird 2 kg); a wolf keeps the mammal 50 kg, a cobra the reptile 20 kg, a priest the human 70 kg |
 | large (horse- or bear-sized) | 500 kg | 160 to 1,600 kg | a moose, a crocodile or a tuna 500 kg |
 | huge (elephant-sized or bigger) | 5,000 kg | 1,600 kg and up | an elephant, a whale shark or a titan 5,000 kg |
 
