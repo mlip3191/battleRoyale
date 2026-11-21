@@ -42,6 +42,7 @@ class Blocklist:
     owners: frozenset[str]
     relations: frozenset[str]
     self_harm: frozenset[str] = frozenset()
+    religious_figures: frozenset[str] = frozenset()
     attack_ask: frozenset[str] = frozenset()
     attack: re.Pattern[str] = re.compile(r"(?!)")
     """A harm word, then within four words a target not followed by "of" (on _clean text)."""
@@ -96,6 +97,7 @@ def load_blocklist() -> Blocklist:
         owners=words("real_person", "owners"),
         relations=words("real_person", "relations"),
         self_harm=words("self_harm", "anywhere"),
+        religious_figures=words("religious_figure", "anywhere"),
         attack_ask=words("attack_planning", "ask"),
         attack=_attack_pattern(
             words("attack_planning", "harm"), words("attack_planning", "targets")
@@ -266,6 +268,8 @@ def check_text_rules(text: str) -> SafetyVerdict:
         return blocked("minor", "rules")
     if _names_someone_known(text, lists):
         return blocked("real_person", "rules")
+    if _has_phrase(text, lists.religious_figures):  # a living religion's figure (D-69)
+        return blocked("deity", "rules")
     for words in sides(strip_ask_opener(text, lists)):
         verdict = _check_side(words, lists)
         if not verdict.allowed:

@@ -72,10 +72,12 @@ GIANT_ANALOGS = {
 }
 BIG_WORDS = r"big|large|huge|giant\w*|enormous|massive|colossal|monstrous|immense"
 NO_ARTICLE = "(no Wikipedia article was found)"  # sent in place of the article text (#403)
-# Why the model answers found false (#403). Only the first three (#444 added generic_kind) mean "a
-# plausible fighter, just not a legend"; the rest, and anything else, are refusals. Fixed here and
-# in prompts/lore_extract.md.
-NOT_A_LEGEND_REASONS = frozenset({"real_animal", "object_or_machine", "generic_kind"})
+# Why the model answers found false (#403). Only these (#444 added generic_kind, D-69 armed_unit
+# and myth_deity) mean "a plausible fighter, just not a legend"; the rest, and anything else, are
+# refusals. Fixed here and in prompts/lore_extract.md.
+NOT_A_LEGEND_REASONS = frozenset(
+    {"real_animal", "object_or_machine", "generic_kind", "armed_unit", "myth_deity"}
+)
 REFUSAL_REASONS = frozenset({"person", "deity", "named_character", "weapon", "nonsense"})
 # Generic supernatural kinds D-65 allows. Their Wikipedia article ("God") is about one named
 # figure, so the lookup would answer "deity"; code calls them generic_kind without asking (#444).
@@ -104,8 +106,9 @@ class LoreReply(BaseModel):
     quote: str | None = None
     """The sentence that supports the choices, copied word for word."""
     reason: Any = None  # Any on purpose: a wrongly typed reason must fail closed, not raise
-    """Only with found false: why (real_animal, object_or_machine, generic_kind, person, deity,
-    named_character, weapon or nonsense). Code checks it; anything else is a refusal."""
+    """Only with found false: why (real_animal, object_or_machine, generic_kind, armed_unit,
+    myth_deity, person, deity, named_character, weapon or nonsense). Code checks it; anything
+    else is a refusal."""
 
 
 @dataclass(frozen=True)
@@ -117,8 +120,8 @@ class LoreOutcome:
     blocked: bool = False
     not_a_legend: bool = False
     kind: str | None = None
-    """With not_a_legend: the fixed reason ("real_animal", "object_or_machine" or "generic_kind")
-    (#453, #444)."""
+    """With not_a_legend: the fixed reason ("real_animal", "object_or_machine", "generic_kind",
+    "armed_unit" or "myth_deity") (#453, #444, D-69)."""
 
 
 UNAVAILABLE = LoreOutcome()
@@ -260,9 +263,24 @@ async def fetch_legend_article(client: httpx.AsyncClient, name: str) -> SourceDo
     return None
 
 
-# True for a generic supernatural kind ("god", "angel"): not a legend, and no lookup is needed.
-def is_generic_supernatural(name: str) -> bool:
-    return name.strip().lower() in GENERIC_SUPERNATURAL_KINDS
+# Common military types (D-69), as intake names them ("US Navy SEALs" is "navy seal"). Their
+# articles are about one real unit, so the lookup tends to answer "person"; code calls them
+# armed_unit without asking. Other units still go through the lookup.
+MILITARY_KINDS = frozenset(
+    {"navy seal", "green beret", "marine", "paratrooper", "infantryman", "soldier"}
+    | {"modern soldier", "commando", "army ranger", "special forces soldier", "swat officer"}
+)
+
+
+# The fixed reason code gives a name without asking the model ("god" is a generic kind, "navy
+# seal" an armed unit), or None when the lookup should decide.
+def code_kind(name: str) -> str | None:
+    word = name.strip().lower()
+    if word in GENERIC_SUPERNATURAL_KINDS:
+        return "generic_kind"
+    if word in MILITARY_KINDS:
+        return "armed_unit"
+    return None
 
 
 # What a found-false answer means: "not a legend" only for a stated harmless reason (#403),

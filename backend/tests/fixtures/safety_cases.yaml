@@ -426,27 +426,22 @@ cases:
     mock:
       classifier: copyrighted_character
 
-  # --- Blocked: deities --------------------------------------------------------------------
+  # --- Deities: gods of mythology fight, living religions' figures don't (D-69) -------------
   - id: dt-01
     text: "Zeus vs a grizzly bear"
-    expect: blocked
-    reason: deity
-    kind: deity
-    layer: wikidata
+    expect: allowed
+    kind: myth_deity
   - id: dt-02
     text: "Thor vs a polar bear"
-    expect: blocked
-    reason: deity
-    kind: deity
-    layer: wikidata
+    expect: allowed
+    kind: myth_deity
   - id: dt-03
     text: "Anubis vs a crocodile"
-    expect: blocked
-    reason: deity
-    kind: deity
-    layer: wikidata
-  # Named deities and human religious figures the classifier must block (Mike, #400 review;
-  # D-65). Plain human religious roles stay allowed (ut-05 to ut-10).
+    expect: allowed
+    kind: myth_deity
+  # Gods and central figures of living religions, and human religious figures, stay blocked
+  # (D-65, D-69): a fixed list in the code rules, the rest by the classifier. Plain human
+  # religious roles stay allowed (ut-05 to ut-10).
   - id: dt-04
     text: "God vs a goose"
     expect: blocked
@@ -460,17 +455,13 @@ cases:
     expect: blocked
     reason: deity
     kind: deity
-    layer: classifier
-    mock:
-      classifier: deity
+    layer: rules
   - id: dt-06
     text: "Buddha vs a goose"
     expect: blocked
     reason: deity
     kind: deity
-    layer: classifier
-    mock:
-      classifier: deity
+    layer: rules
   - id: dt-07
     text: "a prophet vs a goose"
     expect: blocked
@@ -496,27 +487,52 @@ cases:
     mock:
       classifier: deity
 
-  # --- Blocked: firearms and explosives ----------------------------------------------------
+  - id: dt-10
+    text: "Shiva vs a tiger"
+    expect: blocked
+    reason: deity
+    kind: deity
+    layer: rules
+  - id: dt-11
+    text: "Jesus vs a grizzly bear"
+    expect: blocked
+    reason: deity
+    kind: deity
+    layer: rules
+  - id: dt-12
+    text: "Odin vs 6 gray wolves"
+    expect: allowed
+    kind: myth_deity
+
+  # --- Weapons and military units: allowed fighters (D-69) ----------------------------------
   - id: wp-01
     text: "an assault rifle vs a grizzly bear"
-    expect: blocked
-    reason: weapon
-    kind: weapon
-    layer: wikidata
+    expect: allowed
+    kind: object
   - id: wp-02
     text: "a hand grenade vs a toaster"
-    expect: blocked
-    reason: weapon
-    kind: weapon
-    layer: classifier
-    mock:
-      classifier: weapon
+    expect: allowed
+    kind: object
+  - id: wp-04
+    text: "25 US navy seals vs 100 spartan warriors"
+    expect: allowed
+    kind: military
+  - id: wp-05
+    text: "SEAL Team Six vs a grizzly bear"
+    expect: allowed
+    kind: military
+  - id: wp-06
+    text: "10 Green Berets vs a gorilla"
+    expect: allowed
+    kind: military
+  - id: wp-07
+    text: "a Marine vs a samurai"
+    expect: allowed
+    kind: military
   - id: wp-03
     text: "a nuclear bomb vs a goose"
-    expect: blocked
-    reason: weapon
-    kind: weapon
-    layer: wikidata
+    expect: allowed
+    kind: object
 
   # --- Blocked: places, celestial bodies, abstract ideas -----------------------------------
   - id: os-01

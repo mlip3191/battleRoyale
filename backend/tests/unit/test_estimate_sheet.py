@@ -368,3 +368,64 @@ async def test_a_spartan_warrior_fights_as_a_generic_human(monkeypatch) -> None:
     )
     assert estimated and sheet.body == Body.LIVING and sheet.category == "human_archetype"
     assert all(stat.is_estimate for stat in sheet.stats.values())
+
+
+# --- D-69: military units carry a firearm; gods of mythology fight as generic kinds ----------
+
+
+def test_an_armed_unit_is_a_living_human_with_a_labeled_firearm_estimate() -> None:
+    from app.models.stats import Body
+    from app.research.estimate_sheet import FIREARM_STATS
+
+    sheet = estimate_sheet("navy seal", "armed_unit")
+    assert sheet.body == Body.LIVING and sheet.category == "human_archetype"
+    assert sheet.weapons == ["weapon_ranged"]
+    assert all(stat.is_estimate and stat.source is None for stat in sheet.stats.values())
+    for stat, value in FIREARM_STATS.items():
+        assert sheet.stats[stat].value == value
+        assert sheet.stats[stat].low < value < sheet.stats[stat].high
+        assert "Firearm assumption" in (sheet.stats[stat].note or "")
+    assert (
+        sheet.stats[StatName.MASS].value == category_default("human_archetype", StatName.MASS).value
+    )
+    assert sheet.sheet_hash == compute_sheet_hash(sheet.stats)
+
+
+def test_a_god_of_mythology_is_a_living_fighter_without_a_firearm() -> None:
+    from app.models.stats import Body
+
+    sheet = estimate_sheet("zeus", "myth_deity")
+    assert sheet.body == Body.LIVING and sheet.category == "human_archetype"
+    assert "weapon_ranged" not in sheet.weapons
+
+
+async def test_military_units_and_gods_of_mythology_fight_and_living_religions_stay_blocked(
+    monkeypatch,
+) -> None:
+    from app.models.stats import Body
+    from tests.unit.test_legend_cache import ScriptedChat
+    from tests.unit.test_mythical_battles import go_live
+
+    for name, reason in [("navy seal", "armed_unit"), ("zeus", "myth_deity")]:
+        go_live(monkeypatch, ScriptedChat({"found": False, "reason": reason}))
+        sheet, estimated = await stages.lookup_fighter_or_estimate(
+            FighterRequest(entity=name, raw=name)
+        )
+        assert estimated and sheet.body == Body.LIVING
+    go_live(monkeypatch, ScriptedChat({"found": False, "reason": "deity"}))
+    with pytest.raises(StageFailed):
+        await stages.lookup_fighter_or_estimate(FighterRequest(entity="vishnu", raw="vishnu"))
+
+
+async def test_a_navy_seal_is_an_armed_unit_without_asking_the_model(monkeypatch) -> None:
+    from tests.unit.test_legend_cache import ScriptedChat
+    from tests.unit.test_mythical_battles import go_live
+
+    # the article is about one real unit, so the model might say person; code never asks
+    chat = ScriptedChat({"found": False, "reason": "person"})
+    go_live(monkeypatch, chat)
+    sheet, estimated = await stages.lookup_fighter_or_estimate(
+        FighterRequest(entity="navy seal", raw="25 US navy seals")
+    )
+    assert estimated and sheet.weapons == ["weapon_ranged"]
+    assert chat.calls == 0

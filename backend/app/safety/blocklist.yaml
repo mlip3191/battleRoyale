@@ -74,6 +74,44 @@ minor:
   # "a 6-year-old" (head) is blocked; "a 6-year-old horse" is not. Ages from 18 up are fine.
   max_age: 17
 
+religious_figure:
+  reason: deity
+  # D-69 (Mike, Nov 21): gods of mythology may fight (Zeus, Thor), but the gods and central
+  # figures of living religions stay blocked. Only names that are clearly that figure live here;
+  # anything ambiguous ("Kali" is also a martial art, "Brahma" a chicken breed, a capitalized
+  # "God") is left to the classifier. Whole words, anywhere in the request.
+  anywhere:
+    - allah
+    - yahweh
+    - jehovah
+    - jesus
+    - jesus christ
+    - christ
+    - muhammad
+    - mohammed
+    - muhammed
+    - buddha
+    - gautama buddha
+    - vishnu
+    - shiva
+    - krishna
+    - ganesha
+    - ganesh
+    - hanuman
+    - durga
+    - lakshmi
+    - amaterasu
+    - waheguru
+    - guru nanak
+    - ahura mazda
+    - satan
+    - lucifer
+    - virgin mary
+    - shango
+    - oshun
+    - yemoja
+    - obatala
+
 group_of_people:
   # The contract has no separate "group" reason; groups of people map to hate (ARCHITECTURE §11).
   reason: hate

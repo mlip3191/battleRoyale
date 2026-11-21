@@ -126,8 +126,8 @@ EXAMPLES = [
     (("a dog named Napoleon", "dog"), None),
     (("the emperor", "emperor"), None),
     (("Robo-Tron", "robo-tron"), "copyrighted_character"),
-    (("Zeus", "zeus"), "deity"),
-    (("an assault rifle", "assault rifle"), "weapon"),
+    (("Zeus", "zeus"), None),  # D-69: Wikidata's deity and weapon answers don't block
+    (("an assault rifle", "assault rifle"), None),
     (("the Moon", "moon"), "out_of_scope"),
     (("a Canadian goose", "canada goose"), None),
     (("a German Shepherd", "german shepherd"), None),
@@ -241,8 +241,8 @@ async def test_a_repeat_check_through_the_gate_makes_no_wikidata_request(
     cache: WikidataCache,
 ) -> None:
     lookup = CountingLookup()
-    first = await gate("check_matchup", ("Zeus", "zeus", None), cache, lookup=lookup)
+    first = await gate("check_matchup", ("Napoleon", "napoleon", None), cache, lookup=lookup)
     calls = lookup.calls
-    second = await gate("check_matchup", ("Zeus", "zeus", None), cache, lookup=lookup)
-    assert first == second and first.reason == "deity"
+    second = await gate("check_matchup", ("Napoleon", "napoleon", None), cache, lookup=lookup)
+    assert first == second and first.reason == "real_person"
     assert calls > 0 and lookup.calls == calls

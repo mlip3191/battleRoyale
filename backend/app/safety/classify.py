@@ -80,7 +80,9 @@ async def classify_text(text: str, *, chat: ChatLLM) -> SafetyVerdict:
             continue
         parsed = read_reply(reply)
         if parsed is not None:
-            if parsed.verdict == "allowed":
+            # D-69 retired "weapon" (weapons are allowed fighters); the label stays in the reply
+            # schema so a stale answer is read as allowed instead of failing the whole request.
+            if parsed.verdict in ("allowed", "weapon"):
                 return ALLOWED
             return blocked(parsed.verdict, "classifier")
     raise SafetyUnavailable("The safety classifier gave no usable answer.") from problem
