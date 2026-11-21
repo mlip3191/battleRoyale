@@ -31,6 +31,9 @@ EMPTY_KB = (
     "The knowledge base is empty, so new fighters can't be researched yet. "
     "Run `npm run ingest` once (it takes a few minutes), then restart."
 )
+PREBUILT_DAMAGED = (
+    "The prebuilt knowledge base in data/prebuilt-kb/ looks damaged, so it wasn't loaded"
+)
 PREBUILT_MISMATCH = (
     "The prebuilt knowledge base in data/prebuilt-kb/ was built with a different embedding "
     "model than EMBEDDINGS_MODEL in your .env (or that setting is empty), so it wasn't loaded: "
@@ -126,6 +129,7 @@ def _fill_knowledge_base(
         )
     except (ValueError, KeyError, TypeError) as error:  # a damaged file: build it with ingest
         logger.warning("The prebuilt knowledge base wasn't loaded (%s).", error)
+        print(f"{PREBUILT_DAMAGED} ({error})")
         result = LoadResult(LoadOutcome.MISSING)
     if result.outcome is LoadOutcome.LOADED:
         print(

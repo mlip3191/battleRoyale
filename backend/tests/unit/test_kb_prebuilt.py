@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from app.config import REPO_ROOT, Settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
-from app.main import PREBUILT_MISMATCH, create_app
+from app.main import PREBUILT_DAMAGED, PREBUILT_MISMATCH, create_app
 from app.providers.mock.text import MockEmbedder
 from app.research.kb_prebuilt import (
     MANIFEST_FILE,
@@ -283,6 +283,26 @@ def test_a_damaged_vectors_file_is_refused_and_leaves_the_database_empty(
     with pytest.raises(ValueError, match="one 8-number vector"):
         load_prebuilt(fresh, MODEL, folder)
     assert fresh.execute("SELECT COUNT(*) FROM documents").fetchone()[0] == 0
+
+
+# A damaged file at startup: the console says why, then how to rebuild (Felipe's #442 nit).
+def test_startup_prints_why_a_damaged_prebuilt_file_was_not_loaded(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    folder = tmp_path / "damaged"
+    folder.mkdir()
+    (folder / MANIFEST_FILE).write_bytes((FIXTURE / MANIFEST_FILE).read_bytes())
+    vectors = bytearray((FIXTURE / "vectors-1.f16").read_bytes())
+    vectors[0] ^= 0xFF
+    (folder / "vectors-1.f16").write_bytes(bytes(vectors))
+    settings = Settings(
+        _env_file=None, provider_mode="live", data_dir=tmp_path, embeddings_model=MODEL
+    )
+    with TestClient(create_app(settings, tmp_path / "missing", None, folder)):
+        pass
+    out = capsys.readouterr().out
+    assert PREBUILT_DAMAGED in out and "fingerprint" in out
+    assert "npm run ingest` once" in out
 
 
 def test_a_missing_folder_is_reported_as_missing(fresh: sqlite3.Connection, tmp_path: Path) -> None:

@@ -215,7 +215,9 @@ def _store(
     step = size * FLOAT_BYTES
     offset = 0
     with connection:
-        connection.execute("BEGIN")  # table changes join the transaction only if it is explicit
+        # An explicit BEGIN, under sqlite3's default transaction handling, makes the vector-table
+        # DROP/CREATE roll back with the inserts; changing isolation_level would break that.
+        connection.execute("BEGIN")
         connection.execute("DROP TABLE IF EXISTS chunks_vec")
         connection.execute(
             f"CREATE VIRTUAL TABLE chunks_vec USING vec0("
