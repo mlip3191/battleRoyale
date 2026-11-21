@@ -235,14 +235,13 @@ async def test_classifier_recovers_when_the_retry_works() -> None:
 
 # --- The mock classifier (mock mode only, #240) --------------------------------------------
 
-# Mike's examples from #240: obvious real people, characters, gods, and firearms.
+# Mike's examples from #240: obvious real people, characters, and religious figures. Gods of
+# mythology and firearms were examples too, until D-69 allowed them (MOCK_ALLOWED below).
 MOCK_BLOCKS = [
     ("Napoleon vs a grizzly bear", "real_person"),
     ("Taylor Swift vs a goose", "real_person"),
     ("Batman vs a goose", "copyrighted_character"),
-    ("Zeus vs a bear", "deity"),
-    ("a grizzly bear vs a handgun", "weapon"),
-    ("an AK-47 vs a bear", "weapon"),
+    ("the Pope vs a bear", "deity"),
 ]
 
 
@@ -258,12 +257,10 @@ async def test_the_mock_classifier_blocks_obvious_people_characters_deities_and_
 @pytest.mark.parametrize(
     ("text", "reason"),
     [
-        ("an ak47 vs a bear", "weapon"),
-        ("an AK 47 vs a bear", "weapon"),
-        ("3 grenades vs a goose", "weapon"),
+        ("3 prophets vs a goose", "deity"),
         ("Spider-Man vs a goose", "copyrighted_character"),
         ("NAPOLEON BONAPARTE vs a moose", "real_person"),
-        ("Zeus vs a handgun", "deity"),  # several problems: the prompt's first reason wins
+        ("Batman vs the Pope", "copyrighted_character"),  # the prompt's first reason wins
         ("Batman vs Napoleon", "real_person"),
     ],
 )
@@ -282,12 +279,26 @@ MOCK_ALLOWED = [
     "a bombardier beetle vs a hornet",
     "a gunboat vs a kraken",
     "a medieval knight vs a samurai",
+    # D-69: gods of mythology, weapons and military units are allowed fighters
+    "Zeus vs a bear",
+    "a grizzly bear vs a handgun",
+    "an AK-47 vs a bear",
+    "3 grenades vs a goose",
+    "25 US navy seals vs 100 spartan warriors",
 ]
 
 
 @pytest.mark.parametrize("text", MOCK_ALLOWED)
 async def test_the_mock_classifier_still_allows_ordinary_matchups(text: str) -> None:
     assert (await classify_text(text, chat=MockChatLLM())).allowed, text
+
+
+async def test_a_stale_weapon_answer_from_the_classifier_counts_as_allowed(tmp_path: Path) -> None:
+    (tmp_path / "chat").mkdir()
+    fixture = tmp_path / "chat" / f"{PROMPT_NAME}.json"
+    fixture.write_text('{"default": {"verdict": "weapon"}}', encoding="utf-8")
+    verdict = await classify_text("a grizzly bear vs a handgun", chat=MockChatLLM(tmp_path))
+    assert verdict.allowed  # D-69 retired "weapon": weapons are allowed fighters
 
 
 async def test_a_blocking_fixture_reply_wins_over_the_mock_keywords(tmp_path: Path) -> None:

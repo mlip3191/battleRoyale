@@ -49,7 +49,7 @@ The result is staged as a cheesy late-night sports broadcast: an announcer, a so
 | **Must (MVP)** | Two-sided matchups with counts and terrain · any physical fighter: animals, historical archetypes, objects, plants, vehicles, machines, and mythical creatures (D-38) · one clarifying question · safety blocking · cited stat sheets with estimate labels · Monte Carlo verdict with win % · deciding factor · fair-fight count · next challenger · announcer captions · crude animation replaying the event log · results page with sources · runs with one command |
 | **Should** | Announcer voice (TTS) · soundtrack · generated sprites and battlefields · benchmark ≥ 80% on "obvious" cases · shareable result link — the results URL reopens the stored battle **[added]** |
 | **Could (stretch)** | 3+ combatants · voice input (speech-to-text) · photo-based fighters (multimodal embeddings) · mobile layout |
-| **Won't (this term)** | User accounts · real people, named fictional characters, deities, or firearms as fighters · paid APIs · public deployment beyond the demo |
+| **Won't (this term)** | User accounts · real people, named fictional characters, or figures of living religions as fighters (D-69) · paid APIs · public deployment beyond the demo |
 
 ## 4. The eight-step pipeline
 
@@ -60,7 +60,7 @@ The chat LLM (port 9001) parses free text into a structured matchup: entity, cou
 - **[added]** Counts, number words, clamping (max 10,000 per side), and normalization are done by code, not the model.
 - **[added]** Size phrases like "horse-sized duck" are parsed into a `size_reference`; the scale factor is computed by code from both fighters' sourced masses, never by the model.
 - **[added]** If the answer to the clarifying question is still vague, the app picks the most common variant and shows it as an assumption.
-- **[added]** Any physical thing can fight (D-38): objects, plants, vehicles, and machines get sourced mass, size, and speed like animals; mythical creature types ("dragon") are modeled by code on the real animals their legends compare them to, and every one of their stats is labeled an assumption. Named fictional characters, deities, firearms and explosives, and abstract ideas are politely turned away.
+- **[added]** Any physical thing can fight (D-38): objects, plants, vehicles, and machines get sourced mass, size, and speed like animals; mythical creature types ("dragon") are modeled by code on the real animals their legends compare them to, and every one of their stats is labeled an assumption. Named fictional characters, figures of living religions, and abstract ideas are politely turned away; military units, weapons, and gods of mythology may fight (D-69).
 - **Done when:** 25+ test phrasings parse correctly; 50-case safety set passes.
 
 ### Step 2 — Research, RAG (Gunnar: G01–G06)

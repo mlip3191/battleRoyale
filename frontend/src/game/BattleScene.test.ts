@@ -11,7 +11,7 @@ import {
   type BattleSceneOptions,
 } from "./BattleScene.ts";
 import { FakeScene, fakePhaser } from "./fake-phaser.ts";
-import { MAX_SPRITES_PER_SIDE, layoutStage } from "./layout.ts";
+import { HEALTH_BAR, MAX_SPRITES_PER_SIDE, layoutStage } from "./layout.ts";
 import { buildTimeline, keyFrames } from "./timeline.ts";
 
 const BattleScene = createBattleScene(fakePhaser as unknown as typeof Phaser);
@@ -424,5 +424,102 @@ describe("images that never load", () => {
     vi.advanceTimersByTime(LOAD_TIMEOUT_MS);
     expect(scene.load.loadComplete).not.toHaveBeenCalled();
     expect(scene.images).toHaveLength(0);
+  });
+});
+
+describe("health bars (#503)", () => {
+  // The two bar fills (the second rectangle at the bar's height on each side).
+  const fills = (scene: Scene) => {
+    const bars = scene.rects.filter((r) => r.y === HEALTH_BAR.y);
+    return [bars[1], bars[3]];
+  };
+
+  const log = [
+    ev({ type: "approach", side: 0 }),
+    ev({ type: "approach", side: 1, group_size: 3 }),
+    ev({ type: "ko", side: 1, actor: 0 }),
+    ev({ type: "ko", side: 1, actor: 1 }),
+    ev({ type: "end", side: 0 }),
+  ];
+
+  test("both bars start full; a crowd's bar drains with each knock-out, a lone fighter's stays full", () => {
+    const { scene } = stage(withLog(log), [1, 3], false);
+    expect(fills(scene).map((f) => f.scaleX)).toEqual([1, 1]);
+    playAll(scene);
+    const drains = scene.tweens.list.filter(
+      (t) => t.targets === fills(scene)[1],
+    );
+    expect(drains.at(-1)!.scaleX).toBeCloseTo(1 / 3);
+    expect(scene.texts.some((t) => t.text === "1 of 3 standing")).toBe(true);
+    expect(fills(scene)[0].scaleX).toBe(1);
+  });
+
+  test("a side that is knocked out has an empty bar", () => {
+    const solo = [
+      ev({ type: "approach", side: 0 }),
+      ev({ type: "approach", side: 1 }),
+      ev({ type: "ko", side: 1, actor: 0 }),
+      ev({ type: "end", side: 0 }),
+    ];
+    const { scene } = stage(withLog(solo), [1, 1], true);
+    playAll(scene);
+    expect(fills(scene).map((f) => f.scaleX)).toEqual([1, 0]);
+  });
+
+  test("a side that flees has an empty bar", () => {
+    const fled = [
+      ev({ type: "approach", side: 0 }),
+      ev({ type: "approach", side: 1, group_size: 3 }),
+      ev({ type: "flee", side: 1, group_size: 3 }),
+      ev({ type: "end", side: 0 }),
+    ];
+    const { scene } = stage(withLog(fled), [1, 3], true);
+    playAll(scene);
+    expect(fills(scene)[1].scaleX).toBe(0);
+    expect(scene.texts.some((t) => t.text === "0 of 3 standing")).toBe(true);
+  });
+
+  test("reduced motion and skipping set the bar with no tween", () => {
+    const { scene } = stage(withLog(log), [1, 3], true);
+    playAll(scene);
+    expect(
+      scene.tweens.list.some((t) => fills(scene).includes(t.targets as never)),
+    ).toBe(false);
+    expect(fills(scene)[1].scaleX).toBeCloseTo(1 / 3);
+    const skipped = stage(withLog(log), [1, 3], false);
+    skipped.scene.skipToEnd();
+    expect(fills(skipped.scene)[1].scaleX).toBeCloseTo(1 / 3);
+  });
+
+  test("skipping mid-drain snaps each bar to its side's final share (#528)", () => {
+    const solo = [
+      ev({ type: "approach", side: 0 }),
+      ev({ type: "approach", side: 1 }),
+      ev({ type: "ko", side: 1, actor: 0 }),
+      ev({ type: "end", side: 0 }),
+    ];
+    const knockedOut = stage(withLog(solo), [1, 1], false);
+    playAll(knockedOut.scene);
+    freezeTweensHalfway(knockedOut.scene); // the viewer skips during the last knock-out's ease
+    expect(fills(knockedOut.scene)[1].scaleX).toBe(0.5);
+    knockedOut.scene.skipToEnd();
+    expect(fills(knockedOut.scene).map((f) => f.scaleX)).toEqual([1, 0]);
+
+    const crowd = stage(withLog(log), [1, 3], false);
+    playAll(crowd.scene);
+    freezeTweensHalfway(crowd.scene);
+    crowd.scene.skipToEnd();
+    expect(fills(crowd.scene)[1].scaleX).toBeCloseTo(1 / 3);
+  });
+
+  test("a 1,000-strong crowd's bar follows the log's knock-outs", () => {
+    const { scene } = stage(big, [1000, 1], false);
+    playAll(scene);
+    const fell = big.representative_log
+      .filter((e) => e.type === "ko" && e.side === 0)
+      .reduce((n, e) => n + e.group_size, 0);
+    expect(
+      scene.texts.some((t) => t.text === `${1000 - fell} of 1,000 standing`),
+    ).toBe(true);
   });
 });

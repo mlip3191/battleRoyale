@@ -37,7 +37,9 @@ def test_the_complete_example_runs(monkeypatch, capsys):
     exec(compile(example, "docs/simulation-api.md", "exec"), {})
     out = capsys.readouterr().out
     assert "Grizzly bear - adult male" in out
-    assert "A fair fight needs" in out or "No fair fight" in out
+    assert any(
+        text in out for text in ("A fair fight needs", "No fair fight", "already about even")
+    )
 
 
 def test_the_size_reference_snippet_matches_how_run_really_works():

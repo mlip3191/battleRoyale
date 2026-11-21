@@ -134,6 +134,12 @@ async def _run_together(*checks: Awaitable[SafetyVerdict]) -> list[SafetyVerdict
         raise
 
 
+# Wikidata reasons that no longer block on their own (D-69): weapons are allowed fighters, and
+# Wikidata can't tell a god of mythology (Zeus, allowed) from one of a living religion, so the
+# code rules' fixed list and the classifier decide deities.
+NOT_BLOCKED_BY_WIKIDATA = frozenset({"deity", "weapon"})
+
+
 # The Wikidata name check on the sides' names, telling it which ones the model wrote.
 async def _check_side_names(
     fighters: Sequence[Side], lookup: WikidataLookup | None, cache: WikidataCache | None
@@ -143,6 +149,7 @@ async def _check_side_names(
         lookup=lookup,
         cache=cache,
         model_written=model_written_names(fighters),
+        ignore=NOT_BLOCKED_BY_WIKIDATA,
     )
 
 
