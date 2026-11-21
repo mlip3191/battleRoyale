@@ -52,6 +52,7 @@ logger = logging.getLogger(__name__)
 AUDIO_VERSION = "a1"  # bump when the way files are made changes, so old caches are not reused
 ITEM_TIMEOUT_S = 48.0  # per file; the stage passes its own share of the stage budget
 LINE_PAUSE_S = 0.4  # silence between two spoken lines
+LINES_AT_ONCE = 3  # how many of a script's lines are sent to the voice at the same time (#459)
 MUSIC_SECONDS = 30.0
 MUSIC_STYLE = "upbeat retro sports-broadcast theme, brass and synth"
 MUSIC_TAIL = "instrumental, no vocals"
@@ -259,10 +260,22 @@ async def make_music(
 # --- helpers -----------------------------------------------------------------------------------
 
 
-# Speak each line in turn, then join them with a short pause between lines.
+# Speak the lines a few at a time (so twelve lines on a slow shared server fit the per-file
+# limit, #459), then join them in script order with a short pause between lines. If any line
+# fails, the others are cancelled and the whole script fails, as before.
 async def _speak(tts: TTS, script: Script, voice_id: str) -> bytes:
-    clips = [await tts.speak(text, voice_id) for text in spoken_lines(script)]
-    return await asyncio.to_thread(join_wavs, clips, LINE_PAUSE_S)
+    gate = asyncio.Semaphore(LINES_AT_ONCE)
+
+    async def one(text: str) -> bytes:
+        async with gate:
+            return await tts.speak(text, voice_id)
+
+    try:
+        async with asyncio.TaskGroup() as group:
+            tasks = [group.create_task(one(text)) for text in spoken_lines(script)]
+    except ExceptionGroup as failed:
+        raise failed.exceptions[0] from None
+    return await asyncio.to_thread(join_wavs, [task.result() for task in tasks], LINE_PAUSE_S)
 
 
 # The cached file if there is one (in this provider mode's folder), else make it within the time

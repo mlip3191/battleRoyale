@@ -191,6 +191,66 @@ async def test_a_failing_tts_gives_no_files_and_caches_nothing(tmp_path: Path) -
     assert len(redo) == 3  # the failure was not cached
 
 
+# A TTS with a delay per line (default 0), counting how many lines are being spoken at once.
+class TimedTTS(MockTTS):
+    def __init__(self, delays: dict[str, float] | None = None, default: float = 0.0) -> None:
+        self.delays = delays or {}
+        self.default = default
+        self.running = 0
+        self.most_at_once = 0
+
+    async def speak(self, text: str, voice_id: str) -> bytes:
+        self.running += 1
+        self.most_at_once = max(self.most_at_once, self.running)
+        try:
+            await asyncio.sleep(self.delays.get(text, self.default))
+            return await super().speak(text, voice_id)
+        finally:
+            self.running -= 1
+
+
+# A play-by-play of twelve distinct lines, the long script of a show (#459).
+def long_script() -> Script:
+    return script("play_by_play", *(f"Beat number {n}!" for n in range(12)))
+
+
+async def test_a_scripts_lines_are_spoken_a_few_at_a_time(tmp_path: Path) -> None:
+    tts = TimedTTS(default=0.02)
+    assets = await audio.make_audio([long_script()], provider=tts, media_dir=tmp_path)
+    assert len(assets) == 1
+    assert tts.most_at_once == audio.LINES_AT_ONCE == 3
+
+
+async def test_a_twelve_line_script_fits_a_budget_a_one_by_one_read_would_miss(
+    tmp_path: Path,
+) -> None:
+    # Twelve lines of 0.05 s: one by one is 0.6 s, three at a time is about 0.2 s.
+    tts = TimedTTS(default=0.05)
+    assets = await audio.make_audio(
+        [long_script()], provider=tts, media_dir=tmp_path, timeout_s=0.45
+    )
+    assert len(assets) == 1
+
+
+async def test_one_slow_line_does_not_hold_up_the_others(tmp_path: Path) -> None:
+    # One line takes 0.25 s and eleven take 0.04 s: one by one is 0.69 s, about 0.25 s now.
+    tts = TimedTTS({"Beat number 0!": 0.25}, default=0.04)
+    assets = await audio.make_audio(
+        [long_script()], provider=tts, media_dir=tmp_path, timeout_s=0.5
+    )
+    assert len(assets) == 1
+
+
+async def test_the_lines_stay_in_order_even_when_later_ones_finish_first(tmp_path: Path) -> None:
+    texts = [f"Beat number {n}!" for n in range(12)]
+    # Earlier lines are slower, so they finish last.
+    tts = TimedTTS({t: 0.01 * (12 - i) for i, t in enumerate(texts)})
+    assets = await audio.make_audio([long_script()], provider=tts, media_dir=tmp_path)
+    expected = audio.join_wavs([await MockTTS().speak(t, STOCK_VOICE) for t in texts], 0.4)
+    saved = tmp_path / assets[0].url.removeprefix("/media/")
+    assert saved.read_bytes() == expected
+
+
 async def test_one_failing_script_is_left_out_and_the_others_are_kept(tmp_path: Path) -> None:
     tts = SpyTTS(fail_on="Here they come!")
     assets = await audio.make_audio(broadcast(), provider=tts, media_dir=tmp_path)
