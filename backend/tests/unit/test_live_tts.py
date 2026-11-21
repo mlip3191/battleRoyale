@@ -6,6 +6,7 @@ import io
 import json
 import wave
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from app.providers.live.tts import (
     REF_RETRIES,
     REF_TIMEOUT_S,
     LiveTTS,
+    SpokenWav,
     audition_filename,
     is_stock_voice,
     is_usable_voice,
@@ -470,6 +472,158 @@ async def test_make_audio_hashes_the_clip_fingerprint(tmp_path: Path) -> None:
     fingerprint = reference_fingerprint(Settings(_env_file=None, **settings))
     options = {"model": MODEL, "speed": 0.9}
     assert asset.asset_id == audio.narration_request(script, "", options, fingerprint).asset_id
+
+
+# --- which voice really spoke (#483) ---------------------------------------------------------
+
+CLONED_RATE = 16000  # the fake server answers reference-voice requests at this rate
+STOCK_RATE = 22050  # and stock requests at this one, so a saved file shows which voice it holds
+
+
+class VoiceServer:
+    """A fake TTS server whose reference voice fails while `ref_up` is False."""
+
+    def __init__(self, ref_up: bool = True) -> None:
+        self.ref_up = ref_up
+        self.bodies: list[dict[str, Any]] = []
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        self.bodies.append(body)
+        if "ref_audio" not in body:
+            return httpx.Response(200, content=tiny_wav(STOCK_RATE))
+        if not self.ref_up:
+            return httpx.Response(503)
+        return httpx.Response(200, content=tiny_wav(CLONED_RATE))
+
+    def ref_tries(self) -> int:
+        return sum("ref_audio" in body for body in self.bodies)
+
+
+def wav_rate(path: Path) -> int:
+    with wave.open(str(path), "rb") as wav:
+        return wav.getframerate()
+
+
+def saved_file(media: Path, asset: Any) -> Path:
+    return media / asset.url.removeprefix("/media/")
+
+
+# The reference-key and stock-key requests make_audio uses for this script (mock-mode folder).
+def both_keys(script: Script, settings: dict[str, Any]) -> tuple[Any, Any]:
+    options = {"model": MODEL, "speed": 0.9}
+    fingerprint = reference_fingerprint(Settings(_env_file=None, **settings))
+    ref = audio.narration_request(script, "", options, fingerprint)
+    stock = audio.narration_request(script, "", options)
+    return replace(ref, mode="mock"), replace(stock, mode="mock")
+
+
+async def test_speak_reports_which_voice_really_spoke(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    cloned = await live_tts(VoiceServer(), **clip_settings(tmp_path)).speak("Hi", "default")
+    assert isinstance(cloned, SpokenWav) and cloned.voice == "cloned"
+    fallback = live_tts(VoiceServer(ref_up=False), **clip_settings(tmp_path))
+    assert (await fallback.speak("Hi", "default")).voice == "stock"
+    assert (await fallback.speak("Again", "default")).voice == "stock"  # the clip was dropped
+    no_clip = await live_tts(VoiceServer(), announcer_voice_source="stock").speak("Hi", "default")
+    assert no_clip.voice == "stock" and no_clip == tiny_wav(STOCK_RATE)
+
+
+async def test_a_failed_reference_voice_is_not_cached_and_a_later_battle_gets_the_clone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    settings = clip_settings(tmp_path)
+    use_settings(mock_settings(data_dir=tmp_path, **settings))
+    media = tmp_path / "media"
+    script = Script(kind="intro", lines=[ScriptLine(speaker="announcer", text="Hello!")])
+    ref_key, stock_key = both_keys(script, settings)
+    server = VoiceServer(ref_up=False)
+
+    [first] = await audio.make_audio(
+        [script], provider=live_tts(server, **settings), media_dir=media
+    )
+    assert not (media / ref_key.cached_path).exists()  # the stock file is not under the ref key
+    assert first.asset_id == stock_key.asset_id
+    assert wav_rate(saved_file(media, first)) == STOCK_RATE
+
+    server.ref_up = True  # the service recovers before the next battle
+    server.bodies.clear()
+    [second] = await audio.make_audio(
+        [script], provider=live_tts(server, **settings), media_dir=media
+    )
+    assert server.ref_tries() == 1  # battle 2 really sent the clip
+    assert second.asset_id == ref_key.asset_id
+    assert wav_rate(saved_file(media, second)) == CLONED_RATE
+
+
+async def test_later_lines_and_scripts_after_a_failure_stay_off_the_reference_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    settings = clip_settings(tmp_path)
+    use_settings(mock_settings(data_dir=tmp_path, **settings))
+    media = tmp_path / "media"
+    intro = Script(
+        kind="intro",
+        lines=[ScriptLine(speaker="announcer", text=t) for t in ("One", "Two", "Three")],
+    )
+    outro = Script(kind="outro", lines=[ScriptLine(speaker="announcer", text="Bye")])
+    server = VoiceServer(ref_up=False)
+    live = live_tts(server, **settings)  # one adapter for the whole show, as in make_audio
+
+    assets = await audio.make_audio([intro, outro], provider=live, media_dir=media)
+    assert live.ref_audio is None and 1 <= server.ref_tries() <= 2  # dropped after the failure
+    stock_keys = {both_keys(s, settings)[1].asset_id for s in (intro, outro)}
+    assert {a.asset_id for a in assets} == stock_keys
+    for script in (intro, outro):
+        assert not (media / both_keys(script, settings)[0].cached_path).exists()
+    saved = sorted(media.rglob("*.wav"))
+    assert saved == sorted(saved_file(media, a) for a in assets)
+    assert all(wav_rate(path) == STOCK_RATE for path in saved)
+
+
+async def test_a_script_spoken_in_both_voices_is_not_cached_under_either_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    settings = clip_settings(tmp_path)
+    use_settings(mock_settings(data_dir=tmp_path, **settings))
+    media = tmp_path / "media"
+    script = Script(
+        kind="intro", lines=[ScriptLine(speaker="announcer", text=t) for t in ("One", "Two")]
+    )
+    # Same sample rate so the two lines can be joined (VoiceServer uses different rates).
+    stock_same = tiny_wav()  # 24000 Hz, 240 frames
+    longer = io.BytesIO()
+    with wave.open(longer, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(24000)
+        wav.writeframes(b"\x00\x00" * 480)
+    cloned_same = longer.getvalue()
+    ref_up = True
+
+    def flaky(request: httpx.Request) -> httpx.Response:
+        nonlocal ref_up
+        body = json.loads(request.content)
+        if "ref_audio" not in body:
+            return httpx.Response(200, content=stock_same)
+        if not ref_up:
+            return httpx.Response(503)
+        ref_up = False  # the first line gets the clone, the second falls back
+        return httpx.Response(200, content=cloned_same)
+
+    [asset] = await audio.make_audio(
+        [script], provider=live_tts(flaky, **settings), media_dir=media
+    )
+    ref_key, stock_key = both_keys(script, settings)
+    assert not (media / ref_key.cached_path).exists()
+    assert not (media / stock_key.cached_path).exists()
+    assert asset.asset_id != ref_key.asset_id and asset.asset_id != stock_key.asset_id
+    assert saved_file(media, asset).is_file()
 
 
 # The committed synthetic voice files (D-67).
