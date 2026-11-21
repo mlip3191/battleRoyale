@@ -36,6 +36,8 @@ from app.safety.media_names import safe_media_name
 
 logger = logging.getLogger(__name__)
 
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+PNG_HEADER_BYTES = 24  # signature, then the IHDR length, type, width and height
 ITEM_TIMEOUT_S = 50.0  # per picture, inside the images stage's 60 s budget
 FIGHTER_ID = re.compile(r"[a-z0-9]+(?:-{1,2}[a-z0-9]+)*")  # "grizzly-bear", "bear--cub"
 
@@ -268,11 +270,20 @@ async def _bounded(
 # provider and is redone (#461).
 def is_legacy_mock_picture(file: Path) -> bool:
     try:
-        image = png.decode(file.read_bytes())
+        data = file.read_bytes()
+        if not _has_mock_size(data):  # real pictures are far larger: skip the full decode
+            return False
+        return png.corners_transparent(png.decode(data))
     except (OSError, png.PngError):
         return False
-    return (image.width, image.height) == (MOCK_IMAGE_SIZE, MOCK_IMAGE_SIZE) and (
-        png.corners_transparent(image)
+
+
+# True when the PNG header (the first 24 bytes) says the picture is MOCK_IMAGE_SIZE square.
+def _has_mock_size(data: bytes) -> bool:
+    if len(data) < PNG_HEADER_BYTES or data[:8] != PNG_SIGNATURE or data[12:16] != b"IHDR":
+        return False
+    return (
+        int.from_bytes(data[16:20], "big") == MOCK_IMAGE_SIZE == int.from_bytes(data[20:24], "big")
     )
 
 

@@ -160,6 +160,24 @@ def _plant_legacy_placeholder(media: Path, name: str) -> Path:
     return legacy
 
 
+def test_only_a_small_square_with_clear_corners_counts_as_a_legacy_mock_picture(
+    tmp_path: Path,
+) -> None:
+    mock = tmp_path / "mock.png"
+    mock.write_bytes(silhouette_png((200, 200, 200)))
+    assert images.is_legacy_mock_picture(mock)
+    opaque = tmp_path / "opaque.png"  # 64x64 but filled to the corners (not the mock's circle)
+    opaque.write_bytes(write_png(png.decode(silhouette_png((9, 9, 9))).pixels[..., :3]))
+    assert not images.is_legacy_mock_picture(opaque)
+    large = tmp_path / "large.png"  # a real-size sprite is never a placeholder
+    large.write_bytes(keyed_sprite_png())
+    assert not images.is_legacy_mock_picture(large)
+    junk = tmp_path / "junk.png"
+    junk.write_bytes(b"not a png at all, just text")
+    assert not images.is_legacy_mock_picture(junk)
+    assert not images.is_legacy_mock_picture(tmp_path / "missing.png")
+
+
 async def test_live_mode_redraws_a_legacy_mock_placeholder(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
