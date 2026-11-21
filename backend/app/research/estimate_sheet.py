@@ -15,6 +15,7 @@ This sheet is never cached in the sheet store, so a later real sheet for the sam
 shadowed by it.
 """
 
+import math
 import re
 
 from app.models.stats import StatName, StatSheet, StatValue
@@ -48,8 +49,8 @@ MYTH_DEITY_REASON = "myth_deity"
 ARMED_UNIT_REASON = "armed_unit"
 HUMAN_REASONS = frozenset({GENERIC_KIND_REASON, MYTH_DEITY_REASON, ARMED_UNIT_REASON})
 # #517: the lookup's animal kind picks that category's defaults, natural weapon and habitat, and
-# its size class scales a living fighter's body by a mass factor (square-cube: length with the
-# cube root, force with the two-thirds power). Judgment values, labeled estimates like the rest.
+# its size class sets a living fighter's mass (square-cube: length with the cube root, force with
+# the two-thirds power). Judgment values, labeled estimates like the rest.
 ANIMAL_KINDS = {
     "mammal": (("teeth",), "land"),
     "bird": (("beak",), "land"),
@@ -60,7 +61,11 @@ ANIMAL_KINDS = {
     "arachnid": (("sting",), "land"),
     "mollusk": (("beak",), "water"),
 }
-SIZE_FACTORS = {"tiny": 0.001, "small": 0.05, "medium": 1.0, "large": 10.0, "huge": 100.0}
+# kg: a typical adult of each size class whatever its kind, as the prompt defines them (mouse,
+# cat, person, horse or bear, elephant). A kind whose own default mass already falls in the
+# class's band (up to the geometric midpoints with its neighbors) keeps it, so a medium mammal
+# stays 50 kg, a medium person 70 kg and a tiny insect insect-sized.
+SIZE_MASSES = {"tiny": 0.05, "small": 2.5, "medium": 50.0, "large": 500.0, "huge": 5000.0}
 SIZE_EXPONENTS = {
     StatName.MASS: 1.0,
     StatName.SIZE: 1 / 3,
@@ -93,27 +98,29 @@ def estimate_sheet(
     living = animal or generic
     animal_kind = category if animal and category in ANIMAL_KINDS else ESTIMATE_ANIMAL_CATEGORY
     weapons, habitat = ANIMAL_KINDS[animal_kind] if animal else (ESTIMATE_WEAPONS, ESTIMATE_HABITAT)
-    category = (
+    profile_category = (
         animal_kind if animal else ESTIMATE_GENERIC_CATEGORY if generic else ESTIMATE_CATEGORY
     )
     profile = FighterProfile(
         fighter_id=fighter_slug(display),
         display_name=display,
-        media_name=media_name_for(display, category),
-        category=category,
+        media_name=media_name_for(display, profile_category),
+        category=profile_category,
         body=ESTIMATE_ANIMAL_BODY if living else ESTIMATE_BODY,
         habitat=habitat,
         weapons=ARMED_WEAPONS if armed else weapons,
     )
     built = build_stat_sheet(profile)  # no facts, no extraction: code defaults only
     stats = {
-        stat: _labeled(_as_default(value, category, stat)) for stat, value in built.stats.items()
+        stat: _labeled(_as_default(value, profile_category, stat))
+        for stat, value in built.stats.items()
     }
     if armed:
         stats.update({stat: _firearm(stat, stats[stat], v) for stat, v in FIREARM_STATS.items()})
-    factor = SIZE_FACTORS.get(size_class or "", 1.0) if living and not armed else 1.0
+    factor = size_factor(size_class, stats[StatName.MASS].value) if living and not armed else 1.0
     if factor != 1.0:
-        note = f"Sized as a {size_class} {category.replace('_', ' ')} (#517). "
+        kg = SIZE_MASSES[size_class or ""]
+        note = f"Sized as a {size_class} fighter, about {kg:g} kg (#517). "
         stats.update(
             {
                 stat: _scaled(stat, stats[stat], factor**power, note)
@@ -154,6 +161,19 @@ def _firearm(stat: StatName, value: StatValue, firearm: float) -> StatValue:
     return value.model_copy(
         update={"value": firearm, "low": low, "high": high, "note": ESTIMATE_NOTE + FIREARM_NOTE}
     )
+
+
+# The mass factor that brings a default mass to its size class (1 with no class, or when the
+# default already fits the class's band).
+def size_factor(size_class: str | None, default_mass: float) -> float:
+    target = SIZE_MASSES.get(size_class or "")
+    if target is None or default_mass <= 0:
+        return 1.0
+    masses = list(SIZE_MASSES.values())
+    i = masses.index(target)
+    low = math.sqrt(masses[i - 1] * target) if i > 0 else 0.0
+    high = math.sqrt(masses[i + 1] * target) if i + 1 < len(masses) else math.inf
+    return 1.0 if low <= default_mass < high else target / default_mass
 
 
 # An estimate scaled for its size class, with the usual estimate range and a note saying so.
