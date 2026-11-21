@@ -3,6 +3,8 @@ import { describe, expect, test } from "vitest";
 import type { Asset } from "../api/client.ts";
 import done from "../fixtures/battle-record-done.json";
 import {
+  healthFraction,
+  healthLabel,
   sideTitle,
   MAX_SPRITES_PER_SIDE,
   SIDE_COLORS,
@@ -204,5 +206,22 @@ describe("sideTitle", () => {
     expect(sideTitle({ name: "fire ant", count: 1000 })).toBe(
       "1,000 FIRE ANTS",
     );
+  });
+});
+
+describe("health bar (#503)", () => {
+  test("the bar is the share still standing, and empty once the side has fled", () => {
+    expect(healthFraction(6, 6, false)).toBe(1);
+    expect(healthFraction(3, 6, false)).toBe(0.5);
+    expect(healthFraction(0, 6, false)).toBe(0);
+    expect(healthFraction(4, 6, true)).toBe(0);
+    expect(healthFraction(1, 1, false)).toBe(1);
+  });
+
+  test("a crowd says how many are left of its total; a lone fighter says nothing", () => {
+    expect(healthLabel(3, 6, false)).toBe("3 of 6 standing");
+    expect(healthLabel(1000, 1000, false)).toBe("1,000 of 1,000 standing");
+    expect(healthLabel(4, 6, true)).toBe("0 of 6 standing");
+    expect(healthLabel(1, 1, false)).toBe("");
   });
 });

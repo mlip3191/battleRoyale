@@ -5,8 +5,11 @@ import type Phaser from "phaser";
 import type { SimulationResult } from "../api/client.ts";
 import {
   MAX_SPRITES_PER_SIDE,
+  HEALTH_BAR,
   STAGE,
   badgeText,
+  healthFraction,
+  healthLabel,
   visibleSlots,
   sideTitle,
   winnerBanner,
@@ -62,6 +65,8 @@ interface Squad {
   alive: number;
   gone: boolean;
   badge: Phaser.GameObjects.Text | null;
+  bar: Phaser.GameObjects.Rectangle; // the health bar's fill (#503); its scaleX is the share left
+  barLabel: Phaser.GameObjects.Text | null; // "3 of 6 standing" under a crowd's bar
 }
 
 // Build the scene class on top of the Phaser namespace that was loaded at runtime.
@@ -317,6 +322,30 @@ export function createBattleScene(P: typeof Phaser) {
             })
             .setOrigin(side === 0 ? 0 : 1, 0)
         : null;
+      const { y, width, height } = HEALTH_BAR;
+      const origin = side === 0 ? 0 : 1;
+      this.add
+        .rectangle(nameX, y, width, height, 0x1b2250)
+        .setOrigin(origin, 0.5)
+        .setStrokeStyle?.(2, 0x3ee6ff);
+      const bar = this.add
+        .rectangle(nameX, y, width, height, side === 0 ? 0x2f6bff : 0xe5384f)
+        .setOrigin(origin, 0.5);
+      const barLabel =
+        layout.count > 1
+          ? this.add
+              .text(
+                nameX,
+                y + height,
+                healthLabel(layout.count, layout.count, false),
+                {
+                  fontFamily: TEXT_FONT,
+                  fontSize: "16px",
+                  color: "#ffffff",
+                },
+              )
+              .setOrigin(origin, 0)
+          : null;
       return {
         layout,
         sprites,
@@ -325,7 +354,27 @@ export function createBattleScene(P: typeof Phaser) {
         alive: layout.count,
         gone: false,
         badge,
+        bar,
+        barLabel,
       };
+    }
+
+    // Show how many of a side are still in the fight; the bar eases down unless motion is off.
+    private showHealth(squad: Squad, ms: number, instant: boolean) {
+      const share = healthFraction(squad.alive, squad.layout.count, squad.gone);
+      squad.barLabel?.setText(
+        healthLabel(squad.alive, squad.layout.count, squad.gone),
+      );
+      if (instant) {
+        squad.bar.setScale(share, 1);
+        return;
+      }
+      this.tweens.add({
+        targets: squad.bar,
+        scaleX: share,
+        duration: Math.min(300, ms),
+        ease: "Quad.easeOut",
+      });
     }
 
     // Both squads close part of the gap; there are no positions in the log, so the scene picks them.
@@ -402,6 +451,7 @@ export function createBattleScene(P: typeof Phaser) {
       }
       if (squad.badge && squad.layout.count > MAX_SPRITES_PER_SIDE)
         squad.badge.setText(badgeText(squad.alive));
+      this.showHealth(squad, ms, instant);
       if (beat.group && !instant) this.crowdMarker(side, fell, ms, true);
     }
 
@@ -419,7 +469,10 @@ export function createBattleScene(P: typeof Phaser) {
             : this.backOff(side, spot.x, squad.layout.slots[i].x, away);
         this.moveTo(squad.sprites[i], spot.x, ms, instant);
       });
-      if (beat.kind === "flee") squad.gone = true;
+      if (beat.kind === "flee") {
+        squad.gone = true;
+        this.showHealth(squad, ms, instant);
+      }
     }
 
     // A retreat backs off RETREAT_PX toward the squad's own edge, but never past its starting spot,
