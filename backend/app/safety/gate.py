@@ -144,15 +144,13 @@ NOT_BLOCKED_BY_WIKIDATA = frozenset({"deity", "weapon"})
 async def _check_side_names(
     fighters: Sequence[Side], lookup: WikidataLookup | None, cache: WikidataCache | None
 ) -> SafetyVerdict:
-    verdict = await check_names(
+    return await check_names(
         wikidata_names(fighters),
         lookup=lookup,
         cache=cache,
         model_written=model_written_names(fighters),
+        ignore=NOT_BLOCKED_BY_WIKIDATA,
     )
-    if not verdict.allowed and verdict.reason in NOT_BLOCKED_BY_WIKIDATA:
-        return ALLOWED
-    return verdict
 
 
 # The first block in order (classifier before Wikidata), else ALLOWED.

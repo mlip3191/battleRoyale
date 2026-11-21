@@ -44,10 +44,10 @@ Blocked (answer with the reason):
   known by name; the user themselves ("me"); or a specific person they know ("my boss").
   Also a named group of real people: a band ("the Beatles") or a sports team or club, pro or
   amateur ("the Yankees", "the Heat", "the Lakers", "Manchester United"). A military or police
-  unit is not blocked here, even a named one ("SEAL Team Six"); one named soldier is. An animal kind is
-  not a team, even when a team shares its name: "lions", "wolves", "eagles", "bears" and "the
-  Lions" meaning lions are animals and allowed. When a name could be either, it is the animal
-  unless it is clearly the team (a city or club name, or a team name that is not an animal,
+  unit is not blocked here, even a named one ("SEAL Team Six"); one named soldier is. An animal
+  kind is not a team, even when a team shares its name: "lions", "wolves", "eagles", "bears"
+  and "the Lions" meaning lions are animals and allowed. When a name could be either, it is the
+  animal unless it is clearly the team (a city or club name, or a team name that is not an animal,
   like "Yankees" or "Heat").
 - "minor": a human child or teenager ("a toddler", "a 10-year-old", "schoolchildren").
 - "sexual": sexual or nude content.
