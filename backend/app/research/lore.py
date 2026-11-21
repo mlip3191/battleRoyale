@@ -77,6 +77,13 @@ NO_ARTICLE = "(no Wikipedia article was found)"  # sent in place of the article 
 # in prompts/lore_extract.md.
 NOT_A_LEGEND_REASONS = frozenset({"real_animal", "object_or_machine", "generic_kind"})
 REFUSAL_REASONS = frozenset({"person", "deity", "named_character", "weapon", "nonsense"})
+# Generic supernatural kinds D-65 allows. Their Wikipedia article ("God") is about one named
+# figure, so the lookup would answer "deity"; code calls them generic_kind without asking (#444).
+# Intake lowercases the name, so a capitalized "God" (a named deity, D-65) is stopped there.
+GENERIC_SUPERNATURAL_KINDS = frozenset(
+    {"god", "gods", "goddess", "goddesses", "angel", "angels", "demon", "demons"}
+    | {"titan", "titans", "valkyrie", "valkyries"}
+)
 
 
 class LoreReply(BaseModel):
@@ -97,7 +104,7 @@ class LoreReply(BaseModel):
     quote: str | None = None
     """The sentence that supports the choices, copied word for word."""
     reason: Any = None  # Any on purpose: a wrongly typed reason must fail closed, not raise
-    """Only with found false: why (real_animal, object_or_machine, person, deity,
+    """Only with found false: why (real_animal, object_or_machine, generic_kind, person, deity,
     named_character, weapon or nonsense). Code checks it; anything else is a refusal."""
 
 
@@ -110,7 +117,8 @@ class LoreOutcome:
     blocked: bool = False
     not_a_legend: bool = False
     kind: str | None = None
-    """With not_a_legend: the fixed reason ("real_animal" or "object_or_machine") (#453)."""
+    """With not_a_legend: the fixed reason ("real_animal", "object_or_machine" or "generic_kind")
+    (#453, #444)."""
 
 
 UNAVAILABLE = LoreOutcome()
@@ -250,6 +258,11 @@ async def fetch_legend_article(client: httpx.AsyncClient, name: str) -> SourceDo
         if article is not None:
             return article
     return None
+
+
+# True for a generic supernatural kind ("god", "angel"): not a legend, and no lookup is needed.
+def is_generic_supernatural(name: str) -> bool:
+    return name.strip().lower() in GENERIC_SUPERNATURAL_KINDS
 
 
 # What a found-false answer means: "not a legend" only for a stated harmless reason (#403),
