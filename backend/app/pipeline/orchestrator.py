@@ -52,7 +52,7 @@ UNEXPECTED = "Something went wrong behind the scenes. Please try again."
 CANCELLED = "This battle was stopped before it finished. Please try again."
 # Plain notes for stages that ended with a stand-in; the battle carries on without them.
 FALLBACK_DETAILS = {
-    "summary": "The fair-fight search ran out of time this time.",
+    "summary": "The fair-fight search didn't finish this time.",
     "challenger": "No next challenger this time.",
     "script": "No commentary script this time.",
     "audio": "Captions only this time, no announcer voice.",
@@ -151,7 +151,8 @@ async def run_battle(battle_id: str, store: BattleStore) -> None:
 # With a cached battle, a saved fair fight or challenger is copied instead of worked out
 # again; one the cached battle lacks (None) is worked out fresh. A copied value can come
 # from a stage that ended "fallback"; it is still marked "cached", which is fine for a
-# repeat battle.
+# repeat battle. A saved "couldn't work it out in time" box is the exception: it is not a result,
+# so that search runs again.
 async def _after_simulate(
     battle_id: str,
     store: BattleStore,
@@ -161,6 +162,8 @@ async def _after_simulate(
     cached: BattleRecord | None = None,
 ) -> None:
     saved_fair = cached.fair_fight if cached is not None else None
+    if saved_fair is not None and saved_fair.message.startswith(FAIR_FIGHT_UNFINISHED):
+        saved_fair = None  # a cut-off search is retried, not copied (#509)
     saved_next = cached.challenger if cached is not None else None
 
     async def fair_fight() -> Stubbed[FairFight | None]:

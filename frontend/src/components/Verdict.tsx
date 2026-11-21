@@ -149,11 +149,12 @@ export function VerdictBanner({
   );
 }
 
-// How many it takes to make it a coin flip, or why no count can.
 // The start of the message the backend saves when the fair-fight search ran out of time (#509);
-// keep it in step with FAIR_FIGHT_UNFINISHED in backend/app/pipeline/orchestrator.py.
+// keep it in step with FAIR_FIGHT_UNFINISHED in backend/app/pipeline/orchestrator.py (both sides pin
+// the same sentence in a test, so rewording one fails its test).
 export const FAIR_FIGHT_UNFINISHED = "We couldn't work out a fair fight";
 
+// How many it takes to make it a coin flip, or why no count can.
 export function FairFightCard({
   fairFight,
   matchup,

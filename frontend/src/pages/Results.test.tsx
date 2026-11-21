@@ -16,7 +16,10 @@ import * as client from "../api/client.ts";
 import { NOT_FOUND } from "../api/useBattle.ts";
 import type { BattleRecord, StatSheet } from "../api/client.ts";
 import Results from "./Results.tsx";
-import { isTooCloseToCall } from "../components/Verdict.tsx";
+import {
+  FAIR_FIGHT_UNFINISHED,
+  isTooCloseToCall,
+} from "../components/Verdict.tsx";
 
 const state = vi.hoisted(() => ({
   value: { battle: null as unknown, error: null as string | null },
@@ -282,7 +285,8 @@ test("fair fight: shows the no-fair-fight message when there is no count", () =>
 });
 
 test("fair fight: a search that ran out of time still shows a box, without claiming there is none (#509)", () => {
-  const message = "We couldn't work out a fair fight in time for this one.";
+  const message = "We couldn't work out a fair fight in time for this one."; // as the backend saves it
+  expect(message.startsWith(FAIR_FIGHT_UNFINISHED)).toBe(true);
   show({
     ...record,
     fair_fight: {
