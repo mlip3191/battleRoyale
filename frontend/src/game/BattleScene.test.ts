@@ -491,6 +491,27 @@ describe("health bars (#503)", () => {
     expect(fills(skipped.scene)[1].scaleX).toBeCloseTo(1 / 3);
   });
 
+  test("skipping mid-drain snaps each bar to its side's final share (#528)", () => {
+    const solo = [
+      ev({ type: "approach", side: 0 }),
+      ev({ type: "approach", side: 1 }),
+      ev({ type: "ko", side: 1, actor: 0 }),
+      ev({ type: "end", side: 0 }),
+    ];
+    const knockedOut = stage(withLog(solo), [1, 1], false);
+    playAll(knockedOut.scene);
+    freezeTweensHalfway(knockedOut.scene); // the viewer skips during the last knock-out's ease
+    expect(fills(knockedOut.scene)[1].scaleX).toBe(0.5);
+    knockedOut.scene.skipToEnd();
+    expect(fills(knockedOut.scene).map((f) => f.scaleX)).toEqual([1, 0]);
+
+    const crowd = stage(withLog(log), [1, 3], false);
+    playAll(crowd.scene);
+    freezeTweensHalfway(crowd.scene);
+    crowd.scene.skipToEnd();
+    expect(fills(crowd.scene)[1].scaleX).toBeCloseTo(1 / 3);
+  });
+
   test("a 1,000-strong crowd's bar follows the log's knock-outs", () => {
     const { scene } = stage(big, [1000, 1], false);
     playAll(scene);
