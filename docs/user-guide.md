@@ -189,6 +189,11 @@ Click **See the full results**. Each part, top to bottom:
 
 ![The top of the results page: winner, win chance and range for each side, draw chance, average fight length, and the deciding factor](images/user-guide/13-results-verdict.png)
 
+- **Fair fight.** How many of the losing side it would take to make the odds about even, for example "about 2 grizzly bears against 6 gray wolves". If no count up to 10,000 gets close, it says so.
+- **Next challenger.** A suggested opponent for the winner. Click **Fight them!** to start that fight right away.
+
+![Under the verdict: the fair fight, the next challenger with a Fight them! button, then the start of the tale of the tape](images/user-guide/15-results-fair-fight.png)
+
 - **Tale of the tape.** One stat sheet per fighter. For each stat you see the value and where it comes from:
   - a **source link** with a confidence level and a short note from the source;
   - an **estimate** tag when no source had the number, so the app used a default for that kind of fighter;
@@ -199,11 +204,7 @@ Click **See the full results**. Each part, top to bottom:
 
 ![A stat sheet for the grizzly bear: mass, size and top speed with Wikipedia source links, and estimate, derived and assumption tags on other stats](images/user-guide/14-results-tape.png)
 
-- **Fair fight.** How many of the losing side it would take to make the odds about even, for example "about 2 grizzly bears against 6 gray wolves". If no count up to 10,000 gets close, it says so.
-- **Next challenger.** A suggested opponent for the winner. Click **Fight them!** to start that fight right away.
 - **Sources.** Every page the stats came from, with links and licenses.
-
-![The bottom of the results page: the fair fight, the next challenger with a Fight them! button, and the list of sources](images/user-guide/15-results-fair-fight.png)
 
 **Sharing:** the address in your browser's address bar reopens this result. It works on your own computer while the app is running.
 

@@ -400,6 +400,8 @@ test("a network error is shown and the ticker stops", () => {
   expect(screen.queryByRole("region", { name: "Sources" })).toBeNull();
 });
 
+// The fair fight and the next challenger come right after the verdict, before the stat sheets,
+// so "Fight them!" isn't buried at the bottom of the page (#504).
 test("headings are in order: page, sections, then one per fighter", () => {
   show(record);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
@@ -410,9 +412,9 @@ test("headings are in order: page, sections, then one per fighter", () => {
     .map((h) => h.textContent);
   expect(h2).toEqual([
     "Winner: 6 gray wolves",
-    "Tale of the tape",
     "Fair fight",
     "Next challenger: moose",
+    "Tale of the tape",
     "Sources",
   ]);
   const h3 = screen
