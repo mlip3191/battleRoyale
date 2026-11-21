@@ -114,6 +114,46 @@ test("running without a detail: the ticker falls back to 'Researching the …'",
   );
 });
 
+// A running battle where only the named stage is running and every other stage is done.
+const onlyRunning = (name: string) => {
+  const record = asRecord(running);
+  return {
+    ...record,
+    stages: record.stages.map((s) => ({
+      ...s,
+      status: s.stage === name ? "running" : "done",
+      detail: null,
+    })),
+  };
+};
+
+test("audio running without a detail: the ticker says the announcer is being recorded (#493)", () => {
+  show(onlyRunning("audio"));
+  const text = screen.getByRole("status").textContent ?? "";
+  expect(text).toContain("Recording the announcer");
+  expect(text).not.toContain("Researching");
+});
+
+test("audio running with a detail: the stage's own detail still wins", () => {
+  const record = onlyRunning("audio");
+  show({
+    ...record,
+    stages: record.stages.map((s) =>
+      s.stage === "audio" ? { ...s, detail: "Warming up the microphone…" } : s,
+    ),
+  });
+  expect(screen.getByRole("status").textContent).toContain(
+    "Warming up the microphone",
+  );
+});
+
+test("research running without a detail still says it is researching (#493)", () => {
+  show(onlyRunning("research"));
+  expect(screen.getByRole("status").textContent).toContain(
+    "Researching the grizzly bear",
+  );
+});
+
 test("failed: says the fight was called off and links home", () => {
   show({ ...asRecord(running), status: "failed" });
   expect(screen.getByRole("alert").textContent).toContain("called off");
