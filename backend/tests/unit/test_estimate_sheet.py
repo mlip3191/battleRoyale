@@ -429,3 +429,11 @@ async def test_a_navy_seal_is_an_armed_unit_without_asking_the_model(monkeypatch
     )
     assert estimated and sheet.weapons == ["weapon_ranged"]
     assert chat.calls == 0
+
+
+def test_only_the_exact_military_words_skip_the_lookup() -> None:
+    from app.research.lore import code_kind
+
+    assert code_kind("marine") == "armed_unit" and code_kind("navy seal") == "armed_unit"
+    for name in ("marine iguana", "marine biologist", "seal", "elephant seal", "soldier ant"):
+        assert code_kind(name) is None, name

@@ -55,7 +55,8 @@ fits the article best:
   whether a human type qualifies, choose "person".
 - "armed_unit": soldiers of a modern military or police unit, generic or named, who fight with
   firearms (a Navy SEAL, SEAL Team Six, a Green Beret, a Marine, a paratrooper, a modern
-  infantryman, a SWAT officer).
+  infantryman, a SWAT officer). Never a terrorist, militant, militia, extremist or hate group
+  or its members (ISIS fighters, the Taliban, Nazi soldiers): choose "person" for those.
 - "myth_deity": one named god or goddess of a mythology that is no longer widely worshipped
   (Zeus, Thor, Odin, Anubis, Ra, Athena, Poseidon, Freya, Quetzalcoatl as the god).
 - "person": a real person (alive or historical), a named individual, a human religious figure

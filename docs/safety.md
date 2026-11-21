@@ -303,6 +303,13 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   capitalized "God" and the rest are left to the classifier. A stray classifier answer of
   "weapon" counts as allowed. Allowed cases: dt-01 to dt-03, dt-12 (gods of mythology), wp-01 to
   wp-03 (weapons), wp-04 to wp-07 (military units).
+- **Terrorist and hate groups are never military units (D-69, Felipe's #523 review).** A fixed
+  list in `blocklist.yaml` (`hate_group`, layer `rules`) blocks the clear names (ISIS fighters, the
+  Taliban, al-Qaeda, Nazis, the KKK and similar) as `hate`, and the classifier prompt says the same
+  for the rest. A bare "isis" is not on the list, because Isis is also an Egyptian goddess. Cases
+  wp-08 to wp-10; wp-11 (Pearl Harbor) and wp-12 (Hercules) stay blocked. Known limit: live,
+  "Isis vs a crocodile" is still blocked (as `real_person`, a person by that name), so that
+  goddess can't fight yet; Zeus, Thor, Odin and Anubis can.
 - **Plain human religious roles are allowed (D-65).** "a monk", "a priest", "a nun", "a rabbi",
   "an imam" and "a shaman" are generic human types (cases ut-05 to ut-10); human religious
   figures ("a prophet", "a saint", "the Pope") stay blocked as deity.

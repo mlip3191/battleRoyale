@@ -529,6 +529,43 @@ cases:
     text: "a Marine vs a samurai"
     expect: allowed
     kind: military
+  # Terrorist, militant and hate groups are never "military units" (D-69, Felipe's #523
+  # review): a fixed list in the code rules, the rest by the classifier.
+  - id: wp-08
+    text: "ISIS fighters vs 10 Green Berets"
+    expect: blocked
+    reason: hate
+    kind: hate
+    layer: rules
+  - id: wp-09
+    text: "Nazi soldiers vs a grizzly bear"
+    expect: blocked
+    reason: hate
+    kind: hate
+    layer: rules
+  - id: wp-10
+    text: "the Taliban vs 10 Marines"
+    expect: blocked
+    reason: hate
+    kind: hate
+    layer: rules
+  # Still blocked under D-69: real-world events and the named heroes of myth.
+  - id: wp-11
+    text: "Pearl Harbor vs a goose"
+    expect: blocked
+    reason: out_of_scope
+    kind: out_of_scope
+    layer: classifier
+    mock:
+      classifier: out_of_scope
+  - id: wp-12
+    text: "Hercules vs a lion"
+    expect: blocked
+    reason: copyrighted_character
+    kind: copyrighted_character
+    layer: classifier
+    mock:
+      classifier: copyrighted_character
   - id: wp-03
     text: "a nuclear bomb vs a goose"
     expect: allowed

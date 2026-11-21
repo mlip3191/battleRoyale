@@ -89,6 +89,9 @@ religious_figure:
     - christ
     - muhammad
     - mohammad
+    - mohamed
+    - holy spirit
+    - zoroaster
     - mohammed
     - muhammed
     - buddha
@@ -112,6 +115,30 @@ religious_figure:
     - oshun
     - yemoja
     - obatala
+
+hate_group:
+  reason: hate
+  # D-69 lets military units fight, but never a terrorist, militant, extremist or hate group
+  # (Felipe's #523 review). Only names that are clearly such a group live here; the classifier
+  # catches the rest. Whole words, anywhere in the request.
+  anywhere:
+    - isis fighter  # not bare "isis": Isis is also an Egyptian goddess, allowed by D-69
+    - isis fighters
+    - islamic state
+    - isil
+    - daesh
+    - al qaeda
+    - al-qaeda
+    - taliban
+    - boko haram
+    - hamas
+    - hezbollah
+    - nazi
+    - nazis
+    - neo-nazi
+    - neo-nazis
+    - kkk
+    - ku klux klan
 
 group_of_people:
   # The contract has no separate "group" reason; groups of people map to hate (ARCHITECTURE §11).

@@ -24,7 +24,7 @@ All three use the same checks, severities, and verdict rules, and run on the sam
    - **Simulation:** randomness only from the seeded generator; `ENGINE_VERSION` bumped if results change; every new constant is in `constants.py` and `docs/simulation-model.md`.
    - **Providers:** timeouts, retries, and a fallback; a mock exists; tests run in mock mode.
    - **Prompts:** user text delimited as data; media prompts use the allowlisted, brand-free `media_name`; tone is PG.
-   - **Safety (DECISIONS D-07, D-38, D-69):** nothing lets through real people, minors, groups of people (military units are fine, D-69), named fictional characters, gods or central figures of living religions, human religious figures, or real-world events. Objects, machines, plants, weapons, military units, gods of mythology (Zeus), generic deity kinds (D-65), and mythical creature *types* are allowed.
+   - **Safety (DECISIONS D-07, D-38, D-69):** nothing lets through real people, minors, groups of people (military units are fine, D-69, but never terrorist or hate groups), named fictional characters, gods or central figures of living religions, human religious figures, or real-world events. Objects, machines, plants, weapons, military units, gods of mythology (Zeus), generic deity kinds (D-65), and mythical creature *types* are allowed.
    - **Front end:** generated API types only; every stat shows a source or an estimate/assumption tag; captions present; reduced motion respected.
 5. **Bugs and robustness:** wrong logic, missing error handling or fallbacks, unhandled edge cases from ARCHITECTURE §14, race conditions, performance against the stage budgets.
 6. **Security:**

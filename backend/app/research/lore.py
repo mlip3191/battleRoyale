@@ -78,6 +78,8 @@ NO_ARTICLE = "(no Wikipedia article was found)"  # sent in place of the article 
 NOT_A_LEGEND_REASONS = frozenset(
     {"real_animal", "object_or_machine", "generic_kind", "armed_unit", "myth_deity"}
 )
+# "weapon" stays a refusal here on purpose: since D-69 the prompt says it is unused (a weapon is
+# object_or_machine), so an answer of "weapon" is a stray one and failing closed is the safe side.
 REFUSAL_REASONS = frozenset({"person", "deity", "named_character", "weapon", "nonsense"})
 # Generic supernatural kinds D-65 allows. Their Wikipedia article ("God") is about one named
 # figure, so the lookup would answer "deity"; code calls them generic_kind without asking (#444).

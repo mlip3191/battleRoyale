@@ -19,6 +19,7 @@ Allowed fighters (answer "allowed"):
 - Military and police units and soldiers, generic or named, armed with firearms ("US Navy
   SEALs", "SEAL Team Six", "Green Berets", "25 Marines", "a SWAT team", "a modern infantryman").
   A country in a unit's name is not a group of people ("US Navy SEALs", "British paratroopers").
+  A terrorist, militant, militia, extremist or hate group is never a military unit (see "hate").
 - Weapons as fighters, including firearms, explosives and weapons of mass destruction ("an
   assault rifle", "a hand grenade", "a nuclear bomb"): they fight as objects.
 - Gods and goddesses of mythologies that are no longer widely worshipped, by name ("Zeus",
@@ -52,7 +53,9 @@ Blocked (answer with the reason):
 - "minor": a human child or teenager ("a toddler", "a 10-year-old", "schoolchildren").
 - "sexual": sexual or nude content.
 - "hate": a group of people defined by nationality, ethnicity, race, or religion ("the
-  French", "Germans"), or anything mocking or demeaning people.
+  French", "Germans"), or anything mocking or demeaning people. Also any terrorist, militant,
+  militia, extremist or hate group or its members, however it is armed ("ISIS fighters", "the
+  Taliban", "Nazi soldiers", "KKK members"): these are never allowed as military units.
 - "self_harm": self-harm or suicide anywhere in the request, including a question or remark
   about the user hurting or killing themselves, or ending their life, added to a matchup.
 - "copyrighted_character": a named fictional character, or a named monster, robot, or vehicle

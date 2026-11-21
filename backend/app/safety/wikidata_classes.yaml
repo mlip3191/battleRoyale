@@ -42,7 +42,8 @@
 # "a harpy") are allowed while named individuals (Cerberus, Medusa) still block; fictional
 # species blocks kinds from a franchise (Pikachu, Dalek). deity is individuals_only too (#400
 # review); since D-69 the gate ignores Wikidata's deity and weapon answers (gate.py), so gods of
-# mythology (Zeus) fight and the code rules and classifier stop living religions' figures. Cached rows block differently.
+# mythology (Zeus) fight and the code rules and classifier stop living religions' figures.
+# Cached rows block differently.
 # Version 11 (#378): fossil taxon is a kind item, so an extinct animal's own item counts as a kind
 # and "a stegosaurus" is no longer judged by the Dungeons & Dragons monster of the same name.
 # Version 12 (#340 + #378 merged): both branches had bumped to 11 separately, so the merge bumps
