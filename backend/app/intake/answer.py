@@ -3,7 +3,7 @@
 import re
 
 from app.db.intake_pending import PendingQuestion
-from app.intake.parser import ok_message, parse_matchup, typed_sides
+from app.intake.parser import SIDE_SPLIT, ok_message, parse_matchup, typed_sides
 from app.intake.rules import map_terrain
 from app.models.matchup import IntakeResult
 from app.models.terrain import Terrain
@@ -33,12 +33,15 @@ HOW_MANY = re.compile(r"\bhow\s+many\b", re.I)
 NUMBER_WORDS = {
     **{"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7},
     **{"eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "dozen": 12},
+    **{"thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17},
+    **{"eighteen": 18, "nineteen": 19, "twenty": 20},
 }
+MAX_COUNT = 10_000  # the most one side can have (Fighter.count in models/matchup.py)
 COUNT_ANSWER = re.compile(rf"(?:an?\s+)?(\d+|{'|'.join(NUMBER_WORDS)})(?:\s+(\w+))?", re.I)
-# The count words in front of the asked fighter that the answer replaces: "half a", "a dozen",
-# "2.5", "0". Only these go, so a describing word ("big horse") is kept.
+# The count words at the start of the asked side that the answer replaces: "half a", "a dozen",
+# "2.5", "0". Only these go, so a describing word stays: "half a big horse" -> "3 big horse".
 QUANTITY = r"(?:an?|the|half|quarter|third|couple|pair|of|some|few|several|zero|dozen|[\d./]+)"
-QUANTITY_TAIL = re.compile(rf"(?:\b(?:{QUANTITY}|{'|'.join(NUMBER_WORDS)})\s+)+$", re.I)
+QUANTITY_HEAD = re.compile(rf"^(?:(?:{QUANTITY}|{'|'.join(NUMBER_WORDS)})\s+)+", re.I)
 START_OVER = (
     "Sorry, we still couldn't set up that matchup. Please start again and name two fighters, "
     'like "a grizzly bear vs a gray wolf".'
@@ -84,24 +87,36 @@ def merge_answer(
 
 
 # "half a horse vs ..." + "1", asked "How many horses?" -> "1 horse vs ..." (#508). None when the
-# question isn't "how many", the answer isn't a bare count, or no single fighter is asked about.
+# question isn't "how many", the answer isn't a bare count from 1 to MAX_COUNT, or no single
+# fighter is asked about; the answer then merges as before.
 def _with_count(original: str, answer: str, question: str) -> str | None:
     match = COUNT_ANSWER.fullmatch(answer)
     if not HOW_MANY.search(question) or match is None:
         return None
-    asked = re.findall(r"[A-Za-z]+", HOW_MANY.split(question, 1)[1])
+    asked = _asked_phrase(question)
     noun = match.group(2)
-    if noun and not any(_same_noun(noun, word) for word in asked):
-        return None  # "2 wolves" to "How many horses?" is not this count
-    spot = _asked_about(" ".join(_singulars(asked)), original)
-    if spot is None:
-        return None
+    if noun and not (asked and _same_noun(noun, asked[-1])):
+        return None  # "2 wolves" or "2 house" to "How many house cats?" is not this count
     word = match.group(1).lower()
     count = NUMBER_WORDS.get(word) or int(word)
+    spot = _asked_about(" ".join(_singulars(asked)), original)
+    if spot is None or not 1 <= count <= MAX_COUNT:
+        return None
     head = original[: spot.start()]
-    tail = QUANTITY_TAIL.search(head)
-    head = head[: tail.start()] if tail else head
-    return f"{head}{count} {original[spot.start() :]}"
+    sides = list(SIDE_SPLIT.finditer(head))
+    start = sides[-1].end() if sides else 0
+    describing = QUANTITY_HEAD.sub("", head[start:])
+    return f"{head[:start]}{count} {describing}{original[spot.start() :]}"
+
+
+# The fighter a "How many ___ should fight?" question names: "house cats" -> ["house", "cats"].
+def _asked_phrase(question: str) -> list[str]:
+    phrase: list[str] = []
+    for word in re.findall(r"[A-Za-z]+", HOW_MANY.split(question, 1)[1]):
+        if word.lower() in QUESTION_FILLER or FIGHT_WORDS.fullmatch(word):
+            break
+        phrase.append(word)
+    return phrase
 
 
 # Each word and its singular, so a question's "horses" or "wolves" finds "horse" or "wolf".

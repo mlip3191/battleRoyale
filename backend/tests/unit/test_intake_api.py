@@ -104,6 +104,12 @@ REPLIES: dict[str, Any] = {
     "half a horse vs a dozen house cats (banana)": {
         "fighters": [side("half a horse", "horse"), side("a dozen house cats", "house cat")]
     },
+    "half a horse vs a dozen house cats (0)": {
+        "fighters": [side("half a horse", "horse"), side("a dozen house cats", "house cat")]
+    },
+    "half a horse vs a dozen house cats (10001)": {
+        "fighters": [side("half a horse", "horse"), side("a dozen house cats", "house cat")]
+    },
 }
 
 
@@ -430,6 +436,20 @@ HORSE_OPTIONS = ["a horse vs a dozen house cats", "2 horses vs a dozen house cat
             "a horse vs 12 house cats",
         ),
         ("0.5 geese vs a wolf", "one", "How many geese should fight?", "1 geese vs a wolf"),
+        # A describing word stays, and only that side's count words go (review of #520).
+        ("half a big horse vs a wolf", "3", HOW_MANY_HORSES, "3 big horse vs a wolf"),
+        (
+            "half a horse vs a dozen house cats",
+            "twenty",
+            HOW_MANY_HORSES,
+            "20 horse vs a dozen house cats",
+        ),
+        (
+            "half a horse vs a dozen house cats",
+            "10000",
+            HOW_MANY_HORSES,
+            "10000 horse vs a dozen house cats",
+        ),
     ],
 )
 def test_merge_answer_reads_a_bare_count_for_the_side_asked_about(
@@ -445,6 +465,16 @@ def test_merge_answer_reads_a_bare_count_for_the_side_asked_about(
         ("banana", HOW_MANY_HORSES, "half a horse vs a dozen house cats (banana)"),
         ("1", "Which horse?", "half a horse vs a dozen house cats (1)"),
         ("2 wolves", HOW_MANY_HORSES, "half a horse vs a dozen house cats (2 wolves)"),
+        # Outside the 1 to 10,000 a side can have: not read as a count (review of #520).
+        ("0", HOW_MANY_HORSES, "half a horse vs a dozen house cats (0)"),
+        ("10001", HOW_MANY_HORSES, "half a horse vs a dozen house cats (10001)"),
+        # The name must be the asked fighter's last word, not any word of the question: "2 house"
+        # isn't a count for "house cats", so the usual last-word splice runs, as before #508.
+        (
+            "2 house",
+            "How many house cats should fight?",
+            "half a horse vs a dozen 2 house cats",
+        ),
     ],
 )
 def test_merge_answer_leaves_other_answers_to_a_count_question_alone(
@@ -472,10 +502,11 @@ def test_a_bare_count_answer_sets_up_the_matchup(
     assert [f["count"] for f in body["matchup"]["fighters"]] == [1, 12]
 
 
+@pytest.mark.parametrize("answer", ["banana", "0", "10001"])
 def test_a_non_count_answer_to_how_many_still_asks_to_start_again(
-    client: TestClient, chat: ScriptedChat
+    client: TestClient, chat: ScriptedChat, answer: str
 ) -> None:
-    body = answer_half_a_horse(client, "banana")
+    body = answer_half_a_horse(client, answer)
     assert body["status"] == "blocked" and body["message"] == START_OVER
 
 
