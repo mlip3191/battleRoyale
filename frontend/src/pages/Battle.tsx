@@ -244,7 +244,11 @@ function Broadcast({ id }: { id: string }) {
         )}
       </div>
       {show.phase !== "waiting" && sound && (
-        <AudioBar narration={sound.narration} music={sound.music} />
+        <AudioBar
+          narration={sound.narration}
+          music={sound.music}
+          startSound={show.phase === "fight" || show.phase === "verdict"}
+        />
       )}
 
       {reveal && (

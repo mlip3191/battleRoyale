@@ -172,7 +172,7 @@ Then the show starts: the announcer introduces the fighters, with captions on sc
 
 ![The intro: Grizzly bear VS 6 gray wolves, an announcer caption, and Start the fight and Skip to verdict buttons](images/user-guide/10-intro.png)
 
-The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log. Use **Pause**, **1×** and **2×** to control the speed, or **Skip to end**. The sound controls (**Play sound**, **Mute** and a volume slider) control the announcer's voice. The captions always carry the show, with or without sound.
+The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log. Use **Pause**, **1×** and **2×** to control the speed, or **Skip to end**. Sound turns on when you click **Start the fight**; the **Sound on / Sound off** button and a volume slider control the announcer's voice, and switching sound off is remembered in your browser. The captions always carry the show, with or without sound.
 
 ![The animated fight: a grizzly bear facing six wolves in a pixel-art forest, with a damage number above the bear](images/user-guide/11-fight.jpg)
 
@@ -247,7 +247,7 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **"This fight was called off"** with "We don't have a stat sheet for …" | The app couldn't place that fighter. Pick one of the 15 fighters listed in [Type a matchup](#type-a-matchup), a mythical creature such as "a griffin", or click an example matchup. |
 | **"Address already in use"** or port 8000 is busy when you run `npm start` | The app (or something else) is already running. Use the window where it's already running, or close it with Ctrl+C and run `npm start` again. Restarting the computer also clears it. |
 | **The page looks old or a button does nothing after you update the code** | Stop the app with Ctrl+C, run `npm run setup` and then `npm start` again, and refresh the browser page. |
-| **No announcer voice** | Sound is optional, and the captions always carry the show. Click **Play sound**, check that **Mute** is off and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
+| **No announcer voice** | Sound is optional, and the captions always carry the show. Check that the button says **Sound on** (click it if it says **Sound off**) and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
 | **`npm run setup` ends with "not a git repository" or "git is not recognized"** | You downloaded the ZIP instead of cloning. The installs already finished, so you can ignore it and go on. |
 | **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and the prebuilt knowledge base didn't load (the message just above says why, usually a different embedding model). Stop the app with Ctrl+C, run `npm run ingest` once ([step 5](#step-5-optional-refresh-the-knowledge-base)), then `npm start` again. |
 | **"Some effects unavailable: research"** on the broadcast | Usually this just means a fighter isn't on the fighter list, so its stats are estimates, which is expected. If it appears for a listed fighter (for example a grizzly bear), the knowledge base is missing: see [step 5](#step-5-optional-refresh-the-knowledge-base). |

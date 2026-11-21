@@ -1,13 +1,36 @@
-// The broadcast's sound controls (D07): play/pause, mute, and volume for the narration and music.
-// Sound never starts on its own (browsers block it, and captions carry the show); the viewer opts in,
-// and once on, the sound follows the show from part to part until they pause it.
+// The broadcast's sound controls (D07, #499): a Sound on/off switch and volume for the narration and
+// music. Sound turns on when the viewer starts the fight (a click, so browsers allow it) unless they
+// switched it off before (remembered in this browser); once on, it follows the show from part to
+// part until they switch it off. Captions carry the show whenever sound can't play.
 import { useEffect, useRef, useState } from "react";
 import styles from "./audio-bar.module.css";
 
 export interface AudioBarProps {
   narration: string | null; // the announcer's voice track, if one can be played
   music: string | null; // the background music, if any
+  startSound?: boolean; // the viewer started the fight: turn the sound on, unless they switched it off
 }
+
+const OFF_KEY = "battle-royale-sound-off"; // the viewer's "off" choice, kept in this browser
+
+// Whether the viewer switched sound off earlier; storage may be blocked, then the answer is no.
+const savedOff = () => {
+  try {
+    return localStorage.getItem(OFF_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
+// Remember (or forget) the viewer's "off" choice; a blocked store is fine, the choice lasts the visit.
+const saveOff = (off: boolean) => {
+  try {
+    if (off) localStorage.setItem(OFF_KEY, "1");
+    else localStorage.removeItem(OFF_KEY);
+  } catch {
+    /* nothing to do */
+  }
+};
 
 const MUSIC_UNDER_VOICE = 0.4; // music sits under the announcer when both play
 
@@ -22,60 +45,70 @@ const startAll = async (tracks: HTMLAudioElement[]) => {
   return results.some((r) => r.status === "fulfilled");
 };
 
-export default function AudioBar({ narration, music }: AudioBarProps) {
+export default function AudioBar({
+  narration,
+  music,
+  startSound = false,
+}: AudioBarProps) {
   const voice = useRef<HTMLAudioElement>(null);
   const song = useRef<HTMLAudioElement>(null);
-  const soundOn = useRef(false); // the viewer pressed Play sound, and not Pause sound since
+  const soundOn = useRef(false); // sound is wanted: turned on by the viewer or the fight starting
+  const autoStarted = useRef(false); // the fight's start has already had its say
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
   const [volume, setVolume] = useState(80); // percent
 
-  // Apply mute and volume to both tracks whenever they change.
+  // Apply the volume to both tracks whenever it changes.
   useEffect(() => {
     const level = volume / 100;
-    if (voice.current) {
-      voice.current.muted = muted;
-      voice.current.volume = level;
-    }
-    if (song.current) {
-      song.current.muted = muted;
+    if (voice.current) voice.current.volume = level;
+    if (song.current)
       song.current.volume = narration ? level * MUSIC_UNDER_VOICE : level;
-    }
-  }, [muted, volume, narration]);
+  }, [volume, narration]);
 
   // The tracks change with the part of the show (each part has its own announcer file). The old
   // ones stop. If the viewer turned the sound on, the new ones carry on: the next announcer file
   // from its start, the music where it was; with nothing left to play, the button goes back to
-  // "Play sound". Sound the viewer never turned on (or paused) stays off. Leaving the page stops
+  // "Sound off". Sound the viewer switched off stays off. The first time the fight starts, the
+  // sound turns on unless the viewer switched it off in an earlier visit. Leaving the page stops
   // everything. (React has already let go of the elements when the cleanup runs, so it can't read
   // the refs then; the tracks are picked up again whenever they change.)
   useEffect(() => {
     const tracks = present([voice.current, song.current]);
-    if (soundOn.current) void startAll(tracks).then(setPlaying);
+    if (startSound && !autoStarted.current) {
+      autoStarted.current = true;
+      if (!savedOff()) soundOn.current = true;
+    }
+    if (soundOn.current)
+      void startAll(tracks).then((on) => {
+        if (tracks.length > 0 && !on) soundOn.current = false; // refused: don't keep retrying
+        setPlaying(on);
+      });
     return () => tracks.forEach((t) => !t.paused && t.pause());
-  }, [narration, music]);
+  }, [narration, music, startSound]);
 
   if (!narration && !music) return null;
 
   // The tracks on the page right now.
   const tracks = () => present([voice.current, song.current]);
 
-  // Start or stop every track together. The button says "Pause sound" only once the browser
-  // really plays something.
+  // Start or stop every track together, and remember an "off". The button says "Sound on" only
+  // once the browser really plays something.
   const toggle = () => {
     if (playing) {
       tracks().forEach((t) => t.pause());
       soundOn.current = false;
+      saveOff(true);
       setPlaying(false);
       return;
     }
+    saveOff(false);
     void startAll(tracks()).then((on) => {
       soundOn.current = on;
       setPlaying(on);
     });
   };
 
-  // A track that ends (the announcer is done) leaves the button on Play once nothing is left playing.
+  // A track that ends (the announcer is done) leaves the button on Sound off once nothing is left playing.
   const onEnded = () => setPlaying(tracks().some((t) => !t.paused && !t.ended));
 
   return (
@@ -87,15 +120,8 @@ export default function AudioBar({ narration, music }: AudioBarProps) {
         <audio ref={song} src={music} preload="none" loop onEnded={onEnded} />
       )}
       <button type="button" className={styles.button} onClick={toggle}>
-        {playing ? "Pause sound" : "Play sound"}
-      </button>
-      <button
-        type="button"
-        className={styles.button}
-        aria-pressed={muted}
-        onClick={() => setMuted(!muted)}
-      >
-        Mute
+        <span aria-hidden="true">{playing ? "🔊 " : "🔇 "}</span>
+        {playing ? "Sound on" : "Sound off"}
       </button>
       <label className={styles.volume}>
         Volume
