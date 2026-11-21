@@ -602,7 +602,8 @@ export function createBattleScene(P: typeof Phaser) {
     }
 
     // After a skip, put every sprite back on its spot, upright, and fully shown or gone
-    // (killed tweens can leave one mid-lunge or half-faded and tilted mid-fall).
+    // (killed tweens can leave one mid-lunge or half-faded and tilted mid-fall), and each
+    // health bar at its side's current share (a killed tween can leave it mid-drain, #528).
     private snapHome() {
       for (const squad of this.squads!) {
         squad.sprites.forEach((sprite, i) =>
@@ -611,6 +612,7 @@ export function createBattleScene(P: typeof Phaser) {
             .setAngle(0)
             .setAlpha(squad.down[i] ? 0 : 1),
         );
+        this.showHealth(squad, 0, true);
       }
     }
 
