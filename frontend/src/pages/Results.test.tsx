@@ -281,6 +281,23 @@ test("fair fight: shows the no-fair-fight message when there is no count", () =>
   expect(card.textContent).not.toContain("Tested with");
 });
 
+test("fair fight: a search that ran out of time still shows a box, without claiming there is none (#509)", () => {
+  const message = "We couldn't work out a fair fight in time for this one.";
+  show({
+    ...record,
+    fair_fight: {
+      varied_side: 0,
+      count: null,
+      win_prob_at_count: null,
+      message,
+    },
+  });
+  const card = screen.getByRole("region", { name: "Fair fight" });
+  expect(card.textContent).toContain(message);
+  expect(card.textContent).not.toContain("Tested with");
+  expect(screen.queryByRole("region", { name: "No fair fight" })).toBeNull();
+});
+
 test("fair fight: varying side 0 names side 0's fighter", () => {
   show({
     ...record,

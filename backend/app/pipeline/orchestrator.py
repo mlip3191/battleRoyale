@@ -52,13 +52,16 @@ UNEXPECTED = "Something went wrong behind the scenes. Please try again."
 CANCELLED = "This battle was stopped before it finished. Please try again."
 # Plain notes for stages that ended with a stand-in; the battle carries on without them.
 FALLBACK_DETAILS = {
-    "summary": "no fair fight within limits",
+    "summary": "The fair-fight search ran out of time this time.",
     "challenger": "No next challenger this time.",
     "script": "No commentary script this time.",
     "audio": "Captions only this time, no announcer voice.",
     "music": "No music this time.",
     "images": "Placeholder shapes instead of pictures this time.",
 }
+# What the results page's fair-fight box says when the search was cut off or failed (#509). It
+# must not claim that no fair fight exists: that is only said by a search that finished.
+FAIR_FIGHT_UNFINISHED = "We couldn't work out a fair fight in time for this one."
 # Notes for a stage whose fallback path still produced something worth saving.
 FALLBACK_WITH_VALUE = {
     "challenger": "Next challenger picked by quick tests of seed fighters this time.",
@@ -261,8 +264,23 @@ async def _optional[T](
         return out
     except Exception:
         logger.warning("battle %s: stage %s fell back", battle_id, stage, exc_info=True)
+        if stage == "summary":
+            await _save_unfinished_fair_fight(battle_id, store)
         await store.set_stage(battle_id, stage, "fallback", FALLBACK_DETAILS[stage])
         return None
+
+
+# A fair-fight search that was cut off still gets a box on the results page, saying so (#509).
+async def _save_unfinished_fair_fight(battle_id: str, store: BattleStore) -> None:
+    unfinished = FairFight(
+        varied_side=0, count=None, win_prob_at_count=None, message=FAIR_FIGHT_UNFINISHED
+    )
+    try:
+        await _save(battle_id, store, "fair_fight", unfinished)
+    except Exception:
+        logger.warning(
+            "battle %s: could not save the unfinished fair fight", battle_id, exc_info=True
+        )
 
 
 # Put a stage's real output on the record; assets from several stages are added together.
