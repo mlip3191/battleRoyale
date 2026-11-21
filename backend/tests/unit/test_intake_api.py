@@ -94,6 +94,16 @@ REPLIES: dict[str, Any] = {
     "a grizzly bear vs 6 gray wolves in the arena": {
         "fighters": [side("a grizzly bear", "grizzly bear"), side("6 gray wolves", "gray wolf")]
     },
+    # A fraction gets "How many horses should fight?" from code; a bare count answers it (#508).
+    "half a horse vs a dozen house cats": {
+        "fighters": [side("half a horse", "horse"), side("a dozen house cats", "house cat")]
+    },
+    "1 horse vs a dozen house cats": {
+        "fighters": [side("1 horse", "horse"), side("a dozen house cats", "house cat")]
+    },
+    "half a horse vs a dozen house cats (banana)": {
+        "fighters": [side("half a horse", "horse"), side("a dozen house cats", "house cat")]
+    },
 }
 
 
@@ -372,6 +382,101 @@ def test_a_variant_answer_to_one_side_asks_to_start_again_not_a_503(
     assert chat.texts == ["a bear", "a grizzly bear"]
     assert response.status_code == 200
     assert response.json()["status"] == "blocked" and response.json()["message"] == START_OVER
+
+
+HOW_MANY_HORSES = "How many horses should fight?"
+HORSE_OPTIONS = ["a horse vs a dozen house cats", "2 horses vs a dozen house cats"]
+
+
+# #508: a bare count answers "How many ___ should fight?" by replacing that side's count words.
+@pytest.mark.parametrize(
+    ("original", "answer", "question", "merged"),
+    [
+        (
+            "half a horse vs a dozen house cats",
+            "1",
+            HOW_MANY_HORSES,
+            "1 horse vs a dozen house cats",
+        ),
+        (
+            "half a horse vs a dozen house cats",
+            "one",
+            HOW_MANY_HORSES,
+            "1 horse vs a dozen house cats",
+        ),
+        (
+            "half a horse vs a dozen house cats",
+            "2",
+            HOW_MANY_HORSES,
+            "2 horse vs a dozen house cats",
+        ),
+        (
+            "half a horse vs a dozen house cats",
+            "Two",
+            HOW_MANY_HORSES,
+            "2 horse vs a dozen house cats",
+        ),
+        (
+            "half a horse vs a dozen house cats",
+            "2 horses",
+            HOW_MANY_HORSES,
+            "2 horse vs a dozen house cats",
+        ),
+        ("a horse vs 0 wolves", "3", "How many wolves should fight?", "a horse vs 3 wolves"),
+        (
+            "a horse vs 2.5 house cats",
+            "a dozen",
+            "How many house cats should fight?",
+            "a horse vs 12 house cats",
+        ),
+        ("0.5 geese vs a wolf", "one", "How many geese should fight?", "1 geese vs a wolf"),
+    ],
+)
+def test_merge_answer_reads_a_bare_count_for_the_side_asked_about(
+    original: str, answer: str, question: str, merged: str
+) -> None:
+    assert merge_answer(original, answer, question, HORSE_OPTIONS) == merged
+
+
+# A count only counts for a "How many" question; other answers merge as before.
+@pytest.mark.parametrize(
+    ("answer", "question", "merged"),
+    [
+        ("banana", HOW_MANY_HORSES, "half a horse vs a dozen house cats (banana)"),
+        ("1", "Which horse?", "half a horse vs a dozen house cats (1)"),
+        ("2 wolves", HOW_MANY_HORSES, "half a horse vs a dozen house cats (2 wolves)"),
+    ],
+)
+def test_merge_answer_leaves_other_answers_to_a_count_question_alone(
+    answer: str, question: str, merged: str
+) -> None:
+    original = "half a horse vs a dozen house cats"
+    assert merge_answer(original, answer, question, HORSE_OPTIONS) == merged
+
+
+# Ask "How many horses should fight?" about half a horse and send back the answer.
+def answer_half_a_horse(client: TestClient, answer: str) -> dict[str, Any]:
+    text = "half a horse vs a dozen house cats"
+    asked = client.post("/api/intake", json={"text": text}).json()
+    assert asked["status"] == "clarify" and asked["question"] == HOW_MANY_HORSES
+    return client.post(f"/api/intake/{asked['pending_id']}/answer", json={"answer": answer}).json()
+
+
+@pytest.mark.parametrize("answer", ["1", "one"])
+def test_a_bare_count_answer_sets_up_the_matchup(
+    client: TestClient, chat: ScriptedChat, answer: str
+) -> None:
+    body = answer_half_a_horse(client, answer)
+    assert chat.texts[-1] == "1 horse vs a dozen house cats"
+    assert body["status"] == "ok"
+    assert [f["count"] for f in body["matchup"]["fighters"]] == [1, 12]
+
+
+def test_a_non_count_answer_to_how_many_still_asks_to_start_again(
+    client: TestClient, chat: ScriptedChat
+) -> None:
+    body = answer_half_a_horse(client, "banana")
+    assert body["status"] == "blocked" and body["message"] == START_OVER
 
 
 def test_a_one_word_option_answer_names_the_fighter(client: TestClient, chat: ScriptedChat) -> None:
