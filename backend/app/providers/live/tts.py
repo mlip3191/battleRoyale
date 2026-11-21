@@ -11,6 +11,10 @@ file is on disk, and ANNOUNCER_VOICE_REF_CLIP names a readable WAV, each line is
 with the clip added as base64 `ref_audio` (one try, a shorter timeout, no retry). If that fails
 or the reply is not a WAV, the same line is requested again exactly as without a clip, so the
 show still gets the stock voice, and the rest of that show skips the clip.
+
+speak() returns a SpokenWav: plain WAV bytes plus `.voice`, "cloned" when the reference clip
+spoke the line and "stock" otherwise. app/media/audio.py reads it per line, so a stock-voiced file
+is never cached under the reference-voice key (#483).
 """
 
 import base64
@@ -19,7 +23,7 @@ import io
 import logging
 import re
 import wave
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, Self
 
 import httpx
 
@@ -37,6 +41,23 @@ REF_RETRIES = 0  # one reference-voice try; the stock request after it keeps the
 # inside the per-file limit (audio.ITEM_TIMEOUT_S).
 REF_TIMEOUT_S = 12.0
 FINGERPRINT_CHARS = 16  # hex characters of the clip's sha256 used in the audio cache key
+
+SpokenVoice = Literal["cloned", "stock", "mixed"]
+
+
+class SpokenWav(bytes):
+    """WAV bytes that also say which voice really spoke them (compares equal to plain bytes).
+
+    The voice rides on the returned value, not on the adapter, because make_audio speaks several
+    scripts at once on one adapter.
+    """
+
+    voice: SpokenVoice
+
+    def __new__(cls, data: bytes, voice: SpokenVoice) -> Self:
+        wav = super().__new__(cls, data)
+        wav.voice = voice
+        return wav
 
 
 # The fixed speech fields that change the sound of every line: the model, and the speed when
@@ -63,7 +84,8 @@ class LiveTTS:
 
     # Return WAV bytes of text read in voice_id (blank or placeholder ids use the service default).
     # With a reference clip loaded, try it first and fall back to the plain request if it fails.
-    async def speak(self, text: str, voice_id: str) -> bytes:
+    # The reply's .voice says which one spoke: "cloned" or "stock".
+    async def speak(self, text: str, voice_id: str) -> SpokenWav:
         payload = self.options | {"input": text, "response_format": RESPONSE_FORMAT}
         if is_usable_voice(voice_id):
             payload["voice"] = voice_id.strip()
@@ -73,7 +95,7 @@ class LiveTTS:
                 data = await self._post(
                     payload | {"ref_audio": self.ref_audio}, REF_RETRIES, timeout_s
                 )
-                return _checked_wav(data)
+                return SpokenWav(_checked_wav(data), "cloned")
             except (ProviderError, httpx.HTTPError) as error:  # a timeout arrives as ProviderError
                 # make_audio builds one adapter per show (get_provider returns a new one each
                 # call), so dropping the clip here means the rest of this show skips it.
@@ -83,7 +105,7 @@ class LiveTTS:
                         "reference voice failed (%s); the rest of this show uses the stock voice",
                         type(error).__name__,
                     )
-        return _checked_wav(await self._post(payload))
+        return SpokenWav(_checked_wav(await self._post(payload)), "stock")
 
     # POST one speech request and return the raw reply bytes.
     async def _post(
