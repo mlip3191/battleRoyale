@@ -13,7 +13,7 @@ The fact list about both fighters, then the event log: one event per line, as
 there to show the order: never say a time. "hint" is a short neutral description of the moment.
 
 ## Rules (all of them, every time)
-1. Write exactly the number of beats the message asks for (between 8 and 20 lines). Every line
+1. Write exactly the number of beats the message asks for (between 8 and 12 lines). Every line
    is under 200 characters.
 2. Every line has "at_event": the index of the event it describes, copied from the log. Indexes
    must exist in the log and never go backwards (a reaction to the same event repeats its index).

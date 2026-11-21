@@ -11,7 +11,7 @@
   "mean_duration_s": 74.5389,
   "outcome": "win_0",
   "deciding_factor": "numbers",
-  "deciding_factor_explainer": "Numbers decided it: 1000 Duck against 1 Lion. A crowd can wear down even a tougher fighter, and a lone fighter can only face so many at once.",
+  "deciding_factor_explainer": "Numbers decided it: 1000 ducks against 1 Lion. A crowd can wear down even a tougher fighter, and a lone fighter can only face so many at once.",
   "representative_log": [
     {
       "t": 0.0,

@@ -146,6 +146,21 @@ def test_a_second_run_keeps_the_first_below_it(tmp_path):
     assert text.count("# Benchmark results") == 1
 
 
+def test_the_known_limits_survive_every_run(tmp_path):
+    # #425: write_report rewrites everything above the first "## Run" from HEADER, so the D-58
+    # limits and the research-sheet limits must live in HEADER or the next run would erase them.
+    out = tmp_path / "results.md"
+    for day in (8, 9, 10):
+        run = run_report("research")
+        run.started = datetime(2026, 11, day, 9, 0)
+        bm.write_report(out, run)
+    text = out.read_text("utf-8")
+    assert "## Known limits (D-58)" in text
+    assert "Known limits of the research-built sheets" in text
+    assert text.index("Known limits of the research-built sheets") < text.index("## Run ")
+    assert text.count("Known limits of the research-built sheets") == 1
+
+
 # --- The runner (the CI check that it cannot silently break) ----------------------------
 
 
@@ -556,3 +571,60 @@ def test_the_edge_set_has_its_own_table_and_never_changes_the_main_rates(tmp_pat
     assert "2/2 (100%)" in text and "1/1 (100%)" in text  # the main rates are the same as before
     assert main(["--mock", "--no-edge", "--output", str(tmp_path / "b.md")]) == 0
     assert "Edge-case set" not in (tmp_path / "b.md").read_text("utf-8")
+
+
+# --- The pinned seed-sheet baseline (#449) ---------------------------------------------------
+
+
+# Write a run of the given kind on a given day.
+def _write(out, mode, day, *, tuning_only=False):
+    run = run_report(mode)
+    run.tuning_only = tuning_only
+    run.started = datetime(2026, 11, day, 9, 0)
+    bm.write_report(out, run)
+
+
+def test_a_full_seed_run_is_pinned_above_the_runs(tmp_path):
+    out = tmp_path / "results.md"
+    _write(out, "seed", 8)
+    text = out.read_text("utf-8")
+    assert "## Baseline (seed sheets): run 2026-11-08 09:00" in text
+    assert text.index("## Known limits (D-58)") < text.index("## Baseline (seed sheets)")
+    assert text.index("## Baseline (seed sheets)") < text.index("## Run 2026-11-08")
+
+
+def test_research_runs_never_remove_the_pinned_baseline(tmp_path):
+    out = tmp_path / "results.md"
+    _write(out, "seed", 1)
+    for day in range(2, 10):  # eight research runs: the seed run leaves the five-run list
+        _write(out, "research", day)
+    text = out.read_text("utf-8")
+    assert len([ln for ln in text.splitlines() if ln.startswith("## Run")]) == bm.KEEP_RUNS
+    assert "sheets: seed" not in text  # rotated out of the list...
+    assert "## Baseline (seed sheets): run 2026-11-01 09:00" in text  # ...but still pinned
+    assert text.count("## Baseline (seed sheets)") == 1
+
+
+def test_a_newer_full_seed_run_replaces_the_pinned_baseline(tmp_path):
+    out = tmp_path / "results.md"
+    _write(out, "seed", 1)
+    _write(out, "research", 2)
+    _write(out, "seed", 3)
+    text = out.read_text("utf-8")
+    assert "## Baseline (seed sheets): run 2026-11-03 09:00" in text
+    assert "## Baseline (seed sheets): run 2026-11-01" not in text  # the old baseline is gone
+    assert text.count("## Baseline (seed sheets)") == 1
+
+
+def test_tuning_only_and_mock_runs_do_not_replace_the_baseline(tmp_path):
+    out = tmp_path / "results.md"
+    _write(out, "seed", 1)
+    _write(out, "seed", 2, tuning_only=True)  # no held-out rows, so not a baseline
+    _write(out, "mock", 3)
+    assert "## Baseline (seed sheets): run 2026-11-01 09:00" in out.read_text("utf-8")
+
+
+def test_a_file_without_a_baseline_stays_without_one_until_a_seed_run(tmp_path):
+    out = tmp_path / "results.md"
+    _write(out, "research", 1)
+    assert "## Baseline (seed sheets)" not in out.read_text("utf-8")

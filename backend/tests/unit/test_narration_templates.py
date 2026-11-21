@@ -136,6 +136,17 @@ def test_long_log_keeps_first_last_and_knockouts() -> None:
     assert any(log[i].type == "ko" for i in indices)
 
 
+# A 109-event fight gets 12 template beats, from the first event to the last (#363).
+def test_a_109_event_log_narrates_twelve_events_first_to_last() -> None:
+    log = (RESULT.representative_log * 109)[:109]
+    result = RESULT.model_copy(update={"representative_log": log})
+    _, pbp, _ = template_scripts(_facts("bear-vs-wolves", result), result)
+    indices = [line.at_event for line in pbp.lines]
+    assert len(indices) == 12
+    assert indices[0] == 0 and indices[-1] == 108
+    assert indices == sorted(indices)
+
+
 def test_empty_log_still_gives_min_beats_without_events() -> None:
     result = RESULT.model_copy(update={"representative_log": [], "outcome": "no_contest"})
     _, pbp, outro = template_scripts(_facts("bear-vs-wolves", result), result)
@@ -315,7 +326,9 @@ def test_draw_share_the_guard_rejects_gets_a_number_free_line() -> None:
 
 
 def test_side_zero_win_names_the_bear() -> None:
-    result = RESULT.model_copy(update={"outcome": "win_0"})
+    # A clear win: side 0's 95% range sits well above 50% (the fixture's 35-41% would be too close).
+    clear = [[0.60, 0.66], RESULT.win_prob_ci95[1]]
+    result = RESULT.model_copy(update={"outcome": "win_0", "win_prob_ci95": clear})
     facts = _facts("bear-vs-wolves", result)
     outro = outro_script(facts)
     assert outro.lines[0].text.startswith("Your winner: Grizzly bear")

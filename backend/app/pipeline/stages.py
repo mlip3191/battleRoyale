@@ -30,8 +30,8 @@ from app.narration.templates import template_scripts
 from app.pipeline import challenger as next_challenger
 from app.providers.registry import get_provider
 from app.research.estimate_sheet import estimate_sheet
-from app.research.seed_fighters import find_seed_fighter
-from app.research.sheet_store import resolve_legend, resolve_stat_sheet
+from app.research.seed_fighters import fighter_slug, find_seed_fighter
+from app.research.sheet_store import not_a_legend_kind, resolve_legend, resolve_stat_sheet
 from app.simulation import engine, fair
 from app.simulation.rng import make_seed
 
@@ -47,7 +47,9 @@ STAGE_BUDGETS_S: dict[str, float] = {
     "summary": 5.0,
     "challenger": 10.0,
     "script": 10.0,
-    "audio": 60.0,
+    # 120 s, not 60 s (D-68, #485): the cloned announcer voice took 53 to 66 s per show in live
+    # timing against a 48 s per-file limit; 120 x 0.8 = 96 s per file leaves about 30 s of margin.
+    "audio": 120.0,
     "music": 60.0,
     "images": 60.0,
 }
@@ -153,7 +155,8 @@ async def lookup_fighter_or_estimate(fighter: FighterRequest) -> tuple[StatSheet
     sheet = await find_fighter(fighter)
     if sheet is not None:
         return sheet, False
-    return estimate_sheet(_typed_name(fighter.entity, fighter.variant)), True
+    kind = not_a_legend_kind(fighter_slug(fighter.entity))  # a real animal fights as one (#453)
+    return estimate_sheet(_typed_name(fighter.entity, fighter.variant), kind), True
 
 
 # A fighter's sheet for a battle: found, or the all-estimate fallback (see the function above).

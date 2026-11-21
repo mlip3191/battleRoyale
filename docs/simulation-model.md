@@ -76,6 +76,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 | `RECKLESS_ARMOR_SHARE_PER_TIER` | 0.1 | Each attack tier above 3 cuts armor by this share. | **Assumption** |
 | `FRAGILE_FORCE_PER_TIER`, `FRAGILE_FORCE_FLOOR` | 0.04, 0.5 | Each speed tier above 3 cuts attack force by this share, to a floor of half. | **Assumption** |
 | `TOURNAMENT_ENTRY_POINTS`, `TOURNAMENT_POINTS_PER_WIN` | 2, 1 | Points to spend on loadouts at entry and after each round won. | **Assumption** (tournament is post-MVP, D-64) |
+| `ESTIMATE_ANIMAL_*`, `ESTIMATE_GENERIC_*` | `real_animal`: category `mammal`, body `living`, habitat `land`, weapons `teeth`; `generic_kind` (#444, a priest, "a god"): category `human_archetype`, body `living` | A name the legend lookup calls a `real_animal` fights as a living mammal built from the mammal category defaults (50 kg, 500 N, 12 m/s), so an unlisted animal fights back (#453). `generic_kind` also gets the human archetype's behavior defaults (armor 0.6, aggression 0.7, group tactics 0.8), so a priest or an angel is a sturdy fighter. Anything else stays the inert `other` object. | **Assumption**: the `other` object default would make every animal harmless, and the mammal defaults are the nearest we have (`backend/app/research/estimate_sheet.py`) |
 
 ## Numbers and size (F03)
 
@@ -139,6 +140,7 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 ## Fair fight and next challenger (F06)
 
 - **Fair-fight search (`fair.py`).** "How many house cats would make this a coin flip?" The search varies the count of the **losing** side (the side with the lower win share in the main result). It starts at the current count, doubles until the varied side's win share passes 55%, then bisects on whole numbers between the last count below 45% and the first above 55%. Each probe is a 200-run simulation (no deciding-factor analysis), at most 20 probes, counts capped at 10,000. It stops as soon as a probe lands within 5 points of 50% ("A fair fight needs 37 house cats against 1 gray wolf.").
+- **Already even (#501).** When the count that lands inside the band is the count just fought, the message says "This fight is already about even: 1 gray wolf against 9 house cats." instead of suggesting the same matchup; the count and win share are unchanged.
 - **When it can't.** If even 10,000 can't reach 45%, the answer is `count = None` with "No fair fight within 10,000 house cats." (a stalemate where neither side can win counts as this too). If the main fight is a draw or a `no_contest`, there is no loser to even up, so `count` is `None` with a plain explanation.
 - **Whole numbers can't always hit 50%.** Near the balance point one extra fighter can move the win share by 10-20 points. When no integer lands within the 5-point band, the closest count found is returned with "about", and `win_prob_at_count` shows the real value.
 - **Draws don't count as half a win.** The target is the varied side's win share alone, so a stalemate (for example ants against an elephant) can't masquerade as a fair fight.
@@ -195,6 +197,10 @@ All four are multipliers on the fighter's own stat (armor from a floor of 0.05),
 ## Why probabilities are shown as "range"
 
 The 95% interval is a Wilson score interval on the share of runs won. Because every run draws different stats, the shares already blend in input uncertainty: when the stat ranges are narrow the fight's outcome is more predictable, so the win share moves toward 0 or 1 and the interval narrows (tested in `tests/property/test_simulation_engine.py`). The interval does *not* separately model uncertainty in the constants above.
+
+## When the verdict is "too close to call" (#476)
+
+The result's `outcome` is whichever of win 0, win 1 and draw happened most often, so a fight at 50% still has a "winner". The screens do not crown it: **a winner whose 95% win range reaches 50% is too close to call.** The comparison uses the number the viewer sees: the low end of the Wilson interval rounded to a whole percent, as the page prints it, so "range 50-58%" never sits next to "Winner:". The results page then says "Too close to call: slight edge X" instead of "Winner: X", and the broadcast reveal says "Too close to call! Slight edge: X". The odds, the range and the deciding-factor sentence are unchanged, no number changes, and a draw or no contest is shown as before. One rule, `isTooCloseToCall` in `frontend/src/components/Verdict.tsx`, is used by the results page, the broadcast reveal and the arena's end banner ("TOO CLOSE TO CALL!" instead of "X WINS!"). Not covered yet: the announcer's spoken outro ("Your winner: X!", a back-end narration template and prompt), which is a separate follow-up. This is also separate from the deciding factor's own "Too close to call" sentence, which comes from `MIN_EFFECT` in `decide.py` and means no single factor mattered. The wording is a first draft for Dillon to settle.
 
 ## Not modeled yet
 

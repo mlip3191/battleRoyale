@@ -53,6 +53,9 @@ export class FakeObject {
     this.scaleX = x;
     return this;
   }
+  setStrokeStyle() {
+    return this;
+  }
   destroy() {
     this.destroyed = true;
   }

@@ -266,6 +266,27 @@ def test_a_favorite_that_wins_against_the_ground_is_not_said_to_be_helped_by_it(
     assert text.startswith("Cat came out ahead in spite of the ground")
 
 
+# --- #458: a side with a count above 1 reads as a plural in every deciding-factor sentence ------
+
+
+def test_a_crowd_reads_as_a_plural_in_the_numbers_sentence_and_a_single_one_is_unchanged():
+    wolf, bear = make_sheet("Gray wolf"), make_sheet("Grizzly bear")
+    text = _explained("numbers", True, matchup_of(6, 1), [wolf, bear])
+    assert "6 gray wolves against 1 Grizzly bear" in text
+    alone = _explained("numbers", True, matchup_of(1, 1), [wolf, bear])
+    assert "1 Gray wolf against 1 Grizzly bear" in alone  # a count of 1 is unchanged
+
+
+def test_a_crowd_reads_as_a_plural_in_the_scaling_sentence() -> None:
+    from app.simulation.decide import _explain_scaling
+
+    wolf, bear = make_sheet("Gray wolf"), make_sheet("Grizzly bear")
+    fight = matchup_of(6, 1)
+    fight.fighters[0].size_reference = "bear"
+    text = _explain_scaling(fight, [wolf, bear], 0, True)
+    assert "6 gray wolves (" in text and "6 Gray wolf" not in text
+
+
 # --- #365: size that helps the smaller side says so, and how ------------------------------------
 
 
@@ -275,7 +296,7 @@ def test_size_that_helps_a_smaller_crowd_says_the_smaller_side_and_how():
     matchup = matchup_of(6, 1)  # the favorite (side 0) is the smaller side, and a crowd
     text = _explained(StatName.SIZE, True, matchup, [wolf, bear])
     assert text.startswith("Size decided it, in the smaller side's favor:")
-    assert "6 Gray wolf (1.6 m) against 1 Grizzly bear (2.4 m)" in text
+    assert "6 gray wolves (1.6 m) against 1 Grizzly bear (2.4 m)" in text  # #458: a crowd is plural
     assert "easier target" in text and "fit around it" in text
     assert sorted(numbers_in(text, [wolf, bear])) == [1.0, 1.6, 2.4, 6.0]
 
@@ -308,7 +329,7 @@ def test_a_crowd_against_a_slightly_bigger_foe_does_not_claim_more_attackers_fit
     small, big = make_sheet("small", size_m=1.6), make_sheet("big", size_m=2.0)
     text = _explained(StatName.SIZE, True, matchup_of(6, 1), [small, big])
     assert text == (
-        "Size decided it, in the smaller side's favor: 6 Small (1.6 m) against 1 Big (2 m). "
+        "Size decided it, in the smaller side's favor: 6 smalls (1.6 m) against 1 Big (2 m). "
         "A bigger body is an easier target."
     )
 
@@ -318,3 +339,93 @@ def test_a_size_reference_keeps_the_plain_sentence():
     small, big = make_sheet("small", size_m=1.0), make_sheet("big", size_m=2.4)
     text = _explained(StatName.SIZE, True, matchup_of(1, 1, ref_0="horse"), [small, big])
     assert text == "Size decided it: Small (1 m) against Big (2.4 m)."
+
+
+# --- #474: the deciding-factor sentence names the verdict's favorite, not the sample's ----------
+
+
+def _outcomes(wins_0: int, wins_1: int):
+    from app.simulation.engine import RunOutcome
+
+    out = [RunOutcome(0, (1, 0), 10.0, []) for _ in range(wins_0)]
+    return out + [RunOutcome(1, (0, 1), 10.0, []) for _ in range(wins_1)]
+
+
+def test_the_sentence_names_the_full_run_favorite_when_the_first_runs_disagree() -> None:
+    from app.simulation.decide import decide
+
+    alpha = make_sheet("Alpha", size_m=1.0)
+    bravo = make_sheet("Bravo", size_m=3.0)
+    # 1,000 runs: side 0 wins 520 and side 1 wins 480, so the verdict is Alpha. But the first 200
+    # (the sample the factor analysis re-runs) go 80 to 120 for Bravo.
+    base = _outcomes(80, 120) + _outcomes(440, 360)
+    assert sum(o.winner == 0 for o in base) > sum(o.winner == 1 for o in base)
+    assert sum(o.winner == 0 for o in base[:200]) < sum(o.winner == 1 for o in base[:200])
+
+    def simulate(variant, sheets, terrain, n, scaled, **extra):
+        return _outcomes(0, n)  # whatever is changed, Bravo takes every fight
+
+    decision = decide(matchup_of(1, 1), [alpha, bravo], base, simulate)
+    assert "Bravo came out ahead" not in decision.explainer
+    assert "Alpha" in decision.explainer
+
+
+def test_an_agreeing_sample_gives_the_same_sentence_as_before() -> None:
+    from app.simulation.decide import decide
+
+    alpha = make_sheet("Alpha", size_m=1.0)
+    bravo = make_sheet("Bravo", size_m=3.0)
+    base = _outcomes(150, 50) + _outcomes(600, 200)  # the sample and the full run both favor Alpha
+
+    def simulate(variant, sheets, terrain, n, scaled, **extra):
+        return _outcomes(0, n)
+
+    decision = decide(matchup_of(1, 1), [alpha, bravo], base, simulate)
+    assert "Alpha" in decision.explainer and "Bravo came out ahead" not in decision.explainer
+
+
+# --- #479: the stalemate and "wins comfortably" checks read the full run, not the sample ---------
+
+
+def _mixed(side0: int, side1: int, draws: int):
+    from app.simulation.engine import DRAW, RunOutcome
+
+    out = [RunOutcome(0, (1, 0), 10.0, []) for _ in range(side0)]
+    out += [RunOutcome(1, (0, 1), 10.0, []) for _ in range(side1)]
+    return out + [RunOutcome(DRAW, (1, 1), 10.0, []) for _ in range(draws)]
+
+
+def _same_as_base(base):
+    """A factor re-run that changes nothing, so no factor 'decides' and the fallback text shows."""
+
+    def simulate(variant, sheets, terrain, n, scaled, **extra):
+        return base[:n]
+
+    return simulate
+
+
+def _decide_text(base) -> str:
+    from app.simulation.decide import decide
+
+    alpha, bravo = make_sheet("Alpha", size_m=1.0), make_sheet("Bravo", size_m=3.0)
+    return decide(matchup_of(1, 1), [alpha, bravo], base, _same_as_base(base)).explainer
+
+
+def test_a_draw_heavy_sample_does_not_make_a_stalemate_when_the_full_run_has_a_winner() -> None:
+    # The first 200 runs are all draws, the other 800 go to Alpha: the full run is not a stalemate.
+    base = _mixed(0, 0, 200) + _mixed(800, 0, 0)
+    assert "stalemate" not in _decide_text(base).lower()
+
+
+def test_a_real_stalemate_is_still_called_one() -> None:
+    base = _mixed(50, 50, 900)  # mostly draws over every run
+    assert "stalemate" in _decide_text(base).lower()
+
+
+def test_wins_comfortably_follows_the_full_run_not_the_sample() -> None:
+    # The sample is Alpha 195 of 200 (0.975) but the full run is Alpha 850 of 1,000 (0.85).
+    base = _mixed(195, 5, 0) + _mixed(655, 145, 0)
+    assert "comfortably" not in _decide_text(base)
+    # And the reverse: a 0.85 sample (170 of 200) inside a 0.95 full run (950 of 1,000).
+    base = _mixed(170, 30, 0) + _mixed(780, 20, 0)
+    assert "comfortably" in _decide_text(base)

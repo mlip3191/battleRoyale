@@ -79,6 +79,15 @@ PLACEHOLDER_HELP = {
     "fair_count": "how many of that fighter make it a coin flip",
     "fair_win_pct": "how often they win at that count, with the percent sign",
 }
+# When the verdict is too close to call (#482), the same placeholders mean something softer.
+TOO_CLOSE_HELP = {
+    "winner": "the fighter with the slight edge (not a winner: it was too close to call)",
+    "loser": "the other fighter",
+    "win_pct": "how often the fighter with the slight edge came out ahead, with the percent sign",
+}
+# Words that crown a winner; a too-close outro may not use them (placeholders are removed first).
+CROWNS_A_WINNER = re.compile(r"\bwinner\b|takes the win|\bwon\b|\bwins\b", re.I)
+TOO_CLOSE_REJECTED = "the verdict is too close to call: call it a near coin flip with a slight edge"
 
 
 class ScriptRejected(ValueError):
@@ -126,7 +135,8 @@ def required_placeholders(facts: NarrationFacts) -> list[tuple[str, ...]]:
     """Placeholders the outro must use; each tuple is satisfied by any one of its names."""
     verdict: list[tuple[str, ...]] = []
     if facts.outcome in ("win_0", "win_1"):
-        verdict = [("winner",), ("win_pct",)]
+        # Too close to call: the win rate is required, naming the edge is optional (#482).
+        verdict = [("win_pct",)] if facts.too_close else [("winner",), ("win_pct",)]
     elif facts.outcome == "draw":
         verdict = [("draw_pct",)]
     factor = [("deciding_factor",)] if facts.factor_decided else []
@@ -251,6 +261,12 @@ def read_reply(kind: Kind, reply: object, facts: NarrationFacts, log_len: int) -
         ]
         if missing:
             raise ScriptRejected(f"{PLACEHOLDERS_MISSING}: {', '.join(missing)}")
+        if facts.too_close and any(
+            CROWNS_A_WINNER.search(PLACEHOLDER.sub("", text))
+            for text in raw
+            if isinstance(text, str)
+        ):
+            raise ScriptRejected(TOO_CLOSE_REJECTED)
     script = Script(kind=kind, lines=lines, fallback=False)
     problems = check_script(script, facts, log_len)
     if problems:
@@ -263,7 +279,7 @@ def read_reply(kind: Kind, reply: object, facts: NarrationFacts, log_len: int) -
 
 # How many beats to ask for: one per event, kept between MIN_BEATS and MAX_BEATS.
 def beat_target(log_len: int) -> int:
-    """8 for a short log, one per event up to 20."""
+    """8 for a short log, one per event up to 12."""
     return max(MIN_BEATS, min(MAX_BEATS, log_len))
 
 
@@ -272,6 +288,15 @@ def _event_line(i: int, event: FightEvent, facts: NarrationFacts) -> str:
     who = facts.fighters[event.side].display_name
     hint = _hint(event, "-", use_hint=True)
     return f"{i} | {event.t:g} | {event.type} | {who} | {event.group_size} | {hint}"
+
+
+# What a placeholder means for this battle (softer wording when it is too close to call).
+def _placeholder_help(name: str, facts: NarrationFacts) -> str:
+    return (
+        TOO_CLOSE_HELP.get(name, PLACEHOLDER_HELP[name])
+        if facts.too_close
+        else PLACEHOLDER_HELP[name]
+    )
 
 
 # The task-specific part of the user message: counts, the log, or the placeholders.
@@ -291,9 +316,17 @@ def _task_lines(kind: Kind, facts: NarrationFacts, log: Sequence[FightEvent]) ->
     must = [" or ".join("{" + n + "}" for n in group) for group in required_placeholders(facts)]
     return [
         "PLACEHOLDERS you may use (code fills them in):",
-        *(f"{{{name}}}: {PLACEHOLDER_HELP[name]}" for name in values),
+        *(f"{{{name}}}: {_placeholder_help(name, facts)}" for name in values),
         "",
         f"You must use: {', '.join(must)}.",
+        *(
+            [
+                "THE VERDICT IS TOO CLOSE TO CALL: call it a near coin flip with a slight edge. "
+                "Never say winner, won, wins, or takes the win."
+            ]
+            if facts.too_close
+            else []
+        ),
         f"TASK: write the outro in {low} to {high} lines, with no numbers of your own.",
     ]
 

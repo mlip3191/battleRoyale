@@ -20,7 +20,8 @@ from app.text import counted_name, pluralize
 MAX_LINE = 200
 MAX_HINT = 60
 MIN_BEATS = 8
-MAX_BEATS = 20
+# At most 12 beats, so the play-by-play and its one retry fit the per-script deadline (#363).
+MAX_BEATS = 12
 # Stands in for a fighter's name while the number guard reads a line ("Three-toed sloth").
 NAME_MASK = "Fighter"
 
@@ -238,7 +239,7 @@ def beat_text(event: FightEvent, facts: NarrationFacts, use_hint: bool = True) -
 
 
 def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Script:
-    """Play-by-play: 8 to 20 beats, each pointing at a real event in the representative log."""
+    """Play-by-play: 8 to 12 beats, each pointing at a real event in the representative log."""
     log = result.representative_log
     lines: list[ScriptLine] = []
     seen: set[int] = set()
@@ -281,6 +282,43 @@ def fair_fight_line(facts: NarrationFacts, names: Sequence[str] = ()) -> ScriptL
     return safe_line("color_commentator", text, text, facts)
 
 
+# The clear-win verdict: crown the winner and say how often they won.
+def _winner_lines(facts: NarrationFacts, side: int, names: list[str]) -> list[ScriptLine]:
+    winner = facts.fighters[side]
+    won = f"{winner.display_name} won {facts.win_pct[side]}% of {facts.runs:,} simulated fights."
+    return [
+        safe_line(
+            "announcer",
+            f"Your winner: {team_name(winner)}!",
+            f"Your winner: {winner.display_name}!",
+            facts,
+            names,
+        ),
+        safe_line("color_commentator", won, f"{winner.display_name} takes the win.", facts, names),
+    ]
+
+
+# The too-close verdict: a near coin flip with a slight edge, never "winner" or "takes the win".
+def _too_close_lines(facts: NarrationFacts, side: int, names: list[str]) -> list[ScriptLine]:
+    edge = facts.fighters[side]
+    ahead = (
+        f"{edge.display_name} came out ahead in {facts.win_pct[side]}% "
+        f"of {facts.runs:,} simulated fights."
+    )
+    return [
+        safe_line(
+            "announcer",
+            f"Too close to call! A near coin flip, with a slight edge to {team_name(edge)}.",
+            "Too close to call! A near coin flip, with a slight edge.",
+            facts,
+            names,
+        ),
+        safe_line(
+            "color_commentator", ahead, f"{edge.display_name} had the slight edge.", facts, names
+        ),
+    ]
+
+
 def outro_script(facts: NarrationFacts) -> Script:
     """The outro: verdict, win percentage, deciding factor, and the fair-fight line."""
     red, blue = facts.fighters
@@ -288,22 +326,10 @@ def outro_script(facts: NarrationFacts) -> Script:
     factor = FACTOR_WORDS.get(facts.deciding_factor, facts.deciding_factor.replace("_", " "))
     if facts.outcome in ("win_0", "win_1"):
         side = 0 if facts.outcome == "win_0" else 1
-        winner = facts.fighters[side]
-        won = (
-            f"{winner.display_name} won {facts.win_pct[side]}% of {facts.runs:,} simulated fights."
-        )
-        lines = [
-            safe_line(
-                "announcer",
-                f"Your winner: {team_name(winner)}!",
-                f"Your winner: {winner.display_name}!",
-                facts,
-                names,
-            ),
-            safe_line(
-                "color_commentator", won, f"{winner.display_name} takes the win.", facts, names
-            ),
-        ]
+        if facts.too_close:  # the card says "Too close to call", so the outro does too (#482)
+            lines = _too_close_lines(facts, side, names)
+        else:
+            lines = _winner_lines(facts, side, names)
     elif facts.outcome == "draw":
         lines = [
             line("announcer", "It's a draw! Nobody takes the belt tonight!"),

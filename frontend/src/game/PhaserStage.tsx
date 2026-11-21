@@ -4,7 +4,7 @@ import type Phaser from "phaser";
 import { useEffect, useRef, useState } from "react";
 import type { Asset, Matchup, SimulationResult } from "../api/client.ts";
 import { useFocusRescue } from "../components/focus-rescue.ts";
-import { howMany } from "../components/Verdict.tsx";
+import { howMany, isTooCloseToCall } from "../components/Verdict.tsx";
 import type { BattleStage } from "./BattleScene.ts";
 import { STAGE, battlefieldUrl, layoutStage, spriteUrls } from "./layout.ts";
 import { buildTimeline, type Speed } from "./timeline.ts";
@@ -120,6 +120,7 @@ export default function PhaserStage({
         layouts: layoutStage(fighters, assets),
         battlefieldUrl: battlefieldUrl(assets),
         outcome: result.outcome,
+        tooClose: isTooCloseToCall(result),
         reducedMotion: motionless,
         onEvent: (index) => onEventRef.current?.(index),
         onFinish: () => {
@@ -136,6 +137,12 @@ export default function PhaserStage({
         backgroundColor: "#0b1026",
         banner: false,
         audio: { noAudio: true },
+        // The arena takes no pointer input (its controls are page buttons), so let the wheel
+        // and touch swipes over it scroll the page instead of being swallowed (#521).
+        input: {
+          mouse: { preventDefaultWheel: false },
+          touch: { capture: false },
+        },
         scale: { mode: P.Scale.FIT, autoCenter: P.Scale.CENTER_HORIZONTALLY },
         scene: [scene],
       });

@@ -75,8 +75,11 @@ def fair_fight_search(
         return abs(p - 0.5) <= c.FAIR_TOLERANCE
 
     def done(count: int, p: float, rough: bool = False) -> FairFightSearch:
-        lead = "A fair fight needs about" if rough else "A fair fight needs"
-        message = f"{lead} {count} {counted_name(name, count)} against {fixed_text}."
+        here = f"{count} {counted_name(name, count)} against {fixed_text}"
+        if not rough and count == matchup.fighters[side].count:  # already even as fought (#501)
+            message = f"This fight is already about even: {here}."
+        else:
+            message = f"{'A fair fight needs about' if rough else 'A fair fight needs'} {here}."
         return FairFightSearch(
             FairFight(varied_side=side, count=count, win_prob_at_count=p, message=message),
             len(probes),

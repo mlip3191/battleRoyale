@@ -28,6 +28,17 @@ KIND_WORDS = re.compile(r"\b(?:type|kind|species|breed|sort|variety)\b", re.I)
 # A side's trailing place phrase, "6 gray wolves in a forest" -> "in a forest" (#416). Only the
 # tail counts, so a place word inside a fighter's name ("sea turtle") is not the battlefield.
 TERRAIN_TAIL = re.compile(r"\s+((?:in|on|at|inside|into)\s+.+)$", re.I)
+# A bare count answers "How many horses should fight?" (#508): "1", "one", "a dozen", "2 horses".
+HOW_MANY = re.compile(r"\bhow\s+many\b", re.I)
+NUMBER_WORDS = {
+    **{"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7},
+    **{"eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "dozen": 12},
+}
+COUNT_ANSWER = re.compile(rf"(?:an?\s+)?(\d+|{'|'.join(NUMBER_WORDS)})(?:\s+(\w+))?", re.I)
+# The count words in front of the asked fighter that the answer replaces: "half a", "a dozen",
+# "2.5", "0". Only these go, so a describing word ("big horse") is kept.
+QUANTITY = r"(?:an?|the|half|quarter|third|couple|pair|of|some|few|several|zero|dozen|[\d./]+)"
+QUANTITY_TAIL = re.compile(rf"(?:\b(?:{QUANTITY}|{'|'.join(NUMBER_WORDS)})\s+)+$", re.I)
 START_OVER = (
     "Sorry, we still couldn't set up that matchup. Please start again and name two fighters, "
     'like "a grizzly bear vs a gray wolf".'
@@ -45,6 +56,9 @@ def merge_answer(
         return original
     if len(typed_sides(answer)) >= 2:
         return answer  # the answer is a whole matchup, e.g. a suggested "a vs b" option
+    counted = _with_count(original, answer, question)
+    if counted is not None:
+        return counted
     one_side = len(typed_sides(original)) < 2
     if one_side and (_asks_for_opponent(question) or not _offered(answer, options or [])):
         return f"{original} vs {answer}"  # the opponent was missing
@@ -67,6 +81,43 @@ def merge_answer(
         if lead:
             return word.sub(lambda match: " ".join([*lead, match.group(0)]), original, count=1)
     return f"{original} vs {answer}" if one_side else f"{original} ({answer})"
+
+
+# "half a horse vs ..." + "1", asked "How many horses?" -> "1 horse vs ..." (#508). None when the
+# question isn't "how many", the answer isn't a bare count, or no single fighter is asked about.
+def _with_count(original: str, answer: str, question: str) -> str | None:
+    match = COUNT_ANSWER.fullmatch(answer)
+    if not HOW_MANY.search(question) or match is None:
+        return None
+    asked = re.findall(r"[A-Za-z]+", HOW_MANY.split(question, 1)[1])
+    noun = match.group(2)
+    if noun and not any(_same_noun(noun, word) for word in asked):
+        return None  # "2 wolves" to "How many horses?" is not this count
+    spot = _asked_about(" ".join(_singulars(asked)), original)
+    if spot is None:
+        return None
+    word = match.group(1).lower()
+    count = NUMBER_WORDS.get(word) or int(word)
+    head = original[: spot.start()]
+    tail = QUANTITY_TAIL.search(head)
+    head = head[: tail.start()] if tail else head
+    return f"{head}{count} {original[spot.start() :]}"
+
+
+# Each word and its singular, so a question's "horses" or "wolves" finds "horse" or "wolf".
+def _singulars(words: list[str]) -> list[str]:
+    out: list[str] = []
+    for word in words:
+        lower = word.lower()
+        forms = [word]
+        if lower.endswith("ves"):
+            forms.append(word[:-3] + "f")
+        elif lower.endswith("es"):
+            forms += [word[:-2], word[:-1]]
+        elif lower.endswith("s"):
+            forms.append(word[:-1])
+        out += forms
+    return out
 
 
 # True if the question asks who to fight, not which kind of the typed fighter (#360).

@@ -30,11 +30,14 @@ from app.models.media import Asset
 from app.models.stats import Ability, StatSheet
 from app.models.terrain import Terrain
 from app.providers.base import ImageGen
+from app.providers.mock.image import MOCK_IMAGE_SIZE
 from app.providers.registry import ProviderMode, get_provider, provider_mode
 from app.safety.media_names import safe_media_name
 
 logger = logging.getLogger(__name__)
 
+PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+PNG_HEADER_BYTES = 24  # signature, then the IHDR length, type, width and height
 ITEM_TIMEOUT_S = 50.0  # per picture, inside the images stage's 60 s budget
 FIGHTER_ID = re.compile(r"[a-z0-9]+(?:-{1,2}[a-z0-9]+)*")  # "grizzly-bear", "bear--cub"
 
@@ -261,6 +264,34 @@ async def _bounded(
         return request.asset(fallback=True)
 
 
+# A mock placeholder left in the live folder from before mock pictures got their own folder (#280):
+# exactly MOCK_IMAGE_SIZE square with transparent corners (the mock's circle on a clear square).
+# Live sprites and battlefields are far larger, so such a file was never drawn by the live
+# provider and is redone (#461).
+def is_legacy_mock_picture(file: Path) -> bool:
+    try:
+        data = file.read_bytes()
+        if not _has_mock_size(data):  # real pictures are far larger: skip the full decode
+            return False
+        return png.corners_transparent(png.decode(data))
+    except (OSError, png.PngError):
+        return False
+
+
+# True when the PNG header (the first 24 bytes) says the picture is MOCK_IMAGE_SIZE square.
+def _has_mock_size(data: bytes) -> bool:
+    if len(data) < PNG_HEADER_BYTES or data[:8] != PNG_SIGNATURE or data[12:16] != b"IHDR":
+        return False
+    return (
+        int.from_bytes(data[16:20], "big") == MOCK_IMAGE_SIZE == int.from_bytes(data[20:24], "big")
+    )
+
+
+# A cache hit: a real file, and in live mode not a leftover mock placeholder.
+def _is_cache_hit(file: Path, mode: ProviderMode) -> bool:
+    return files.is_cached(file) and not (mode == "live" and is_legacy_mock_picture(file))
+
+
 # The cached file if there is one (in this provider mode's folder), else draw it, save it, and
 # return its asset.
 async def _make(
@@ -275,7 +306,7 @@ async def _make(
         return request.asset(fallback=True)
     request = replace(request, mode=provider_mode("image"))
     file = (media_dir or files.media_root()) / request.cached_path
-    if not force and files.is_cached(file):
+    if not force and _is_cache_hit(file, request.mode):
         return request.asset()
     try:
         data = await draw(provider or get_provider("image"))

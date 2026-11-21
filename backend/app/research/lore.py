@@ -7,6 +7,15 @@ on the list, the quote is in the article word for word, and any number of heads 
 quote. Each ability needs a backing word in the quote or is dropped, and a giant analog needs
 the quote to say the creature is big (#391). Anything that fails is blocked as "nonsense"; an
 outage gives no sheet, never a guess.
+
+When the model answers found false it also picks one reason from a fixed list (#403). Code maps
+the harmless reasons (a real animal, an object or machine, a generic kind of human or
+supernatural being) to "not a legend", which falls
+back to an all-estimate sheet (#401); every other reason, and a missing or invalid one, stays
+blocked. The model only picks a label; it never sets a number. A name with no Wikipedia article
+is asked about too, with the name alone and a marker in place of the article: found false goes
+through the same reason check, and found true is blocked because there is no text to check a
+quote against.
 """
 
 import json
@@ -16,6 +25,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
+from typing import Any
 
 import httpx
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -61,6 +71,19 @@ GIANT_ANALOGS = {
     "Pickup truck",
 }
 BIG_WORDS = r"big|large|huge|giant\w*|enormous|massive|colossal|monstrous|immense"
+NO_ARTICLE = "(no Wikipedia article was found)"  # sent in place of the article text (#403)
+# Why the model answers found false (#403). Only the first three (#444 added generic_kind) mean "a
+# plausible fighter, just not a legend"; the rest, and anything else, are refusals. Fixed here and
+# in prompts/lore_extract.md.
+NOT_A_LEGEND_REASONS = frozenset({"real_animal", "object_or_machine", "generic_kind"})
+REFUSAL_REASONS = frozenset({"person", "deity", "named_character", "weapon", "nonsense"})
+# Generic supernatural kinds D-65 allows. Their Wikipedia article ("God") is about one named
+# figure, so the lookup would answer "deity"; code calls them generic_kind without asking (#444).
+# Intake lowercases the name, so a capitalized "God" (a named deity, D-65) is stopped there.
+GENERIC_SUPERNATURAL_KINDS = frozenset(
+    {"god", "gods", "goddess", "goddesses", "angel", "angels", "demon", "demons"}
+    | {"titan", "titans", "valkyrie", "valkyries"}
+)
 
 
 class LoreReply(BaseModel):
@@ -80,14 +103,22 @@ class LoreReply(BaseModel):
     """How many heads, only with extra_heads and only when the quote states it."""
     quote: str | None = None
     """The sentence that supports the choices, copied word for word."""
+    reason: Any = None  # Any on purpose: a wrongly typed reason must fail closed, not raise
+    """Only with found false: why (real_animal, object_or_machine, generic_kind, person, deity,
+    named_character, weapon or nonsense). Code checks it; anything else is a refusal."""
 
 
 @dataclass(frozen=True)
 class LoreOutcome:
-    """A creature to build, a block (the request is nonsense), or neither (try again later)."""
+    """A creature to build, a block (the request is nonsense), "not a legend" (a plausible real
+    fighter: fall back to estimates), or none of these (a service is down: try again later)."""
 
     creature: Creature | None = None
     blocked: bool = False
+    not_a_legend: bool = False
+    kind: str | None = None
+    """With not_a_legend: the fixed reason ("real_animal", "object_or_machine" or "generic_kind")
+    (#453, #444)."""
 
 
 UNAVAILABLE = LoreOutcome()
@@ -229,19 +260,37 @@ async def fetch_legend_article(client: httpx.AsyncClient, name: str) -> SourceDo
     return None
 
 
-# The creature for a legend not in mythical.yaml, a block, or nothing when a service is down.
+# True for a generic supernatural kind ("god", "angel"): not a legend, and no lookup is needed.
+def is_generic_supernatural(name: str) -> bool:
+    return name.strip().lower() in GENERIC_SUPERNATURAL_KINDS
+
+
+# What a found-false answer means: "not a legend" only for a stated harmless reason (#403),
+# otherwise a block, so a missing, unknown or oddly typed reason fails closed.
+def outcome_for_not_found(reason: object) -> LoreOutcome:
+    if isinstance(reason, str) and reason.strip().lower() in NOT_A_LEGEND_REASONS:
+        return LoreOutcome(not_a_legend=True, kind=reason.strip().lower())  # the reason goes on
+    return NONSENSE
+
+
+# The creature for a legend not in mythical.yaml, a block, "not a legend", or nothing when a
+# service is down. With no article the model is still asked, with the name alone (#403, PM).
 async def lore_for(name: str, client: httpx.AsyncClient, chat: ChatLLM) -> LoreOutcome:
     try:
         article = await fetch_legend_article(client, name)
     except (SourceError, httpx.HTTPError) as error:
         logger.warning("Could not fetch the article for %r (%s).", name, error)
         return UNAVAILABLE
-    if article is None:
-        return NONSENSE
-    text = article_text(article.body.decode("utf-8", errors="replace"))
+    text = NO_ARTICLE
+    if article is not None:
+        text = article_text(article.body.decode("utf-8", errors="replace"))
     reply = await ask_model(chat, build_messages(name, text, sorted(real_fighters().values())))
     if reply is None:
         return UNAVAILABLE
+    if not reply.found:
+        return outcome_for_not_found(reply.reason)
+    if article is None:  # a legend claimed with no article: no text to check a quote against
+        return NONSENSE
     source = {
         "title": article.title,
         "url": article.url,
