@@ -60,11 +60,24 @@ def test_navy_seals_read_as_the_animal_get_the_note(raw: str) -> None:
         ("100 duck-sized horses", "horse", None),
         ("a main-battle tank", "main battle tank", None),
         ("a bear", "bear", None),  # a default-kind pick has its own note, not this one
+        ("6 gray wolves in a forest", "gray wolf", None),  # the battlefield isn't a dropped word
+        ("US Navy SEALs", "navy seal", None),  # D-69: a dropped country tag isn't a misread
+        ("US navy seals", "navy seal", None),
+        ("a Roman legionary", "roman legionary", None),
+        ("an African elephant", "african elephant", None),
     ],
 )
 def test_no_note_when_the_typed_name_was_kept(raw: str, entity: str, variant: str | None) -> None:
     result = read(f"{raw} vs a goose", (raw, entity, variant), ("a goose", "goose"))
     assert misreads(result) == []
+
+
+# Intended: dropping only adjectives still gets the note, so the user sees what was kept.
+def test_dropped_adjectives_get_the_note() -> None:
+    result = read("a big angry bear vs a goose", ("a big angry bear", "bear"), ("a goose", "goose"))
+    assert misreads(result) == [
+        "We read 'a big angry bear' as bear. Not what you meant? Edit it and fight again."
+    ]
 
 
 def test_each_misread_side_gets_its_own_note() -> None:

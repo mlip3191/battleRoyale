@@ -402,16 +402,26 @@ def _name_words(name: str) -> list[str]:
     return [singular_word(w) for w in words if w not in ARTICLES]
 
 
+# Country tags that may drop without changing the fighter: "US Navy SEALs" -> navy seal (D-69).
+_IGNORED_TYPED_WORDS = {"us", "usa", "uk"}
+
+
+# A side's raw without its trailing battlefield: "6 gray wolves in a forest" -> "6 gray wolves".
+def _without_place(raw: str) -> str:
+    place = terrain_in_text(raw)
+    return raw[: raw.lower().rfind(place.lower())].rstrip() if place else raw
+
+
 # One note per side whose typed words didn't all make it into the fighter we kept (#500), e.g.
 # "We read 'kimono dragon' as dragon." Code-built, so a typed number in raw is fine here.
 def misread_notes(fighters: list[FighterRequest]) -> list[str]:
     notes = []
     for fighter in fighters:
-        typed = _name_words(fighter.raw)
+        raw = _without_place(fighter.raw).strip()
+        typed = [w for w in _name_words(raw) if w not in _IGNORED_TYPED_WORDS]
         used = list(dict.fromkeys(_name_words(fighter.variant or "") + _name_words(fighter.entity)))
         if not typed or not used or set(typed) <= set(used):
             continue
-        raw = fighter.raw.strip()
         room = max(1, MAX_NOTE_CHARS - len(MISREAD_NOTE.format(raw="", used=" ".join(used))))
         if len(raw) > room:
             raw = raw[: room - 1].rstrip() + "…"
