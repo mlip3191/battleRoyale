@@ -44,6 +44,14 @@ const BackHome = ({ linkRef }: { linkRef: Ref<HTMLAnchorElement> }) => (
   </p>
 );
 
+// What the ticker says while a stage is running and has no detail of its own (#493): the audio
+// stage can take about a minute with the cloned voice, so it must not read "Researching…".
+function stageTicker(stage: string | undefined, first: string): string {
+  return stage === "audio"
+    ? "Recording the announcer…"
+    : `Researching the ${first}…`;
+}
+
 // The captions box: one live region, always mounted, so screen readers hear each new line.
 function Captions({ lines }: { lines: ScriptLine[] }) {
   return (
@@ -132,7 +140,7 @@ function Broadcast({ id }: { id: string }) {
       ? ""
       : "Warming up the studio lights…"
     : battle.status === "running" && show.phase === "waiting"
-      ? (running?.detail ?? `Researching the ${first}…`)
+      ? (running?.detail ?? stageTicker(running?.stage, first))
       : "";
 
   const result = battle?.result ?? null;
