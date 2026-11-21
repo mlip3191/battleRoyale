@@ -125,7 +125,7 @@ Wait until you see **"Battle Royale is starting at http://localhost:8000"** and 
 
 Open your web browser (Chrome, Edge, Safari or Firefox) and go to **http://localhost:8000**.
 
-![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button, example matchups and the showcase battles](images/user-guide/05-home.png)
+![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button, the "Try one of these" example matchups and the "Showcase (Ready Made)" battles](images/user-guide/05-home.png)
 
 On the battle and results pages, a **Home** button in the top bar brings you back here.
 
@@ -135,7 +135,7 @@ On the battle and results pages, a **Home** button in the top bar brings you bac
 
 ### Type a matchup
 
-Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under the box: it fills in the box, and then you click **FIGHT!**.
+Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under **Try one of these**, below the box: it fills in the box, and then you click **FIGHT!**. An example starts a new fight, researched and simulated live, so it takes about a minute or two.
 
 Good examples:
 
@@ -210,7 +210,7 @@ Click **See the full results**. Each part, top to bottom:
 
 ### Showcase battles
 
-Ready-made battles show off what the app can do. They load automatically when the app starts and appear under **Showcase** on the home page. Click one to watch it straight away, with no waiting:
+Ready-made battles show off what the app can do. They load automatically when the app starts and appear under **Showcase (Ready Made)** on the home page. Unlike the examples above the box, they're saved battles: click one to watch it straight away, with no waiting:
 
 1. 100 duck-sized horses vs 1 horse-sized duck
 2. Grizzly bear vs 4 gray wolves
