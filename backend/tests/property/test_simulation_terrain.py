@@ -9,10 +9,10 @@ from app.models.stats import Habitat
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.engine import _templates, run, run_once
-from app.simulation.fighters import apply_terrain, sample_template
+from app.simulation.fighters import apply_terrain, effective_habitat, sample_template, shoots
 from app.simulation.rng import run_rng
 from app.simulation.terrain import MODIFIERS, can_engage
-from tests.property.sim_helpers import lion, make_sheet, matchup_of
+from tests.property.sim_helpers import lion, make_dragon, make_sheet, matchup_of
 
 SHARK = dict(
     habitat="water", mass_kg=500, size_m=4.0, top_speed_mps=10, attack_force_n=5000,
@@ -119,6 +119,26 @@ def test_a_rifle_reaches_an_eagle_in_the_sky_and_two_fliers_fight():
     assert fliers.outcome != "no_contest"
     on_the_ground = run(matchup_of(1, 1, terrain=Terrain.SKY), [lion(), lion()], runs=100)
     assert on_the_ground.outcome != "no_contest"
+
+
+def test_shoots_means_a_ranged_weapon_or_a_breath_weapon():
+    assert not shoots(lion())
+    assert shoots(rifleman())
+    assert shoots(make_dragon(["breath_weapon"]))
+    assert not shoots(make_dragon(["flight"]))  # wings alone don't reach anyone from afar
+
+
+def test_a_breath_weapon_reaches_up_from_the_ground_but_a_grounded_beast_without_one_cannot():
+    # The dragon fixture lives in the air; these two are earthbound (no flight, habitat land).
+    breather = make_dragon(["breath_weapon"], name="wingless breather")
+    breather = breather.model_copy(update={"habitat": Habitat.LAND})
+    biter = make_dragon([], name="wingless biter").model_copy(update={"habitat": Habitat.LAND})
+    assert effective_habitat(breather) is not Habitat.AIR  # no flight: on the ground below
+    sky = matchup_of(1, 1, terrain=Terrain.SKY)
+    assert run(sky, [eagle(), breather], runs=100).outcome != "no_contest"
+    assert run(sky, [eagle(), biter], runs=100).outcome == "no_contest"
+    # A winged dragon is a flier itself, so against the eagle the two simply fight.
+    assert run(sky, [eagle(), make_dragon(["flight"])], runs=100).outcome != "no_contest"
 
 
 def test_on_the_ground_below_the_sky_is_the_open_field():

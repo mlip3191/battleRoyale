@@ -214,7 +214,7 @@ TERRAIN_WORDS: dict[str, tuple[Terrain, bool]] = {
     "cliff": (Terrain.MOUNTAIN, True), "hill": (Terrain.MOUNTAIN, False),
     "canyon": (Terrain.MOUNTAIN, False),
     "sky": (Terrain.SKY, True), "air": (Terrain.SKY, True),
-    "midair": (Terrain.SKY, True), "cloud": (Terrain.SKY, True),
+    "midair": (Terrain.SKY, True), "cloud": (Terrain.SKY, False),  # a cloud forest is a forest
 }  # fmt: skip
 TERRAIN_FILLER = {"in", "on", "at", "a", "an", "the", "of", "inside", "into", "middle"}
 

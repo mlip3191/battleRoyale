@@ -158,7 +158,7 @@ If a fighter is vague, the app asks **one** question, such as *"Which type of be
 
 ### Check tonight's card and pick a battlefield
 
-The page scrolls down to the card, which shows how the app read your matchup: each side, how many, and any assumptions it made. Pick a **Battlefield** from the list (arena, open field, forest, open water, shoreline, city streets, mountain or sky), then click **Start the fight!** on the card. In the **sky**, fliers fight each other; a fighter on the ground can only reach a flier with a ranged attack (a rifle, a dragon's breath), so "a bald eagle vs a grizzly bear in the sky" is a no contest.
+The page scrolls down to the card, which shows how the app read your matchup: each side, how many, and any assumptions it made. Pick a **Battlefield** from the list (arena, open field, forest, open water, shoreline, city streets, mountain or sky), then click **Start the fight!** on the card. In the **sky**, fliers fight each other; a fighter on the ground can only reach a flier with a ranged attack (a rifle, or a breath weapon on a creature that can't fly), so "a bald eagle vs a grizzly bear in the sky" is a no contest.
 
 ![The "Tonight's card" panel showing Bear (grizzly) vs 6 × Wolf (gray), the Battlefield set to Forest, and a Start the fight! button](images/user-guide/08-card.png)
 
