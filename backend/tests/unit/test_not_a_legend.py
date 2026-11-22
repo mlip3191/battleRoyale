@@ -252,3 +252,15 @@ def test_forgetting_clears_both_memories_and_recording_prunes_expired_entries(
     sheet_store.remember_refusal("zeus")
     sheet_store.forget_refusals()
     assert not sheet_store._NOT_A_LEGEND and not sheet_store._REFUSED
+
+
+def test_the_animal_kind_and_size_class_are_kept_only_from_their_fixed_lists() -> None:
+    outcome = lore.outcome_for_not_found("real_animal", " Bird ", "HUGE")
+    assert (outcome.kind, outcome.category, outcome.size_class) == ("real_animal", "bird", "huge")
+    odd = lore.outcome_for_not_found("real_animal", "dragon", 7)
+    assert (odd.category, odd.size_class) == (None, None)  # off the list or not a word: dropped
+    titan = lore.outcome_for_not_found("generic_kind", "mammal", "huge")
+    assert (titan.category, titan.size_class) == (None, "huge")  # a kind only for an animal
+    seal = lore.outcome_for_not_found("armed_unit", None, "huge")
+    assert seal.size_class is None  # soldiers stay human-sized
+    assert lore.outcome_for_not_found("deity", "mammal", "huge") == NONSENSE
