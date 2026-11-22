@@ -5,7 +5,10 @@
 # a stat sheet's media_name is meant to be generic already ("electric pickup truck"). A media_name
 # containing any of these words (or two-word phrases) gets placeholder art instead of a prompt.
 # Words that are also ordinary animals or things ("jaguar", "mustang", "caterpillar", "ram",
-# "beetle", "puma") are left out on purpose. Lowercase only.
+# "beetle", "puma") are left out on purpose. So are gods of mythology and military units, which
+# may fight (D-69): live sprites for "thor" and "navy seal" (checked Nov 22, #529) are a generic
+# Norse warrior and a plain soldier, with no film look, insignia or flag. The franchise word
+# ("marvel") stays on the list. Lowercase only.
 
 words:
   # vehicle makers and models
