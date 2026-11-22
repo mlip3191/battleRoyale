@@ -151,7 +151,9 @@ def _sheet_without_extraction(
         return None
 
 
-# Fighters whose name or id contains the search text: seed-list fighters, then cached ones.
+# Seed-list fighters whose name or id contains the search text. Cached sheets off the seed list
+# (legends, and animals researched on demand, #518) had no safety check of their own, so they
+# are never listed.
 def search_fighters(
     connection: sqlite3.Connection, query: str, limit: int = SEARCH_LIMIT
 ) -> list[FighterMatch]:
@@ -159,11 +161,6 @@ def search_fighters(
     cached = {row[0] for row in connection.execute("SELECT DISTINCT fighter_id FROM stat_sheets")}
     seeded = {path.stem for path in SEED_SHEETS_DIR.glob("*.json")}
     names = {f.id: f.display_name for f in load_seed_fighters() if f.category != "mythical"}
-    for fighter_id in sorted(cached - names.keys()):
-        sheet = cached_sheet(connection, fighter_id)
-        # Legends modeled on demand had no safety check of their own, so they aren't listed.
-        if sheet is not None and sheet.category != "mythical":
-            names[fighter_id] = sheet.display_name
     matches = [
         FighterMatch(fighter_id=i, display_name=n, cached=i in cached or i in seeded)
         for i, n in names.items()
