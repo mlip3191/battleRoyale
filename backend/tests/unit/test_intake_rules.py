@@ -260,6 +260,10 @@ def test_size_phrase_is_removed_from_a_name() -> None:
         ("the savanna", Terrain.OPEN_FIELD),
         ("in a snowy forest", Terrain.FOREST),
         ("Arena", Terrain.ARENA),
+        ("in the sky", Terrain.SKY),  # D-70
+        ("in the air", Terrain.SKY),
+        ("in the clouds", Terrain.SKY),
+        ("midair", Terrain.SKY),
     ],
 )
 def test_terrain_words_map_to_the_enum(phrase: str, terrain: Terrain) -> None:

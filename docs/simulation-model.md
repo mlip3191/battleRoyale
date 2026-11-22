@@ -78,7 +78,7 @@ Honesty note: published studies say how strong a bite is or how fast an animal r
 
 ## Terrain, habitat, and behavior (F04)
 
-- **Terrain table.** `terrain.py` gives every Terrain x Habitat pair (28 rows, each commented) a speed, attack, and hit multiplier. Water-only fighters on dry land are stranded (speed x0.1, attack x0.3, hit x0.5); land fighters in deep water are crippled (speed x0.2, attack x0.4, hit x0.5); the shoreline lets both engage weakly (land x0.7/0.8/0.8, water x0.5/0.6/0.7). All values are **assumptions** chosen for clear, sensible handicaps; they are not measured.
+- **Terrain table.** `terrain.py` gives every Terrain x Habitat pair (32 rows, each commented) a speed, attack, and hit multiplier. Water-only fighters on dry land are stranded (speed x0.1, attack x0.3, hit x0.5); land fighters in deep water are crippled (speed x0.2, attack x0.4, hit x0.5); the shoreline lets both engage weakly (land x0.7/0.8/0.8, water x0.5/0.6/0.7). All values are **assumptions** chosen for clear, sensible handicaps; they are not measured.
 
 The full table (each row is a multiplier on that fighter's speed, attack damage and hit chance; every value is an **assumption**, not a measurement):
 
@@ -112,8 +112,12 @@ The full table (each row is a multiplier on that fighter's speed, attack damage 
 | mountain | water | x0.1 | x0.3 | x0.5 | stranded |
 | mountain | air | x0.9 | x1.0 | x0.95 | thin air and updrafts, small cost |
 | mountain | amphibious | x0.7 | x0.9 | x0.85 | rough rock is hard on soft bodies |
+| sky | land | x1.0 | x1.0 | x1.0 | on the ground below, as in an open field (D-70) |
+| sky | water | x0.1 | x0.3 | x0.5 | stranded on the ground below |
+| sky | air | x1.0 | x1.0 | x1.0 | home: open sky, nothing in the way |
+| sky | amphibious | x0.8 | x0.9 | x0.9 | out of the water on the ground below |
 
-- **`no_contest`.** If neither side can reach the other, `run()` returns immediately with outcome `no_contest`, zero probabilities, and an END event "no contest: neither can reach the other". The only unreachable pair is a flier against a strictly water-living fighter in open water (the swimmer is submerged and the flier is out of reach). On dry land a fish is stranded and reachable; in the shallows everyone is reachable.
+- **`no_contest`.** If neither side can reach the other, `run()` returns immediately with outcome `no_contest`, zero probabilities, and an END event "no contest: neither can reach the other". Two cases are unreachable. In open water, a flier against a strictly water-living fighter (the swimmer is submerged and the flier is out of reach). **In the sky (D-70),** a flier against a fighter on the ground that has no ranged attack: the flier stays up, and only a ranged weapon (`weapon_ranged`, such as a rifle) or a breath weapon reaches it. The explainer then says the flier "stays up in the sky" and the other side can't reach it. Two fliers, or two fighters on the ground below, fight as usual. On dry land a fish is stranded and reachable; in the shallows everyone is reachable. Vehicle guns aren't modeled (D-38), so a tank can't shoot up at a flier.
 - **Morale, retreat, and flee.** When a side's lost share of total hit points passes its morale threshold (see constants), it retreats (RETREAT event) and stops attacking. If it is faster than the other side (after terrain) it escapes (FLEE event): the fight ends, the pursuer wins, and the runner counts as a survivor (a loss for its side, but alive). If it is not faster, it is caught and finishes the fight defenseless. Machines will never retreat (F08).
 - **Group tactics.** Two or more attackers on the same target (or, for ranged sides and swarms, a crowd of attackers) raise hit chance by `group_tactics_0_1 x 0.5`, capped by the normal hit-chance maximum.
 

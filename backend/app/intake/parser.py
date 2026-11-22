@@ -95,6 +95,7 @@ TERRAIN_PHRASES = {
     Terrain.SHORELINE: " on the shoreline",
     Terrain.URBAN: " in the city",
     Terrain.MOUNTAIN: " on the mountain",
+    Terrain.SKY: " in the sky",
 }
 
 
