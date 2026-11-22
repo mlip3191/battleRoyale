@@ -186,14 +186,17 @@ async def test_a_stage_past_its_budget_falls_back_and_the_battle_is_done(
     assert all(ran_normally(record, s) for s in others)
 
 
-async def test_a_slow_fair_fight_says_no_fair_fight_within_limits(
+async def test_a_slow_fair_fight_still_gets_a_box_that_says_it_ran_out_of_time(
     store: BattleStore, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """#509: a cut-off search left the results page with no fair-fight section at all."""
     monkeypatch.setitem(stages.STAGE_BUDGETS_S, "summary", TINY_BUDGET)
     replace(monkeypatch, "summary", sleep_too_long)
     record = await battle(store)
-    assert stage_of(record, "summary").detail == "no fair fight within limits"
-    assert record.fair_fight is None
+    assert "no fair fight within" not in (stage_of(record, "summary").detail or "").lower()
+    assert record.fair_fight is not None and record.fair_fight.count is None
+    assert record.fair_fight.message == "We couldn't work out a fair fight in time for this one."
+    assert "no fair fight" not in record.fair_fight.message.lower()
     assert record.result is not None
 
 
@@ -672,7 +675,9 @@ async def test_scripts_still_run_when_the_summary_falls_back(
     replace(monkeypatch, "summary", boom)
     record = await battle(store)
     assert record.status == "done"
-    assert (stage_of(record, "summary").status, record.fair_fight) == ("fallback", None)
+    assert stage_of(record, "summary").status == "fallback"
+    # The results page gets the "couldn't work it out" box (#509); the scripts still get no count.
+    assert record.fair_fight is not None and record.fair_fight.count is None
     assert (stage_of(record, "script").status, stage_of(record, "script").detail) == MOCK_SCRIPT
     assert [s.kind for s in record.scripts] == ["intro", "play_by_play", "outro"]
     assert NO_FAIR_CHECK in outro_lines(record)

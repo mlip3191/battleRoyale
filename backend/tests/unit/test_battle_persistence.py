@@ -138,6 +138,30 @@ async def test_a_cache_hit_without_fair_fight_or_challenger_works_them_out_fresh
     assert stage(second, "challenger")[1] != CACHED
 
 
+async def test_a_repeat_of_a_timed_out_battle_runs_the_fair_fight_search_again(
+    store: BattleStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#509 review: the "couldn't work it out" box must not be copied from the cache as a result."""
+    real = stages.summary
+
+    async def too_slow(*_: Any, **__: Any) -> Any:
+        await asyncio.sleep(5)
+
+    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "summary", 0.05)
+    monkeypatch.setattr(stages, "summary", too_slow)
+    first = await fight(store, "grizzly bear", "gray wolf")
+    assert first.fair_fight is not None and first.fair_fight.count is None
+
+    monkeypatch.setitem(stages.STAGE_BUDGETS_S, "summary", 5.0)
+    monkeypatch.setattr(stages, "summary", real)
+    again = await fight(store, "grizzly bear", "gray wolf")
+    assert stage(again, "simulate") == ("done", CACHED)  # the verdict is still reused
+    assert stage(again, "summary")[1] != CACHED  # but the search ran again
+    assert again.fair_fight is None or "couldn't work out" not in again.fair_fight.message
+    outro = [line.text for s in again.scripts if s.kind == "outro" for line in s.lines]
+    assert "Want a fair fight? No count makes this one fair." not in outro
+
+
 async def test_a_battle_whose_research_fell_back_is_still_reused(
     store: BattleStore, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -149,6 +149,11 @@ export function VerdictBanner({
   );
 }
 
+// The start of the message the backend saves when the fair-fight search ran out of time (#509);
+// keep it in step with FAIR_FIGHT_UNFINISHED in backend/app/pipeline/orchestrator.py (both sides pin
+// the same sentence in a test, so rewording one fails its test).
+export const FAIR_FIGHT_UNFINISHED = "We couldn't work out a fair fight";
+
 // How many it takes to make it a coin flip, or why no count can.
 export function FairFightCard({
   fairFight,
@@ -159,9 +164,12 @@ export function FairFightCard({
 }) {
   const { count, win_prob_at_count: chance } = fairFight;
   const fighter = matchup.fighters[fairFight.varied_side];
+  // A search cut off for time (#509) did not find "no fair fight"; the heading must not say it did.
+  const noneFound =
+    count === null && !fairFight.message.startsWith(FAIR_FIGHT_UNFINISHED);
   return (
     <section className={styles.card} aria-labelledby="fair-title">
-      <h2 id="fair-title">{count === null ? "No fair fight" : "Fair fight"}</h2>
+      <h2 id="fair-title">{noneFound ? "No fair fight" : "Fair fight"}</h2>
       <p>{fairFight.message}</p>
       {count !== null && fighter && (
         <p className={styles.muted}>

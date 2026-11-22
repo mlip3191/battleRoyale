@@ -129,7 +129,7 @@ Stages run in the orchestrator (`pipeline/`). Each stage records `pending | runn
 | 4–5 Scripts | ≤ 10 s | — | template-based fallback script |
 | 5 Audio + music | audio ≤ 120 s (D-68), music ≤ 60 s | — | captions only / no music |
 | 6 Images | ≤ 60 s (cached per fighter) | — | placeholder shapes in the fighter's color |
-| 7 Fair fight | ≤ 5 s | — | "no fair fight within limits" |
+| 7 Fair fight | ≤ 5 s | — | a "couldn't work out a fair fight in time" box (#509); a finished search with no answer says "No fair fight within N …" |
 | 8 Next challenger | ≤ 10 s | — | candidates come only from seed/cached fighters (no new research), so the budget holds; fallback: closest odds from the seed list |
 
 ## 5. Shared contracts (backend/app/models)
