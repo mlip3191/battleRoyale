@@ -552,6 +552,21 @@ test("audio: sound turned on in the intro carries into the fight's announcer fil
   }
 });
 
+test("music is cut: a music fallback shows no banner and no progress row (#538)", () => {
+  show(done); // the fixture's only fallback is music
+  expect(screen.queryByText(/Some effects unavailable/)).toBeNull();
+  const progress = screen.getByRole("list", { name: "Show progress" });
+  expect(progress.textContent).not.toContain("music");
+  cleanup();
+  show({
+    ...doneRecord,
+    stages: doneRecord.stages.map((s) => ({ ...s, status: "done" })),
+  });
+  expect(
+    screen.getByRole("list", { name: "Show progress" }).textContent,
+  ).toContain("music: done");
+});
+
 test("degraded: no images means the stage gets no pictures and draws placeholders", () => {
   show(without("sprite", "battlefield"));
   startFight();
@@ -563,8 +578,13 @@ test("degraded: no images means the stage gets no pictures and draws placeholder
 });
 
 test('degraded: "some effects unavailable" shows whenever a stage is fallback, and only then', () => {
-  show(done);
-  expect(screen.getByText("Some effects unavailable: music.")).toBeTruthy();
+  show({
+    ...doneRecord,
+    stages: doneRecord.stages.map((s) =>
+      s.stage === "images" ? { ...s, status: "fallback" } : s,
+    ),
+  });
+  expect(screen.getByText("Some effects unavailable: pictures.")).toBeTruthy();
   cleanup();
   show({
     ...doneRecord,
