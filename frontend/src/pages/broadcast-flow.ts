@@ -166,10 +166,16 @@ const STAGE_NAMES: Record<StageStatus["stage"], string> = {
 // Said when the script stage fell back: the show still has full commentary, from the template.
 export const TEMPLATE_SCRIPT_NOTE = "Some commentary used the template script.";
 
-// "Some effects unavailable: music." when any stage used a stand-in, otherwise null. A template
+// Music is cut (no music service), so its fallback is the normal case, not news (#538).
+export const shownStage = (s: StageStatus) =>
+  !(s.stage === "music" && s.status === "fallback");
+
+// "Some effects unavailable: pictures." when any stage used a stand-in, otherwise null. A template
 // script is not missing, so it gets its own sentence (on mocks the play-by-play always is one).
 export function unavailableNote(stages: readonly StageStatus[]) {
-  const fellBack = stages.filter((s) => s.status === "fallback");
+  const fellBack = stages.filter(
+    (s) => s.status === "fallback" && shownStage(s),
+  );
   const names = fellBack
     .filter((s) => s.stage !== "script")
     .map((s) => STAGE_NAMES[s.stage]);

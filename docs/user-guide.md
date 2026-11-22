@@ -168,7 +168,7 @@ While the app researches and simulates, a ticker shows what it's doing and a lis
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 
-Then the show starts: the announcer introduces the fighters, with captions on screen. The intro has its own **Start the fight** button (a second one, after the card's): click it when you're ready, or **Skip to verdict** to jump straight to the result. A note may appear at the top. **"Some effects unavailable: …"** names the parts that used a stand-in this time (for example the voice or the music); **"Some commentary used the template script"** means the AI announcer was slow, so ready-made commentary was used. Either way the captions always carry the show, and the fight and its numbers are the same.
+Then the show starts: the announcer introduces the fighters, with captions on screen. The intro has its own **Start the fight** button (a second one, after the card's): click it when you're ready, or **Skip to verdict** to jump straight to the result. A note may appear at the top. **"Some effects unavailable: …"** names the parts that used a stand-in this time (for example the voice or the pictures; music is cut, so it is never listed); **"Some commentary used the template script"** means the AI announcer was slow, so ready-made commentary was used. Either way the captions always carry the show, and the fight and its numbers are the same.
 
 ![The intro: Grizzly bear VS 6 gray wolves, an announcer caption, and Start the fight and Skip to verdict buttons](images/user-guide/10-intro.png)
 

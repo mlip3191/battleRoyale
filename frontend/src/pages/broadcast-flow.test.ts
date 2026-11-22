@@ -287,9 +287,6 @@ describe("audio", () => {
 
 describe("notes and verdict", () => {
   test('"some effects unavailable" names every fallback stage, and only then', () => {
-    expect(unavailableNote(battle.stages)).toBe(
-      "Some effects unavailable: music.",
-    );
     const fine = battle.stages.map((s) => ({ ...s, status: "done" as const }));
     expect(unavailableNote(fine)).toBeNull();
     const two = fine.map((s) =>
@@ -302,6 +299,23 @@ describe("notes and verdict", () => {
     );
   });
 
+  test("music is cut, so its fallback is never called unavailable (#538)", () => {
+    // The fixture battle's only fallback is music.
+    expect(battle.stages.find((s) => s.stage === "music")?.status).toBe(
+      "fallback",
+    );
+    expect(unavailableNote(battle.stages)).toBeNull();
+    const fine = battle.stages.map((s) => ({ ...s, status: "done" as const }));
+    const withResearch = fine.map((s) =>
+      s.stage === "research" || s.stage === "music"
+        ? { ...s, status: "fallback" as const }
+        : s,
+    );
+    expect(unavailableNote(withResearch)).toBe(
+      "Some effects unavailable: research.",
+    );
+  });
+
   test("a template script is not called unavailable (#270)", () => {
     const fine = battle.stages.map((s) => ({ ...s, status: "done" as const }));
     const withStatus = (fallbacks: string[]) =>
@@ -311,8 +325,8 @@ describe("notes and verdict", () => {
     expect(unavailableNote(withStatus(["script"]))).toBe(
       "Some commentary used the template script.",
     );
-    expect(unavailableNote(withStatus(["script", "music"]))).toBe(
-      "Some commentary used the template script. Some effects unavailable: music.",
+    expect(unavailableNote(withStatus(["script", "images"]))).toBe(
+      "Some commentary used the template script. Some effects unavailable: pictures.",
     );
   });
 
