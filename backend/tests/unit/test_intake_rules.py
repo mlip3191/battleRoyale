@@ -260,6 +260,9 @@ def test_size_phrase_is_removed_from_a_name() -> None:
         ("the savanna", Terrain.OPEN_FIELD),
         ("in a snowy forest", Terrain.FOREST),
         ("Arena", Terrain.ARENA),
+        ("in the sky", Terrain.SKY),  # D-70
+        ("in the air", Terrain.SKY),
+        ("midair", Terrain.SKY),
     ],
 )
 def test_terrain_words_map_to_the_enum(phrase: str, terrain: Terrain) -> None:
@@ -269,6 +272,11 @@ def test_terrain_words_map_to_the_enum(phrase: str, terrain: Terrain) -> None:
 @pytest.mark.parametrize("phrase", [None, "", "  ", "in the"])
 def test_no_terrain_means_arena_without_an_assumption(phrase: str | None) -> None:
     assert map_terrain(phrase) == (Terrain.ARENA, None)
+
+
+def test_clouds_are_the_sky_but_a_cloud_forest_is_a_forest() -> None:  # D-70
+    assert map_terrain("in the clouds")[0] is Terrain.SKY
+    assert map_terrain("in the cloud forest")[0] is Terrain.FOREST
 
 
 def test_approximate_terrain_is_mapped_with_an_assumption() -> None:

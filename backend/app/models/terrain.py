@@ -13,3 +13,4 @@ class Terrain(StrEnum):
     SHORELINE = "shoreline"
     URBAN = "urban"
     MOUNTAIN = "mountain"
+    SKY = "sky"  # D-70: only fliers, and ranged attacks from the ground, reach a flier

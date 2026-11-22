@@ -103,6 +103,20 @@ test("ok: Enter submits, shows the confirmation card, and its start button start
   expect(await screen.findByText("broadcast page")).toBeTruthy();
 });
 
+test("the sky is one of the battlefields (D-70)", async () => {
+  api.postIntake.mockResolvedValue(ok);
+  ask(open(), "a grizzly bear vs 6 gray wolves");
+  const card = await screen.findByRole("region", { name: "Tonight's card" });
+  const field = screen.getByLabelText("Battlefield") as HTMLSelectElement;
+  expect(within(field).getByRole("option", { name: "Sky" })).toBeTruthy();
+  fireEvent.change(field, { target: { value: "sky" } });
+  fireEvent.click(within(card).getByRole("button", { name: START_LABEL }));
+  expect(api.createBattle).toHaveBeenCalledWith({
+    ...ok.matchup,
+    terrain: "sky",
+  });
+});
+
 test("Shift+Enter adds a line instead of submitting", () => {
   const box = open();
   fireEvent.change(box, { target: { value: "a goose" } });

@@ -65,7 +65,8 @@
         "water",
         "shoreline",
         "urban",
-        "mountain"
+        "mountain",
+        "sky"
       ],
       "title": "Terrain",
       "type": "string"

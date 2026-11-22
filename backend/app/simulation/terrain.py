@@ -58,6 +58,11 @@ MODIFIERS: dict[tuple[Terrain, Habitat], Modifier] = {
     (T.MOUNTAIN, W): Modifier(0.1, 0.3, 0.5),  # stranded
     (T.MOUNTAIN, A): Modifier(0.9, 1.0, 0.95),  # thin air and updrafts, small cost
     (T.MOUNTAIN, X): Modifier(0.7, 0.9, 0.85),  # rough rock is hard on soft bodies
+    # --- sky (D-70): open air for fliers; anyone else fights on the open field below it ---
+    (T.SKY, L): Modifier(1.0, 1.0, 1.0),  # on the ground below, as in an open field
+    (T.SKY, W): Modifier(0.1, 0.3, 0.5),  # stranded on the ground below
+    (T.SKY, A): Modifier(1.0, 1.0, 1.0),  # home: open sky, nothing in the way
+    (T.SKY, X): Modifier(0.8, 0.9, 0.9),  # out of the water on the ground below
 }
 
 
@@ -66,13 +71,27 @@ def modifier(terrain: Terrain, habitat: Habitat) -> Modifier:
     return MODIFIERS[(terrain, habitat)]
 
 
-def can_engage(terrain: Terrain, habitat_a: Habitat, habitat_b: Habitat) -> bool:
+def can_engage(
+    terrain: Terrain,
+    habitat_a: Habitat,
+    habitat_b: Habitat,
+    *,
+    ranged_a: bool = False,
+    ranged_b: bool = False,
+) -> bool:
     """False when neither side can reach the other (the result is then `no_contest`).
 
     A strictly water-living fighter is submerged in open water (`Terrain.WATER`), out of reach of
     a flier, and a flier is out of reach of it. On dry land a fish is stranded and
     reachable. In the shallows (shoreline) everyone is reachable, but weakly.
+
+    In the sky (D-70) a flier stays up, so a fighter on the ground below reaches it only with a
+    ranged attack (`ranged_a`/`ranged_b`: a rifle, breath). Two fliers, or two fighters on the
+    ground, always engage.
     """
     if terrain is Terrain.WATER and {habitat_a, habitat_b} == {Habitat.AIR, Habitat.WATER}:
         return False
+    if terrain is Terrain.SKY and (habitat_a is Habitat.AIR) != (habitat_b is Habitat.AIR):
+        grounded_ranged = ranged_b if habitat_a is Habitat.AIR else ranged_a
+        return grounded_ranged
     return True

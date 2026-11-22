@@ -51,6 +51,7 @@ export const TERRAINS = {
   shoreline: "Shoreline",
   urban: "City streets",
   mountain: "Mountain",
+  sky: "Sky",
 } satisfies Record<Terrain, string>;
 
 // The card's own button, so it isn't a second "FIGHT!" next to the form's (#462).

@@ -9,10 +9,10 @@ from app.models.stats import Habitat
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.engine import _templates, run, run_once
-from app.simulation.fighters import apply_terrain, sample_template
+from app.simulation.fighters import apply_terrain, effective_habitat, sample_template, shoots
 from app.simulation.rng import run_rng
 from app.simulation.terrain import MODIFIERS, can_engage
-from tests.property.sim_helpers import lion, make_sheet, matchup_of
+from tests.property.sim_helpers import lion, make_dragon, make_sheet, matchup_of
 
 SHARK = dict(
     habitat="water", mass_kg=500, size_m=4.0, top_speed_mps=10, attack_force_n=5000,
@@ -71,6 +71,80 @@ def test_eagle_vs_shark_in_water_is_no_contest():
     last = result.representative_log[-1]
     assert last.type == EventType.END and "no contest" in last.text_hint
     assert "can't reach each other" in result.deciding_factor_explainer
+
+
+# --- the sky (D-70): only fliers, and ranged attacks from the ground, reach a flier -------------
+
+
+def rifleman():
+    return make_sheet("rifleman", habitat="land", weapons=["weapon_ranged"], reach_m=300.0)
+
+
+def test_in_the_sky_only_a_ranged_attack_reaches_a_flier_from_the_ground():
+    A, L, W = Habitat.AIR, Habitat.LAND, Habitat.WATER
+    assert can_engage(Terrain.SKY, A, A)  # two fliers
+    assert can_engage(Terrain.SKY, L, L)  # two on the ground below
+    assert not can_engage(Terrain.SKY, A, L)  # a bear can't reach an eagle
+    assert not can_engage(Terrain.SKY, L, A)
+    assert not can_engage(Terrain.SKY, W, A)
+    assert can_engage(Terrain.SKY, A, L, ranged_b=True)  # a rifle reaches up
+    assert can_engage(Terrain.SKY, L, A, ranged_a=True)
+    assert not can_engage(Terrain.SKY, A, L, ranged_a=True)  # the flier's own reach doesn't count
+
+
+def test_the_ranged_flag_changes_nothing_on_the_other_battlefields():
+    for terrain in Terrain:
+        if terrain is Terrain.SKY:
+            continue
+        for a in Habitat:
+            for b in Habitat:
+                plain = can_engage(terrain, a, b)
+                assert plain == (
+                    not (terrain is Terrain.WATER and {a, b} == {Habitat.AIR, Habitat.WATER})
+                )
+                assert can_engage(terrain, a, b, ranged_a=True, ranged_b=True) == plain
+
+
+def test_an_eagle_vs_a_lion_in_the_sky_is_no_contest_with_a_reason():
+    result = run(matchup_of(1, 1, terrain=Terrain.SKY), [eagle(), lion()], runs=100)
+    assert result.outcome == "no_contest" and result.win_prob == (0.0, 0.0)
+    assert "stays up in the sky" in result.deciding_factor_explainer
+    assert "Lion" in result.deciding_factor_explainer
+
+
+def test_a_rifle_reaches_an_eagle_in_the_sky_and_two_fliers_fight():
+    shot = run(matchup_of(1, 1, terrain=Terrain.SKY), [eagle(), rifleman()], runs=100)
+    assert shot.outcome != "no_contest"
+    fliers = run(matchup_of(1, 1, terrain=Terrain.SKY), [eagle(), eagle()], runs=100)
+    assert fliers.outcome != "no_contest"
+    on_the_ground = run(matchup_of(1, 1, terrain=Terrain.SKY), [lion(), lion()], runs=100)
+    assert on_the_ground.outcome != "no_contest"
+
+
+def test_shoots_means_a_ranged_weapon_or_a_breath_weapon():
+    assert not shoots(lion())
+    assert shoots(rifleman())
+    assert shoots(make_dragon(["breath_weapon"]))
+    assert not shoots(make_dragon(["flight"]))  # wings alone don't reach anyone from afar
+
+
+def test_a_breath_weapon_reaches_up_from_the_ground_but_a_grounded_beast_without_one_cannot():
+    # The dragon fixture lives in the air; these two are earthbound (no flight, habitat land).
+    breather = make_dragon(["breath_weapon"], name="wingless breather")
+    breather = breather.model_copy(update={"habitat": Habitat.LAND})
+    biter = make_dragon([], name="wingless biter").model_copy(update={"habitat": Habitat.LAND})
+    assert effective_habitat(breather) is not Habitat.AIR  # no flight: on the ground below
+    sky = matchup_of(1, 1, terrain=Terrain.SKY)
+    assert run(sky, [eagle(), breather], runs=100).outcome != "no_contest"
+    assert run(sky, [eagle(), biter], runs=100).outcome == "no_contest"
+    # A winged dragon is a flier itself, so against the eagle the two simply fight.
+    assert run(sky, [eagle(), make_dragon(["flight"])], runs=100).outcome != "no_contest"
+
+
+def test_on_the_ground_below_the_sky_is_the_open_field():
+    for habitat in (Habitat.LAND, Habitat.WATER, Habitat.AMPHIBIOUS):
+        assert MODIFIERS[(Terrain.SKY, habitat)] == MODIFIERS[(Terrain.OPEN_FIELD, habitat)]
+    assert MODIFIERS[(Terrain.SKY, Habitat.AIR)] == (1.0, 1.0, 1.0)
 
 
 def test_eagle_vs_shark_is_a_fight_where_the_shark_is_stranded_or_in_the_shallows():
