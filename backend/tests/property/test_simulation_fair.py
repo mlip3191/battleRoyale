@@ -185,9 +185,58 @@ def test_a_rough_answer_says_about_and_reports_the_real_win_share():
         found = fair_fight(matchup_of(cats, 1), [house_cat(), wolf()])
         assert found.count is not None
         outside = abs(found.win_prob_at_count - 0.5) > c.FAIR_TOLERANCE
-        assert ("needs about" in found.message) == outside  # not "already about even" (#501)
+        # A rough answer says "about" or, at the count already fought, "as close as it gets"
+        # (#549); never "already about even" (#501).
+        rough_wording = "needs about" in found.message or "as close as it gets" in found.message
+        assert rough_wording == outside
+        assert "already about even" not in found.message or not outside
         rough += outside
     assert rough >= 1
+
+
+def step(low_until, low=0.42, high=0.70):
+    """A win share that jumps over the 50% band: `low` up to `low_until` cats, `high` after."""
+    return lambda count: low if count <= low_until else high
+
+
+def test_a_rough_best_count_equal_to_the_count_fought_never_says_needs(monkeypatch):
+    """#549: "a dozen house cats vs a gorilla" read "A fair fight needs about 12 house cats"."""
+    fake_engine(monkeypatch, 1, step(12))  # 42% at 12 cats, 70% at 13: 12 is the closest
+    search = fair_fight_search(matchup_of(1, 12), [wolf(), house_cat()], main_result(1))
+    assert search.result.count == 12
+    assert "needs" not in search.result.message
+    assert search.result.message.startswith(
+        "This is as close as it gets: 12 house cats against 1 gray wolf."
+    )
+
+
+def test_a_rough_answer_names_the_win_chance_on_both_sides_of_even(monkeypatch):
+    """#549: "needs about 2 dragons" hid that 1 dragon wins 15% and 2 dragons win 80%."""
+    # Rising to 40% at 20 cats, then a jump to 70% at 21: 20 is the closest to even.
+    fake_engine(monkeypatch, 1, lambda n: 0.2 + 0.01 * n if n <= 20 else 0.70)
+    search = fair_fight_search(matchup_of(1, 1), [wolf(), house_cat()], main_result(1))
+    assert search.result.count == 20
+    assert search.result.message == (
+        "A fair fight needs about 20 house cats against 1 gray wolf. "
+        "20 house cats win 40%, 21 house cats win 70%."
+    )
+
+
+def test_one_fighter_on_a_side_of_the_win_chances_reads_as_wins(monkeypatch):
+    fake_engine(monkeypatch, 1, step(1, low=0.10, high=0.80))
+    search = fair_fight_search(matchup_of(1, 1), [wolf(), house_cat()], main_result(1))
+    assert "1 house cat wins 10%, 2 house cats win 80%." in search.result.message
+
+
+def test_the_fair_fight_message_keeps_each_sides_size_reference(monkeypatch):
+    """#549: "needs 480 horses against 1 duck" dropped "duck-sized" and "horse-sized"."""
+    fake_engine(monkeypatch, 1, logistic(37))
+    search = fair_fight_search(
+        matchup_of(1, 1, ref_0="horse", ref_1="duck"), [wolf(), house_cat()], main_result(1)
+    )
+    assert search.result.message == (
+        "A fair fight needs 37 duck-sized house cats against 1 horse-sized gray wolf."
+    )
 
 
 # --- test_challengers ----------------------------------------------------------------------------
