@@ -176,6 +176,34 @@ describe("placeholders when images are missing", () => {
     const two = [sprite("s1", "/media/a.png"), sprite("s2", "/media/b.png")];
     expect(spriteUrls(two, fighters)).toEqual(["/media/a.png", "/media/b.png"]);
   });
+
+  test("a fighter read as another name gets the one sprite left over (#536)", () => {
+    // "dogs" fight as the golden retriever, so its sprite never names a dog.
+    const dogsVsCats = [{ entity: "dog" }, { entity: "cat" }];
+    const pair = [
+      sprite("s1", "/media/sprites/golden-retriever-v1.png"),
+      sprite("s2", "/media/sprites/house-cat-v1.png"),
+    ];
+    expect(spriteUrls(pair, dogsVsCats)).toEqual([
+      "/media/sprites/golden-retriever-v1.png",
+      "/media/sprites/house-cat-v1.png",
+    ]);
+    const snakeVsMongoose = [{ entity: "mongoose" }, { entity: "snake" }];
+    const cobra = [
+      sprite("s1", "/media/sprites/mongoose-v1.png"),
+      sprite("s2", "/media/sprites/king-cobra-v1.png"),
+    ];
+    expect(spriteUrls(cobra, snakeVsMongoose)).toEqual([
+      "/media/sprites/mongoose-v1.png",
+      "/media/sprites/king-cobra-v1.png",
+    ]);
+    // Two leftovers are still ambiguous, so that side keeps its placeholder.
+    const extra = [...pair, sprite("s3", "/media/sprites/gray-wolf-v1.png")];
+    expect(spriteUrls(extra, dogsVsCats)).toEqual([
+      null,
+      "/media/sprites/house-cat-v1.png",
+    ]);
+  });
 });
 
 describe("winnerBanner", () => {
