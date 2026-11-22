@@ -180,7 +180,9 @@ async def lookup_fighter_or_estimate(fighter: FighterRequest) -> tuple[StatSheet
     category, size_class = not_a_legend_shape(slug)  # of its kind and size (#517)
     flies = not_a_legend_flies(slug)  # a hawk flies, an ostrich doesn't (#542)
     name = _typed_name(fighter.entity, fighter.variant)
-    estimate = estimate_sheet(name, kind, category=category, size_class=size_class, flies=flies)
+    estimate = estimate_sheet(
+        name, kind, category=category, size_class=size_class, flies=flies, raw=fighter.raw
+    )
     if not _article_fits(fighter.variant):  # an adult's article would mislead a "baby moose"
         return estimate, True
     sheet = await researched_or_estimate(  # live research (#518), within the stage's time

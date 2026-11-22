@@ -92,8 +92,9 @@ def estimate_sheet(
     category: str | None = None,
     size_class: str | None = None,
     flies: bool | None = None,
+    raw: str | None = None,
 ) -> StatSheet:
-    display = display_name_for(name)
+    display = display_name_for(name, raw)
     animal = kind == ANIMAL_REASON
     generic = kind in HUMAN_REASONS
     armed = kind == ARMED_UNIT_REASON
@@ -141,12 +142,22 @@ def estimate_sheet(
 
 # A display name the StatSheet allowlist accepts: letters, digits, spaces, and hyphens only,
 # with the first letter capitalized like the seed list ("Wolverine", "Polar bear").
-def display_name_for(name: str) -> str:
+def display_name_for(name: str, raw: str | None = None) -> str:
     cleaned = re.sub(r"[^A-Za-z0-9 -]+", " ", name)
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" -")
     if not cleaned:
         return UNKNOWN_NAME
+    cleaned = _as_typed(cleaned, raw)
     return cleaned[:1].upper() + cleaned[1:]
+
+
+# Intake lowercases names ("Navy SEAL team" is "navy seal"): take the capitals back from what the
+# user typed when it holds the name, unless they shouted it in all caps (#556).
+def _as_typed(cleaned: str, raw: str | None) -> str:
+    found = re.search(re.escape(cleaned), raw or "", re.IGNORECASE)
+    if found is None or found.group().isupper():
+        return cleaned
+    return found.group()
 
 
 # A value code derived from another estimate (a living animal's reach) becomes the category
