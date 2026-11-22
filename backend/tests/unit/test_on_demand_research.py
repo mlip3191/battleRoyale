@@ -84,17 +84,14 @@ def test_only_quoted_stats_replace_the_estimate() -> None:
 
 
 def test_a_sourced_size_sets_the_reach_derived_from_it() -> None:  # #535
-    size = quoted(2.59, "m", "Bulls measure")
+    size = quoted(2.59, "m", "Bulls measure").model_copy(update={"low": 2.0, "high": 3.0})
     built = MOOSE.model_copy(update={"stats": {**MOOSE.stats, StatName.SIZE: size}})
     sheet = on_demand.merged(MOOSE, built)
     assert sheet is not None and sheet.stats[StatName.SIZE] == size
     reach = sheet.stats[StatName.REACH]
     assert reach.method == "derived" and not reach.is_estimate
     assert reach.value == pytest.approx(0.25 * 2.59)
-    assert (reach.low, reach.high) == (
-        pytest.approx(0.25 * size.low) if size.low is not None else reach.value,
-        pytest.approx(0.25 * size.high) if size.high is not None else reach.value,
-    )
+    assert (reach.low, reach.high) == (pytest.approx(0.5), pytest.approx(0.75))  # size's range
     # With only the mass sourced, the reach's input is still an estimate, so it stays one.
     assert researched(MOOSE).stats[StatName.REACH] == MOOSE.stats[StatName.REACH]
 
@@ -274,6 +271,7 @@ async def test_an_adult_is_researched_like_the_plain_animal(monkeypatch) -> None
         return estimate
 
     monkeypatch.setattr(stages, "researched_or_estimate", research)
+    assert stages._ARTICLE_WORDS <= stages._LABEL_WORDS  # the typed name drops them too
     sheet_store.remember_not_a_legend("moose", "real_animal", "mammal", "large")
     adult = FighterRequest(entity="moose", variant="adult", raw="an adult moose")
     await stages.lookup_fighter_or_estimate(adult)

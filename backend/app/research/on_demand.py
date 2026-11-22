@@ -253,7 +253,9 @@ def merged(estimate: StatSheet, built: StatSheet) -> StatSheet | None:
     )
 
 
-# True when every stat `derive` would read for this stat is sourced (a ram needs mass and speed).
+# True when every stat `derive` would read for this stat is sourced. Only reach (from size)
+# applies to the animals researched here; the mass-and-speed case is a ramming machine's attack,
+# kept so the rule stays safe if machines are ever researched.
 def _inputs_sourced(stat: StatName, sourced: dict[StatName, StatValue]) -> bool:
     if stat == StatName.REACH:
         return StatName.SIZE in sourced

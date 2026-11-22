@@ -86,6 +86,7 @@ LEGEND_UNAVAILABLE = "We couldn't look up {name!r} right now. Please try again i
 _LABEL_WORDS = frozenset({"adult", "male", "female", "juvenile", "baby", "young"})
 # Variants an animal's article already describes, so they are researched like the plain animal
 # (#535). A baby, a young animal or one sex is a different fighter from the article's adult.
+# A subset of _LABEL_WORDS (a unit test checks it), so the fighter's name drops these words too.
 _ARTICLE_WORDS = frozenset({"adult"})
 
 
