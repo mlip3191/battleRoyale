@@ -254,6 +254,15 @@ def test_forgetting_clears_both_memories_and_recording_prunes_expired_entries(
     assert not sheet_store._NOT_A_LEGEND and not sheet_store._REFUSED
 
 
+def test_flies_is_kept_only_as_a_real_yes_or_no_for_a_real_animal() -> None:  # #542
+    assert lore.outcome_for_not_found("real_animal", "bird", "small", True).flies is True
+    assert lore.outcome_for_not_found("real_animal", "bird", "medium", False).flies is False
+    for odd in ("yes", "sometimes", 1, None):
+        assert lore.outcome_for_not_found("real_animal", "bird", "small", odd).flies is None
+    assert lore.outcome_for_not_found("generic_kind", None, "medium", True).flies is None
+    assert lore.outcome_for_not_found("person", None, None, True).blocked  # still a refusal
+
+
 def test_the_animal_kind_and_size_class_are_kept_only_from_their_fixed_lists() -> None:
     outcome = lore.outcome_for_not_found("real_animal", " Bird ", "HUGE")
     assert (outcome.kind, outcome.category, outcome.size_class) == ("real_animal", "bird", "huge")

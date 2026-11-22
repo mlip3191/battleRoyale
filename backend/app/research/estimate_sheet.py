@@ -61,6 +61,7 @@ ANIMAL_KINDS = {
     "arachnid": (("sting",), "land"),
     "mollusk": (("beak",), "water"),
 }
+FLYING_HABITAT = "air"  # an animal the lookup says flies (#542)
 # kg: a typical adult of each size class whatever its kind, as the prompt defines them (mouse,
 # cat, person, horse or bear, elephant). A kind whose own default mass already falls in the
 # class's band (up to the geometric midpoints with its neighbors) keeps it, so a medium mammal
@@ -90,6 +91,7 @@ def estimate_sheet(
     *,
     category: str | None = None,
     size_class: str | None = None,
+    flies: bool | None = None,
 ) -> StatSheet:
     display = display_name_for(name)
     animal = kind == ANIMAL_REASON
@@ -98,6 +100,8 @@ def estimate_sheet(
     living = animal or generic
     animal_kind = category if animal and category in ANIMAL_KINDS else ESTIMATE_ANIMAL_CATEGORY
     weapons, habitat = ANIMAL_KINDS[animal_kind] if animal else (ESTIMATE_WEAPONS, ESTIMATE_HABITAT)
+    if animal and flies is True:  # #542: a hawk or a wasp moves by air; an ostrich stays on land
+        habitat = FLYING_HABITAT
     profile_category = (
         animal_kind if animal else ESTIMATE_GENERIC_CATEGORY if generic else ESTIMATE_CATEGORY
     )

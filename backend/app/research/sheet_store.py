@@ -66,6 +66,7 @@ NOT_A_LEGEND_MEMORY_S = 600.0
 _NOT_A_LEGEND: dict[str, float] = {}  # legend slug -> when it was found not to be a legend
 _NOT_A_LEGEND_KIND: dict[str, str] = {}  # legend slug -> the fixed reason it gave (#453)
 _NOT_A_LEGEND_SHAPE: dict[str, tuple[str | None, str | None]] = {}  # -> (category, size) (#517)
+_NOT_A_LEGEND_FLIES: dict[str, bool] = {}  # legend slug -> whether the animal flies (#542)
 # At most this many new legends are fetched and modeled at once, so many unknown names can't
 # flood Wikipedia and the chat model (#324). Waiting for a slot counts toward LEGEND_BUDGET_S.
 MAX_LEGEND_LOOKUPS = 2
@@ -217,7 +218,9 @@ async def _resolve_legend(
         logger.warning("Modeling the legend %r ran out of time.", name)
         return UNAVAILABLE
     if outcome.not_a_legend:  # a plausible real fighter (#403): an estimate sheet, and remembered
-        remember_not_a_legend(slug, outcome.kind, outcome.category, outcome.size_class)
+        remember_not_a_legend(
+            slug, outcome.kind, outcome.category, outcome.size_class, flies=outcome.flies
+        )
         return None
     if outcome.creature is None:
         if outcome.blocked:
@@ -261,24 +264,35 @@ def recently_not_a_legend(slug: str) -> bool:
     del _NOT_A_LEGEND[slug]
     _NOT_A_LEGEND_KIND.pop(slug, None)
     _NOT_A_LEGEND_SHAPE.pop(slug, None)
+    _NOT_A_LEGEND_FLIES.pop(slug, None)
     return False
 
 
 # Remember a "not a legend" answer, dropping expired ones so the memory never grows without bound.
 def remember_not_a_legend(
-    slug: str, kind: str | None = None, category: str | None = None, size_class: str | None = None
+    slug: str,
+    kind: str | None = None,
+    category: str | None = None,
+    size_class: str | None = None,
+    *,
+    flies: bool | None = None,
 ) -> None:
     now = time.monotonic()
     for old in [name for name, at in _NOT_A_LEGEND.items() if now - at >= NOT_A_LEGEND_MEMORY_S]:
         del _NOT_A_LEGEND[old]
         _NOT_A_LEGEND_KIND.pop(old, None)
         _NOT_A_LEGEND_SHAPE.pop(old, None)
+        _NOT_A_LEGEND_FLIES.pop(old, None)
     _NOT_A_LEGEND[slug] = now
     if kind:
         _NOT_A_LEGEND_KIND[slug] = kind
     else:
         _NOT_A_LEGEND_KIND.pop(slug, None)
     _NOT_A_LEGEND_SHAPE[slug] = (category, size_class)
+    if flies is None:
+        _NOT_A_LEGEND_FLIES.pop(slug, None)
+    else:
+        _NOT_A_LEGEND_FLIES[slug] = flies
 
 
 # The fixed reason remembered for a name that is not a legend ("real_animal"), or None.
@@ -293,12 +307,18 @@ def not_a_legend_shape(slug: str) -> tuple[str | None, str | None]:
     return _NOT_A_LEGEND_SHAPE.get(slug, (None, None))
 
 
+# Whether the remembered animal flies (#542): True, False, or None when the lookup didn't say.
+def not_a_legend_flies(slug: str) -> bool | None:
+    return _NOT_A_LEGEND_FLIES.get(slug) if recently_not_a_legend(slug) else None
+
+
 # Forget every remembered answer (tests start clean; a restart does the same in the app).
 def forget_refusals() -> None:
     _REFUSED.clear()
     _NOT_A_LEGEND.clear()
     _NOT_A_LEGEND_KIND.clear()
     _NOT_A_LEGEND_SHAPE.clear()
+    _NOT_A_LEGEND_FLIES.clear()
 
 
 # This event loop's lookup limit (a semaphore belongs to one loop, and tests start new ones).
