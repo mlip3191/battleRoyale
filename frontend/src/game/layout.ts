@@ -105,7 +105,9 @@ function ownerOf(asset: Asset, names: readonly string[]): number | null {
 // Pick each side's sprite URL. The Asset contract does not say which fighter a sprite belongs to,
 // so a sprite is used only when that is unambiguous: its file name names exactly one side's
 // fighter (whole words), or there are exactly two sprites and neither names a fighter (taken in
-// fighter order). Otherwise that side gets a placeholder.
+// fighter order). A side whose sprite has another name ("dog" fights as the golden retriever,
+// #536) gets the one sprite no fighter's name matched, if there is exactly one. Otherwise that
+// side gets a placeholder.
 export function spriteUrls(
   assets: readonly Asset[],
   fighters: readonly Pick<FighterRequest, "entity">[],
@@ -117,13 +119,15 @@ export function spriteUrls(
     const hits = sprites.filter((_, s) => owners[s] === i);
     return hits.length === 1 ? hits[0] : null;
   });
-  // Name matches win; a side with no match falls back to a placeholder.
+  // Name matches win; a side with no match takes the single unmatched sprite, if there is one.
   if (
     names[0] !== names[1] &&
     (byName[0] || byName[1]) &&
     byName[0] !== byName[1]
   ) {
-    return [byName[0]?.url ?? null, byName[1]?.url ?? null];
+    const leftovers = sprites.filter((_, s) => owners[s] === null);
+    const leftover = leftovers.length === 1 ? leftovers[0].url : null;
+    return [byName[0]?.url ?? leftover, byName[1]?.url ?? leftover];
   }
   if (names[0] === names[1] && sprites.length === 1) {
     return [sprites[0].url, sprites[0].url];
