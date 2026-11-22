@@ -393,6 +393,22 @@ def test_every_beat_type_validates_and_points_at_its_event(kind: EventType, word
     _assert_guarded(facts, pbp)
 
 
+PROMPTS = Path(__file__).parents[2] / "prompts"
+TEMPLATES = Path(__file__).parents[2] / "app" / "narration" / "templates.py"
+
+
+# A miss is said plainly; a tester read "whiff" as one animal smelling the other (#505).
+def test_a_miss_is_called_a_miss_never_a_whiff() -> None:
+    base = RESULT.representative_log[0]
+    log = [base.model_copy(update={"type": EventType.MISS, "text_hint": ""})]
+    result = RESULT.model_copy(update={"representative_log": log})
+    pbp = play_by_play_script(_facts("bear-vs-wolves", result), result)
+    assert any("swings and misses" in ln.text for ln in pbp.lines)
+    assert not any("whiff" in ln.text.lower() for ln in pbp.lines)
+    for path in [TEMPLATES, *PROMPTS.glob("*.md")]:
+        assert "whiff" not in path.read_text(encoding="utf-8").lower(), path.name
+
+
 def test_large_count_uses_a_thousands_separator() -> None:
     a, b = MATCHUPS["bear-vs-wolves"]
     facts = build_facts([_sheet(a), _sheet(b)], RESULT, FAIR, counts=(1, 1000))

@@ -44,6 +44,10 @@ export interface Timeline {
 
 export const SWARM_THRESHOLD = 200;
 
+// The word floated over a fighter who was swung at and missed. Plain on purpose: a tester read
+// "whiff" as one animal smelling the other (#505).
+export const MISS_LABEL = "miss!";
+
 // Base length of each kind of beat at 1x, before long logs are squeezed.
 export const BEAT_MS: Record<BeatKind, number> = {
   approach: 900,
