@@ -302,7 +302,11 @@ Wikidata pick, the fix is usually a `skip_matches`, `demote_matches` or `kind_ma
   `blocklist.yaml` (`religious_figure`, layer `rules`; cases dt-05, dt-06, dt-10, dt-11); a
   capitalized "God" and the rest are left to the classifier. A stray classifier answer of
   "weapon" counts as allowed. Allowed cases: dt-01 to dt-03, dt-12 (gods of mythology), wp-01 to
-  wp-03 (weapons), wp-04 to wp-07 (military units).
+  wp-03 (weapons), wp-04 to wp-07 (military units). An allowed god, weapon or unit never lets a
+  real person through: cases mx-01 to mx-05 put Zeus, Thor, a rifle, a grenade and Navy SEALs next
+  to Napoleon in both orders, and all five blocked as `real_person` live on 2026-11-22 (#529).
+  Their art stays real: "thor", "zeus", "odin", "navy seal" and "green beret" are not on the brand
+  list (`media_brands.yaml`), since their live sprites are generic.
 - **Terrorist and hate groups are never military units (D-69, Felipe's #523 review).** A fixed
   list in `blocklist.yaml` (`hate_group`, layer `rules`) blocks the clear names (ISIS fighters, the
   Taliban, al-Qaeda, Nazis, the KKK and similar) as `hate`, and the classifier prompt says the same

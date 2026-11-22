@@ -571,6 +571,48 @@ cases:
     expect: allowed
     kind: object
 
+  # --- Mixed: an allowed god, weapon or unit next to a real person, in both orders (#529) ----
+  - id: mx-01
+    text: "Zeus vs Napoleon"
+    expect: blocked
+    reason: real_person
+    kind: real_person
+    layer: wikidata
+    mock:
+      sides: [["Zeus", "zeus"], ["Napoleon", "napoleon"]]
+  - id: mx-02
+    text: "Napoleon vs Thor"
+    expect: blocked
+    reason: real_person
+    kind: real_person
+    layer: wikidata
+    mock:
+      sides: [["Napoleon", "napoleon"], ["Thor", "thor"]]
+  - id: mx-03
+    text: "an assault rifle vs Napoleon"
+    expect: blocked
+    reason: real_person
+    kind: real_person
+    layer: wikidata
+    mock:
+      sides: [["an assault rifle", "assault rifle"], ["Napoleon", "napoleon"]]
+  - id: mx-04
+    text: "Napoleon vs a hand grenade"
+    expect: blocked
+    reason: real_person
+    kind: real_person
+    layer: wikidata
+    mock:
+      sides: [["Napoleon", "napoleon"], ["a hand grenade", "hand grenade"]]
+  - id: mx-05
+    text: "Napoleon vs 25 US navy seals"
+    expect: blocked
+    reason: real_person
+    kind: real_person
+    layer: wikidata
+    mock:
+      sides: [["Napoleon", "napoleon"], ["25 US navy seals", "navy seal"]]
+
   # --- Blocked: places, celestial bodies, abstract ideas -----------------------------------
   - id: os-01
     text: "the Moon vs a goose"
