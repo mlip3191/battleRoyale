@@ -26,6 +26,7 @@ import {
   nextShow,
   placeLines,
   sideNames,
+  shownStage,
   unavailableNote,
   verdictReveal,
   type Show,
@@ -244,7 +245,11 @@ function Broadcast({ id }: { id: string }) {
         )}
       </div>
       {show.phase !== "waiting" && sound && (
-        <AudioBar narration={sound.narration} music={sound.music} />
+        <AudioBar
+          narration={sound.narration}
+          music={sound.music}
+          startSound={show.phase === "fight" || show.phase === "verdict"}
+        />
       )}
 
       {reveal && (
@@ -267,7 +272,7 @@ function Broadcast({ id }: { id: string }) {
       )}
       {battle && (
         <ol aria-label="Show progress" className={styles.progress}>
-          {battle.stages.map((s) => (
+          {battle.stages.filter(shownStage).map((s) => (
             <li key={s.stage}>
               {s.stage}: {s.status}
             </li>

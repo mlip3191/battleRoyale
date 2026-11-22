@@ -92,8 +92,10 @@ def cached_sheets(limit: int = MAX_CACHED, db_path: Path | None = None) -> list[
         logger.warning("challenger: could not read cached sheets (%s)", type(error).__name__)
         return []
     sheets = [sheet for row in rows if (sheet := _parse_sheet(row["sheet_json"])) is not None]
-    # Legends modeled on demand had no safety check of their own, so they're never offered.
-    return [sheet for sheet in sheets if sheet.category != "mythical"]
+    # Legends and animals researched on demand (#518) had no safety check of their own, so only
+    # seed-list fighters' sheets are offered.
+    seed_ids = {f.id for f in load_seed_fighters() if f.category != "mythical"}
+    return [sheet for sheet in sheets if sheet.fighter_id in seed_ids]
 
 
 # One saved sheet, or None if it no longer matches the contract.

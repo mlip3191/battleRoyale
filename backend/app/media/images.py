@@ -50,6 +50,7 @@ TERRAIN_SCENES: dict[Terrain, str] = {
     Terrain.SHORELINE: "a sandy beach where land meets the sea",
     Terrain.URBAN: "an empty city street with buildings",
     Terrain.MOUNTAIN: "a rocky mountain slope",
+    Terrain.SKY: "a wide open blue sky with drifting white clouds, no ground",
 }
 # What each legendary power looks like, in plain words, in a fixed order. Regeneration has no
 # look, so it adds nothing; extra heads says how many when the sheet knows.

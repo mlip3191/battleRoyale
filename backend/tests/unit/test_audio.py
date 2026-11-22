@@ -180,6 +180,38 @@ async def test_new_words_a_new_voice_or_a_new_prompt_miss_the_cache(tmp_path: Pa
     assert bears is not None and other is not None and bears.prompt_hash != other.prompt_hash
 
 
+async def test_a_three_digit_count_is_spoken_in_words_but_captioned_in_digits(
+    tmp_path: Path,
+) -> None:
+    tts = SpyTTS()
+    show = script("intro", "A tiger vs 128 geese!", "1,000 fans and 1000 more.")
+    [asset] = await audio.make_audio([show], provider=tts, media_dir=tmp_path)
+    assert [text for text, _ in tts.calls] == [
+        "A tiger vs one hundred twenty-eight geese!",
+        "one thousand fans and one thousand more.",
+    ]
+    assert not any("28" in text for text, _ in tts.calls)
+    # The caption, the saved script and the display lines keep the digits.
+    assert [line.text for line in show.lines] == [
+        "A tiger vs 128 geese!",
+        "1,000 fans and 1000 more.",
+    ]
+    assert audio.spoken_lines(show) == ["A tiger vs 128 geese!", "1,000 fans and 1000 more."]
+    # The cache key is the spoken form, so a file once spoken from the digits is not reused.
+    request = audio.narration_request(show, STOCK_VOICE)
+    assert request.request["lines"] == [text for text, _ in tts.calls]
+    digits = {**request.request, "lines": audio.spoken_lines(show)}
+    old = audio.AudioRequest(kind="narration_audio", script_kind="intro", request=digits)
+    assert old.prompt_hash != request.prompt_hash
+    assert asset.asset_id.startswith("narration-intro-")
+
+
+async def test_a_line_with_no_big_count_keeps_its_cache_key(tmp_path: Path) -> None:
+    show = script("intro", "Welcome to the arena!", "Only 42 geese tonight.")
+    request = audio.narration_request(show, STOCK_VOICE)
+    assert request.request["lines"] == audio.spoken_lines(show)
+
+
 # --- failures -----------------------------------------------------------------------------------
 
 

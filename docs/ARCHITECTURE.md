@@ -138,7 +138,7 @@ These are the **only** shapes passed between lanes. Field names below are normat
 
 ```python
 # terrain.py
-class Terrain(StrEnum): ARENA="arena"; OPEN_FIELD="open_field"; FOREST="forest"; WATER="water"; SHORELINE="shoreline"; URBAN="urban"; MOUNTAIN="mountain"
+class Terrain(StrEnum): ARENA="arena"; OPEN_FIELD="open_field"; FOREST="forest"; WATER="water"; SHORELINE="shoreline"; URBAN="urban"; MOUNTAIN="mountain"; SKY="sky"
 
 # matchup.py
 class FighterRequest(BaseModel):
@@ -164,7 +164,8 @@ class IntakeResult(BaseModel):
     pending_id: str | None = None
     blocked_reason: Literal["real_person","minor","sexual","hate","self_harm","copyrighted_character",
                             "deity","weapon","out_of_scope","nonsense","other"] | None = None
-                            # deity: named gods/religious figures; weapon: modern firearms, explosives, WMD;
+                            # deity: gods/figures of living religions, human religious figures (D-69);
+                            # weapon: unused since D-69 (weapons are allowed fighters);
                             # out_of_scope: abstract ideas, places, landforms, celestial bodies
     message: str | None = None            # user-facing text
 
@@ -370,7 +371,7 @@ Pure Python, no I/O, no providers. Lane owner: Felipe.
 - **Size references:** for a `size_reference` ("horse-sized duck"), code scales the duck's stat sheet to the horse's mass with square-cube rules (mass × k, strength × k^(2/3), speed per documented allometry) and records the scaling in the result.
 - **Individuals:** each fighter instance has HP ∝ mass (square-cube: volume), damage per hit from `attack_force_n` scaled by mass^(2/3) (muscle cross-section), armor reduces damage, hit chance from speed and size ratio.
 - **Numbers (Lanchester):** melee uses the linear law: only as many attackers engage one target as fit around it (`max_engagers = clamp((size_target/size_attacker)², 1, 8)`). Ranged weapons use the square law. Fights switch to aggregated "group" mode for speed when a side has more than 200 individuals, or when the fight's estimated work (attackers x attack rate x fight length, from stats only) is over a budget (D-50), so a crowd against one huge target also uses it.
-- **Terrain/habitat:** a habitat mismatch (e.g. shark on land) applies speed and attack penalties; if neither side can reach the other the result is `no_contest`.
+- **Terrain/habitat:** a habitat mismatch (e.g. shark on land) applies speed and attack penalties; if neither side can reach the other the result is `no_contest`. In the sky (D-70) a flier is reachable from the ground only by a ranged attack.
 - **Behavior:** each side retreats when losses pass a morale threshold derived from `aggression_0_1`. Fights time out at 600 simulated seconds → draw.
 - **Bodies (F08):** `living` fighters behave as above. `machine` fighters never retreat or flee and are "out of action" when `endurance_s` (operating time) runs out; `ramming` and `crushing` damage is derived by code from mass and speed (a documented momentum formula). Mounted guns on vehicles are not modeled (PG; we don't model real weapon effects). `inert` fighters never approach; they hit back only with an attack in reach (e.g. `spines` damage whoever bites a cactus). If neither side can damage the other, the result is `no_contest`; if one side can't finish the other in 600 s, it's a draw.
 - **Abilities (mythical, F08):** `flight` lets a fighter engage air and land targets; `breath_weapon` is a ranged attack (square law); `regeneration` heals a share of HP per second; `extra_heads` multiplies attack rate by `heads` (default 3 when the lore gives no verified number). Every ability constant is labeled an assumption in `docs/simulation-model.md`.
@@ -392,7 +393,7 @@ Pure Python, no I/O, no providers. Lane owner: Felipe.
 ## 11. Safety, security, and content
 
 - **Blocked fighters:** named real people (checked two ways: LLM classifier, and Wikidata "instance of human (Q5)" lookup), anyone under 18 or "a child", sexual content, ethnic/religious/national groups, self-harm, real-world attack planning. Copyrighted fictional characters are blocked in MVP (see DECISIONS D-07).
-- **Also blocked (D-38):** named deities and religious figures (`deity`); modern firearms, explosives, and weapons of mass destruction as fighters (`weapon`); copyrighted or trademarked characters, including named robots and vehicles from films, games, and toys (`copyrighted_character`); abstract ideas, places, landforms, and celestial bodies (`out_of_scope`, with a joke and a suggestion).
+- **Also blocked (D-38, D-69):** gods and central figures of living religions, and human religious figures (`deity`; gods of mythology such as Zeus are allowed, D-69); copyrighted or trademarked characters, including named robots and vehicles from films, games, and toys (`copyrighted_character`); abstract ideas, places, landforms, and celestial bodies (`out_of_scope`, with a joke and a suggestion).
 - **Allowed (D-38):** animals (living and extinct); generic historical human archetypes ("Roman legionary"); mythical and folklore creature *types* ("dragon", "kraken", "werewolf"); objects, plants, vehicles, and machines ("toaster", "saguaro cactus", "bulldozer", "main battle tank"). Brand-name products are allowed but drawn and scored under a generic `media_name` ("electric pickup truck"); named individual fictional characters are not.
 - **Prompt injection:** user text is wrapped as data in every prompt; media and narration prompts use the resolved `display_name` from the stat sheet (validated against an allowlist of letters, digits, spaces, hyphens), never the raw user text; Wikipedia text fetched on demand is also treated as untrusted data; outputs are schema-validated; the simulation, not the model, decides the winner, so "make the duck win" cannot change a result.
 - **Tone:** PG. Knockouts and retreats, no gore or blood descriptions. Announcer jokes never target groups of people.
@@ -428,7 +429,7 @@ See `.env.example` for the full list with comments. Groups: app (`APP_ENV`, `POR
 | Vehicle or machine ("a bulldozer vs 50 wolves") | `body=machine`; ramming/crushing from sourced mass and speed; never retreats; stops when operating time runs out | G09/F08 |
 | Mythical creature ("a dragon vs a main battle tank") | Lore profile from `data/seed/mythical.yaml` or built on demand from the myth's article; every stat an "assumption"; "according to legend" in the UI and script | G09/F08 |
 | Brand-name product ("a Cybertruck vs a rhino") | Allowed; stats from its article; sprite and music use the generic `media_name` | G09/A08 |
-| Fictional character, deity, or firearm | Blocked as `copyrighted_character`, `deity`, or `weapon` with a friendly suggestion | A04 |
+| Fictional character, or a god or figure of a living religion | Blocked as `copyrighted_character` or `deity` with a friendly suggestion (military units, weapons and gods of mythology may fight, D-69) | A04 |
 | Abstract or enormous ("Monday vs coffee", "the Moon vs a whale") | Blocked as `out_of_scope` with a joke and a suggestion | A04 |
 | Mirror match ("wolf vs wolf") | ~50/50; property test enforces it | F07 |
 | Huge counts ("1,000,000 ants") | Clamp to 10,000 with an assumption note; swarm mode | A02/F02 |

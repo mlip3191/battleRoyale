@@ -137,6 +137,12 @@ export default function PhaserStage({
         backgroundColor: "#0b1026",
         banner: false,
         audio: { noAudio: true },
+        // The arena takes no pointer input (its controls are page buttons), so let the wheel
+        // and touch swipes over it scroll the page instead of being swallowed (#521).
+        input: {
+          mouse: { preventDefaultWheel: false },
+          touch: { capture: false },
+        },
         scale: { mode: P.Scale.FIT, autoCenter: P.Scale.CENTER_HORIZONTALLY },
         scene: [scene],
       });

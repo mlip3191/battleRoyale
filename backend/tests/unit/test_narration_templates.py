@@ -393,6 +393,22 @@ def test_every_beat_type_validates_and_points_at_its_event(kind: EventType, word
     _assert_guarded(facts, pbp)
 
 
+PROMPTS = Path(__file__).parents[2] / "prompts"
+TEMPLATES = Path(__file__).parents[2] / "app" / "narration" / "templates.py"
+
+
+# A miss is said plainly; a tester read "whiff" as one animal smelling the other (#505).
+def test_a_miss_is_called_a_miss_never_a_whiff() -> None:
+    base = RESULT.representative_log[0]
+    log = [base.model_copy(update={"type": EventType.MISS, "text_hint": ""})]
+    result = RESULT.model_copy(update={"representative_log": log})
+    pbp = play_by_play_script(_facts("bear-vs-wolves", result), result)
+    assert any("swings and misses" in ln.text for ln in pbp.lines)
+    assert not any("whiff" in ln.text.lower() for ln in pbp.lines)
+    for path in [TEMPLATES, *PROMPTS.glob("*.md")]:
+        assert "whiff" not in path.read_text(encoding="utf-8").lower(), path.name
+
+
 def test_large_count_uses_a_thousands_separator() -> None:
     a, b = MATCHUPS["bear-vs-wolves"]
     facts = build_facts([_sheet(a), _sheet(b)], RESULT, FAIR, counts=(1, 1000))
@@ -518,3 +534,25 @@ def test_fmt_tiny_values_never_use_scientific_notation() -> None:
     said = fmt(2.5e-6)
     assert said == "0.0000025"
     assert "e" not in said and "E" not in said
+
+
+# #527 (follow-up to #501): when the fair count is the count just fought, the outro says the fight
+# is already about even instead of suggesting the same matchup.
+@pytest.mark.parametrize(
+    ("fought", "fair", "said"),
+    [
+        (1, 1, "Want a fair fight? It's already about even, winning 49% of the time."),
+        (1, 3, "Want a fair fight? About 3 gorillas make it a coin flip, winning 49% of the time."),
+        (3, 3, "Want a fair fight? It's already about even, winning 49% of the time."),
+    ],
+)
+def test_fair_fight_line_says_already_even_for_the_count_just_fought(
+    fought: int, fair: int, said: str
+) -> None:
+    fair_fight = FAIR.model_copy(update={"varied_side": 1, "count": fair})
+    facts = build_facts(
+        [_sheet("stat-sheet.json"), _sheet("gorilla.json")], RESULT, fair_fight, counts=(1, fought)
+    )
+    text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
+    assert text == said
+    assert find_unsupported_numbers(text, facts.allowed) == []

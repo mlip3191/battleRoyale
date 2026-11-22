@@ -268,6 +268,12 @@ def fair_fight_line(facts: NarrationFacts, names: Sequence[str] = ()) -> ScriptL
         if facts.fair_win_pct is None:  # a count with no probability: never say "None%"
             return safe_line("color_commentator", safe, safe, facts)
         count = facts.fair_count
+        if count == facts.fighters[facts.fair_side].count:  # the fight just fought (#527)
+            text = (
+                "Want a fair fight? It's already about even, "
+                f"winning {facts.fair_win_pct}% of the time."
+            )
+            return safe_line("color_commentator", text, safe, facts, names)
         varied = counted_name(facts.fighters[facts.fair_side].display_name, count)
         verb = "makes" if count == 1 else "make"
         text = (

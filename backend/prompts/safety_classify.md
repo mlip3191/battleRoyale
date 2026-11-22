@@ -16,6 +16,14 @@ Allowed fighters (answer "allowed"):
 - Generic human types from history or work, never a named person ("Roman legionary",
   "samurai", "medieval knight", "boxer", "100 average men").
 - Mythical and folklore creature types, never a named one ("dragon", "kraken", "werewolf").
+- Military and police units and soldiers, generic or named, armed with firearms ("US Navy
+  SEALs", "SEAL Team Six", "Green Berets", "25 Marines", "a SWAT team", "a modern infantryman").
+  A country in a unit's name is not a group of people ("US Navy SEALs", "British paratroopers").
+  A terrorist, militant, militia, extremist or hate group is never a military unit (see "hate").
+- Weapons as fighters, including firearms, explosives and weapons of mass destruction ("an
+  assault rifle", "a hand grenade", "a nuclear bomb"): they fight as objects.
+- Gods and goddesses of mythologies that are no longer widely worshipped, by name ("Zeus",
+  "Thor", "Odin", "Anubis", "Ra", "Athena").
 - Objects, plants, foods, vehicles, and machines, including military vehicles ("toaster",
   "saguaro cactus", "croissant", "bulldozer", "main battle tank") and brand-name products.
 - Silly sizes and numbers ("100 duck-sized horses vs 1 horse-sized duck").
@@ -36,30 +44,34 @@ Blocked (answer with the reason):
 - "real_person": any real, named individual, living or dead, including historical figures
   known by name; the user themselves ("me"); or a specific person they know ("my boss").
   Also a named group of real people: a band ("the Beatles") or a sports team or club, pro or
-  amateur ("the Yankees", "the Heat", "the Lakers", "Manchester United"). An animal kind is
-  not a team, even when a team shares its name: "lions", "wolves", "eagles", "bears" and "the
-  Lions" meaning lions are animals and allowed. When a name could be either, it is the animal
-  unless it is clearly the team (a city or club name, or a team name that is not an animal,
+  amateur ("the Yankees", "the Heat", "the Lakers", "Manchester United"). A military or police
+  unit is not blocked here, even a named one ("SEAL Team Six"); one named soldier is. An animal
+  kind is not a team, even when a team shares its name: "lions", "wolves", "eagles", "bears"
+  and "the Lions" meaning lions are animals and allowed. When a name could be either, it is the
+  animal unless it is clearly the team (a city or club name, or a team name that is not an animal,
   like "Yankees" or "Heat").
 - "minor": a human child or teenager ("a toddler", "a 10-year-old", "schoolchildren").
 - "sexual": sexual or nude content.
 - "hate": a group of people defined by nationality, ethnicity, race, or religion ("the
-  French", "Germans"), or anything mocking or demeaning people.
+  French", "Germans"), or anything mocking or demeaning people. Also any terrorist, militant,
+  militia, extremist or hate group or its members, however it is armed ("ISIS fighters", "the
+  Taliban", "Nazi soldiers", "KKK members"): these are never allowed as military units.
 - "self_harm": self-harm or suicide anywhere in the request, including a question or remark
   about the user hurting or killing themselves, or ending their life, added to a matchup.
 - "copyrighted_character": a named fictional character, or a named monster, robot, or vehicle
   from a film, show, game, book, comic, or toy line, or a named individual from myth or legend
-  (Cerberus, Medusa, the Lernaean Hydra, Smaug). A generic kind of creature is allowed ("a
-  dragon", "a griffin", "a hydra" as a kind).
-- "deity": a named god, goddess, or religious figure ("Zeus", "Thor", "Anubis", "Allah",
-  "Jesus", "Buddha", "Satan", capitalized "God"), and a human religious figure ("a
-  prophet", "a saint", "the Pope"). Only a generic kind of supernatural being is allowed ("a
-  god", "an angel", "a demon", "a valkyrie", "a titan"), never a named one. A plain human
-  religious role is allowed ("a monk", "a priest", "a nun", "a rabbi", "an imam", "a shaman").
-- "weapon": a modern firearm, an explosive, or a weapon of mass destruction as a fighter
-  (a knight's sword or a legionary's spear is fine).
+  (Cerberus, Medusa, the Lernaean Hydra, Smaug, Hercules). A generic kind of creature is allowed
+  ("a dragon", "a griffin", "a hydra" as a kind), and so is a named god of mythology ("Zeus").
+- "deity": a god or central figure of a living religion ("God" capitalized, "Allah", "Yahweh",
+  "Jesus", "Muhammad", "Buddha", "Vishnu", "Shiva", "Krishna", "Ganesha", "Satan"), and a human
+  religious figure ("a prophet", "a saint", "the Pope"). Gods of mythologies no longer widely
+  worshipped are allowed ("Zeus", "Thor", "Anubis"), and so is a generic kind of supernatural
+  being ("a god", "an angel", "a demon", "a valkyrie", "a titan"). A plain human religious role
+  is allowed ("a monk", "a priest", "a nun", "a rabbi", "an imam", "a shaman").
+- "weapon": not used; weapons are allowed fighters (above).
 - "out_of_scope": an abstract idea, a place, a landform, or a celestial body ("democracy",
-  "Mount Everest", "the Moon").
+  "Mount Everest", "the Moon"), or a real-world event such as a named battle, attack or bombing
+  ("Pearl Harbor", "the Battle of Fallujah").
 - "nonsense": no recognizable fighter at all.
 - "other": anything else that should not be in a family-friendly fight, including any request
   for real-world violence or harm: plans, steps, or instructions to attack, bomb, shoot, or

@@ -46,7 +46,11 @@ MESSAGES: dict[str, str] = {
         "Named characters, from stories or from myth, sit this one out. Try a creature type "
         'instead, like "a dragon" or "a giant robot".'
     ),
-    "deity": 'Gods are above our pay grade. Try a mythical creature, like "a griffin", instead.',
+    "deity": (
+        'Gods of living religions are above our pay grade. Try a god of myth, like "Zeus", or a '
+        'mythical creature, like "a griffin".'
+    ),
+    # Unused since D-69 (weapons are allowed fighters); kept while the contract lists the reason.
     "weapon": (
         "No firearms or explosives in this arena. Vehicles and machines are welcome, like "
         '"a bulldozer".'

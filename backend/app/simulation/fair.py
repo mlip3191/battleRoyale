@@ -22,6 +22,27 @@ class FairFightSearch:
     probes: int
 
 
+def _side_text(count: int, sheet: StatSheet, request: FighterRequest) -> str:
+    """ "480 duck-sized horses": the count, the size reference if the side has one, and the name."""
+    sized = f"{request.size_reference}-sized " if request.size_reference else ""
+    return f"{count} {sized}{counted_name(sheet.display_name, count)}"
+
+
+def _win_chances(probes: list[tuple[int, float]], sheet: StatSheet, request: FighterRequest) -> str:
+    """The win chance at the probed counts just below and just above 50%, from the search itself."""
+    below = [cp for cp in probes if cp[1] < 0.5]
+    above = [cp for cp in probes if cp[1] >= 0.5]
+    if not below or not above:
+        return ""
+    low = max(below, key=lambda cp: (cp[1], cp[0]))  # the closest to even from below
+    high = min(above, key=lambda cp: (cp[1], cp[0]))  # and from above
+    parts = []
+    for count, p in (low, high):
+        verb = "wins" if count == 1 else "win"
+        parts.append(f"{_side_text(count, sheet, request)} {verb} {round(p * 100)}%")
+    return f"{parts[0]}, {parts[1]}."
+
+
 def _with_count(matchup: Matchup, side: int, count: int) -> Matchup:
     probe = matchup.model_copy(deep=True)
     probe.fighters[side].count = count
@@ -57,7 +78,7 @@ def fair_fight_search(
     other = 1 - side
     name = stat_sheets[side].display_name
     other_count = matchup.fighters[other].count
-    fixed_text = f"{other_count} {counted_name(stat_sheets[other].display_name, other_count)}"
+    fixed_text = _side_text(other_count, stat_sheets[other], matchup.fighters[other])
     probes: list[tuple[int, float]] = []
 
     def probe(count: int) -> float:
@@ -75,8 +96,20 @@ def fair_fight_search(
         return abs(p - 0.5) <= c.FAIR_TOLERANCE
 
     def done(count: int, p: float, rough: bool = False) -> FairFightSearch:
-        lead = "A fair fight needs about" if rough else "A fair fight needs"
-        message = f"{lead} {count} {counted_name(name, count)} against {fixed_text}."
+        here = (
+            f"{_side_text(count, stat_sheets[side], matchup.fighters[side])} against {fixed_text}"
+        )
+        fought = count == matchup.fighters[side].count  # the fight the viewer just saw (#501)
+        if not rough:
+            message = (
+                f"This fight is already about even: {here}."
+                if fought
+                else f"A fair fight needs {here}."
+            )
+        else:
+            lead = "This is as close as it gets:" if fought else "A fair fight needs about"
+            chances = _win_chances(probes, stat_sheets[side], matchup.fighters[side])
+            message = f"{lead} {here}. {chances}".rstrip()
         return FairFightSearch(
             FairFight(varied_side=side, count=count, win_prob_at_count=p, message=message),
             len(probes),

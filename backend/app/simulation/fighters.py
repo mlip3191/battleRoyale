@@ -72,6 +72,12 @@ def effective_habitat(sheet: StatSheet) -> Habitat:
     return Habitat.AIR if flies else sheet.habitat
 
 
+def shoots(sheet: StatSheet) -> bool:
+    """True when the fighter attacks from a distance: a ranged weapon, or a breath weapon."""
+    breathes = sheet.lore is not None and Ability.BREATH_WEAPON in sheet.lore.abilities
+    return "weapon_ranged" in sheet.weapons or breathes
+
+
 def scale_factor(sheet: StatSheet, reference: StatSheet) -> float:
     """k = reference mass / own mass, from the sheets' central values (computed in code)."""
     own = sheet.stats[StatName.MASS].value

@@ -105,7 +105,9 @@ function ownerOf(asset: Asset, names: readonly string[]): number | null {
 // Pick each side's sprite URL. The Asset contract does not say which fighter a sprite belongs to,
 // so a sprite is used only when that is unambiguous: its file name names exactly one side's
 // fighter (whole words), or there are exactly two sprites and neither names a fighter (taken in
-// fighter order). Otherwise that side gets a placeholder.
+// fighter order). A side whose sprite has another name ("dog" fights as the golden retriever,
+// #536) gets the one sprite no fighter's name matched, if there is exactly one. Otherwise that
+// side gets a placeholder.
 export function spriteUrls(
   assets: readonly Asset[],
   fighters: readonly Pick<FighterRequest, "entity">[],
@@ -117,13 +119,15 @@ export function spriteUrls(
     const hits = sprites.filter((_, s) => owners[s] === i);
     return hits.length === 1 ? hits[0] : null;
   });
-  // Name matches win; a side with no match falls back to a placeholder.
+  // Name matches win; a side with no match takes the single unmatched sprite, if there is one.
   if (
     names[0] !== names[1] &&
     (byName[0] || byName[1]) &&
     byName[0] !== byName[1]
   ) {
-    return [byName[0]?.url ?? null, byName[1]?.url ?? null];
+    const leftovers = sprites.filter((_, s) => owners[s] === null);
+    const leftover = leftovers.length === 1 ? leftovers[0].url : null;
+    return [byName[0]?.url ?? leftover, byName[1]?.url ?? leftover];
   }
   if (names[0] === names[1] && sprites.length === 1) {
     return [sprites[0].url, sprites[0].url];
@@ -185,4 +189,23 @@ export function winnerBanner(layout: Pick<SideLayout, "name" | "count">) {
 export function sideTitle(layout: Pick<SideLayout, "name" | "count">) {
   if (layout.count <= 1) return layout.name.toUpperCase();
   return `${layout.count.toLocaleString("en-US")} ${pluralOf(layout.name)}`.toUpperCase();
+}
+
+// The health bar under each side's name (#503). It is driven only by the replay log's knock-outs
+// and escapes: the share of the side's fighters still in the fight. The log has no hit points per
+// fighter, so a lone fighter's bar stays full until it falls or flees.
+export const HEALTH_BAR = { y: 96, width: 260, height: 14 } as const;
+
+// How full a side's bar is, 0 to 1: fighters still standing over the side's total; empty once the
+// side has fled.
+export function healthFraction(alive: number, count: number, gone: boolean) {
+  if (gone || count <= 0) return 0;
+  return Math.min(1, Math.max(0, alive / count));
+}
+
+// The words under a crowd's bar ("3 of 6 standing"); a lone fighter has none.
+export function healthLabel(alive: number, count: number, gone: boolean) {
+  if (count <= 1) return "";
+  const left = gone ? 0 : Math.max(0, alive);
+  return `${left.toLocaleString("en-US")} of ${count.toLocaleString("en-US")} standing`;
 }

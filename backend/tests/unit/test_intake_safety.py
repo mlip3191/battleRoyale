@@ -288,9 +288,8 @@ HOME_EXAMPLES = [
         ("Napoleon vs a grizzly bear", "real_person"),
         ("Taylor Swift vs a goose", "real_person"),
         ("Batman vs a goose", "copyrighted_character"),
-        ("Zeus vs a bear", "deity"),
-        ("a grizzly bear vs a handgun", "weapon"),
-        ("an AK-47 vs a bear", "weapon"),
+        ("the Pope vs a bear", "deity"),
+        ("Allah vs a bear", "deity"),  # code rules: a living religion (D-69)
         ("a toddler vs a goose", "minor"),  # code rules, before the mock classifier
         ("my friend John Smith vs a goose", "real_person"),  # code rules too
     ],

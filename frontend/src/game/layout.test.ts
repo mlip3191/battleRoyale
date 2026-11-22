@@ -3,6 +3,8 @@ import { describe, expect, test } from "vitest";
 import type { Asset } from "../api/client.ts";
 import done from "../fixtures/battle-record-done.json";
 import {
+  healthFraction,
+  healthLabel,
   sideTitle,
   MAX_SPRITES_PER_SIDE,
   SIDE_COLORS,
@@ -174,6 +176,34 @@ describe("placeholders when images are missing", () => {
     const two = [sprite("s1", "/media/a.png"), sprite("s2", "/media/b.png")];
     expect(spriteUrls(two, fighters)).toEqual(["/media/a.png", "/media/b.png"]);
   });
+
+  test("a fighter read as another name gets the one sprite left over (#536)", () => {
+    // "dogs" fight as the golden retriever, so its sprite never names a dog.
+    const dogsVsCats = [{ entity: "dog" }, { entity: "cat" }];
+    const pair = [
+      sprite("s1", "/media/sprites/golden-retriever-v1.png"),
+      sprite("s2", "/media/sprites/house-cat-v1.png"),
+    ];
+    expect(spriteUrls(pair, dogsVsCats)).toEqual([
+      "/media/sprites/golden-retriever-v1.png",
+      "/media/sprites/house-cat-v1.png",
+    ]);
+    const snakeVsMongoose = [{ entity: "mongoose" }, { entity: "snake" }];
+    const cobra = [
+      sprite("s1", "/media/sprites/mongoose-v1.png"),
+      sprite("s2", "/media/sprites/king-cobra-v1.png"),
+    ];
+    expect(spriteUrls(cobra, snakeVsMongoose)).toEqual([
+      "/media/sprites/mongoose-v1.png",
+      "/media/sprites/king-cobra-v1.png",
+    ]);
+    // Two leftovers are still ambiguous, so that side keeps its placeholder.
+    const extra = [...pair, sprite("s3", "/media/sprites/gray-wolf-v1.png")];
+    expect(spriteUrls(extra, dogsVsCats)).toEqual([
+      null,
+      "/media/sprites/house-cat-v1.png",
+    ]);
+  });
 });
 
 describe("winnerBanner", () => {
@@ -204,5 +234,22 @@ describe("sideTitle", () => {
     expect(sideTitle({ name: "fire ant", count: 1000 })).toBe(
       "1,000 FIRE ANTS",
     );
+  });
+});
+
+describe("health bar (#503)", () => {
+  test("the bar is the share still standing, and empty once the side has fled", () => {
+    expect(healthFraction(6, 6, false)).toBe(1);
+    expect(healthFraction(3, 6, false)).toBe(0.5);
+    expect(healthFraction(0, 6, false)).toBe(0);
+    expect(healthFraction(4, 6, true)).toBe(0);
+    expect(healthFraction(1, 1, false)).toBe(1);
+  });
+
+  test("a crowd says how many are left of its total; a lone fighter says nothing", () => {
+    expect(healthLabel(3, 6, false)).toBe("3 of 6 standing");
+    expect(healthLabel(1000, 1000, false)).toBe("1,000 of 1,000 standing");
+    expect(healthLabel(4, 6, true)).toBe("0 of 6 standing");
+    expect(healthLabel(1, 1, false)).toBe("");
   });
 });
