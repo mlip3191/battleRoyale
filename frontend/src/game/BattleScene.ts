@@ -16,6 +16,7 @@ import {
   type SideLayout,
 } from "./layout.ts";
 import {
+  MISS_LABEL,
   ReplayClock,
   keyFrames,
   type Beat,
@@ -387,7 +388,7 @@ export function createBattleScene(P: typeof Phaser) {
       });
     }
 
-    // Lunge toward the other side; a hit adds a small shake and floating damage, a miss a whiff.
+    // Lunge toward the other side; a hit adds a small shake and floating damage, a miss a "miss!".
     private strike(beat: Beat, ms: number) {
       if (beat.actorSide === null || beat.affectedSide === null) return;
       const attackers = this.pick(
@@ -418,7 +419,7 @@ export function createBattleScene(P: typeof Phaser) {
             ms,
           );
       } else if (beat.kind === "miss") {
-        this.floatText(at.x, at.y, "whiff!", "#b8c1e8", ms);
+        this.floatText(at.x, at.y, MISS_LABEL, "#b8c1e8", ms);
       }
     }
 
