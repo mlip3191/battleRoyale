@@ -5,9 +5,11 @@ module fetches its Wikipedia article, stores it (ingest_on_demand), and runs the
 as the seed fighters (build_sheet_with_evidence), so every number it keeps carries a quote that
 code checked. Before that it stores the animal's Wikidata measurements as facts, read by code
 as for the seed fighters, and reads the article's taxobox "Class:" row with code, so an ostrich
-is a bird even when the lookup's label said otherwise. Each extracted stat replaces the
-estimate's value; every other stat stays the labeled estimate (with its #517 size class). A
-sheet with at least one sourced stat is cached, so later battles reuse it.
+is a bird even when the lookup's label said otherwise. The article is downloaded once and
+shared by the taxobox and the stored passages (#535). Each extracted stat replaces the
+estimate's value, and a stat derived from sourced ones (reach from size) is worked out again;
+every other stat stays the labeled estimate (with its #517 size class). A sheet with at least
+one sourced stat is cached, so later battles reuse it.
 
 The battle waits at most ON_DEMAND_RESEARCH_S, and never past the research stage's deadline
 (the legend lookup before it can use most of the stage). If the build takes longer, the battle
@@ -32,16 +34,17 @@ import httpx
 from app.config import get_settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
-from app.models.stats import StatSheet
+from app.models.stats import StatName, StatSheet, StatValue
 from app.providers.registry import get_provider
+from app.research.defaults import PHYSICAL_ORDER
 from app.research.estimate_sheet import ANIMAL_KINDS, FLYING_HABITAT, estimate_sheet
 from app.research.extract import build_sheet_with_evidence
 from app.research.facts import store_facts, wikidata_facts
 from app.research.ingest import ingest_on_demand
 from app.research.sheet_hash import compute_sheet_hash
 from app.research.sheet_store import cached_sheet, legend_client, save_sheet
-from app.research.sources import SourceError, fetch_article, fetch_wikidata
-from app.research.statsheet import FighterProfile
+from app.research.sources import SourceDocument, SourceError, fetch_article, fetch_wikidata
+from app.research.statsheet import FighterProfile, derive
 
 logger = logging.getLogger(__name__)
 
@@ -142,17 +145,19 @@ async def _research(
     try:
         apply_migrations(connection)
         async with client:
-            animal_kind = await _taxobox_kind(client, title)
+            article = await _article(client, title)
+            animal_kind = None if article is None else kind_from_taxobox(_html(article))
             if animal_kind is None:
                 return None
             await _store_wikidata_facts(connection, client, estimate.fighter_id, title)
-            await ingest_on_demand(
+            await ingest_on_demand(  # the same download, not a second fetch (#535)
                 connection,
                 client,
                 get_provider("doc_parser"),
                 get_provider("embedder"),
                 estimate.fighter_id,
                 title,
+                article=article,
             )
         base = estimate
         if animal_kind != estimate.category:
@@ -191,15 +196,17 @@ async def _store_wikidata_facts(
     store_facts(connection, fighter_id, "wikidata", facts, document.license, retrieved_at)
 
 
-# The animal kind from the article's taxobox "Class:" row, or None when there is none we know.
-async def _taxobox_kind(client: httpx.AsyncClient, title: str) -> str | None:
+# The fighter's article, or None when there is none or it can't be fetched.
+async def _article(client: httpx.AsyncClient, title: str) -> SourceDocument | None:
     try:
-        article = await fetch_article(client, title)
+        return await fetch_article(client, title)
     except (SourceError, httpx.HTTPError):
         return None
-    if article is None:
-        return None
-    return kind_from_taxobox(article.body.decode("utf-8", errors="replace"))
+
+
+# The article's HTML as text.
+def _html(article: SourceDocument) -> str:
+    return article.body.decode("utf-8", errors="replace")
 
 
 # The taxobox's class (Aves, Reptilia, ...) as one of our animal kinds, or None.
@@ -226,14 +233,33 @@ def profile_of(estimate: StatSheet) -> FighterProfile:
 
 
 # The estimate with every extracted (quoted, checked) stat put in, or None when none was found.
+# A stat code derives from others (reach from size) is worked out again from the sourced
+# inputs (#535); while any input is still an estimate, it stays the labeled estimate.
 def merged(estimate: StatSheet, built: StatSheet) -> StatSheet | None:
     found = {stat: value for stat, value in built.stats.items() if value.method == "extracted"}
     if not found:
         return None
     stats = {**estimate.stats, **found}
+    sourced = {stat: value for stat, value in stats.items() if not value.is_estimate}
+    profile = profile_of(estimate)
+    for stat in PHYSICAL_ORDER:
+        if stat in sourced or not _inputs_sourced(stat, sourced):
+            continue
+        value = derive(stat, profile, sourced)
+        if value is not None:
+            stats[stat] = sourced[stat] = value
     return StatSheet.model_validate(
         {**estimate.model_dump(), "stats": stats, "sheet_hash": compute_sheet_hash(stats)}
     )
+
+
+# True when every stat `derive` would read for this stat is sourced. Only reach (from size)
+# applies to the animals researched here; the mass-and-speed case is a ramming machine's attack,
+# kept so the rule stays safe if machines are ever researched.
+def _inputs_sourced(stat: StatName, sourced: dict[StatName, StatValue]) -> bool:
+    if stat == StatName.REACH:
+        return StatName.SIZE in sourced
+    return StatName.MASS in sourced and StatName.SPEED in sourced
 
 
 # True when this fighter's research found nothing within the last NOTHING_FOUND_MEMORY_S.

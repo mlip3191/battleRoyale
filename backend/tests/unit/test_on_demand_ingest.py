@@ -72,6 +72,23 @@ async def run(db: sqlite3.Connection, parser: RecordingParser, status: int = 200
         return await ingest_on_demand(db, http, parser, MockEmbedder(), "moose", "Moose")
 
 
+async def test_an_article_already_fetched_is_not_downloaded_again(db) -> None:  # #535
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, headers={"ETag": '"42/abc"'}, content=ARTICLE.encode())
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+        article = await ingest.fetch_article(http, "Moose")
+        parser = RecordingParser(pause=0)
+        stored = await ingest_on_demand(
+            db, http, parser, MockEmbedder(), "moose", "Moose", article=article
+        )
+    assert stored and len(requests) == 1  # only the fetch above
+    assert any(DESCRIPTION in piece for piece in parser.pieces)
+
+
 def test_only_the_lead_and_size_sections_are_kept() -> None:
     lead, description = needed_sections(ARTICLE)
     assert LEAD in lead and HISTORY not in lead
