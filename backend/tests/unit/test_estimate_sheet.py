@@ -16,7 +16,7 @@ from app.pipeline.orchestrator import ESTIMATED_FIGHTER, ESTIMATED_FIGHTERS, run
 from app.pipeline.stages import StageFailed
 from app.pipeline.store import BattleStore
 from app.research.defaults import behavioral_default, category_default
-from app.research.estimate_sheet import ESTIMATE_CATEGORY, estimate_sheet
+from app.research.estimate_sheet import ESTIMATE_CATEGORY, display_name_for, estimate_sheet
 from app.research.lore import NONSENSE, UNAVAILABLE
 from app.research.sheet_hash import compute_sheet_hash
 from app.research.statsheet import BEHAVIORAL
@@ -557,3 +557,23 @@ async def test_the_flies_label_reaches_the_battle_sheet_and_is_remembered(monkey
     again, _ = await stages.lookup_fighter_or_estimate(fighter)
     assert estimated and first.habitat == "air" and again == first and chat.calls == 1
     assert sheet_store.not_a_legend_flies("hawk") is True
+
+
+def test_the_display_name_takes_its_capitals_from_what_the_user_typed() -> None:
+    # Intake lowercases "a Navy SEAL team" to "navy seal" (#556).
+    sheet = estimate_sheet("navy seal", raw="a Navy SEAL team")
+    assert (sheet.display_name, sheet.fighter_id) == ("Navy SEAL", "navy-seal")
+
+
+@pytest.mark.parametrize(
+    ("name", "raw", "display"),
+    [
+        ("wolverine", "a wolverine", "Wolverine"),  # typed in lowercase: first letter only
+        ("gorilla", "A GORILLA", "Gorilla"),  # shouted in all caps: not kept
+        ("navy seal", "something unrelated", "Navy seal"),  # the name is not in the text
+    ],
+)
+def test_the_display_name_keeps_the_plain_rule_when_the_text_has_no_capitals_to_give(
+    name: str, raw: str, display: str
+) -> None:
+    assert display_name_for(name, raw) == display

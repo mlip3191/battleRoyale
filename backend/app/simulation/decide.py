@@ -197,13 +197,15 @@ def _explain_scaling(matchup: Matchup, sheets: list[StatSheet], fav: int, helped
 
     def side(i: int) -> str:
         fighter, sheet = matchup.fighters[i], sheets[i]
-        mass = fmt(sheet.stats[StatName.MASS].value)
+        mass = _valued(sheet, StatName.MASS, " kg")
         name = (
             _counted(fighter.count, sheet.display_name) if fighter.count > 1 else sheet.display_name
         )
         if fighter.size_reference:
-            return f"{name} ({mass} kg normally, scaled to {fighter.size_reference} size)"
-        return f"{name} ({mass} kg)"
+            plain, comma, label = mass.partition(",")  # "500 kg" and ", estimate" (#552)
+            scaled = f"scaled to {fighter.size_reference} size"
+            return f"{name} ({plain} normally, {scaled}{comma}{label})"
+        return f"{name} ({mass})"
 
     pair = f"{side(fav)} against {side(1 - fav)}"
     if helped:
@@ -360,8 +362,8 @@ def _explain_smaller_side(
     crowd = max(counts) > 1  # head counts show why a crowd of small fighters benefits
     sides = [
         f"{_counted(n, sheets[i].display_name) if crowd else sheets[i].display_name} "
-        f"({fmt(v)}{unit})"
-        for i, n, v in ((fav, counts[0], values[0]), (foe, counts[1], values[1]))
+        f"({_valued(sheets[i], key, unit)})"
+        for i, n in ((fav, counts[0]), (foe, counts[1]))
     ]
     pair = f"{sides[0]} against {sides[1]}"
     if key == StatName.MASS:  # weight is mostly health in the model: no honest one-line "how"
