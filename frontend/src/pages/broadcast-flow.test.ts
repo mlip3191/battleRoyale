@@ -308,11 +308,31 @@ describe("notes and verdict", () => {
     const fine = battle.stages.map((s) => ({ ...s, status: "done" as const }));
     const withResearch = fine.map((s) =>
       s.stage === "research" || s.stage === "music"
-        ? { ...s, status: "fallback" as const }
+        ? { ...s, status: "fallback" as const, detail: null }
         : s,
     );
     expect(unavailableNote(withResearch)).toBe(
       "Some effects unavailable: research.",
+    );
+  });
+
+  test("an off-list fighter is named, not called research unavailable (#540)", () => {
+    const fine = battle.stages.map((s) => ({ ...s, status: "done" as const }));
+    const note =
+      "We have no stat sheet for 'pitbull', so its stats are estimates.";
+    const fallBack = (stages: string[]) =>
+      fine.map((s) =>
+        stages.includes(s.stage)
+          ? {
+              ...s,
+              status: "fallback" as const,
+              detail: s.stage === "research" ? note : null,
+            }
+          : s,
+      );
+    expect(unavailableNote(fallBack(["research", "music"]))).toBe(note);
+    expect(unavailableNote(fallBack(["research", "images"]))).toBe(
+      `${note} Some effects unavailable: pictures.`,
     );
   });
 

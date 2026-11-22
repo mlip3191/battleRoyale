@@ -171,16 +171,23 @@ export const shownStage = (s: StageStatus) =>
   !(s.stage === "music" && s.status === "fallback");
 
 // "Some effects unavailable: pictures." when any stage used a stand-in, otherwise null. A template
-// script is not missing, so it gets its own sentence (on mocks the play-by-play always is one).
+// script is not missing, so it gets its own sentence (on mocks the play-by-play always is one),
+// and so does a research note.
 export function unavailableNote(stages: readonly StageStatus[]) {
   const fellBack = stages.filter(
     (s) => s.status === "fallback" && shownStage(s),
   );
+  // Research falls back when a fighter isn't on our list; its note names the fighter on
+  // estimates, which says more than "research unavailable" (#540).
+  const research = fellBack.find((s) => s.stage === "research")?.detail ?? "";
   const names = fellBack
-    .filter((s) => s.stage !== "script")
+    .filter(
+      (s) => s.stage !== "script" && !(s.stage === "research" && research),
+    )
     .map((s) => STAGE_NAMES[s.stage]);
   const parts = [
     fellBack.some((s) => s.stage === "script") ? TEMPLATE_SCRIPT_NOTE : "",
+    research,
     names.length > 0 ? `Some effects unavailable: ${names.join(", ")}.` : "",
   ].filter(Boolean);
   return parts.length > 0 ? parts.join(" ") : null;
