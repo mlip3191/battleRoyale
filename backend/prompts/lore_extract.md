@@ -75,6 +75,9 @@ With "real_animal", also give "category": exactly one of "mammal", "bird", "rept
 "myth_deity", also give "size_class", how big a typical adult is: "tiny" (mouse-sized or
 smaller), "small" (cat-sized), "medium" (person-sized), "large" (horse- or bear-sized) or "huge"
 (elephant-sized or bigger). Words only, never a number. Otherwise leave both null.
+With "real_animal", also give "flies": true when a typical adult flies under its own power (a
+hawk, a bat, a bee), false when it doesn't (an ostrich, a penguin, an ant, a flying fish that
+only glides). Otherwise leave it null.
 If the message says no Wikipedia article was found, answer found false and pick the reason
 from the name alone. A made-up or unclear name is "nonsense".
 When in doubt, choose "nonsense". Code uses the reason only to decide what happens next; it
@@ -83,4 +86,4 @@ never changes a number.
 Reply with JSON only, matching the schema:
 {"found": true, "body_analog": "<fighter>", "size_analog": "<fighter or null>", "abilities": ["<ability>"], "heads": null, "quote": "<sentence>"}
 or
-{"found": false, "body_analog": null, "size_analog": null, "abilities": [], "heads": null, "quote": null, "reason": "<one word from the list>", "category": "<animal kind or null>", "size_class": "<size word or null>"}
+{"found": false, "body_analog": null, "size_analog": null, "abilities": [], "heads": null, "quote": null, "reason": "<one word from the list>", "category": "<animal kind or null>", "size_class": "<size word or null>", "flies": <true, false or null>}

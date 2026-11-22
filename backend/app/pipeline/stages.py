@@ -34,6 +34,7 @@ from app.research.estimate_sheet import estimate_sheet
 from app.research.on_demand import researched_or_estimate
 from app.research.seed_fighters import fighter_slug, find_seed_fighter
 from app.research.sheet_store import (
+    not_a_legend_flies,
     not_a_legend_kind,
     not_a_legend_shape,
     resolve_legend,
@@ -168,8 +169,9 @@ async def lookup_fighter_or_estimate(fighter: FighterRequest) -> tuple[StatSheet
     slug = fighter_slug(fighter.entity)
     kind = not_a_legend_kind(slug)  # a real animal fights as one (#453)
     category, size_class = not_a_legend_shape(slug)  # of its kind and size (#517)
+    flies = not_a_legend_flies(slug)  # a hawk flies, an ostrich doesn't (#542)
     name = _typed_name(fighter.entity, fighter.variant)
-    estimate = estimate_sheet(name, kind, category=category, size_class=size_class)
+    estimate = estimate_sheet(name, kind, category=category, size_class=size_class, flies=flies)
     if fighter.variant:  # an adult's article would give a "baby moose" the wrong numbers
         return estimate, True
     sheet = await researched_or_estimate(  # live research (#518), within the stage's time

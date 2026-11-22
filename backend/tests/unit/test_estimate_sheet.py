@@ -525,3 +525,35 @@ async def test_the_lookup_labels_shape_the_battle_sheet_and_are_remembered(monke
     assert first.stats[StatName.MASS].value == pytest.approx(5000.0)  # huge, whatever its kind
     assert again == first and chat.calls == 1  # remembered, not asked again
     assert sheet_store.not_a_legend_shape("ostrich") == ("bird", "huge")
+
+
+# --- #542: the lookup says whether an unlisted animal flies -----------------------------------
+
+
+def test_an_animal_that_flies_moves_by_air_and_one_that_doesnt_stays_on_its_kinds_ground() -> None:
+    hawk = estimate_sheet("hawk", "real_animal", category="bird", size_class="small", flies=True)
+    ostrich = estimate_sheet("ostrich", "real_animal", category="bird", flies=False)
+    wasp = estimate_sheet("wasp", "real_animal", category="insect", flies=True)
+    assert (hawk.habitat, hawk.weapons) == ("air", ["beak"])
+    assert (ostrich.habitat, wasp.habitat) == ("land", "air")
+    assert estimate_sheet("ostrich", "real_animal", category="bird").habitat == "land"  # unsaid
+    # Only an animal: a generic kind or an object never gets wings from the label.
+    assert estimate_sheet("priest", "generic_kind", flies=True).habitat == "land"
+    assert estimate_sheet("rock", "object_or_machine", flies=True).habitat == "land"
+
+
+async def test_the_flies_label_reaches_the_battle_sheet_and_is_remembered(monkeypatch) -> None:
+    from app.research import sheet_store
+    from tests.unit.test_legend_cache import ScriptedChat
+    from tests.unit.test_mythical_battles import go_live
+
+    chat = ScriptedChat(
+        {"found": False, "reason": "real_animal", "category": "bird", "size_class": "small",
+         "flies": True}
+    )  # fmt: skip
+    go_live(monkeypatch, chat)
+    fighter = FighterRequest(entity="hawk", raw="a hawk")
+    first, estimated = await stages.lookup_fighter_or_estimate(fighter)
+    again, _ = await stages.lookup_fighter_or_estimate(fighter)
+    assert estimated and first.habitat == "air" and again == first and chat.calls == 1
+    assert sheet_store.not_a_legend_flies("hawk") is True

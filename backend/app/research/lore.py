@@ -124,6 +124,8 @@ class LoreReply(BaseModel):
     mollusk."""
     size_class: Any = None
     """Only with found false, for a living fighter: tiny, small, medium, large or huge."""
+    flies: Any = None
+    """Only with real_animal: true when a typical adult flies under its own power (#542)."""
 
 
 @dataclass(frozen=True)
@@ -141,6 +143,8 @@ class LoreOutcome:
     """With real_animal: the kind of animal from ANIMAL_CATEGORIES, or None (#517)."""
     size_class: str | None = None
     """With a sized reason: tiny to huge from SIZE_CLASSES, or None (#517)."""
+    flies: bool | None = None
+    """With real_animal: whether it flies, or None when the answer was not a plain yes/no."""
 
 
 UNAVAILABLE = LoreOutcome()
@@ -304,9 +308,10 @@ def code_kind(name: str) -> str | None:
 
 # What a found-false answer means: "not a legend" only for a stated harmless reason (#403),
 # otherwise a block, so a missing, unknown or oddly typed reason fails closed. The animal kind
-# and size class are kept only when they are on their fixed lists and fit the reason (#517).
+# and size class are kept only when they are on their fixed lists and fit the reason (#517), and
+# "flies" only as a real true/false for a real animal (#542).
 def outcome_for_not_found(
-    reason: object, category: object = None, size_class: object = None
+    reason: object, category: object = None, size_class: object = None, flies: object = None
 ) -> LoreOutcome:
     kind = _label(reason, NOT_A_LEGEND_REASONS)
     if kind is None:
@@ -316,6 +321,7 @@ def outcome_for_not_found(
         kind=kind,  # the reason goes on
         category=_label(category, ANIMAL_CATEGORIES) if kind == "real_animal" else None,
         size_class=_label(size_class, SIZE_CLASSES) if kind in SIZED_REASONS else None,
+        flies=flies if kind == "real_animal" and isinstance(flies, bool) else None,
     )
 
 
@@ -341,7 +347,7 @@ async def lore_for(name: str, client: httpx.AsyncClient, chat: ChatLLM) -> LoreO
     if reply is None:
         return UNAVAILABLE
     if not reply.found:
-        return outcome_for_not_found(reply.reason, reply.category, reply.size_class)
+        return outcome_for_not_found(reply.reason, reply.category, reply.size_class, reply.flies)
     if article is None:  # a legend claimed with no article: no text to check a quote against
         return NONSENSE
     source = {

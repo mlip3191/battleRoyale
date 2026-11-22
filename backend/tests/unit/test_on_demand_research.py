@@ -350,3 +350,14 @@ async def test_a_wikidata_failure_still_goes_on_to_the_article(monkeypatch) -> N
     sheet = await on_demand._research(OSTRICH, "real_animal", "medium", "ostrich")
     assert sheet is not None and sheet.stats[StatName.MASS].value == 100.0
     assert done["facts"] == [] and done["ingested"] == ["ostrich"]
+
+
+async def test_a_flier_stays_a_flier_when_its_article_changes_its_kind(monkeypatch) -> None:  # #542
+    stub_research(monkeypatch)
+    hawk = estimate_sheet("hawk", "real_animal", category="mammal", size_class="small", flies=True)
+    assert hawk.habitat == "air"
+    sheet = await on_demand._research(hawk, "real_animal", "small", "hawk")
+    assert sheet is not None and sheet.category == "bird" and sheet.habitat == "air"
+    walker = estimate_sheet("ostrich", "real_animal", category="mammal", flies=False)
+    grounded = await on_demand._research(walker, "real_animal", None, "ostrich")
+    assert grounded is not None and grounded.habitat == "land"
