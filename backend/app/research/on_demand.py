@@ -34,7 +34,7 @@ from app.db.connection import connect
 from app.db.migrate import apply_migrations
 from app.models.stats import StatSheet
 from app.providers.registry import get_provider
-from app.research.estimate_sheet import ANIMAL_KINDS, estimate_sheet
+from app.research.estimate_sheet import ANIMAL_KINDS, FLYING_HABITAT, estimate_sheet
 from app.research.extract import build_sheet_with_evidence
 from app.research.facts import store_facts, wikidata_facts
 from app.research.ingest import ingest_on_demand
@@ -156,8 +156,13 @@ async def _research(
             )
         base = estimate
         if animal_kind != estimate.category:
+            flies = estimate.habitat == FLYING_HABITAT  # only the lookup's "flies" gives air (#542)
             base = estimate_sheet(
-                estimate.display_name, kind, category=animal_kind, size_class=size_class
+                estimate.display_name,
+                kind,
+                category=animal_kind,
+                size_class=size_class,
+                flies=flies,
             )
         providers = (get_provider("chat"), get_provider("embedder"), get_provider("reranker"))
         built = await build_sheet_with_evidence(connection, providers, profile_of(base))
