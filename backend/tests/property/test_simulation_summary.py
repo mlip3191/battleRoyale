@@ -313,7 +313,7 @@ def test_size_that_helps_a_lone_smaller_fighter_skips_the_crowd_reason():
 def test_size_that_helps_the_bigger_side_keeps_the_plain_sentence():
     big, small = make_sheet("big", size_m=2.4), make_sheet("small", size_m=1.0)
     text = _explained(StatName.SIZE, True, matchup_of(1, 6), [big, small])
-    assert text == "Size decided it: Big (2.4 m) against Small (1 m)."
+    assert text == "Size decided it: Big (2.4 m, estimate) against Small (1 m, estimate)."
 
 
 def test_weight_that_helps_the_lighter_side_says_the_lighter_side():
@@ -338,7 +338,45 @@ def test_a_size_reference_keeps_the_plain_sentence():
     # A scaled fighter's sheet size isn't the size it fought at, so "smaller" could be wrong.
     small, big = make_sheet("small", size_m=1.0), make_sheet("big", size_m=2.4)
     text = _explained(StatName.SIZE, True, matchup_of(1, 1, ref_0="horse"), [small, big])
-    assert text == "Size decided it: Small (1 m) against Big (2.4 m)."
+    assert text == "Size decided it: Small (1 m, estimate) against Big (2.4 m, estimate)."
+
+
+# --- #552: an estimated number is labeled in the deciding-factor sentence ----------------------
+
+
+def _with_estimate(sheet, key, is_estimate):
+    """The same sheet with one stat marked as an estimate (or as sourced)."""
+    stats = dict(sheet.stats)
+    stats[key] = stats[key].model_copy(update={"is_estimate": is_estimate})
+    return sheet.model_copy(update={"stats": stats})
+
+
+def _strength_pair(seal_estimate, gorilla_estimate, seal_force=7000):
+    key = StatName.ATTACK_FORCE
+    seal = _with_estimate(make_sheet("navy seal", attack_force_n=seal_force), key, seal_estimate)
+    gorilla = _with_estimate(make_sheet("gorilla", attack_force_n=1020), key, gorilla_estimate)
+    return [seal, gorilla]
+
+
+def test_a_strength_that_is_an_estimate_is_labeled_in_the_sentence():
+    text = _explained(StatName.ATTACK_FORCE, True, matchup_of(1, 1), _strength_pair(True, False))
+    assert text == "Strength decided it: Navy seal (7000 N, estimate) against Gorilla (1020 N)."
+
+
+def test_an_estimate_is_labeled_when_the_favorite_won_in_spite_of_the_stat():
+    sheets = _strength_pair(True, False, seal_force=700)
+    text = _explained(StatName.ATTACK_FORCE, False, matchup_of(1, 1), sheets)
+    assert "Navy seal (700 N, estimate) against Gorilla (1020 N)" in text
+
+
+def test_an_estimate_on_the_other_side_is_labeled_too():
+    text = _explained(StatName.ATTACK_FORCE, True, matchup_of(1, 1), _strength_pair(False, True))
+    assert text == "Strength decided it: Navy seal (7000 N) against Gorilla (1020 N, estimate)."
+
+
+def test_a_sourced_number_stays_plain():
+    text = _explained(StatName.ATTACK_FORCE, True, matchup_of(1, 1), _strength_pair(False, False))
+    assert text == "Strength decided it: Navy seal (7000 N) against Gorilla (1020 N)."
 
 
 # --- #474: the deciding-factor sentence names the verdict's favorite, not the sample's ----------

@@ -325,9 +325,9 @@ def _explain(
         return f"The ground decided it: the {terrain} suits the {fav_name} ({mover} mover) better."
 
     label, lower, unit = _STAT_TEXT[key]
-    vf = fmt(sheets[fav].stats[key].value)
-    vo = fmt(sheets[foe].stats[key].value)
-    pair = f"{fav_name} ({vf}{unit}) against {foe_name} ({vo}{unit})"
+    vf = _valued(sheets[fav], key, unit)
+    vo = _valued(sheets[foe], key, unit)
+    pair = f"{fav_name} ({vf}) against {foe_name} ({vo})"
     if helped and key in (StatName.SIZE, StatName.MASS):
         smaller = sheets[fav].stats[key].value < sheets[foe].stats[key].value
         # A size reference rescales a fighter, so its sheet size may not be the size it fought at.
@@ -341,6 +341,12 @@ def _explain(
     if key in ASSUMABLE_STATS:
         text += " This rests on an assumption: behavior and armor are judgments, not measurements."
     return text
+
+
+def _valued(sheet: StatSheet, key: StatName, unit: str) -> str:
+    """A stat as "7000 N", plus ", estimate" when code set it rather than a source (#552)."""
+    stat = sheet.stats[key]
+    return f"{fmt(stat.value)}{unit}{', estimate' if stat.is_estimate else ''}"
 
 
 def _explain_smaller_side(
