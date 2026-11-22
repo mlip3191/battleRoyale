@@ -16,6 +16,7 @@ from app.intake.llm_io import CALL_ERRORS, as_data, data_block
 from app.intake.llm_io import INPUT_END as INPUT_END  # re-exported for tests and golden checks
 from app.intake.llm_io import INPUT_START as INPUT_START
 from app.intake.rules import (
+    ARTICLES,
     MULTIPLIERS,
     SCALES,
     UNITS,
@@ -24,6 +25,7 @@ from app.intake.rules import (
     map_terrain,
     normalize_entity,
     read_count,
+    singular_word,
     terrain_in_text,
 )
 from app.intake.schema import Clarification, ParsedFighter, ParsedMatchup
@@ -79,6 +81,8 @@ REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it 
 COMMON_KIND_NOTE = "Still not sure which kind you meant, so we'll use the most common one."
 # Names the fighter code picked for a bare kind (#168), from the same table research uses.
 DEFAULT_KIND_NOTE = "Not sure which {kind}, so we used the {pick}."
+# Says so when the fighter we kept isn't the words the user typed (#500): "kimono dragon" -> dragon.
+MISREAD_NOTE = "We read '{raw}' as {used}. Not what you meant? Edit it and fight again."
 EXAMPLE_OPTIONS = [
     "a grizzly bear vs 6 gray wolves",
     "a dozen house cats vs a golden retriever",
@@ -392,6 +396,39 @@ def default_kind_notes(fighters: list[FighterRequest]) -> list[str]:
     return notes
 
 
+# A name's words, singular, no hyphens or articles: "Main-battle tanks" -> main, battle, tank.
+def _name_words(name: str) -> list[str]:
+    words = normalize_entity(name).replace("-", " ").split()
+    return [singular_word(w) for w in words if w not in ARTICLES]
+
+
+# Country tags that may drop without changing the fighter: "US Navy SEALs" -> navy seal (D-69).
+_IGNORED_TYPED_WORDS = {"us", "usa", "uk"}
+
+
+# A side's raw without its trailing battlefield: "6 gray wolves in a forest" -> "6 gray wolves".
+def _without_place(raw: str) -> str:
+    place = terrain_in_text(raw)
+    return raw[: raw.lower().rfind(place.lower())].rstrip() if place else raw
+
+
+# One note per side whose typed words didn't all make it into the fighter we kept (#500), e.g.
+# "We read 'kimono dragon' as dragon." Code-built, so a typed number in raw is fine here.
+def misread_notes(fighters: list[FighterRequest]) -> list[str]:
+    notes = []
+    for fighter in fighters:
+        raw = _without_place(fighter.raw).strip()
+        typed = [w for w in _name_words(raw) if w not in _IGNORED_TYPED_WORDS]
+        used = list(dict.fromkeys(_name_words(fighter.variant or "") + _name_words(fighter.entity)))
+        if not typed or not used or set(typed) <= set(used):
+            continue
+        room = max(1, MAX_NOTE_CHARS - len(MISREAD_NOTE.format(raw="", used=" ".join(used))))
+        if len(raw) > room:
+            raw = raw[: room - 1].rstrip() + "…"
+        notes.append(MISREAD_NOTE.format(raw=raw, used=" ".join(used)))
+    return notes
+
+
 # The model's reading -> IntakeResult (ok or clarify), with every number decided by code.
 # ask=False accepts a still-vague fighter with a note instead of asking again.
 def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -> IntakeResult:
@@ -419,7 +456,7 @@ def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -
         notes.append(terrain_note)
     fighters = [request for request, _ in built]
     picks = default_kind_notes(fighters)
-    notes += picks
+    notes += picks + misread_notes(fighters)
     if parsed.needs_clarification and not picks:
         notes.append(COMMON_KIND_NOTE)
     matchup = Matchup(
