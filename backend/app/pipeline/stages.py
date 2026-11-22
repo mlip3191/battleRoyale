@@ -84,6 +84,9 @@ LEGEND_BLOCKED = (
 LEGEND_UNAVAILABLE = "We couldn't look up {name!r} right now. Please try again in a minute."
 # Age and sex words used as labels by mock intake; they are not shown in the miss message.
 _LABEL_WORDS = frozenset({"adult", "male", "female", "juvenile", "baby", "young"})
+# Variants an animal's article already describes, so they are researched like the plain animal
+# (#535). A baby, a young animal or one sex is a different fighter from the article's adult.
+_ARTICLE_WORDS = frozenset({"adult"})
 
 
 def _typed_name(entity: str, variant: str | None) -> str:
@@ -94,6 +97,11 @@ def _typed_name(entity: str, variant: str | None) -> str:
             return kind
         return f"{kind} {entity}"
     return entity
+
+
+# True when the animal's article describes this variant: none, or only "adult" (#535).
+def _article_fits(variant: str | None) -> bool:
+    return all(word in _ARTICLE_WORDS for word in (variant or "").lower().split())
 
 
 class StageFailed(Exception):
@@ -172,7 +180,7 @@ async def lookup_fighter_or_estimate(fighter: FighterRequest) -> tuple[StatSheet
     flies = not_a_legend_flies(slug)  # a hawk flies, an ostrich doesn't (#542)
     name = _typed_name(fighter.entity, fighter.variant)
     estimate = estimate_sheet(name, kind, category=category, size_class=size_class, flies=flies)
-    if fighter.variant:  # an adult's article would give a "baby moose" the wrong numbers
+    if not _article_fits(fighter.variant):  # an adult's article would mislead a "baby moose"
         return estimate, True
     sheet = await researched_or_estimate(  # live research (#518), within the stage's time
         estimate, kind, size_class, title=fighter.entity, deadline=deadline

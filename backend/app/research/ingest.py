@@ -218,7 +218,7 @@ def needed_sections(html: str) -> list[str]:
     return ["".join(group) for group in groups]
 
 
-# Fetch one article and store only its needed sections, parsed in parallel.
+# Fetch one article (unless given) and store only its needed sections, parsed in parallel.
 async def _ingest_needed(
     connection: sqlite3.Connection,
     client: httpx.AsyncClient,
@@ -226,8 +226,10 @@ async def _ingest_needed(
     embedder: Embedder,
     fighter_id: str,
     title: str,
+    article: SourceDocument | None = None,
 ) -> bool:
-    article = await fetch_article(client, title)
+    if article is None:
+        article = await fetch_article(client, title)
     if article is None:
         logger.info("No article titled %r for %s.", title, fighter_id)
         return False
@@ -267,7 +269,9 @@ async def _ingest_needed(
 
 
 # Ingest a fighter off the seed list within ON_DEMAND_BUDGET_S. True when its passages are
-# stored; a timeout or failure is logged and gives False, never an error.
+# stored; a timeout or failure is logged and gives False, never an error. `article` is one the
+# caller already fetched (on-demand research reads its taxobox first, #535), so it isn't
+# downloaded twice.
 async def ingest_on_demand(
     connection: sqlite3.Connection,
     client: httpx.AsyncClient,
@@ -275,10 +279,12 @@ async def ingest_on_demand(
     embedder: Embedder,
     fighter_id: str,
     title: str,
+    *,
+    article: SourceDocument | None = None,
 ) -> bool:
     try:
         return await asyncio.wait_for(
-            _ingest_needed(connection, client, parser, embedder, fighter_id, title),
+            _ingest_needed(connection, client, parser, embedder, fighter_id, title, article),
             ON_DEMAND_BUDGET_S,
         )
     except TimeoutError:

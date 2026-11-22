@@ -42,15 +42,15 @@ def go_live(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(on_demand, "get_settings", lambda: SimpleNamespace(provider_mode="live"))
 
 
-# A quoted mass, as extraction gives one.
-def quoted_mass(value: float) -> StatValue:
+# A quoted value, as extraction gives one.
+def quoted(value: float, unit: str, words: str) -> StatValue:
     return StatValue(
         value=value,
-        unit="kg",
+        unit=unit,
         source=Source(
             title="Moose",
             url="https://en.wikipedia.org/wiki/Moose",
-            quote=f"Bulls weigh {value:g} kg",
+            quote=f"{words} {value:g} {unit}",
             retrieved_at="2026-11-21T00:00:00Z",
             license="CC BY-SA 4.0",
         ),
@@ -58,6 +58,11 @@ def quoted_mass(value: float) -> StatValue:
         is_estimate=False,
         method="extracted",
     )
+
+
+# A quoted mass, as extraction gives one.
+def quoted_mass(value: float) -> StatValue:
+    return quoted(value, "kg", "Bulls weigh")
 
 
 def researched(estimate: StatSheet, mass: float = 450.0) -> StatSheet:
@@ -76,6 +81,22 @@ def test_only_quoted_stats_replace_the_estimate() -> None:
     assert others == {s: v for s, v in MOOSE.stats.items() if s != StatName.MASS}
     assert sheet.sheet_hash != MOOSE.sheet_hash
     assert on_demand.merged(MOOSE, MOOSE) is None  # nothing sourced: nothing to keep
+
+
+def test_a_sourced_size_sets_the_reach_derived_from_it() -> None:  # #535
+    size = quoted(2.59, "m", "Bulls measure")
+    built = MOOSE.model_copy(update={"stats": {**MOOSE.stats, StatName.SIZE: size}})
+    sheet = on_demand.merged(MOOSE, built)
+    assert sheet is not None and sheet.stats[StatName.SIZE] == size
+    reach = sheet.stats[StatName.REACH]
+    assert reach.method == "derived" and not reach.is_estimate
+    assert reach.value == pytest.approx(0.25 * 2.59)
+    assert (reach.low, reach.high) == (
+        pytest.approx(0.25 * size.low) if size.low is not None else reach.value,
+        pytest.approx(0.25 * size.high) if size.high is not None else reach.value,
+    )
+    # With only the mass sourced, the reach's input is still an estimate, so it stays one.
+    assert researched(MOOSE).stats[StatName.REACH] == MOOSE.stats[StatName.REACH]
 
 
 def test_the_taxobox_class_gives_the_animal_kind() -> None:
@@ -243,6 +264,27 @@ async def test_the_battle_researches_within_the_stage_and_never_a_variant(monkey
     assert estimated and len(calls) == 1  # an adult's article would mislead
 
 
+async def test_an_adult_is_researched_like_the_plain_animal(monkeypatch) -> None:  # #535
+    from app.research import sheet_store
+
+    titles: list[str] = []
+
+    async def research(estimate, kind, size_class, **options):
+        titles.append(options["title"])
+        return estimate
+
+    monkeypatch.setattr(stages, "researched_or_estimate", research)
+    sheet_store.remember_not_a_legend("moose", "real_animal", "mammal", "large")
+    adult = FighterRequest(entity="moose", variant="adult", raw="an adult moose")
+    await stages.lookup_fighter_or_estimate(adult)
+    assert titles == ["moose"]  # the article describes adults
+    for variant in ("baby", "adult male", "young"):  # still a variant the article doesn't fit
+        request = FighterRequest(entity="moose", variant=variant, raw=f"a {variant} moose")
+        _, estimated = await stages.lookup_fighter_or_estimate(request)
+        assert estimated
+    assert titles == ["moose"]
+
+
 async def test_a_better_kind_with_nothing_sourced_is_used_once_not_rebuilt(monkeypatch) -> None:
     go_live(monkeypatch)
     runs: list[str] = []
@@ -272,7 +314,7 @@ def stub_research(
     wikidata_fails: bool = False,
     mass: float | None = 100.0,
 ) -> dict:
-    done: dict = {"facts": [], "ingested": [], "profiles": []}
+    done: dict = {"facts": [], "ingested": [], "profiles": [], "fetches": 0, "articles": []}
     monkeypatch.setattr(
         on_demand,
         "legend_client",
@@ -280,6 +322,7 @@ def stub_research(
     )
 
     async def fetch_article(client, title):
+        done["fetches"] += 1
         return None if article is None else SimpleNamespace(body=article.encode())
 
     async def fetch_wikidata(client, title):
@@ -287,8 +330,9 @@ def stub_research(
             raise SourceError("Wikidata is down", status=503)
         return SimpleNamespace(body=b"{}", retrieved_at=datetime.now(UTC), license="CC0")
 
-    async def ingest(connection, client, parser, embedder, fighter_id, title):
+    async def ingest(connection, client, parser, embedder, fighter_id, title, *, article=None):
         done["ingested"].append(title)
+        done["articles"].append(article)
         return True
 
     async def build(connection, providers, profile):
@@ -330,6 +374,13 @@ async def test_a_bird_article_makes_a_bird_of_the_same_size_and_saves_it(monkeyp
     assert saved("ostrich") == sheet
 
 
+async def test_the_article_is_downloaded_once_per_build(monkeypatch) -> None:  # #535
+    done = stub_research(monkeypatch)
+    await on_demand._research(OSTRICH, "real_animal", "medium", "ostrich")
+    assert done["fetches"] == 1  # the taxobox and the stored passages share one download
+    assert done["articles"][0] is not None and done["articles"][0].body == AVES.encode()
+
+
 async def test_nothing_sourced_saves_nothing(monkeypatch) -> None:
     stub_research(monkeypatch, mass=None)
     sheet = await on_demand._research(OSTRICH, "real_animal", "medium", "ostrich")
@@ -340,7 +391,8 @@ async def test_nothing_sourced_saves_nothing(monkeypatch) -> None:
 async def test_an_article_without_an_animal_taxobox_gives_nothing(monkeypatch) -> None:
     done = stub_research(monkeypatch, article="<p>Ostrich may refer to: a band, a film</p>")
     assert await on_demand._research(OSTRICH, "real_animal", "medium", "ostrich") is None
-    assert done == {"facts": [], "ingested": [], "profiles": []} and saved("ostrich") is None
+    assert (done["facts"], done["ingested"], done["profiles"]) == ([], [], [])
+    assert saved("ostrich") is None
     stub_research(monkeypatch, article=None)
     assert await on_demand._research(OSTRICH, "real_animal", "medium", "ostrich") is None
 
