@@ -133,7 +133,7 @@ def estimate_sheet(
         stats.update({stat: _noted(stats[stat], STAND_IN_NOTE) for stat in STAND_IN_STATS})
     if factor != 1.0:
         kg = SIZE_MASSES[size_class or ""]
-        note = f"Sized as a {size_class} fighter, about {kg:g} kg (#517, #562). "
+        note = f"Sized as a {size_class} fighter, about {kg:g} kg (#517). "
         stats.update(
             {
                 stat: _scaled(stat, stats[stat], factor**power, note)

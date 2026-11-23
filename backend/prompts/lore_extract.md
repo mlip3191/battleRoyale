@@ -72,8 +72,8 @@ fits the article best:
   you are not sure).
 With "real_animal", also give "category": exactly one of "mammal", "bird", "reptile",
 "amphibian", "fish", "insect", "arachnid" or "mollusk". With "real_animal", "generic_kind",
-"myth_deity" or "object_or_machine", also give "size_class", how big a typical adult (or a
-typical one, for an object or machine) is: "tiny" (mouse- or phone-sized or smaller), "small"
+"myth_deity" or "object_or_machine", also give "size_class", how big a typical adult animal
+or person, or a typical object or machine, is: "tiny" (mouse- or phone-sized or smaller), "small"
 (cat- or toaster-sized), "medium" (person- or motorcycle-sized), "large" (horse-, bear- or
 car-sized) or "huge" (elephant- or bus-sized or bigger). Words only, never a number. Otherwise
 leave both null.
