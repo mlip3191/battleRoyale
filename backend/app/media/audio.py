@@ -61,6 +61,9 @@ logger = logging.getLogger(__name__)
 AUDIO_VERSION = "a1"  # bump when the way files are made changes, so old caches are not reused
 ITEM_TIMEOUT_S = 96.0  # per file (120 s audio budget x 0.8, D-68); the stage passes its own share
 LINE_PAUSE_S = 0.4  # silence between two spoken lines
+# At most this many TTS calls run at once for one script's file, so a long script's voice takes
+# about ceil(lines / 3) line latencies instead of one per line and fits the audio budget (#548).
+SPEAK_CONCURRENCY = 3
 MUSIC_SECONDS = 30.0
 MUSIC_STYLE = "upbeat retro sports-broadcast theme, brass and synth"
 MUSIC_TAIL = "instrumental, no vocals"
@@ -275,11 +278,20 @@ async def make_music(
 # --- helpers -----------------------------------------------------------------------------------
 
 
-# Speak each line in turn, then join them with a short pause between lines. If the provider says
-# which voice spoke (live TTS), the joined file says it too; lines in two voices are tagged
-# "mixed" so they are not cached under the reference or stock key.
+# Speak the lines a few at a time (SPEAK_CONCURRENCY, #548), keep the clips in the script's line
+# order, then join them with a short pause between lines. If the provider says which voice spoke
+# (live TTS), the joined file says it too; lines in two voices are tagged "mixed" so they are not
+# cached under the reference or stock key.
 async def _speak(tts: TTS, script: Script, voice_id: str) -> bytes:
-    clips = [await tts.speak(text, voice_id) for text in speech_lines(script)]
+    limit = asyncio.Semaphore(SPEAK_CONCURRENCY)
+
+    # One line, waiting for a free slot first.
+    async def one(text: str) -> bytes:
+        async with limit:
+            return await tts.speak(text, voice_id)
+
+    # gather returns results in argument order, not completion order.
+    clips = await asyncio.gather(*(one(text) for text in speech_lines(script)))
     voices = {getattr(clip, "voice", None) for clip in clips}
     joined = await asyncio.to_thread(join_wavs, clips, LINE_PAUSE_S)
     if voices == {None}:

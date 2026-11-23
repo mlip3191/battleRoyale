@@ -2,6 +2,8 @@
 
 import asyncio
 import io
+import math
+import time
 import wave
 from pathlib import Path
 from typing import Any
@@ -18,6 +20,7 @@ from app.models.stats import StatSheet
 from app.pipeline import stages
 from app.pipeline.orchestrator import FALLBACK_DETAILS, FALLBACK_WITH_VALUE, run_battle
 from app.pipeline.store import BattleStore
+from app.providers.live.tts import SpokenVoice, SpokenWav
 from app.providers.mock.audio import MOCK_SAMPLE_RATE, MockMusicGen, MockTTS
 from app.research.seed_fighters import find_seed_sheet
 from tests.conftest import mock_settings
@@ -113,6 +116,93 @@ async def test_the_lines_are_joined_with_a_short_pause(tmp_path: Path) -> None:
     data = (tmp_path / asset.url.removeprefix("/media/")).read_bytes()
     pause = int(MOCK_SAMPLE_RATE * audio.LINE_PAUSE_S) / MOCK_SAMPLE_RATE
     assert wav_seconds(data) == pytest.approx(3 * 1.0 + 2 * pause)
+
+
+def tone_wav(level: int, frames: int) -> bytes:
+    """A mono 16-bit mock-rate WAV whose every sample is `level`, so each clip is recognisable."""
+    out = io.BytesIO()
+    with wave.open(out, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(MOCK_SAMPLE_RATE)
+        wav.writeframes(level.to_bytes(2, "little", signed=True) * frames)
+    return out.getvalue()
+
+
+def wav_frames(data: bytes) -> bytes:
+    with wave.open(io.BytesIO(data), "rb") as wav:
+        return wav.readframes(wav.getnframes())
+
+
+class DelayedTTS(MockTTS):
+    """A TTS where each line takes `delay(i)` seconds; it counts how many calls overlap."""
+
+    def __init__(self, texts: list[str], delay: Any, clip: Any = None) -> None:
+        self.texts = texts
+        self.delay = delay  # index of the line -> seconds
+        self.clip = clip  # index of the line -> WAV bytes (the mock's one-second clip if None)
+        self.in_flight = 0
+        self.most_in_flight = 0
+
+    async def speak(self, text: str, voice_id: str) -> bytes:
+        i = self.texts.index(text)
+        self.in_flight += 1
+        self.most_in_flight = max(self.most_in_flight, self.in_flight)
+        try:
+            await asyncio.sleep(self.delay(i))
+        finally:
+            self.in_flight -= 1
+        if self.clip is None:
+            return await super().speak(text, voice_id)
+        return self.clip(i)
+
+
+async def test_the_lines_are_spoken_a_few_at_a_time_not_one_after_another() -> None:
+    # #548: six lines at 0.4 s each took 2.4 s one by one; three at a time takes about 0.8 s.
+    assert audio.SPEAK_CONCURRENCY == 3
+    texts = [f"Line number {n}." for n in range(1, 7)]
+    delay = 0.4
+    tts = DelayedTTS(texts, lambda _: delay)
+    start = time.perf_counter()
+    joined = await audio._speak(tts, script("outro", *texts), STOCK_VOICE)
+    elapsed = time.perf_counter() - start
+    rounds = math.ceil(len(texts) / audio.SPEAK_CONCURRENCY)  # 2
+    assert elapsed >= rounds * delay * 0.9
+    assert elapsed < (rounds + 1.5) * delay  # one by one would be 6 delays
+    assert tts.most_in_flight == audio.SPEAK_CONCURRENCY
+    assert tts.in_flight == 0 and wav_seconds(joined) > 0
+
+
+async def test_the_joined_file_keeps_line_order_when_later_lines_finish_first() -> None:
+    texts = ["First!", "Second!", "Third!", "Fourth!", "Fifth!"]
+    clips = [tone_wav(level=100 * (i + 1), frames=50 * (i + 1)) for i in range(len(texts))]
+    # Earlier lines take longer, so the clips finish in reverse order.
+    tts = DelayedTTS(texts, lambda i: 0.05 * (len(texts) - i), lambda i: clips[i])
+    joined = await audio._speak(tts, script("intro", *texts), STOCK_VOICE)
+    silence = b"\x00\x00" * int(MOCK_SAMPLE_RATE * audio.LINE_PAUSE_S)
+    assert wav_frames(joined) == silence.join(wav_frames(clip) for clip in clips)
+
+
+async def test_the_joined_file_is_tagged_with_the_voice_that_spoke_it() -> None:
+    texts = ["One.", "Two.", "Three.", "Four."]
+    wav = tone_wav(level=1, frames=10)
+
+    async def joined(voices: list[SpokenVoice | None]) -> bytes:
+        def clip(i: int) -> bytes:
+            voice = voices[i]
+            return wav if voice is None else SpokenWav(wav, voice)
+
+        tts = DelayedTTS(texts, lambda i: 0.02 * (len(texts) - i), clip)
+        return await audio._speak(tts, script("intro", *texts), STOCK_VOICE)
+
+    cloned = await joined(["cloned"] * 4)
+    assert isinstance(cloned, SpokenWav) and cloned.voice == "cloned"
+    stock = await joined(["stock"] * 4)
+    assert isinstance(stock, SpokenWav) and stock.voice == "stock"
+    mixed = await joined(["cloned", "cloned", "stock", "stock"])
+    assert isinstance(mixed, SpokenWav) and mixed.voice == "mixed"
+    plain = await joined([None] * 4)
+    assert not isinstance(plain, SpokenWav)
 
 
 async def test_music_is_one_untagged_music_file(tmp_path: Path) -> None:
