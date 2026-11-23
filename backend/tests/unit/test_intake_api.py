@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import logging
 import sqlite3
 import time
 from collections.abc import AsyncIterator, Iterator
@@ -39,6 +40,7 @@ from app.providers.base import ChatMessage
 from app.providers.live.chat import LiveChatLLM
 from app.providers.live.http import ProviderError
 from app.providers.mock.text import MockChatLLM
+from app.safety.verdict import ALLOWED, SafetyVerdict
 
 
 def side(raw: str, entity: str) -> dict[str, Any]:
@@ -107,20 +109,29 @@ REPLIES: dict[str, Any] = {
 }
 
 
+# Far longer than any patched deadline: a hung call only ends when the deadline cancels it.
+HANG_SECONDS = 30.0
+
+
 class ScriptedChat:
     """Stand-in chat model that replies from REPLIES and remembers each text it saw.
 
-    Set `down` to make every call fail like an outage, or `delay` to make each call slow.
+    Set `down` to make every call fail like an outage, `delay` to make each call slow, or `hangs`
+    to make that many calls, from the next one, hang until the deadline cancels them (#547).
     """
 
     def __init__(self) -> None:
         self.texts: list[str] = []
         self.down = False
         self.delay = 0.0
+        self.hangs = 0
 
     async def complete(self, messages: list[ChatMessage], **_: Any) -> str:
         if self.down:
             raise ProviderError("chat endpoint unavailable")
+        if self.hangs:
+            self.hangs -= 1
+            await asyncio.sleep(HANG_SECONDS)
         await asyncio.sleep(self.delay)
         content = messages[1]["content"]
         text = content.removeprefix(f"{INPUT_START}\n").removesuffix(f"\n{INPUT_END}")
@@ -575,6 +586,126 @@ def test_a_slow_model_hits_the_deadline_on_both_routes(
     assert first.status_code == 503 and first.json()["detail"] == UNAVAILABLE_MESSAGE
     answer = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "grizzly bear"})
     assert answer.status_code == 503 and pending_rows(db_path) == 1  # the question is kept
+
+
+# --- #547: one slow step is retried inside the deadline, and the log names it ---------------
+
+# Short enough to keep the tests quick, long enough for the mock safety check and Wikidata.
+SHORT_DEADLINE = 1.0
+GRIZZLY_VS_WOLF = "a grizzly bear vs a gray wolf"
+
+
+class HangOnceChat:
+    """Wraps a chat model so its first `hangs` calls hang until the deadline cancels them."""
+
+    def __init__(self, inner: Any, hangs: int = 1) -> None:
+        self.inner = inner
+        self.hangs = hangs
+
+    async def complete(self, messages: list[ChatMessage], **kwargs: Any) -> str:
+        if self.hangs:
+            self.hangs -= 1
+            await asyncio.sleep(HANG_SECONDS)
+        return await self.inner.complete(messages, **kwargs)
+
+
+# The intake route's log lines (one per timed-out attempt).
+def intake_log(caplog: pytest.LogCaptureFixture) -> list[logging.LogRecord]:
+    return [r for r in caplog.records if r.name == intake_api.logger.name]
+
+
+def test_a_model_call_that_times_out_once_is_retried_and_answers(
+    client: TestClient, db_path: Path, chat: ScriptedChat, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pending_id = ask_which_bear(client)
+    monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", SHORT_DEADLINE)
+    chat.hangs = 1
+    first = client.post("/api/intake", json={"text": GRIZZLY_VS_WOLF})
+    assert first.status_code == 200 and first.json()["status"] == "ok"
+    assert [f["entity"] for f in first.json()["matchup"]["fighters"]] == [
+        "grizzly bear",
+        "gray wolf",
+    ]
+    chat.hangs = 1  # the answer route retries the same way
+    answer = client.post(f"/api/intake/{pending_id}/answer", json={"answer": "grizzly bear"})
+    assert answer.status_code == 200 and answer.json()["status"] == "ok"
+    assert pending_rows(db_path) == 0
+
+
+def test_two_timeouts_in_a_row_are_a_503_inside_the_deadline(
+    client: TestClient,
+    chat: ScriptedChat,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    deadline = 0.5
+    monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", deadline)
+    chat.hangs = 2
+    caplog.set_level(logging.WARNING, logger=intake_api.logger.name)
+    started = time.monotonic()
+    response = client.post("/api/intake", json={"text": GRIZZLY_VS_WOLF})
+    elapsed = time.monotonic() - started
+    assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
+    assert elapsed < deadline + 0.3  # the retry fits in the same deadline, not twice it
+    assert chat.hangs == 0  # both attempts reached the model
+    lines = [r.getMessage() for r in intake_log(caplog)]
+    assert lines == [
+        "Intake attempt 1 of 2 timed out during parse.",
+        "Intake attempt 2 of 2 timed out during parse.",
+    ]
+
+
+def test_no_retry_starts_when_the_first_attempt_used_the_whole_deadline(
+    client: TestClient, chat: ScriptedChat, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", 0.2)
+    monkeypatch.setattr(intake_api, "ATTEMPT_SHARE", 1.0)
+    chat.hangs = 2
+    response = client.post("/api/intake", json={"text": GRIZZLY_VS_WOLF})
+    assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
+    assert chat.hangs == 1  # the second call never started
+
+
+# Make one intake step hang once, by step name.
+def hang_once(step: str, chat: ScriptedChat, monkeypatch: pytest.MonkeyPatch) -> None:
+    if "parse" in step:
+        chat.hangs = 1
+    if "safety classify" in step:
+        safety = HangOnceChat(MockChatLLM())
+        monkeypatch.setattr("app.intake.parser.get_intake_chat", lambda: safety)
+    if step == "Wikidata":
+        hung: list[int] = []
+
+        async def names_check(*_: Any, **__: Any) -> SafetyVerdict:
+            if not hung:
+                hung.append(1)
+                await asyncio.sleep(HANG_SECONDS)
+            return ALLOWED
+
+        monkeypatch.setattr("app.safety.gate.check_names", names_check)
+
+
+@pytest.mark.parametrize(
+    "step", ["parse", "safety classify", "parse and safety classify", "Wikidata"]
+)
+def test_a_timeout_logs_one_line_naming_the_step_and_no_request_details(
+    client: TestClient,
+    chat: ScriptedChat,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    step: str,
+) -> None:
+    monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", SHORT_DEADLINE)
+    hang_once(step, chat, monkeypatch)
+    caplog.set_level(logging.DEBUG)
+    response = client.post("/api/intake", json={"text": GRIZZLY_VS_WOLF})
+    assert response.status_code == 200 and response.json()["status"] == "ok"  # the retry worked
+    records = intake_log(caplog)
+    assert [r.getMessage() for r in records] == [f"Intake attempt 1 of 2 timed out during {step}."]
+    for record in caplog.records:  # nothing logged anywhere carries the request
+        line = record.getMessage().lower()
+        assert GRIZZLY_VS_WOLF not in line and "grizzly" not in line
+        assert INPUT_START.lower() not in line and "http" not in line
 
 
 # About 490 characters: under the 500 limit, so the model is asked to read it (#362).

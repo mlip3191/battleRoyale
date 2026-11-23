@@ -29,6 +29,7 @@ from app.intake.rules import (
     terrain_in_text,
 )
 from app.intake.schema import Clarification, ParsedFighter, ParsedMatchup
+from app.intake.steps import PARSE, intake_step
 from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.models.terrain import Terrain
 from app.providers.base import ChatLLM, ChatMessage
@@ -181,6 +182,7 @@ def read_reply(reply: str, text: str) -> ParsedMatchup:
 # Ask the model, retrying once with the problem described; None if the replies were unusable.
 # Raises IntakeUnavailable when any call failed and no reply was usable, so a provider error
 # isn't blamed on the user's wording; only all-replies-unusable means "please rephrase".
+@intake_step(PARSE)
 async def ask_model(chat: ChatLLM, text: str) -> ParsedMatchup | None:
     messages = build_messages(text)
     schema = ParsedMatchup.model_json_schema()
