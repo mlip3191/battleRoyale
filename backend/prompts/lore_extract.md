@@ -71,10 +71,12 @@ fits the article best:
 - "nonsense": anything else (a place, a film, a band, a list of meanings, gibberish, or when
   you are not sure).
 With "real_animal", also give "category": exactly one of "mammal", "bird", "reptile",
-"amphibian", "fish", "insect", "arachnid" or "mollusk". With "real_animal", "generic_kind" or
-"myth_deity", also give "size_class", how big a typical adult is: "tiny" (mouse-sized or
-smaller), "small" (cat-sized), "medium" (person-sized), "large" (horse- or bear-sized) or "huge"
-(elephant-sized or bigger). Words only, never a number. Otherwise leave both null.
+"amphibian", "fish", "insect", "arachnid" or "mollusk". With "real_animal", "generic_kind",
+"myth_deity" or "object_or_machine", also give "size_class", how big a typical adult (or a
+typical one, for an object or machine) is: "tiny" (mouse- or phone-sized or smaller), "small"
+(cat- or toaster-sized), "medium" (person- or motorcycle-sized), "large" (horse-, bear- or
+car-sized) or "huge" (elephant- or bus-sized or bigger). Words only, never a number. Otherwise
+leave both null.
 With "real_animal", also give "flies": true when a typical adult flies under its own power (a
 hawk, a bat, a bee), false when it doesn't (an ostrich, a penguin, an ant, a flying fish that
 only glides). Otherwise leave it null.

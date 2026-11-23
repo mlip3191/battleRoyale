@@ -35,6 +35,11 @@ ESTIMATE_NOTE = "Estimate: we have no stat sheet for this fighter. "
 # from the mammal defaults. The reason is one of a fixed list the model picks; code decides from
 # it alone, so no model text or number reaches the sheet. Anything else stays the inert object.
 ANIMAL_REASON = "real_animal"
+OBJECT_REASON = "object_or_machine"  # sized by its class too (#562): a school bus isn't 1 kg
+# Said on the sheet when nothing tells code how big an object is, so a 1 kg stand-in never
+# decides a fight silently (#562).
+STAND_IN_NOTE = "Stand-in: we couldn't tell how big this is, so it uses a placeholder size. "
+STAND_IN_STATS = (StatName.MASS, StatName.SIZE)
 ESTIMATE_ANIMAL_CATEGORY = "mammal"
 ESTIMATE_ANIMAL_BODY = "living"
 ESTIMATE_ANIMAL_WEAPONS = ("teeth",)
@@ -122,10 +127,13 @@ def estimate_sheet(
     }
     if armed:
         stats.update({stat: _firearm(stat, stats[stat], v) for stat, v in FIREARM_STATS.items()})
-    factor = size_factor(size_class, stats[StatName.MASS].value) if living and not armed else 1.0
+    sized = (living and not armed) or kind == OBJECT_REASON
+    factor = size_factor(size_class, stats[StatName.MASS].value) if sized else 1.0
+    if not living and size_class not in SIZE_MASSES:  # an object of unknown size (#562)
+        stats.update({stat: _noted(stats[stat], STAND_IN_NOTE) for stat in STAND_IN_STATS})
     if factor != 1.0:
         kg = SIZE_MASSES[size_class or ""]
-        note = f"Sized as a {size_class} fighter, about {kg:g} kg (#517). "
+        note = f"Sized as a {size_class} fighter, about {kg:g} kg (#517, #562). "
         stats.update(
             {
                 stat: _scaled(stat, stats[stat], factor**power, note)
@@ -198,6 +206,12 @@ def _scaled(stat: StatName, value: StatValue, scale: float, note: str) -> StatVa
     return value.model_copy(
         update={"value": scaled, "low": low, "high": high, "note": ESTIMATE_NOTE + note}
     )
+
+
+# The same estimate with a note added after "Estimate: ...", so both say it plainly.
+def _noted(value: StatValue, note: str) -> StatValue:
+    rest = (value.note or "").removeprefix(ESTIMATE_NOTE)
+    return value.model_copy(update={"note": ESTIMATE_NOTE + note + rest})
 
 
 # The same estimate, with a note that says plainly it is one.
