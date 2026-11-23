@@ -1,5 +1,6 @@
 """A07 (#45): the live TTS adapter against a fake speech server (no network)."""
 
+import asyncio
 import base64
 import hashlib
 import io
@@ -21,6 +22,7 @@ from app.providers.live import http
 from app.providers.live import tts as tts_module
 from app.providers.live.http import ProviderError, post_bytes
 from app.providers.live.tts import (
+    REF_CONCURRENCY,
     REF_RETRIES,
     REF_TIMEOUT_S,
     LiveTTS,
@@ -348,7 +350,9 @@ async def test_a_failed_reference_voice_falls_back_to_the_plain_request(
 
     assert await live_tts(handler, **clip_settings(tmp_path)).speak("Hi", "default") == tiny_wav()
     with_ref = [b for b in bodies if "ref_audio" in b]
-    assert len(with_ref) == 1  # REF_RETRIES = 0: even a busy server gets one reference try
+    # 503/429 are retried; a 422 or a non-WAV body is not.
+    expected = REF_RETRIES + 1 if first.status_code in http.RETRY_STATUSES else 1
+    assert len(with_ref) == expected
     assert bodies[-1] == {
         "model": MODEL,
         "input": "Hi",
@@ -371,7 +375,7 @@ async def test_a_network_error_on_the_reference_voice_falls_back(
     assert await live_tts(handler, **clip_settings(tmp_path)).speak("Hi", "default") == tiny_wav()
 
 
-async def test_a_reference_timeout_falls_back_after_one_try(
+async def test_a_reference_timeout_is_retried_then_falls_back(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(http, "BACKOFF_S", 0.0)
@@ -385,7 +389,7 @@ async def test_a_reference_timeout_falls_back_after_one_try(
         return httpx.Response(200, content=tiny_wav())
 
     assert await live_tts(handler, **clip_settings(tmp_path)).speak("Hi", "default") == tiny_wav()
-    assert ["ref_audio" in b for b in bodies] == [True, False]
+    assert ["ref_audio" in b for b in bodies] == [True] * (REF_RETRIES + 1) + [False]
 
 
 async def test_after_one_reference_failure_the_show_skips_the_clip(
@@ -423,10 +427,11 @@ async def test_the_reference_try_fits_the_per_file_budget(
     live = live_tts(Recorder(), **clip_settings(tmp_path))
     await live.speak("Hi", "default")
     ref, stock = calls
-    assert ref["timeout_s"] <= REF_TIMEOUT_S and ref["retries"] == REF_RETRIES == 0
+    assert ref["timeout_s"] <= REF_TIMEOUT_S and ref["retries"] == REF_RETRIES == 2
     default_timeout = Settings(_env_file=None).provider_timeout_s
     assert stock["timeout_s"] == default_timeout and "retries" not in stock
-    assert REF_TIMEOUT_S + default_timeout < audio.ITEM_TIMEOUT_S
+    # Worst case: every clip retry, then one stock fallback, still inside the per-file limit.
+    assert (REF_RETRIES + 1) * REF_TIMEOUT_S + default_timeout < audio.ITEM_TIMEOUT_S
 
 
 async def test_a_blank_voice_with_a_clip_sends_ref_audio_and_no_voice(tmp_path: Path) -> None:
@@ -526,7 +531,8 @@ async def test_speak_reports_which_voice_really_spoke(
     assert isinstance(cloned, SpokenWav) and cloned.voice == "cloned"
     fallback = live_tts(VoiceServer(ref_up=False), **clip_settings(tmp_path))
     assert (await fallback.speak("Hi", "default")).voice == "stock"
-    assert (await fallback.speak("Again", "default")).voice == "stock"  # the clip was dropped
+    assert fallback.ref_audio is not None  # a 503 is transient; later lines still try the clip
+    assert (await fallback.speak("Again", "default")).voice == "stock"
     no_clip = await live_tts(VoiceServer(), announcer_voice_source="stock").speak("Hi", "default")
     assert no_clip.voice == "stock" and no_clip == tiny_wav(STOCK_RATE)
 
@@ -575,7 +581,8 @@ async def test_later_lines_and_scripts_after_a_failure_stay_off_the_reference_ke
     live = live_tts(server, **settings)  # one adapter for the whole show, as in make_audio
 
     assets = await audio.make_audio([intro, outro], provider=live, media_dir=media)
-    assert live.ref_audio is None and 1 <= server.ref_tries() <= 2  # dropped after the failure
+    # 503 is transient: the clip stays loaded and every line still tries it, then falls back.
+    assert live.ref_audio is not None and server.ref_tries() >= 4
     stock_keys = {both_keys(s, settings)[1].asset_id for s in (intro, outro)}
     assert {a.asset_id for a in assets} == stock_keys
     for script in (intro, outro):
@@ -624,6 +631,55 @@ async def test_a_script_spoken_in_both_voices_is_not_cached_under_either_key(
     assert not (media / stock_key.cached_path).exists()
     assert asset.asset_id != ref_key.asset_id and asset.asset_id != stock_key.asset_id
     assert saved_file(media, asset).is_file()
+
+
+async def test_a_429_on_one_line_does_not_drop_the_clip_for_later_lines(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    seen: list[bool] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        has_ref = "ref_audio" in body
+        seen.append(has_ref)
+        # First clip attempt (and its retries) are 429; later clip attempts succeed.
+        if has_ref and seen.count(True) <= (REF_RETRIES + 1):
+            return httpx.Response(429, json={"error": {"code": "queue_full"}})
+        return httpx.Response(200, content=tiny_wav(CLONED_RATE if has_ref else STOCK_RATE))
+
+    live = live_tts(handler, **clip_settings(tmp_path))
+    first = await live.speak("One", "default")
+    second = await live.speak("Two", "default")
+    assert first.voice == "stock"
+    assert live.ref_audio is not None
+    assert second.voice == "cloned"
+    assert seen.count(True) >= 2
+
+
+async def test_reference_voice_requests_on_one_adapter_do_not_overlap(tmp_path: Path) -> None:
+    in_flight = 0
+    most = 0
+    live = live_tts(Recorder(), **clip_settings(tmp_path))
+    orig = live._post
+
+    async def slow_post(payload, retries=None, timeout_s=None):
+        nonlocal in_flight, most
+        if "ref_audio" in payload:
+            in_flight += 1
+            most = max(most, in_flight)
+            try:
+                await asyncio.sleep(0.05)
+                return await orig(payload, retries, timeout_s)
+            finally:
+                in_flight -= 1
+        return await orig(payload, retries, timeout_s)
+
+    live._post = slow_post  # type: ignore[method-assign]
+    assert REF_CONCURRENCY == 1
+    results = await asyncio.gather(*(live.speak(f"Line {i}", "default") for i in range(6)))
+    assert most == 1
+    assert all(getattr(wav, "voice", None) == "cloned" for wav in results)
 
 
 # The committed synthetic voice files (D-67).
