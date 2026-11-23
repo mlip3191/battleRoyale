@@ -286,9 +286,12 @@ async def summary(matchup: Matchup, found: Research, result: SimulationResult) -
 
 
 # Step 8: the next challenger from seed and cached fighters only (pipeline/challenger.py).
+# A draw or no contest gets none and ends "done", not "fallback" (no "unavailable" banner).
 async def challenger(
     matchup: Matchup, found: Research, result: SimulationResult
 ) -> Stubbed[ChallengerSuggestion | None]:
+    if result.outcome in ("draw", "no_contest"):  # no champion, so nobody to challenge (#550)
+        return Stubbed(None)
     # The engine's own matchup, so the winner duels as the battle was fought (count and size).
     pick, fallback = await next_challenger.suggest(
         found.sheets,
