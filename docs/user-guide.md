@@ -231,6 +231,7 @@ The app politely turns some requests away, and tells you why:
 | **Abstract ideas, places, landforms, planets** | They aren't physical fighters with measurable stats. | A message explaining what kinds of fighters work. |
 | **More than two sides** | The arena only fits two sides for now. | It offers each pair as a two-sided matchup. Group a pack into one side, like "3 wolves". |
 | **More than 10,000 on a side, or fractions** | It keeps the simulation fast and the fighters whole. | It lowers the count to 10,000 and says so on tonight's card, or asks how many whole fighters you meant. |
+| **A group with no number, an odd number** ("a swarm of bees", "1e3 ants", "-3 lions") | The simulation needs a whole, positive count. | It reads the count for you and says so on tonight's card: a swarm or colony is 1,000, a school 100, a flock 30, a herd or troop 20, a pod or gaggle 10, a pack or pride 6; "1e3" is 1,000; "-3" is 3. Type a number to choose your own. |
 
 **What does work:** animals, historical fighter types (a Roman legionary, a medieval knight), military units (US Navy SEALs, who fight with a rifle), objects and weapons (a toaster, a sword, a grenade), plants, vehicles and machines (a bulldozer, a tank), gods of mythology (Zeus), and mythical creature types (a dragon, a griffin). Fighters off our list fight on labeled estimates. A mythical creature is modeled on the real animals its legends compare it to, and every one of its stats is tagged as an assumption.
 
