@@ -55,6 +55,8 @@ class Blocklist:
     not_fighters: frozenset[str] = frozenset()
     ask_opener: re.Pattern[str] = re.compile(r"(?!)")
     """An ask phrase and its comma at the start of the text, see strip_ask_opener (#344)."""
+    instruction_head: frozenset[str] = frozenset()
+    """Head nouns that name an instruction to the app, not a fighter ("system prompt", #561)."""
 
 
 # Phrases as one regex alternative, longest first, each as whole words.
@@ -117,6 +119,7 @@ def load_blocklist() -> Blocklist:
             rf"^\s*(?:please\s+)?(?:{_alternatives(words('real_person', 'ask_openers'))})\s*,\s*",
             re.IGNORECASE,
         ),
+        instruction_head=words("not_a_fighter", "head"),
     )
 
 
@@ -194,6 +197,8 @@ def _check_side(words: list[str], lists: Blocklist) -> SafetyVerdict:
         return blocked("hate", "rules")
     if _in(head, lists.people_words) and any(_in(w, lists.group_head) for w in words[:-1]):
         return blocked("hate", "rules")
+    if _in(head, lists.instruction_head):  # "prompt" or "prompts"
+        return blocked("nonsense", "rules")
     return ALLOWED
 
 
