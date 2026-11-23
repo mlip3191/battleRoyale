@@ -43,6 +43,7 @@ GROUP_WORDS = {
 }  # fmt: skip
 # Scientific notation as typed, "1e3" or "2.5E2", up to e99 (#561).
 SCIENTIFIC = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)[eE]\+?(\d{1,2})(?![\w.])")
+SCIENTIFIC_MAX = 1_000_000  # past this, the note says "more than" instead of every digit
 # A minus sign stuck to a number at the start of a word, "-3" (not "T-1000" or "1-3") (#561).
 MINUS = re.compile(r"(?<![\w.])[-−](\d[\d,]*(?:\.\d+)?)")
 
@@ -65,6 +66,26 @@ def _group_word(tokens: list[str], index: int) -> str | None:
     return word if word in GROUP_WORDS and _next(tokens, index) == "of" else None
 
 
+# True for a token that states a count: digits or a number word.
+def _is_count_word(token: str) -> bool:
+    return (
+        bool(NUMBER_TOKEN.match(token)) or token in UNITS or token in SCALES or token in MULTIPLIERS
+    )
+
+
+# Drop a group phrase that a typed count follows, so the count is read as typed: "a pack of 12
+# wolves" -> "a 12 wolves" (#561 review). Only the first group phrase is looked at.
+def _without_group_before_count(
+    tokens: list[str], hyphens: list[str]
+) -> tuple[list[str], list[str]]:
+    for index in range(len(tokens)):
+        if _group_word(tokens, index):
+            if index + 2 < len(tokens) and _is_count_word(tokens[index + 2]):
+                return tokens[:index] + tokens[index + 2 :], hyphens[:index] + hyphens[index + 2 :]
+            break
+    return tokens, hyphens
+
+
 # Numbers written in ways the count reader can't use, rewritten with a note for the card (#561):
 # "1e3 ants" -> "1000 ants", "-3 lions" -> "3 lions".
 def tidy_numbers(text: str) -> tuple[str, list[str]]:
@@ -72,6 +93,9 @@ def tidy_numbers(text: str) -> tuple[str, list[str]]:
 
     def expand(match: re.Match[str]) -> str:
         value = Decimal(match.group(1)) * 10 ** int(match.group(2))
+        if value > SCIENTIFIC_MAX:  # "1e99": a short note; the side is capped later anyway
+            notes.append(f"We read '{match.group(0)}' as more than {SCIENTIFIC_MAX:,}.")
+            return str(SCIENTIFIC_MAX)
         plain = f"{value.normalize():f}"
         notes.append(f"We read '{match.group(0)}' as {Decimal(plain):,}.")
         return plain
@@ -114,6 +138,7 @@ def _is_description(tokens: list[str], hyphens: list[str], index: int) -> bool:
 def read_count(raw: str) -> CountReading:
     pairs = TOKEN.findall(raw.lower())
     tokens, hyphens = [t for t, _ in pairs], [h for _, h in pairs]
+    tokens, hyphens = _without_group_before_count(tokens, hyphens)
     total = current = 0
     saw_number = saw_article = False
     for index, token in enumerate(tokens):
@@ -135,9 +160,9 @@ def read_count(raw: str) -> CountReading:
         elif token in SCALES:
             total, current, saw_number = total + max(current, 1) * SCALES[token], 0, True
         elif group := _group_word(tokens, index):
-            # "a swarm of bees" -> 1,000; "2 packs of wolves" -> 12. A typed count still wins.
-            count = total + max(current, 1) * GROUP_WORDS[group]
-            return CountReading(count, None, None if saw_number else group)
+            if saw_number:  # "2 packs of wolves": the typed count, as typed (#561 review)
+                break
+            return CountReading(GROUP_WORDS[group], None, group)  # "a swarm of bees" -> 1,000
         elif token in ARTICLES and not saw_number and index == 0:
             saw_article = True
         elif token in {"and", "of"} and saw_number:
@@ -200,7 +225,10 @@ def normalize_entity(name: str) -> str:
 def without_group(name: str) -> str:
     words = name.split()
     if len(words) > 2 and singular_word(words[0]) in GROUP_WORDS and words[1] == "of":
-        return " ".join(words[2:])
+        words = words[2:]
+        while len(words) > 1 and (words[0] in QUANTITY_WORDS or NUMBER_TOKEN.match(words[0])):
+            words = words[1:]  # "pack of 12 wolf" -> "wolf"
+        return " ".join(words)
     return name
 
 

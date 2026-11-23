@@ -67,7 +67,10 @@ async def test_1e3_ants_fight_as_1000_ants_and_no_fighter_is_called_e() -> None:
         ("a swarm of bees", CountReading(1000, None, "swarm")),
         ("a pack of wolves", CountReading(6, None, "pack")),
         ("a herd of zebras", CountReading(20, None, "herd")),
-        ("2 packs of wolves", CountReading(12, None, None)),
+        ("2 packs of wolves", CountReading(2)),
+        ("a pack of 12 wolves", CountReading(12)),
+        ("a flock of 50 geese", CountReading(50)),
+        ("a herd of two hundred bison", CountReading(200)),
         ("a school bus", CountReading(1)),
         ("a pair of goats", CountReading(2)),
     ],
@@ -170,3 +173,41 @@ def test_the_misread_note_never_cuts_the_s_off_abrams() -> None:
     notes = misread_notes([side])
     assert notes and "abrams main battle tank" in notes[0]
     assert "abram " not in notes[0]
+
+
+def test_a_huge_exponent_gets_a_short_note() -> None:
+    text, notes = tidy_numbers("1e99 ants vs a frog")
+    assert text == "1000000 ants vs a frog"
+    assert notes == ["We read '1e99' as more than 1,000,000."]
+
+
+@pytest.mark.parametrize(
+    ("raw", "count"),
+    [("a pack of 12 wolves", 12), ("a flock of 50 geese", 50), ("2 packs of wolves", 2)],
+)
+def test_a_typed_count_with_a_group_word_is_used_as_typed_with_no_assumed_note(
+    raw: str, count: int
+) -> None:
+    request, notes = build_fighter(ParsedFighter(raw=raw, entity=raw.split()[-1]), 10_000)
+    assert request.count == count
+    assert notes == []
+    assert request.variant is None
+
+
+def test_a_group_phrase_and_a_typed_count_never_end_up_in_the_name() -> None:
+    assert without_group(normalize_entity("pack of 12 wolves")) == "wolf"
+    request, _ = build_fighter(ParsedFighter(raw="2 packs of wolves", entity="wolf"), 10_000)
+    assert (request.entity, request.variant) == ("wolf", None)
+
+
+def test_a_plural_instruction_head_is_blocked_too() -> None:
+    assert check_text_rules("your system prompts vs a goose").reason == "nonsense"
+
+
+async def test_minus_three_lions_fight_as_three_with_the_note_on_the_card() -> None:
+    result = await parse_matchup("-3 lions vs a tiger")
+    assert result.status == "ok" and result.matchup is not None
+    assert result.matchup.fighters[0].count == 3
+    assert result.matchup.assumptions[0] == (
+        "We read '-3' as 3, since a side can't have fewer than zero fighters."
+    )

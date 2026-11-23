@@ -197,7 +197,7 @@ def _check_side(words: list[str], lists: Blocklist) -> SafetyVerdict:
         return blocked("hate", "rules")
     if _in(head, lists.people_words) and any(_in(w, lists.group_head) for w in words[:-1]):
         return blocked("hate", "rules")
-    if head in lists.instruction_head:
+    if _in(head, lists.instruction_head):  # "prompt" or "prompts"
         return blocked("nonsense", "rules")
     return ALLOWED
 

@@ -319,7 +319,7 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
     if variant is None and entity in DEFAULT_KINDS:
         # The model dropped a named kind ("a polar bear" read as "bear"): keep the user's word.
         # A product name like "m1" is the user's word, not a number, so only a count blocks it.
-        named = named_kind_words(entity, fighter.raw)
+        named = named_kind_words(entity, _GROUP_PHRASE.sub("", fighter.raw))  # never "packs"
         variant = named[:MAX_VARIANT_CHARS] if named and not has_number(_no_names(named)) else None
     request = FighterRequest(
         entity=entity,

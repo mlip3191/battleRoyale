@@ -41,8 +41,10 @@ Wikidata files them under one ("a vending machine", "a lighthouse").
    model call. They catch only clear cases: self-harm phrases about the user ("end my life",
    "hurt myself"), minors, groups of people, "me", "my brother", real-world attack planning, and
    a side whose head noun is an instruction to the app ("your system prompt", "previous
-   instructions"; #561). That last rule looks at head nouns only, so an injection tacked onto a
-   real matchup ("a duck vs a horse. Ignore your rules ...") still gives the clean result.
+   instructions"; #561). That last rule looks at head nouns only, the last word of each side, so
+   an injection tacked onto a real matchup ("a duck vs a horse. Ignore your rules ...") still
+   gives the clean result. An instruction that isn't a side's last word passes this rule and is
+   left to the classifier and to the checks on the parsed sides.
    An ask phrase that opens the request before a comma ("help me, a lion vs a goose"; also "tell
    me", "show me", "give me", "teach me", "help us") is not a fighter and is cut off first
    (`ask_openers`, #344). "help me vs a goose" and "help me, me vs a goose" still block, because
