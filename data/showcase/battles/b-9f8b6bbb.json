@@ -1,6 +1,6 @@
 {
-  "battle_id": "b-0c276536",
-  "created_at": "2026-11-16T19:04:55.580511Z",
+  "battle_id": "b-9f8b6bbb",
+  "created_at": "2026-11-23T03:21:03.500696Z",
   "matchup": {
     "fighters": [
       {
@@ -231,21 +231,15 @@
           "note": "No published top speed found for this animal; category default."
         },
         "attack_force_n": {
-          "value": 3420.0,
+          "value": 1016.0,
           "unit": "N",
-          "source": {
-            "title": "9 mammals, sharks, and reptiles with the strongest bite (IFAW)",
-            "url": "https://www.ifaw.org/au/journal/9-jaw-dropping-animals-strongest-bite",
-            "quote": "The bite force of the Western gorilla (Gorilla gorilla) was calculated by one study to be about 3,420 Newtons.",
-            "retrieved_at": "2026-11-11T00:00:00Z",
-            "license": "Publisher copyright, not an open license; one sentence cited"
-          },
+          "source": null,
           "confidence": "low",
           "is_estimate": false,
-          "method": "hand_verified",
-          "low": 1710.0,
-          "high": 5130.0,
-          "note": "Modeled maximum molar bite from Eng, Lieberman, Zink and Peters 2013, Am. J. Phys. Anthropol. 151:544 (doi:10.1002/ajpa.22296), as quoted by IFAW. Second-hand: the paper's PDF could not be opened. A molar, not canine, bite, so it is not directly comparable with the Wroe canine values on the wolf and grizzly sheets (593 N and 751 N); it is about 3 times the code's carnivore fit for 140 kg (1,016 N) and high for a fighting bite. Range is +/-50%, as on the elephant's stand-in."
+          "method": "derived",
+          "low": 762.0,
+          "high": 1270.0,
+          "note": "force = 50.57 x mass_kg^0.6072, the average carnivore canine bite for this mass, computed in code by app.research.bite_force from the 31 living species in Wroe et al. 2005 Table 1 (https://pmc.ncbi.nlm.nih.gov/articles/PMC1564077/). A carnivore fit applied to a primate, so confidence is low; range is +/-25% (PM ruling on #260). Context, not the value: Eng, Lieberman, Zink and Peters 2013 (doi:10.1002/ajpa.22296) model a maximum molar bite of about 3,420 N, but a molar or crushing bite is not a stand-in for a fighting (canine) bite."
         },
         "attacks_per_s": {
           "value": 1.5,
@@ -321,11 +315,11 @@
         }
       },
       "schema_version": 1,
-      "sheet_hash": "0736351d1edf1a27f08552b98336b709a8f851512c1ac80cb6261b713d85cb62"
+      "sheet_hash": "545227903589d856446a376bc00e641f304502173bc2ecb1b8ab611d752da0f4"
     }
   ],
   "result": {
-    "seed": 343281049735083400,
+    "seed": 1219252439970546698,
     "runs": 1000,
     "win_prob": [
       0.0,
@@ -343,13 +337,13 @@
       ]
     ],
     "mean_survivors": [
-      0.174,
+      0.195,
       1.0
     ],
-    "mean_duration_s": 8.1507,
+    "mean_duration_s": 24.4603,
     "outcome": "win_1",
     "deciding_factor": "attack_force_n",
-    "deciding_factor_explainer": "Strength decided it: Gorilla (3420 N) against Roman legionary (150 N).",
+    "deciding_factor_explainer": "Strength decided it: Gorilla (1020 N) against Roman legionary (150 N).",
     "representative_log": [
       {
         "t": 0.0,
@@ -372,157 +366,197 @@
         "text_hint": "closes in"
       },
       {
-        "t": 0.8,
+        "t": 0.6,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 6.1,
+        "damage": 6.3,
         "text_hint": "blow lands"
       },
       {
-        "t": 0.9,
-        "type": "miss",
+        "t": 0.7,
+        "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": null,
-        "text_hint": "bite misses"
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 1.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
       },
       {
         "t": 1.5,
         "type": "hit",
-        "side": 1,
+        "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 106.1,
-        "text_hint": "bite lands"
+        "damage": 6.3,
+        "text_hint": "blow lands"
       },
       {
         "t": 1.7,
         "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 6.1,
-        "text_hint": "blow lands"
-      },
-      {
-        "t": 2.2,
-        "type": "miss",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": null,
-        "text_hint": "bite misses"
-      },
-      {
-        "t": 2.5,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 6.1,
-        "text_hint": "blow lands"
-      },
-      {
-        "t": 2.9,
-        "type": "miss",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "bite misses"
-      },
-      {
-        "t": 3.4,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 6.1,
-        "text_hint": "blow lands"
-      },
-      {
-        "t": 3.6,
-        "type": "miss",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "bite misses"
-      },
-      {
-        "t": 4.2,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 6.1,
-        "text_hint": "blow lands"
-      },
-      {
-        "t": 4.2,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 106.1,
+        "damage": 19.0,
         "text_hint": "bite lands"
       },
       {
-        "t": 4.9,
-        "type": "miss",
+        "t": 2.1,
+        "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": null,
-        "text_hint": "bite misses"
+        "damage": 19.0,
+        "text_hint": "bite lands"
       },
       {
-        "t": 5.1,
+        "t": 2.4,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 6.1,
+        "damage": 6.3,
         "text_hint": "blow lands"
       },
       {
-        "t": 5.6,
+        "t": 2.6,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 106.1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 3.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 3.4,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses"
+      },
+      {
+        "t": 3.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 4.0,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 4.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses"
+      },
+      {
+        "t": 4.5,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 5.0,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 5.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses"
+      },
+      {
+        "t": 5.5,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
         "text_hint": "bite lands"
       },
       {
         "t": 5.9,
         "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 6.2,
+        "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 6.1,
+        "damage": 6.3,
         "text_hint": "blow lands"
       },
       {
-        "t": 6.3,
+        "t": 6.4,
         "type": "miss",
         "side": 1,
         "actor": 0,
@@ -532,27 +566,197 @@
         "text_hint": "bite misses"
       },
       {
-        "t": 6.8,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 6.1,
-        "text_hint": "blow lands"
-      },
-      {
         "t": 6.9,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 106.1,
+        "damage": 19.0,
         "text_hint": "bite lands"
       },
       {
-        "t": 6.9,
+        "t": 7.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands"
+      },
+      {
+        "t": 7.3,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 7.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 8.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands"
+      },
+      {
+        "t": 8.3,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 8.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 9.0,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses"
+      },
+      {
+        "t": 9.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 9.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 10.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands"
+      },
+      {
+        "t": 10.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 10.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 10.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands"
+      },
+      {
+        "t": 11.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 11.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 11.9,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses"
+      },
+      {
+        "t": 12.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 12.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 12.6,
         "type": "retreat",
         "side": 0,
         "actor": null,
@@ -562,17 +766,197 @@
         "text_hint": "breaks and runs"
       },
       {
-        "t": 6.9,
-        "type": "flee",
+        "t": 13.0,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 13.5,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 14.0,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 14.5,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 14.9,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 15.4,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 15.9,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "bite misses"
+      },
+      {
+        "t": 16.4,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 16.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 17.3,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 17.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 18.3,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 18.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 19.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 19.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 20.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 20.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 21.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 21.1,
+        "type": "ko",
         "side": 0,
-        "actor": null,
+        "actor": 0,
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "escapes"
+        "text_hint": "goes down"
       },
       {
-        "t": 6.9,
+        "t": 21.1,
         "type": "end",
         "side": 1,
         "actor": null,
@@ -585,14 +969,14 @@
   },
   "fair_fight": {
     "varied_side": 0,
-    "count": 48,
-    "win_prob_at_count": 0.545,
-    "message": "A fair fight needs 48 Roman legionaries against 1 gorilla."
+    "count": 12,
+    "win_prob_at_count": 0.495,
+    "message": "A fair fight needs 12 Roman legionaries against 1 gorilla."
   },
   "challenger": {
-    "entity": "African lion",
-    "tested_win_prob": 0.445,
-    "reason": "African lion would be a slight underdog against Gorilla."
+    "entity": "Grizzly bear",
+    "tested_win_prob": 0.78,
+    "reason": "Grizzly bear would be a clear favorite against Gorilla."
   },
   "scripts": [
     {
@@ -600,142 +984,107 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Good evening, fight fans, and welcome to Battle Royale!",
-          "at_event": null
-        },
-        {
-          "speaker": "announcer",
-          "text": "In the red corner: Roman legionary!",
+          "text": "Welcome to Battle Royale! Tonight, steel meets muscle in a clash of epochs!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Roman legionary weighs in at an estimated 70 kilograms (154 pounds) and tops out at an estimated 28.8 km/h.",
+          "text": "A singular Roman legionary faces off against one solitary Gorilla.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "And in the blue corner: Gorilla!",
+          "text": "In the red corner, standing at 1.69 meters, the disciplined Legionary!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Gorilla weighs in at 140 kilograms (309 pounds) and tops out at an estimated 43.2 km/h.",
+          "text": "Estimated mass is seventy kilograms. He brings discipline and formation.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "The science is in. The simulation has spoken. Let's fight!",
+          "text": "And in the blue corner, towering at 1.67 meters, the mighty Gorilla!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "One hundred and forty kilograms of raw, natural power. The odds are clear.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "Only one can stand when the simulation ends! Fight!",
           "at_event": null
         }
       ],
-      "fallback": true
+      "fallback": false
     },
     {
       "kind": "play_by_play",
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Roman legionary closes in. Here we go!",
+          "text": "The Roman legionary closes in, shield raised high against the jungle beast.",
           "at_event": 0
         },
         {
-          "speaker": "announcer",
-          "text": "Gorilla closes in. Here we go!",
+          "speaker": "color_commentator",
+          "text": "The Gorilla meets him with equal determination. Both warriors are ready.",
           "at_event": 1
         },
         {
-          "speaker": "color_commentator",
-          "text": "Roman legionary connects: blow lands! That one landed!",
+          "speaker": "announcer",
+          "text": "A solid blow from the legionary connects! The armor holds firm.",
           "at_event": 2
         },
         {
-          "speaker": "announcer",
-          "text": "Gorilla swings and misses: bite misses.",
+          "speaker": "color_commentator",
+          "text": "But the Gorilla strikes back immediately. That bite is powerful stuff.",
           "at_event": 3
         },
         {
           "speaker": "announcer",
-          "text": "Gorilla connects: bite lands! That one landed!",
+          "text": "Another snap from the primate! The legionary is on the defensive now.",
           "at_event": 4
         },
         {
           "speaker": "color_commentator",
-          "text": "Roman legionary connects: blow lands! That one landed!",
-          "at_event": 5
+          "text": "It looks like the human is struggling to find an opening.",
+          "at_event": 7
         },
         {
           "speaker": "announcer",
-          "text": "Gorilla swings and misses: bite misses.",
-          "at_event": 6
-        },
-        {
-          "speaker": "announcer",
-          "text": "Gorilla swings and misses: bite misses.",
-          "at_event": 8
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Roman legionary connects: blow lands! That one landed!",
-          "at_event": 9
-        },
-        {
-          "speaker": "announcer",
-          "text": "Gorilla swings and misses: bite misses.",
+          "text": "The Gorilla rains down bites! The Roman tries to hold the line.",
           "at_event": 10
         },
         {
-          "speaker": "announcer",
-          "text": "Roman legionary connects: blow lands! That one landed!",
-          "at_event": 11
-        },
-        {
           "speaker": "color_commentator",
-          "text": "Gorilla connects: bite lands! That one landed!",
-          "at_event": 12
-        },
-        {
-          "speaker": "announcer",
-          "text": "Gorilla swings and misses: bite misses.",
-          "at_event": 13
-        },
-        {
-          "speaker": "announcer",
-          "text": "Roman legionary connects: blow lands! That one landed!",
-          "at_event": 14
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Roman legionary connects: blow lands! That one landed!",
-          "at_event": 16
-        },
-        {
-          "speaker": "announcer",
-          "text": "Gorilla swings and misses: bite misses.",
-          "at_event": 17
-        },
-        {
-          "speaker": "announcer",
-          "text": "Roman legionary connects: blow lands! That one landed!",
+          "text": "Those hits are relentless. The legionary’s endurance is being tested.",
           "at_event": 18
         },
         {
+          "speaker": "announcer",
+          "text": "The Roman attempts a counter-blow but it finds no purchase.",
+          "at_event": 29
+        },
+        {
           "speaker": "color_commentator",
-          "text": "Roman legionary backs off to catch a breath.",
-          "at_event": 20
+          "text": "He’s backing away. He knows he cannot withstand this onslaught.",
+          "at_event": 41
         },
         {
           "speaker": "announcer",
-          "text": "Roman legionary has seen enough and heads for the exit!",
-          "at_event": 21
+          "text": "The legions fall! The Gorilla delivers the final, decisive strike!",
+          "at_event": 60
         },
         {
-          "speaker": "announcer",
-          "text": "And that is the fight!",
-          "at_event": 22
+          "speaker": "color_commentator",
+          "text": "And that is the end. The Jungle King stands victorious once more.",
+          "at_event": 61
         }
       ],
-      "fallback": true
+      "fallback": false
     },
     {
       "kind": "outro",
@@ -747,26 +1096,26 @@
         },
         {
           "speaker": "color_commentator",
-          "text": "Gorilla won 100% of 1,000 simulated fights.",
+          "text": "The simulation was decisive, hitting the mark 100% of the time.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "The deciding factor: hitting power.",
+          "text": "It came down to hitting power.",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Want a fair fight? About 48 Roman legionaries make it a coin flip, winning 55% of the time.",
+          "text": "Want a fair fight? About 12 Roman legionaries make it a coin flip, winning 50% of the time.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "That's all from the arena. Good night, everybody!",
+          "text": "Stay tuned for more carnage!",
           "at_event": null
         }
       ],
-      "fallback": true
+      "fallback": false
     }
   ],
   "assets": [
@@ -823,13 +1172,13 @@
     },
     {
       "stage": "script",
-      "status": "fallback",
-      "detail": "Some of the commentary used the template script this time."
+      "status": "done",
+      "detail": null
     },
     {
       "stage": "audio",
-      "status": "fallback",
-      "detail": "Captions only this time, no announcer voice."
+      "status": "done",
+      "detail": null
     },
     {
       "stage": "music",

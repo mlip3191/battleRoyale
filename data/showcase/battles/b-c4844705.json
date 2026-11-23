@@ -1,6 +1,6 @@
 {
-  "battle_id": "b-e8afed20",
-  "created_at": "2026-11-16T19:05:10.631511Z",
+  "battle_id": "b-c4844705",
+  "created_at": "2026-11-23T20:59:48.196920Z",
   "matchup": {
     "fighters": [
       {
@@ -311,7 +311,7 @@
     }
   ],
   "result": {
-    "seed": 390865302672015499,
+    "seed": 3722967825937509613,
     "runs": 1000,
     "win_prob": [
       0.0,
@@ -332,10 +332,10 @@
       0.0,
       1.0
     ],
-    "mean_duration_s": 60.9639,
+    "mean_duration_s": 62.3635,
     "outcome": "win_1",
     "deciding_factor": "mass_kg",
-    "deciding_factor_explainer": "Size decided it: Main battle tank (70000 kg) against Dragon (6000 kg).",
+    "deciding_factor_explainer": "Size decided it: Main battle tank (70000 kg) against Dragon (6000 kg, estimate).",
     "representative_log": [
       {
         "t": 0.0,
@@ -358,7 +358,57 @@
         "text_hint": "closes in"
       },
       {
-        "t": 0.7,
+        "t": 0.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 1.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 1.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 1.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 2.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 3.2,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -368,7 +418,27 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 2.1,
+        "t": 3.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 4.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 4.5,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -378,17 +448,7 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 2.6,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 3.5,
+        "t": 5.2,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -398,77 +458,37 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 4.8,
+        "t": 5.8,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 5.1,
+        "t": 6.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 6.7,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
+        "damage": 3442.0,
         "text_hint": "ram lands"
       },
       {
-        "t": 6.2,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 3196.6,
-        "text_hint": "blast lands"
-      },
-      {
-        "t": 7.5,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 3196.6,
-        "text_hint": "blast lands"
-      },
-      {
-        "t": 7.6,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 8.9,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 3196.6,
-        "text_hint": "blast lands"
-      },
-      {
-        "t": 10.1,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 10.3,
+        "t": 7.2,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -478,7 +498,47 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 11.6,
+        "t": 7.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 8.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 9.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 9.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 9.8,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -488,77 +548,137 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 12.6,
+        "t": 10.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 11.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 11.7,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
+        "damage": 3442.0,
         "text_hint": "ram lands"
       },
       {
-        "t": 13.0,
+        "t": 11.8,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 14.4,
+        "t": 12.5,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 15.1,
+        "t": 13.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 13.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 14.2,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "ram misses"
+      },
+      {
+        "t": 14.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 15.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 15.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 16.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 16.7,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
+        "damage": 3442.0,
         "text_hint": "ram lands"
       },
       {
-        "t": 15.7,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 3196.6,
-        "text_hint": "blast lands"
-      },
-      {
-        "t": 17.1,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 3196.6,
-        "text_hint": "blast lands"
-      },
-      {
-        "t": 17.6,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 18.4,
+        "t": 17.2,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -566,6 +686,46 @@
         "group_size": 1,
         "damage": null,
         "text_hint": "blast misses"
+      },
+      {
+        "t": 17.8,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 18.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 19.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 19.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
       },
       {
         "t": 19.8,
@@ -574,131 +734,91 @@
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 20.1,
+        "t": 20.5,
         "type": "hit",
-        "side": 1,
+        "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
+        "damage": 1971.4,
+        "text_hint": "blast lands"
       },
       {
         "t": 21.2,
-        "type": "miss",
+        "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": null,
-        "text_hint": "blast misses"
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 21.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 21.8,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
       },
       {
         "t": 22.5,
-        "type": "miss",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "blast misses"
-      },
-      {
-        "t": 22.6,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 23.9,
-        "type": "miss",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "blast misses"
-      },
-      {
-        "t": 25.1,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 25.3,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 26.6,
+        "t": 23.2,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 27.6,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 28.0,
+        "t": 23.8,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 29.3,
-        "type": "miss",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "blast misses"
-      },
-      {
-        "t": 30.1,
+        "t": 24.2,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
+        "damage": 3442.0,
         "text_hint": "ram lands"
       },
       {
-        "t": 30.7,
+        "t": 24.5,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -708,27 +828,17 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 32.1,
+        "t": 25.2,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 32.6,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 33.4,
+        "t": 25.8,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -738,27 +848,27 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 34.8,
+        "t": 26.5,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 35.1,
+        "t": 26.7,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
+        "damage": 3442.0,
         "text_hint": "ram lands"
       },
       {
-        "t": 36.2,
+        "t": 27.2,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -768,167 +878,87 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 37.5,
+        "t": 27.8,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 28.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 29.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 29.2,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 37.6,
-        "type": "hit",
-        "side": 1,
+        "t": 29.8,
+        "type": "miss",
+        "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
+        "damage": null,
+        "text_hint": "blast misses"
       },
       {
-        "t": 38.9,
+        "t": 30.5,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 40.1,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 40.2,
-        "type": "miss",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "blast misses"
-      },
-      {
-        "t": 41.6,
-        "type": "miss",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "blast misses"
-      },
-      {
-        "t": 42.6,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 43.0,
-        "type": "miss",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "blast misses"
-      },
-      {
-        "t": 44.3,
-        "type": "miss",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "blast misses"
-      },
-      {
-        "t": 45.1,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 45.7,
-        "type": "miss",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": null,
-        "text_hint": "blast misses"
-      },
-      {
-        "t": 47.0,
+        "t": 31.2,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 3196.6,
+        "damage": 1971.4,
         "text_hint": "blast lands"
       },
       {
-        "t": 47.6,
+        "t": 31.7,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
+        "damage": 3442.0,
         "text_hint": "ram lands"
       },
       {
-        "t": 48.4,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 3196.6,
-        "text_hint": "blast lands"
-      },
-      {
-        "t": 49.8,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 3196.6,
-        "text_hint": "blast lands"
-      },
-      {
-        "t": 50.1,
-        "type": "hit",
-        "side": 1,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 2900.7,
-        "text_hint": "ram lands"
-      },
-      {
-        "t": 51.1,
+        "t": 31.8,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -938,7 +968,17 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 52.5,
+        "t": 32.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 33.2,
         "type": "miss",
         "side": 0,
         "actor": 0,
@@ -948,17 +988,307 @@
         "text_hint": "blast misses"
       },
       {
-        "t": 52.6,
+        "t": 33.9,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 34.2,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
+        "damage": 3442.0,
         "text_hint": "ram lands"
       },
       {
-        "t": 52.6,
+        "t": 34.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 35.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 35.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 36.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 36.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 37.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 37.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 38.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 39.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 39.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 39.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 40.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 41.2,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 41.7,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "ram misses"
+      },
+      {
+        "t": 41.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 42.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 43.2,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 43.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 44.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 44.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 45.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 45.9,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 46.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 1971.4,
+        "text_hint": "blast lands"
+      },
+      {
+        "t": 46.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 47.2,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 47.9,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 48.5,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blast misses"
+      },
+      {
+        "t": 49.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 49.2,
         "type": "retreat",
         "side": 0,
         "actor": null,
@@ -968,17 +1298,37 @@
         "text_hint": "breaks and runs"
       },
       {
-        "t": 55.1,
+        "t": 51.7,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 2900.7,
+        "damage": 3442.0,
         "text_hint": "ram lands"
       },
       {
-        "t": 55.1,
+        "t": 54.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 56.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 3442.0,
+        "text_hint": "ram lands"
+      },
+      {
+        "t": 56.7,
         "type": "ko",
         "side": 0,
         "actor": 0,
@@ -988,7 +1338,7 @@
         "text_hint": "goes down"
       },
       {
-        "t": 55.1,
+        "t": 56.7,
         "type": "end",
         "side": 1,
         "actor": null,
@@ -1002,7 +1352,7 @@
   "fair_fight": {
     "varied_side": 0,
     "count": 4,
-    "win_prob_at_count": 0.49,
+    "win_prob_at_count": 0.46,
     "message": "A fair fight needs 4 dragons against 1 main battle tank."
   },
   "challenger": {
@@ -1016,142 +1366,107 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Good evening, fight fans, and welcome to Battle Royale!",
-          "at_event": null
-        },
-        {
-          "speaker": "announcer",
-          "text": "In the red corner: Dragon!",
+          "text": "Ladies and gentlemen! Welcome to Battle Royale!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Dragon, according to legend, weighs in at an estimated 6,000 kilograms (13,228 pounds) and tops out at an estimated 19.7 km/h. Legend numbers are estimates.",
+          "text": "A simulation has already determined the outcome.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "And in the blue corner: Main battle tank!",
+          "text": "In the red corner, the Dragon! Weight six thousand kilograms.",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Main battle tank weighs in at 70,000 kilograms (154,323 pounds) and tops out at 65 km/h.",
+          "text": "According to legend. Its size is estimated at 8.92139 meters.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "The science is in. The simulation has spoken. Let's fight!",
+          "text": "And in the blue corner, the Main battle tank! Mass seventy tons!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "It possesses more aggression than fire breath combined.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "Sheer mass decides it! Let us go to the fight!",
           "at_event": null
         }
       ],
-      "fallback": true
+      "fallback": false
     },
     {
       "kind": "play_by_play",
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Dragon closes in. Here we go!",
+          "text": "The Dragon closes in, scales gleaming under the lights!",
           "at_event": 0
         },
         {
+          "speaker": "color_commentator",
+          "text": "The Main battle tank returns the gesture. Massive steel meets mythical scale.",
+          "at_event": 1
+        },
+        {
           "speaker": "announcer",
-          "text": "Dragon swings and misses: blast misses.",
+          "text": "Dragon fires! A blast strikes true against the armor!",
+          "at_event": 2
+        },
+        {
+          "speaker": "announcer",
+          "text": "Another hit lands! The beast is applying pressure immediately!",
           "at_event": 3
         },
         {
-          "speaker": "color_commentator",
-          "text": "Dragon connects: blast lands! That one landed!",
-          "at_event": 6
+          "speaker": "announcer",
+          "text": "Main battle tank responds with a devastating ram!",
+          "at_event": 4
         },
         {
-          "speaker": "announcer",
-          "text": "Dragon connects: blast lands! That one landed!",
+          "speaker": "color_commentator",
+          "text": "Heavy machinery has heavy reach. That impact was solid.",
           "at_event": 9
         },
         {
           "speaker": "announcer",
-          "text": "Dragon swings and misses: blast misses.",
-          "at_event": 13
+          "text": "Dragon blasts again! Precision fire on the chassis!",
+          "at_event": 12
+        },
+        {
+          "speaker": "announcer",
+          "text": "The tank rams back! No quarter given for dragons or tanks alike.",
+          "at_event": 14
         },
         {
           "speaker": "color_commentator",
-          "text": "Dragon connects: blast lands! That one landed!",
-          "at_event": 16
-        },
-        {
-          "speaker": "announcer",
-          "text": "Dragon connects: blast lands! That one landed!",
-          "at_event": 19
-        },
-        {
-          "speaker": "announcer",
-          "text": "Dragon connects: blast lands! That one landed!",
-          "at_event": 23
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Dragon swings and misses: blast misses.",
-          "at_event": 26
-        },
-        {
-          "speaker": "announcer",
-          "text": "Main battle tank connects: ram lands! That one landed!",
-          "at_event": 29
-        },
-        {
-          "speaker": "announcer",
-          "text": "Dragon connects: blast lands! That one landed!",
+          "text": "Durability testing at its finest. Both combatants are holding firm.",
           "at_event": 33
         },
         {
-          "speaker": "color_commentator",
-          "text": "Dragon swings and misses: blast misses.",
-          "at_event": 36
+          "speaker": "announcer",
+          "text": "The Dragon breaks contact! It is retreating from the arena!",
+          "at_event": 95
         },
         {
           "speaker": "announcer",
-          "text": "Dragon swings and misses: blast misses.",
-          "at_event": 39
+          "text": "Dragon goes down! The knockout signal is flashed!",
+          "at_event": 99
         },
         {
           "speaker": "announcer",
-          "text": "Dragon swings and misses: blast misses.",
-          "at_event": 42
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Main battle tank connects: ram lands! That one landed!",
-          "at_event": 46
-        },
-        {
-          "speaker": "announcer",
-          "text": "Main battle tank connects: ram lands! That one landed!",
-          "at_event": 49
-        },
-        {
-          "speaker": "announcer",
-          "text": "Main battle tank connects: ram lands! That one landed!",
-          "at_event": 52
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Dragon backs off to catch a breath.",
-          "at_event": 62
-        },
-        {
-          "speaker": "announcer",
-          "text": "Dragon goes down! That is a knockout!",
-          "at_event": 64
-        },
-        {
-          "speaker": "announcer",
-          "text": "And that is the fight!",
-          "at_event": 65
+          "text": "It is over! The Main battle tank wins by sheer mass!",
+          "at_event": 100
         }
       ],
-      "fallback": true
+      "fallback": false
     },
     {
       "kind": "outro",
@@ -1163,26 +1478,21 @@
         },
         {
           "speaker": "color_commentator",
-          "text": "Main battle tank won 100% of 1,000 simulated fights.",
+          "text": "Victory achieved 100% of the time.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "The deciding factor: sheer mass.",
+          "text": "It came down to sheer mass.",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Want a fair fight? About 4 dragons make it a coin flip, winning 49% of the time.",
-          "at_event": null
-        },
-        {
-          "speaker": "announcer",
-          "text": "That's all from the arena. Good night, everybody!",
+          "text": "Want a fair fight? About 4 dragons make it a coin flip, winning 46% of the time.",
           "at_event": null
         }
       ],
-      "fallback": true
+      "fallback": false
     }
   ],
   "assets": [
@@ -1225,27 +1535,27 @@
     {
       "stage": "simulate",
       "status": "done",
-      "detail": null
+      "detail": "cached"
     },
     {
       "stage": "summary",
       "status": "done",
-      "detail": null
+      "detail": "cached"
     },
     {
       "stage": "challenger",
       "status": "done",
-      "detail": null
+      "detail": "cached"
     },
     {
       "stage": "script",
-      "status": "fallback",
-      "detail": "Some of the commentary used the template script this time."
+      "status": "done",
+      "detail": null
     },
     {
       "stage": "audio",
-      "status": "fallback",
-      "detail": "Captions only this time, no announcer voice."
+      "status": "done",
+      "detail": null
     },
     {
       "stage": "music",

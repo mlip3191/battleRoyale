@@ -1,6 +1,6 @@
 {
-  "battle_id": "b-a7a54a04",
-  "created_at": "2026-11-16T19:04:43.267055Z",
+  "battle_id": "b-9cd73137",
+  "created_at": "2026-11-23T03:25:20.727980Z",
   "matchup": {
     "fighters": [
       {
@@ -303,28 +303,28 @@
     }
   ],
   "result": {
-    "seed": 8816751515862506227,
+    "seed": 3424052663838125364,
     "runs": 1000,
     "win_prob": [
-      0.934,
-      0.066
+      0.954,
+      0.046
     ],
     "draw_prob": 0.0,
     "win_prob_ci95": [
       [
-        0.9168903772338006,
-        0.9477878747932127
+        0.9391874888881304,
+        0.9653376871954269
       ],
       [
-        0.052212125206787474,
-        0.08310962276619951
+        0.03466231280457309,
+        0.06081251111186951
       ]
     ],
     "mean_survivors": [
-      0.996,
-      0.066
+      0.992,
+      0.046
     ],
-    "mean_duration_s": 8.906,
+    "mean_duration_s": 9.045399999999999,
     "outcome": "win_0",
     "deciding_factor": "attack_force_n",
     "deciding_factor_explainer": "Honey badger's venom resistance decided it: it shrugs off bites that would kill others.",
@@ -350,27 +350,17 @@
         "text_hint": "closes in"
       },
       {
-        "t": 0.9,
-        "type": "miss",
-        "side": 1,
+        "t": 0.8,
+        "type": "hit",
+        "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": null,
-        "text_hint": "bite misses"
+        "damage": 11.3,
+        "text_hint": "bite lands"
       },
       {
         "t": 1.3,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 8.9,
-        "text_hint": "bite lands"
-      },
-      {
-        "t": 1.6,
         "type": "miss",
         "side": 1,
         "actor": 0,
@@ -380,27 +370,37 @@
         "text_hint": "bite misses"
       },
       {
-        "t": 2.3,
+        "t": 1.8,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 8.9,
+        "damage": 11.3,
         "text_hint": "bite lands"
       },
       {
-        "t": 2.4,
+        "t": 2.1,
         "type": "hit",
         "side": 1,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 9.0,
+        "damage": 10.6,
         "text_hint": "bite lands"
       },
       {
-        "t": 3.1,
+        "t": 2.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 11.3,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 3.0,
         "type": "miss",
         "side": 1,
         "actor": 0,
@@ -408,19 +408,29 @@
         "group_size": 1,
         "damage": null,
         "text_hint": "bite misses"
-      },
-      {
-        "t": 3.2,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 8.9,
-        "text_hint": "bite lands"
       },
       {
         "t": 3.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 10.6,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 4.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 11.3,
+        "text_hint": "bite lands"
+      },
+      {
+        "t": 4.6,
         "type": "miss",
         "side": 1,
         "actor": 0,
@@ -430,17 +440,17 @@
         "text_hint": "bite misses"
       },
       {
-        "t": 4.2,
+        "t": 5.0,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 8.9,
+        "damage": 11.3,
         "text_hint": "bite lands"
       },
       {
-        "t": 4.2,
+        "t": 5.0,
         "type": "retreat",
         "side": 1,
         "actor": null,
@@ -450,47 +460,37 @@
         "text_hint": "breaks and runs"
       },
       {
-        "t": 5.1,
-        "type": "hit",
-        "side": 0,
-        "actor": 0,
-        "target": 0,
-        "group_size": 1,
-        "damage": 8.9,
-        "text_hint": "bite lands"
-      },
-      {
         "t": 6.1,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 8.9,
+        "damage": 11.3,
         "text_hint": "bite lands"
       },
       {
-        "t": 7.1,
+        "t": 7.2,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 8.9,
+        "damage": 11.3,
         "text_hint": "bite lands"
       },
       {
-        "t": 8.0,
+        "t": 8.2,
         "type": "hit",
         "side": 0,
         "actor": 0,
         "target": 0,
         "group_size": 1,
-        "damage": 8.9,
+        "damage": 11.3,
         "text_hint": "bite lands"
       },
       {
-        "t": 8.0,
+        "t": 8.2,
         "type": "ko",
         "side": 1,
         "actor": 0,
@@ -500,7 +500,7 @@
         "text_hint": "goes down"
       },
       {
-        "t": 8.0,
+        "t": 8.2,
         "type": "end",
         "side": 0,
         "actor": null,
@@ -514,8 +514,8 @@
   "fair_fight": {
     "varied_side": 1,
     "count": 3,
-    "win_prob_at_count": 0.48,
-    "message": "A fair fight needs 3 king cobras against 1 honey badger."
+    "win_prob_at_count": 0.41,
+    "message": "A fair fight needs about 3 king cobras against 1 honey badger. 3 king cobras win 41%, 4 king cobras win 61%."
   },
   "challenger": {
     "entity": "African lion",
@@ -528,132 +528,107 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Good evening, fight fans, and welcome to Battle Royale!",
-          "at_event": null
-        },
-        {
-          "speaker": "announcer",
-          "text": "In the red corner: Honey badger!",
+          "text": "Ladies and gentlemen, welcome to the simulation arena!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Honey badger weighs in at 9 kilograms (19.8 pounds) and tops out at an estimated 43.2 km/h.",
+          "text": "We have a mammal against a reptile tonight.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "And in the blue corner: King cobra!",
+          "text": "In the red corner, weighing in at nine kilograms, the Honey badger!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "King cobra weighs in at 10 kilograms (22 pounds) and tops out at an estimated 14.4 km/h.",
+          "text": "He stands less than eight-tenths of a meter tall.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "The science is in. The simulation has spoken. Let's fight!",
+          "text": "And in the blue corner, ten kilograms of pure scale, the King cobra!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "A four-meter extension of cold-hearted intent.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "Let’s see if hitting power decides this! Fight!",
           "at_event": null
         }
       ],
-      "fallback": true
+      "fallback": false
     },
     {
       "kind": "play_by_play",
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Honey badger closes in. Here we go!",
+          "text": "The Honey badger closes in! A low, dangerous stance.",
           "at_event": 0
         },
         {
-          "speaker": "announcer",
-          "text": "King cobra closes in. Here we go!",
+          "speaker": "color_commentator",
+          "text": "And the King cobra mirrors him. Tense atmosphere here.",
           "at_event": 1
         },
         {
-          "speaker": "color_commentator",
-          "text": "King cobra swings and misses: bite misses.",
+          "speaker": "announcer",
+          "text": "Badger snaps first! A sharp bite finds its mark!",
           "at_event": 2
         },
         {
           "speaker": "announcer",
-          "text": "Honey badger connects: bite lands! That one landed!",
+          "text": "Cobra tries to counter but misses completely!",
           "at_event": 3
         },
         {
           "speaker": "announcer",
-          "text": "King cobra swings and misses: bite misses.",
+          "text": "Another snap from the badger! Precision striking.",
           "at_event": 4
         },
         {
           "speaker": "color_commentator",
-          "text": "Honey badger connects: bite lands! That one landed!",
+          "text": "Finally the cobra connects. A solid hit.",
           "at_event": 5
         },
         {
           "speaker": "announcer",
-          "text": "King cobra connects: bite lands! That one landed!",
+          "text": "Badger lands again! He is relentless!",
           "at_event": 6
         },
         {
           "speaker": "announcer",
-          "text": "King cobra swings and misses: bite misses.",
+          "text": "Cobra swings wide and misses!",
           "at_event": 7
         },
         {
-          "speaker": "color_commentator",
-          "text": "Honey badger connects: bite lands! That one landed!",
+          "speaker": "announcer",
+          "text": "Cobra strikes back! It lands with force!",
           "at_event": 8
         },
         {
-          "speaker": "announcer",
-          "text": "King cobra swings and misses: bite misses.",
+          "speaker": "color_commentator",
+          "text": "The badger absorbs it and fires back immediately.",
           "at_event": 9
         },
         {
           "speaker": "announcer",
-          "text": "Honey badger connects: bite lands! That one landed!",
-          "at_event": 10
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "King cobra backs off to catch a breath.",
-          "at_event": 11
-        },
-        {
-          "speaker": "announcer",
-          "text": "Honey badger connects: bite lands! That one landed!",
+          "text": "Badger lands a heavy blow! The cobra breaks!",
           "at_event": 12
         },
         {
           "speaker": "announcer",
-          "text": "Honey badger connects: bite lands! That one landed!",
-          "at_event": 13
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Honey badger connects: bite lands! That one landed!",
-          "at_event": 14
-        },
-        {
-          "speaker": "announcer",
-          "text": "Honey badger connects: bite lands! That one landed!",
-          "at_event": 15
-        },
-        {
-          "speaker": "announcer",
-          "text": "King cobra goes down! That is a knockout!",
+          "text": "The King cobra goes down! It is over!",
           "at_event": 16
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "And that is the fight!",
-          "at_event": 17
         }
       ],
-      "fallback": true
+      "fallback": false
     },
     {
       "kind": "outro",
@@ -665,26 +640,26 @@
         },
         {
           "speaker": "color_commentator",
-          "text": "Honey badger won 93% of 1,000 simulated fights.",
+          "text": "They secured the victory in 95% of the time.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "The deciding factor: hitting power.",
+          "text": "It came down to hitting power.",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Want a fair fight? About 3 king cobras make it a coin flip, winning 48% of the time.",
+          "text": "Want a fair fight? About 3 king cobras make it a coin flip, winning 41% of the time.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "That's all from the arena. Good night, everybody!",
+          "text": "We'll see you for the next bout. Goodnight!",
           "at_event": null
         }
       ],
-      "fallback": true
+      "fallback": false
     }
   ],
   "assets": [
@@ -727,27 +702,27 @@
     {
       "stage": "simulate",
       "status": "done",
-      "detail": null
+      "detail": "cached"
     },
     {
       "stage": "summary",
       "status": "done",
-      "detail": null
+      "detail": "cached"
     },
     {
       "stage": "challenger",
       "status": "done",
-      "detail": null
+      "detail": "cached"
     },
     {
       "stage": "script",
-      "status": "fallback",
-      "detail": "Some of the commentary used the template script this time."
+      "status": "done",
+      "detail": null
     },
     {
       "stage": "audio",
-      "status": "fallback",
-      "detail": "Captions only this time, no announcer voice."
+      "status": "done",
+      "detail": null
     },
     {
       "stage": "music",

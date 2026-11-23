@@ -1,6 +1,6 @@
 {
-  "battle_id": "b-a2b57592",
-  "created_at": "2026-11-18T21:32:28.619667Z",
+  "battle_id": "b-461a9b50",
+  "created_at": "2026-11-23T13:41:20.849984Z",
   "matchup": {
     "fighters": [
       {
@@ -344,7 +344,7 @@
     "mean_duration_s": 75.77539999999999,
     "outcome": "win_1",
     "deciding_factor": "mass_kg",
-    "deciding_factor_explainer": "Size decided it: after scaling, Duck (1.14 kg normally, scaled to horse size) against 100 Horse (500 kg normally, scaled to duck size).",
+    "deciding_factor_explainer": "Size decided it: after scaling, Duck (1.14 kg normally, scaled to horse size) against 100 horses (500 kg normally, scaled to duck size).",
     "representative_log": [
       {
         "t": 0.0,
@@ -2722,7 +2722,7 @@
     "varied_side": 0,
     "count": 500,
     "win_prob_at_count": 0.455,
-    "message": "A fair fight needs 500 horses against 1 duck."
+    "message": "A fair fight needs 500 duck-sized horses against 1 horse-sized duck."
   },
   "challenger": {
     "entity": "African lion",
@@ -2735,37 +2735,37 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "LADIES AND GENTLEMEN, WELCOME TO BATTLE ROYALE!",
+          "text": "Ladies and gentlemen, welcome to the coliseum of the absurd!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Tonight, a collision of titans and tiny talents.",
+          "text": "It is indeed. Please ensure your seats are securely fastened.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "IN THE RED CORNER, THE STEEL-HOOFED STORM, HORSE X100!",
+          "text": "In the red corner, weighing five hundred kilograms... Horses x100!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "A collective mass of five hundred kilograms of muscle.",
+          "text": "A mass that suggests they might tip over if one sneezes.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "AND IN THE BLUE, THE FEATHERED FURY, DUCK X1!",
+          "text": "And in the blue corner, a single Duck!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Weighing in at just over one kilogram. Quite agile.",
+          "text": "One individual. One bird. Zero percent chance for the other side.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "ONE HUNDRED VS ONE. LET US SEE WHAT HAPPENS!",
+          "text": "Sheer mass decides all. Let the simulation begin!",
           "at_event": null
         }
       ],
@@ -2776,133 +2776,98 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Horse, all 100 of them, closes in. Here we go!",
+          "text": "The Horse closes in! The Duck stands ready!",
           "at_event": 0
         },
         {
+          "speaker": "color_commentator",
+          "text": "It is an odd matchup, indeed.",
+          "at_event": 1
+        },
+        {
           "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
+          "text": "Hooves thunder! A kick lands on the Duck!",
+          "at_event": 2
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "The Horse is throwing volume, but precision matters.",
+          "at_event": 5
+        },
+        {
+          "speaker": "announcer",
+          "text": "A sharp peck! The impact rocks the equine!",
+          "at_event": 10
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "One strike and the Horse goes down!",
           "at_event": 11
         },
         {
-          "speaker": "color_commentator",
-          "text": "Horse goes down! That is a knockout!",
+          "speaker": "announcer",
+          "text": "The Duck rises again! Another precise peck connects!",
+          "at_event": 20
+        },
+        {
+          "speaker": "announcer",
+          "text": "Down goes the Horse! The mass advantage fades fast!",
           "at_event": 21
         },
         {
-          "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 28
-        },
-        {
-          "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
+          "speaker": "color_commentator",
+          "text": "The Duck picks its shots with terrifying calm.",
           "at_event": 43
         },
         {
-          "speaker": "color_commentator",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 52
-        },
-        {
           "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
+          "text": "Another knockdown for the big horse!",
           "at_event": 64
         },
         {
-          "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 81
-        },
-        {
           "speaker": "color_commentator",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 91
-        },
-        {
-          "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
+          "text": "This is becoming a routine for the Duck.",
           "at_event": 96
         },
         {
           "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 112
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 126
-        },
-        {
-          "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 135
-        },
-        {
-          "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 144
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 148
-        },
-        {
-          "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 149
-        },
-        {
-          "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 150
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 151
-        },
-        {
-          "speaker": "announcer",
-          "text": "Horse goes down! That is a knockout!",
-          "at_event": 152
-        },
-        {
-          "speaker": "announcer",
-          "text": "And that is the fight!",
+          "text": "The fight is over! The Duck takes the victory!",
           "at_event": 236
         }
       ],
-      "fallback": true
+      "fallback": false
     },
     {
       "kind": "outro",
       "lines": [
         {
           "speaker": "announcer",
-          "text": "The simulation ends. Your winner: Duck!",
+          "text": "The computer has spoken. It is not even close.",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "It happened 100% of the time across 1,000 runs.",
+          "text": "Duck wins. Horse loses. Zero percent chance for the horse.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "It came down to sheer mass.",
+          "text": "Your winner: Duck!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "It won 100% of the time.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "And it came down to sheer mass.",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
           "text": "Want a fair fight? About 500 horses make it a coin flip, winning 46% of the time.",
-          "at_event": null
-        },
-        {
-          "speaker": "announcer",
-          "text": "Good night, and stay aerodynamic.",
           "at_event": null
         }
       ],
@@ -2963,13 +2928,13 @@
     },
     {
       "stage": "script",
-      "status": "fallback",
-      "detail": "Some of the commentary used the template script this time."
+      "status": "done",
+      "detail": null
     },
     {
       "stage": "audio",
-      "status": "fallback",
-      "detail": "Captions only this time, no announcer voice."
+      "status": "done",
+      "detail": null
     },
     {
       "stage": "music",
