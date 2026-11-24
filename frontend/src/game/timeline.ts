@@ -64,9 +64,14 @@ export const BEAT_MS: Record<BeatKind, number> = {
   end: 1600,
 };
 
-// Long logs are squeezed so a replay lasts at most this long at 1x, but no beat goes below MIN_BEAT_MS.
-export const MAX_REPLAY_MS = 90_000;
-export const MIN_BEAT_MS = 150;
+// Long logs are squeezed so a replay lasts at most this long at 1x, but no beat goes below
+// MIN_BEAT_MS. About 20 s since #580 (90 s before): a tester said a fight should last about 15 s,
+// and a 151-event bear-vs-6-wolves log ran about 82 s. A log that already fits is not squeezed.
+export const MAX_REPLAY_MS = 20_000;
+// 60 ms, so even the engine's longest log (MAX_LOG_EVENTS, 300 events) fits the cap with room
+// to spare: 300 x 60 ms = 18 s. That is still about four frames at 60 fps, enough to see a hit
+// flash; at 2x speed the old 150 ms floor was already 75 ms on screen.
+export const MIN_BEAT_MS = 60;
 
 const other = (side: Side): Side => (side === 0 ? 1 : 0);
 
@@ -174,6 +179,21 @@ function describe(
   }
 }
 
+// How much to shrink every beat so the log fits in MAX_REPLAY_MS. Beats that would drop below
+// MIN_BEAT_MS are held at that floor and take their share of the time first; the rest share
+// what is left. 1 when the log already fits.
+function squeezeFactor(raw: readonly number[]): number {
+  let rest = raw.reduce((a, b) => a + b, 0); // length of the beats not held at the floor
+  if (rest <= MAX_REPLAY_MS) return 1;
+  let budget = MAX_REPLAY_MS; // time left for those beats
+  for (const ms of [...raw].sort((a, b) => a - b)) {
+    if ((ms * budget) / rest >= MIN_BEAT_MS) break; // this beat and every longer one stay above
+    budget -= MIN_BEAT_MS;
+    rest -= ms;
+  }
+  return rest > 0 ? Math.max(0, budget) / rest : 0;
+}
+
 // Build the replay timeline: one beat per event, in log order, back to back.
 // Beat lengths depend only on the kind of event; the log's `t` is ignored on purpose (a summary
 // KO's `t` is the last logged event, not when that crowd fell), so do not time beats from `t`.
@@ -184,11 +204,11 @@ export function buildTimeline(
 ): Timeline {
   const log = result.representative_log;
   const raw = log.map((event) => BEAT_MS[describe(event, result.outcome).kind]);
-  const sum = raw.reduce((a, b) => a + b, 0);
-  const squeeze = sum > MAX_REPLAY_MS ? MAX_REPLAY_MS / sum : 1;
+  const squeeze = squeezeFactor(raw);
   let clock = 0;
   const beats = log.map((event, index): Beat => {
-    const duration = Math.max(MIN_BEAT_MS, Math.round(raw[index] * squeeze));
+    // Rounded down, so the squeezed beats never add up to more than MAX_REPLAY_MS.
+    const duration = Math.max(MIN_BEAT_MS, Math.floor(raw[index] * squeeze));
     const beat: Beat = {
       index,
       start: clock,

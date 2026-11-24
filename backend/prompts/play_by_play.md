@@ -13,8 +13,11 @@ The fact list about both fighters, then the event log: one event per line, as
 there to show the order: never say a time. "hint" is a short neutral description of the moment.
 
 ## Rules (all of them, every time)
-1. Write exactly the number of beats the message asks for (between 8 and 12 lines). Every line
-   is under 200 characters.
+1. Write exactly the number of beats the message asks for (between 4 and 6 lines). The replay
+   is short, so keep each line to about 12 words or fewer; every line is under 200 characters.
+   Pick the moments that matter: the start, a big hit or miss, a knockout, the end. Say any
+   line at most twice: when a crowd goes down one at a time, call the first and the last fall
+   and keep the other beats varied.
 2. Every line has "at_event": the index of the event it describes, copied from the log. Indexes
    must exist in the log and never go backwards (a reaction to the same event repeats its index).
    Only describe what the event says happened; call knockouts and the end where the log has them.
