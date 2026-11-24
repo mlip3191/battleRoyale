@@ -1,10 +1,12 @@
 """#575: every logged event carries each side's hit points, so a health bar can drain per hit."""
 
+import pytest
+
 from app.models.matchup import FighterRequest, Matchup
 from app.models.simulation import EventType, FightEvent, SimulationResult
 from app.models.terrain import Terrain
 from app.research.seed_fighters import find_seed_sheet
-from app.simulation.engine import OUT_OF_ACTION, run
+from app.simulation.engine import OUT_OF_ACTION, _hp, run
 from tests.property.sim_helpers import (
     ant,
     duck,
@@ -18,7 +20,8 @@ from tests.property.sim_helpers import (
 from tests.property.test_simulation_venom import target, viper
 
 CLOSING = (EventType.END, EventType.STALEMATE)
-# Hit points and damage are each logged to 0.1, so a drop can read up to 0.15 off its damage.
+# Damage is logged to 0.1 and hit points to 0.1 or finer, so a drop can read up to 0.15 off its
+# damage.
 ROUNDING = 0.15 + 1e-9
 
 
@@ -144,3 +147,19 @@ def test_a_regenerating_fighter_stays_within_its_hit_points():
     troll = make_dragon(["regeneration"], name="troll")
     result = run(matchup_of(1, 3), [troll, lion()], runs=20, explain=False)
     check_log(result, heals=True)
+
+
+@pytest.mark.parametrize(
+    ("value", "start", "logged"),
+    [
+        (0.0, 0.0, 0.0),
+        (-1.0, 0.0, 0.0),  # never below empty
+        (4.12115e-13, 1000.0, 0.0),  # running-total drift on a wiped-out side reads exactly 0
+        (0.257234567, 0.3, 0.257235),  # a tiny crowd keeps 6 significant digits
+        (9.99, 0.0, 9.99),
+        (12345.678, 0.0, 12345.7),  # 0.1 is already finer than 6 significant digits
+        (10_745_920.34, 0.0, 10_745_920.3),  # a big total is never coarser than 0.1
+    ],
+)
+def test_hit_points_are_logged_to_0_1_or_finer_and_never_as_float_noise(value, start, logged):
+    assert _hp(value, start) == logged

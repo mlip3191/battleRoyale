@@ -52,11 +52,11 @@ def _tick_up(t: float) -> float:
     return round(math.ceil(t / c.TICK_S - 1e-9) * c.TICK_S, 6)
 
 
-def _hp(value: float) -> float:
-    """Hit points for the log (#575): to 0.1 at least, and to 6 significant digits when smaller,
-    so a crowd of tiny fighters (10,000 ants hold about 0.3 in all) still drains visibly."""
-    value = max(value, 0.0)
-    if value == 0.0:
+def _hp(value: float, start: float = 0.0) -> float:
+    """Hit points for the log (#575): to 0.1, or to 6 significant digits when that is finer, so a
+    crowd of tiny fighters (10,000 ants hold about 0.3 in all) still drains visibly. `start` is the
+    side's starting total: a running total drifts by about 1e-14, so next to nothing reads 0."""
+    if value <= 1e-9 * start or value <= 0.0:
         return 0.0
     return round(value, max(1, 5 - math.floor(math.log10(value))))
 
@@ -264,7 +264,7 @@ def run_once(
             return
         else:
             left = hp_now[0]() if hp_now else start_hp
-            hp_left = (_hp(left[0]), _hp(left[1]))
+            hp_left = (_hp(left[0], start_hp[0]), _hp(left[1], start_hp[1]))
             events.append(event.model_copy(update={"hp_left": hp_left}))
 
     starts = _starts(sides)
