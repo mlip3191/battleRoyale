@@ -171,6 +171,45 @@ test("a side that never wins says its standing fighters include any that ran awa
   expect(verdict.textContent).not.toContain("left standing");
 });
 
+// #587: "Tiger wins 55%" beside "about 0.6 tigers still standing" read as a contradiction. When the
+// winner's average is under 1, the card says the averages cover every fight, wins and losses alike.
+test("a winner averaging under 1 standing says the averages cover every fight (#587)", () => {
+  const result = {
+    ...record.result!,
+    outcome: "win_0" as const,
+    win_prob: [0.55, 0.45] as [number, number],
+    win_prob_ci95: [
+      [0.52, 0.58],
+      [0.42, 0.48],
+    ] as [[number, number], [number, number]],
+    draw_prob: 0,
+    mean_survivors: [0.6, 67.4] as [number, number],
+  };
+  show({ ...record, result });
+  const verdict = screen.getByRole("region", { name: /^Winner:/ });
+  expect(verdict.textContent).toContain("about 0.6 still standing");
+  expect(verdict.textContent).toContain("count every simulated fight");
+  expect(verdict.textContent).toContain("won and lost alike");
+});
+
+test("a winner averaging 1 or more standing keeps the plain wording (#587)", () => {
+  show(record);
+  const verdict = screen.getByRole("region", { name: /^Winner:/ });
+  expect(verdict.textContent).not.toContain("count every simulated fight");
+  const draw = {
+    ...record.result!,
+    outcome: "draw" as const,
+    win_prob: [0.3, 0.3] as [number, number],
+    draw_prob: 0.4,
+    mean_survivors: [0.2, 0.3] as [number, number],
+  };
+  cleanup(); // one page at a time
+  show({ ...record, result: draw });
+  expect(
+    screen.getByRole("region", { name: "It's a draw" }).textContent,
+  ).not.toContain("count every simulated fight");
+});
+
 test("averages over many runs are rounded to one decimal, and duration sits outside the draw row", () => {
   const result = {
     ...record.result!,

@@ -132,6 +132,12 @@ export function VerdictBanner({
           </div>
         </dl>
       )}
+      {winner !== null && result.mean_survivors[winner] < 1 && (
+        <p className={styles.muted}>
+          Those averages count every simulated fight, the ones each side won and
+          lost alike, so even the winner can average under 1 still standing.
+        </p>
+      )}
       {result.outcome !== "no_contest" && (
         <p className={styles.muted}>
           Fights last about {average(result.mean_duration_s)} s on average.
