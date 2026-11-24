@@ -4,7 +4,7 @@
 
 MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM), Adam Fondale, Gunnar O'Connor, Felipe Cervino, Dillon Smart.
 
-> **Status:** feature freeze Nov 22, 2026 · code complete Nov 25, 2026 (tagged `v1.0`). Every task and bug is an issue on the [project board](https://github.com/users/mlip3191/projects/2).
+> **Status:** feature freeze Nov 22, 2026 · code complete Nov 25, 2026 (to be tagged `v1.0` then). Every task and bug is an issue on the [project board](https://github.com/users/mlip3191/projects/2).
 
 ## Start here
 
