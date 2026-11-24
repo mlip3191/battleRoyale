@@ -125,7 +125,7 @@ Wait until you see **"Battle Royale is starting at http://localhost:8000"** and 
 
 Open your web browser (Chrome, Edge, Safari or Firefox) and go to **http://localhost:8000**.
 
-![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button, the "Try one of these" example matchups and the "Showcase (Ready Made)" battles](images/user-guide/05-home.png)
+![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button, the "Stumped? Try one of the sample battles below" example matchups and the "Showcase (Ready Made)" battles](images/user-guide/05-home.png)
 
 On the battle and results pages, a **Home** button in the top bar brings you back here.
 
@@ -135,7 +135,7 @@ On the battle and results pages, a **Home** button in the top bar brings you bac
 
 ### Type a matchup
 
-Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under **Try one of these**, below the box: it fills in the box, and then you click **FIGHT!**. An example starts a new fight, researched and simulated live, so it takes about a minute or two.
+The instructions sit right under the heading. Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under **Stumped? Try one of the sample battles below**, below the box: it fills in the box, and then you click **FIGHT!**. An example starts a new fight, researched and simulated live, so it takes about a minute or two.
 
 Good examples:
 
