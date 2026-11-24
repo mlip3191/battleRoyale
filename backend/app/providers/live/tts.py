@@ -117,6 +117,9 @@ class LiveTTS:
     # The line in the reference voice, or None when the stock voice should read it. One clip
     # request at a time on this adapter (shared by the whole show); a clip turned off while
     # this line waited is not sent, and right after a timeout or 5xx it is tried only once.
+    # A 429, another 4xx, or a non-WAV reply between two failing lines neither counts nor
+    # resets, so "fail, 429, fail" turns the clip off; after one failure, clip tries stay single
+    # requests until a success.
     async def _speak_cloned(self, payload: dict[str, Any]) -> SpokenWav | None:
         timeout_s = min(self.timeout_s, REF_TIMEOUT_S)
         async with self._ref_limit:

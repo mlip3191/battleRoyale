@@ -690,8 +690,10 @@ async def test_reference_voice_requests_on_one_adapter_do_not_overlap(tmp_path: 
 
 # --- a voice service that keeps failing (#570) -----------------------------------------------
 
-SCALE = 0.01  # 1 real second = 10 ms, so a whole show's timing runs in about a second
+# 1 real second = 50 ms: a whole show runs in about 4 s, leaving slack for a slow CI timer.
+SCALE = 0.05
 TYPICAL_LINE_S = 3.0  # one line's latency: Adam's live run spoke 22 lines in about 67 s (#567)
+SLOW_LINE_S = 5.0  # a slow line: "a normal line takes about 5 s" (REF_TIMEOUT_S in tts.py)
 
 
 # The longest show the writer allows: every script at its most lines.
@@ -753,8 +755,9 @@ def test_a_whole_show_fits_the_per_file_budget_with_the_clip_slot_wait() -> None
     backoff = sum(http.BACKOFF_S * 2**n for n in range(REF_RETRIES))
     first = (REF_RETRIES + 1) * REF_TIMEOUT_S + backoff
     probes = (REF_FAILURES_TO_STOP - 1) * (REF_PROBE_RETRIES + 1) * REF_TIMEOUT_S
-    rest = math.ceil((lines - 1) / audio.SPEAK_CONCURRENCY) * TYPICAL_LINE_S
-    assert first + probes + rest < audio.ITEM_TIMEOUT_S
+    rounds = math.ceil((lines - 1) / audio.SPEAK_CONCURRENCY)
+    for line_s in (TYPICAL_LINE_S, SLOW_LINE_S):
+        assert first + probes + rounds * line_s < audio.ITEM_TIMEOUT_S
 
 
 # A server whose clip replies come from `clip` (one reply per clip request, in order); stock
@@ -778,8 +781,8 @@ class ClipScript:
         return sum(self.sent)
 
 
-TIMEOUT = httpx.ReadTimeout
-OK = httpx.Response(200, content=tiny_wav(CLONED_RATE))
+TIMEOUT_ERROR = httpx.ReadTimeout
+CLONED_REPLY = httpx.Response(200, content=tiny_wav(CLONED_RATE))
 
 
 @pytest.mark.parametrize("status", sorted(REF_REJECTED_STATUSES))
@@ -800,7 +803,7 @@ async def test_a_400_falls_back_for_that_line_only_and_is_not_retried(
 ) -> None:
     monkeypatch.setattr(http, "BACKOFF_S", 0.0)
     assert 400 not in REF_REJECTED_STATUSES and 400 not in http.RETRY_STATUSES
-    server = ClipScript(httpx.Response(400, text="bad input"), OK)
+    server = ClipScript(httpx.Response(400, text="bad input"), CLONED_REPLY)
     live = live_tts(server, **clip_settings(tmp_path))
     assert (await live.speak("One", "default")).voice == "stock"
     assert server.sent == [True, False]  # one clip try, then the stock voice
@@ -809,7 +812,7 @@ async def test_a_400_falls_back_for_that_line_only_and_is_not_retried(
 
 
 @pytest.mark.parametrize(
-    ("failure", "label"), [(TIMEOUT, "ProviderError"), (httpx.Response(503), "HTTP 503")]
+    ("failure", "label"), [(TIMEOUT_ERROR, "ProviderError"), (httpx.Response(503), "HTTP 503")]
 )
 async def test_two_failing_lines_in_a_row_turn_the_clip_off_for_the_show(
     tmp_path: Path,
@@ -842,8 +845,8 @@ async def test_a_clip_success_resets_the_failure_count(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(http, "BACKOFF_S", 0.0)
-    fail_line = [TIMEOUT] * (REF_RETRIES + 1)
-    server = ClipScript(*fail_line, OK, *fail_line, OK)
+    fail_line = [TIMEOUT_ERROR] * (REF_RETRIES + 1)
+    server = ClipScript(*fail_line, CLONED_REPLY, *fail_line, CLONED_REPLY)
     live = live_tts(server, **clip_settings(tmp_path))
     voices = [(await live.speak(text, "default")).voice for text in ("1", "2", "3", "4")]
     assert voices == ["stock", "cloned", "stock", "cloned"]
@@ -857,7 +860,7 @@ async def test_a_429_line_does_not_count_toward_turning_the_clip_off(
 ) -> None:
     monkeypatch.setattr(http, "BACKOFF_S", 0.0)
     busy = [httpx.Response(429, json={"error": {"code": "queue_full"}})] * (REF_RETRIES + 1)
-    server = ClipScript(*busy, *busy, *busy, OK)
+    server = ClipScript(*busy, *busy, *busy, CLONED_REPLY)
     live = live_tts(server, **clip_settings(tmp_path))
     voices = [(await live.speak(text, "default")).voice for text in ("1", "2", "3", "4")]
     assert voices == ["stock", "stock", "stock", "cloned"]
