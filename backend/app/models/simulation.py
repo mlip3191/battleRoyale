@@ -42,6 +42,9 @@ class FightEvent(Contract):
     """Damage dealt, when the event is a hit."""
     text_hint: str
     """Short neutral description for narration, e.g. "bite lands"."""
+    hp_left: tuple[float, float] | None = None
+    """Each side's combined hit points still standing after this event, from the engine (#575):
+    knocked-out and out-of-action fighters count 0. None on closing summaries and old logs."""
 
 
 class SimulationResult(Contract):
@@ -69,6 +72,9 @@ class SimulationResult(Contract):
     """Plain-language explanation of the deciding factor, written by a code template."""
     representative_log: list[FightEvent] = Field(max_length=300)
     """Events of one typical fight, capped at 300."""
+    start_hp: tuple[float, float] | None = None
+    """Each side's combined hit points at the start of the representative fight (#575), so a
+    health bar can show `hp_left` as a share; None on results made before it existed."""
 
 
 class FairFight(Contract):

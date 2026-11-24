@@ -5,6 +5,7 @@ import base64
 import hashlib
 import io
 import json
+import math
 import wave
 from collections.abc import Callable
 from dataclasses import replace
@@ -18,11 +19,15 @@ from pydantic import SecretStr, ValidationError
 from app.config import REPO_ROOT, Settings, use_settings
 from app.media import audio
 from app.models.narration import Script, ScriptLine
+from app.narration.writer import LINE_COUNTS
 from app.providers.live import http
 from app.providers.live import tts as tts_module
 from app.providers.live.http import ProviderError, post_bytes
 from app.providers.live.tts import (
     REF_CONCURRENCY,
+    REF_FAILURES_TO_STOP,
+    REF_PROBE_RETRIES,
+    REF_REJECTED_STATUSES,
     REF_RETRIES,
     REF_TIMEOUT_S,
     LiveTTS,
@@ -581,8 +586,9 @@ async def test_later_lines_and_scripts_after_a_failure_stay_off_the_reference_ke
     live = live_tts(server, **settings)  # one adapter for the whole show, as in make_audio
 
     assets = await audio.make_audio([intro, outro], provider=live, media_dir=media)
-    # 503 is transient: the clip stays loaded and every line still tries it, then falls back.
-    assert live.ref_audio is not None and server.ref_tries() >= 4
+    # Two 503 lines in a row turn the clip off (#570); the lines behind them skip it.
+    assert live.ref_audio is None
+    assert server.ref_tries() == (REF_RETRIES + 1) + (REF_PROBE_RETRIES + 1)
     stock_keys = {both_keys(s, settings)[1].asset_id for s in (intro, outro)}
     assert {a.asset_id for a in assets} == stock_keys
     for script in (intro, outro):
@@ -680,6 +686,185 @@ async def test_reference_voice_requests_on_one_adapter_do_not_overlap(tmp_path: 
     results = await asyncio.gather(*(live.speak(f"Line {i}", "default") for i in range(6)))
     assert most == 1
     assert all(getattr(wav, "voice", None) == "cloned" for wav in results)
+
+
+# --- a voice service that keeps failing (#570) -----------------------------------------------
+
+# 1 real second = 50 ms: a whole show runs in about 4 s, leaving slack for a slow CI timer.
+SCALE = 0.05
+TYPICAL_LINE_S = 3.0  # one line's latency: Adam's live run spoke 22 lines in about 67 s (#567)
+SLOW_LINE_S = 5.0  # a slow line: "a normal line takes about 5 s" (REF_TIMEOUT_S in tts.py)
+
+
+# The longest show the writer allows: every script at its most lines.
+def longest_show() -> list[Script]:
+    return [
+        Script(
+            kind=kind,
+            lines=[ScriptLine(speaker="announcer", text=f"{kind} {n}") for n in range(high)],
+        )
+        for kind, (_low, high) in LINE_COUNTS.items()
+    ]
+
+
+async def test_a_reference_voice_that_always_times_out_still_voices_the_whole_show(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Real timing, scaled down: a hung clip request takes its whole timeout, then the stock
+    # voice takes a typical line. All three scripts run at once, as in the pipeline.
+    monkeypatch.setattr(tts_module, "REF_TIMEOUT_S", REF_TIMEOUT_S * SCALE)
+    monkeypatch.setattr(http, "BACKOFF_S", http.BACKOFF_S * SCALE)
+    settings = clip_settings(tmp_path)
+    use_settings(mock_settings(data_dir=tmp_path, **settings))
+
+    async def hung_clip(request: httpx.Request) -> httpx.Response:
+        if "ref_audio" in json.loads(request.content):
+            await asyncio.sleep(tts_module.REF_TIMEOUT_S)
+            raise httpx.ReadTimeout("hung", request=request)
+        await asyncio.sleep(TYPICAL_LINE_S * SCALE)
+        return httpx.Response(200, content=tiny_wav(STOCK_RATE))
+
+    scripts = longest_show()
+    media = tmp_path / "media"
+    live = live_tts(hung_clip, **settings)  # type: ignore[arg-type]
+    clip_tries = 0
+    post = live._post
+
+    async def counted_post(payload, retries=None, timeout_s=None):  # type: ignore[no-untyped-def]
+        nonlocal clip_tries
+        clip_tries += "ref_audio" in payload
+        return await post(payload, retries, timeout_s)
+
+    live._post = counted_post  # type: ignore[method-assign]
+    assets = await audio.make_audio(
+        scripts, provider=live, media_dir=media, timeout_s=audio.ITEM_TIMEOUT_S * SCALE
+    )
+    assert [a.script_kind for a in assets] == [s.kind for s in scripts]
+    assert all(wav_rate(saved_file(media, a)) == STOCK_RATE for a in assets)
+    # Only two lines tried the clip; every line queued behind them went straight to stock.
+    assert live.ref_audio is None and clip_tries == REF_FAILURES_TO_STOP
+
+
+# The worst case in plain arithmetic, counting the wait for the one-at-a-time clip slot.
+def test_a_whole_show_fits_the_per_file_budget_with_the_clip_slot_wait() -> None:
+    lines = sum(high for _low, high in LINE_COUNTS.values())
+    # Healthy service: the show's clip lines are spoken one at a time, so they add up.
+    assert lines * TYPICAL_LINE_S < audio.ITEM_TIMEOUT_S
+    # Hung service: the first line uses every retry, each later failing line gets one quick try,
+    # then the rest of the show is read in the stock voice, a few lines at a time.
+    backoff = sum(http.BACKOFF_S * 2**n for n in range(REF_RETRIES))
+    first = (REF_RETRIES + 1) * REF_TIMEOUT_S + backoff
+    probes = (REF_FAILURES_TO_STOP - 1) * (REF_PROBE_RETRIES + 1) * REF_TIMEOUT_S
+    rounds = math.ceil((lines - 1) / audio.SPEAK_CONCURRENCY)
+    for line_s in (TYPICAL_LINE_S, SLOW_LINE_S):
+        assert first + probes + rounds * line_s < audio.ITEM_TIMEOUT_S
+
+
+# A server whose clip replies come from `clip` (one reply per clip request, in order); stock
+# requests always succeed. Records whether each request carried the clip.
+class ClipScript:
+    def __init__(self, *clip: httpx.Response | type[Exception]) -> None:
+        self.clip = list(clip)
+        self.sent: list[bool] = []
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        has_ref = "ref_audio" in json.loads(request.content)
+        self.sent.append(has_ref)
+        if not has_ref:
+            return httpx.Response(200, content=tiny_wav(STOCK_RATE))
+        reply = self.clip.pop(0)
+        if isinstance(reply, type):
+            raise reply("hung", request=request)  # type: ignore[call-arg]
+        return reply
+
+    def clip_tries(self) -> int:
+        return sum(self.sent)
+
+
+TIMEOUT_ERROR = httpx.ReadTimeout
+CLONED_REPLY = httpx.Response(200, content=tiny_wav(CLONED_RATE))
+
+
+@pytest.mark.parametrize("status", sorted(REF_REJECTED_STATUSES))
+async def test_each_rejected_status_drops_the_clip_for_the_show(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: int
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    server = ClipScript(httpx.Response(status, text="bad ref"))
+    live = live_tts(server, **clip_settings(tmp_path))
+    assert (await live.speak("One", "default")).voice == "stock"
+    assert live.ref_audio is None and server.clip_tries() == 1  # not retried
+    assert (await live.speak("Two", "default")).voice == "stock"
+    assert server.clip_tries() == 1  # the second line never sent the clip
+
+
+async def test_a_400_falls_back_for_that_line_only_and_is_not_retried(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    assert 400 not in REF_REJECTED_STATUSES and 400 not in http.RETRY_STATUSES
+    server = ClipScript(httpx.Response(400, text="bad input"), CLONED_REPLY)
+    live = live_tts(server, **clip_settings(tmp_path))
+    assert (await live.speak("One", "default")).voice == "stock"
+    assert server.sent == [True, False]  # one clip try, then the stock voice
+    assert live.ref_audio is not None
+    assert (await live.speak("Two", "default")).voice == "cloned"
+
+
+@pytest.mark.parametrize(
+    ("failure", "label"), [(TIMEOUT_ERROR, "ProviderError"), (httpx.Response(503), "HTTP 503")]
+)
+async def test_two_failing_lines_in_a_row_turn_the_clip_off_for_the_show(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    failure: httpx.Response | type[Exception],
+    label: str,
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    server = ClipScript(*[failure] * 10)
+    live = live_tts(server, **clip_settings(tmp_path))
+    assert (await live.speak("One", "default")).voice == "stock"
+    assert live.ref_audio is not None  # one failing line keeps the clip
+    assert server.clip_tries() == REF_RETRIES + 1
+    assert (await live.speak("Two", "default")).voice == "stock"
+    assert live.ref_audio is None
+    assert server.clip_tries() == REF_RETRIES + 1 + REF_PROBE_RETRIES + 1  # one quick try
+    assert (await live.speak("Three", "default")).voice == "stock"
+    assert server.clip_tries() == REF_RETRIES + 2  # line three went straight to stock
+    turned_off = [r.getMessage() for r in caplog.records if "turned off" in r.getMessage()]
+    assert turned_off == [
+        f"reference voice turned off for this show after {REF_FAILURES_TO_STOP} failures "
+        f"in a row ({label})"
+    ]
+    for record in caplog.records:
+        assert "decoy-host" not in record.getMessage() and DECOY_KEY not in record.getMessage()
+
+
+async def test_a_clip_success_resets_the_failure_count(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    fail_line = [TIMEOUT_ERROR] * (REF_RETRIES + 1)
+    server = ClipScript(*fail_line, CLONED_REPLY, *fail_line, CLONED_REPLY)
+    live = live_tts(server, **clip_settings(tmp_path))
+    voices = [(await live.speak(text, "default")).voice for text in ("1", "2", "3", "4")]
+    assert voices == ["stock", "cloned", "stock", "cloned"]
+    assert live.ref_audio is not None
+    # After the success, the next failing line got every retry again, not one quick try.
+    assert server.clip_tries() == 2 * (REF_RETRIES + 1) + 2
+
+
+async def test_a_429_line_does_not_count_toward_turning_the_clip_off(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(http, "BACKOFF_S", 0.0)
+    busy = [httpx.Response(429, json={"error": {"code": "queue_full"}})] * (REF_RETRIES + 1)
+    server = ClipScript(*busy, *busy, *busy, CLONED_REPLY)
+    live = live_tts(server, **clip_settings(tmp_path))
+    voices = [(await live.speak(text, "default")).voice for text in ("1", "2", "3", "4")]
+    assert voices == ["stock", "stock", "stock", "cloned"]
+    assert server.clip_tries() == 3 * (REF_RETRIES + 1) + 1  # every busy line got every retry
 
 
 # The committed synthetic voice files (D-67).

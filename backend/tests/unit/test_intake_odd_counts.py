@@ -211,3 +211,139 @@ async def test_minus_three_lions_fight_as_three_with_the_note_on_the_card() -> N
     assert result.matchup.assumptions[0] == (
         "We read '-3' as 3, since a side can't have fewer than zero fighters."
     )
+
+
+# --- 6. A group word with a filler word or two numbers (#573) ---------------------------------
+
+PACK_NOTE = "Assumed 6 wolves for 'pack', since no number was given."
+
+
+# The side's fighter and the card's notes, read end to end in mock mode.
+async def first_side(text: str) -> tuple[FighterRequest, list[str]]:
+    result = await parse_matchup(text)
+    assert result.status == "ok" and result.matchup is not None
+    return result.matchup.fighters[0], result.matchup.assumptions
+
+
+async def test_a_typed_count_wins_over_the_group_default_past_the_word_the() -> None:
+    wolves, notes = await first_side("a pack of the 12 wolves vs a moose")
+    assert (wolves.entity, wolves.count) == ("wolf", 12)
+    assert not [n for n in notes if n.startswith("Assumed") and "for 'pack'" in n]
+
+
+async def test_two_packs_of_five_wolves_are_ten_wolves_with_a_note() -> None:
+    wolves, notes = await first_side("2 packs of 5 wolves vs a moose")
+    assert (wolves.entity, wolves.count) == ("wolf", 10)
+    assert "We read '2 packs of 5' as 10." in notes
+
+
+@pytest.mark.parametrize(
+    ("raw", "count"),
+    [
+        ("a pack of the 12 wolves", 12),
+        ("a swarm of about 500 bees", 500),
+        ("a herd of some 40 zebras", 40),
+        ("a flock of around fifty geese", 50),
+        ("a pod of roughly 8 orcas", 8),
+        ("a pack of maybe a dozen wolves", 12),
+        ("a pack of a dozen wolves", 12),
+    ],
+)
+def test_a_number_typed_after_a_filler_word_wins_over_the_group_default(
+    raw: str, count: int
+) -> None:
+    assert read_count(raw) == CountReading(count)
+
+
+@pytest.mark.parametrize(
+    ("raw", "count", "note"),
+    [
+        ("2 packs of 5 wolves", 10, "We read '2 packs of 5' as 10."),
+        ("two packs of a dozen wolves", 24, "We read 'two packs of a dozen' as 24."),
+        ("3 swarms of 1,000 bees", 3000, "We read '3 swarms of 1,000' as 3,000."),
+        ("twenty-five herds of 4 zebras", 100, "We read 'twenty-five herds of 4' as 100."),
+    ],
+)
+def test_a_count_of_groups_times_a_count_per_group_is_multiplied_with_a_note(
+    raw: str, count: int, note: str
+) -> None:
+    request, notes = build_fighter(ParsedFighter(raw=raw, entity=raw), 10_000)
+    assert request.count == count
+    assert notes == [note]
+    assert request.variant is None
+
+
+def test_one_group_of_five_is_five_with_no_note() -> None:
+    request, notes = build_fighter(ParsedFighter(raw="one pack of 5 wolves", entity="wolf"), 10_000)
+    assert (request.count, notes) == (5, [])
+
+
+def test_multiplied_groups_still_stop_at_the_per_side_cap() -> None:
+    raw = "100 swarms of 1000 bees"
+    request, notes = build_fighter(ParsedFighter(raw=raw, entity="bee"), 10_000)
+    assert request.count == 10_000
+    assert notes == [
+        "We read '100 swarms of 1000' as 100,000.",
+        "Capped the bee side at 10,000 (the most per side); you asked for 100,000.",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("raw", "problem"),
+    [
+        ("0 packs of 5 wolves", "zero"),
+        ("2 packs of 0 wolves", "zero"),
+        ("2 packs of 1/2 wolves", "fraction"),
+        ("half a pack of 12 wolves", "fraction"),
+    ],
+)
+def test_a_zero_or_fraction_with_groups_is_still_flagged(raw: str, problem: str) -> None:
+    assert read_count(raw).problem == problem
+
+
+@pytest.mark.parametrize(
+    ("raw", "reading"),
+    [
+        ("a pack of the wolves", CountReading(6, None, "pack")),
+        ("a pack of 12-foot wolves", CountReading(6, None, "pack")),
+        ("a wolf from a pack of 12", CountReading(1)),
+        ("a pack of A-10 Warthogs", CountReading(6, None, "pack")),
+        ("2 packs of A-10s", CountReading(2)),
+    ],
+)
+def test_a_group_with_no_count_after_it_keeps_its_default(raw: str, reading: CountReading) -> None:
+    assert read_count(raw) == reading
+
+
+async def test_five_colonies_of_four_ants_are_twenty_ants_with_no_stray_colonies() -> None:
+    ants, notes = await first_side("5 colonies of 4 ants vs a frog")
+    assert (ants.entity, ants.count, ants.variant) == ("ant", 20, None)
+    assert "We read '5 colonies of 4' as 20." in notes
+    assert not [n for n in notes if "colonies" in n and not n.startswith("We read '5 colonies")]
+
+
+async def test_a_filler_word_never_ends_up_in_the_fighters_name() -> None:
+    wolves, notes = await first_side("a pack of about 12 wolves vs a moose")
+    assert (wolves.entity, wolves.count, wolves.variant) == ("wolf", 12, None)
+    assert not [n for n in notes if "about" in n]
+    assert without_group(normalize_entity("pack of about 12 wolves")) == "wolf"
+
+
+@pytest.mark.parametrize(
+    ("text", "count", "note"),
+    [
+        ("a pack of wolves vs a moose", 6, PACK_NOTE),
+        ("a pack of 12 wolves vs a moose", 12, None),
+        ("2 packs of wolves vs a moose", 2, None),
+        ("1e3 ants vs a moose", 1000, "We read '1e3' as 1,000."),
+    ],
+)
+async def test_the_561_group_and_odd_count_readings_are_unchanged(
+    text: str, count: int, note: str | None
+) -> None:
+    fighter, notes = await first_side(text)
+    assert fighter.count == count
+    if note:
+        assert note in notes
+    else:
+        assert not [n for n in notes if n.startswith(("Assumed", "We read"))]

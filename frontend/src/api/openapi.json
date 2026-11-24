@@ -781,6 +781,29 @@
             "description": "Short neutral description for narration, e.g. \"bite lands\".",
             "title": "Text Hint",
             "type": "string"
+          },
+          "hp_left": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Each side's combined hit points still standing after this event, from the engine (#575):\nknocked-out and out-of-action fighters count 0. None on closing summaries and old logs.",
+            "title": "Hp Left"
           }
         },
         "required": [
@@ -1365,6 +1388,29 @@
             "maxItems": 300,
             "title": "Representative Log",
             "type": "array"
+          },
+          "start_hp": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Each side's combined hit points at the start of the representative fight (#575), so a\nhealth bar can show `hp_left` as a share; None on results made before it existed.",
+            "title": "Start Hp"
           }
         },
         "required": [
