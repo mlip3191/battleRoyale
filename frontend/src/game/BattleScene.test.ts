@@ -613,6 +613,25 @@ describe("health bars (#503)", () => {
         expect(f.scaleX).toBeCloseTo(expected[i]),
       );
     });
+
+    test("a side that flees empties its bar; the other keeps its hit-point share", () => {
+      const fled = big.representative_log.find((e) => e.type === "flee")!;
+      const other = fled.side === 0 ? 1 : 0;
+      const left = big.representative_log
+        .filter((e) => e.hp_left)
+        .at(-1)!.hp_left!;
+      const { scene } = stage(big, [1000, 1], true);
+      playAll(scene);
+      expect(fills(scene)[fled.side].scaleX).toBe(0);
+      expect(fills(scene)[other].scaleX).toBeCloseTo(
+        left[other] / big.start_hp![other],
+      );
+    });
+
+    test("a fresh replay starts both bars full", () => {
+      const { scene } = stage(hundred as SimulationResult, [100, 5], false);
+      expect(fills(scene).map((f) => f.scaleX)).toEqual([1, 1]);
+    });
   });
 
   test("a 1,000-strong crowd's bar follows the log's knock-outs", () => {

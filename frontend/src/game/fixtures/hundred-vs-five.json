@@ -22,7 +22,7 @@
       "group_size": 100,
       "damage": null,
       "text_hint": "closes in",
-      "hp_left": [1135.0, 10991.3]
+      "hp_left": [1134.95, 10991.3]
     },
     {
       "t": 0.0,
@@ -33,7 +33,7 @@
       "group_size": 5,
       "damage": null,
       "text_hint": "closes in",
-      "hp_left": [1135.0, 10991.3]
+      "hp_left": [1134.95, 10991.3]
     },
     {
       "t": 0.4,
@@ -44,7 +44,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1135.0, 10990.2]
+      "hp_left": [1134.95, 10990.2]
     },
     {
       "t": 0.4,
@@ -55,7 +55,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1135.0, 10989.0]
+      "hp_left": [1134.95, 10989.0]
     },
     {
       "t": 0.4,
@@ -66,7 +66,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1135.0, 10987.9]
+      "hp_left": [1134.95, 10987.9]
     },
     {
       "t": 0.4,
@@ -77,7 +77,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1135.0, 10986.8]
+      "hp_left": [1134.95, 10986.8]
     },
     {
       "t": 0.4,
@@ -88,7 +88,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1135.0, 10985.6]
+      "hp_left": [1134.95, 10985.6]
     },
     {
       "t": 0.4,
@@ -506,7 +506,7 @@
       "group_size": 1,
       "damage": 161.7,
       "text_hint": "bite lands",
-      "hp_left": [1112.3, 10946.9]
+      "hp_left": [1112.25, 10946.9]
     },
     {
       "t": 0.9,
@@ -517,7 +517,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1112.3, 10946.9]
+      "hp_left": [1112.25, 10946.9]
     },
     {
       "t": 0.9,
@@ -528,7 +528,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "bite misses",
-      "hp_left": [1112.3, 10946.9]
+      "hp_left": [1112.25, 10946.9]
     },
     {
       "t": 1.0,
@@ -539,7 +539,7 @@
       "group_size": 1,
       "damage": 161.7,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10946.9]
+      "hp_left": [1100.91, 10946.9]
     },
     {
       "t": 1.0,
@@ -550,7 +550,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1100.9, 10946.9]
+      "hp_left": [1100.91, 10946.9]
     },
     {
       "t": 1.2,
@@ -561,7 +561,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10945.8]
+      "hp_left": [1100.91, 10945.8]
     },
     {
       "t": 1.2,
@@ -572,7 +572,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10944.7]
+      "hp_left": [1100.91, 10944.7]
     },
     {
       "t": 1.2,
@@ -583,7 +583,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10943.5]
+      "hp_left": [1100.91, 10943.5]
     },
     {
       "t": 1.2,
@@ -594,7 +594,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10942.4]
+      "hp_left": [1100.91, 10942.4]
     },
     {
       "t": 1.2,
@@ -605,7 +605,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10941.2]
+      "hp_left": [1100.91, 10941.2]
     },
     {
       "t": 1.2,
@@ -616,7 +616,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10940.1]
+      "hp_left": [1100.91, 10940.1]
     },
     {
       "t": 1.2,
@@ -627,7 +627,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "bite misses",
-      "hp_left": [1100.9, 10940.1]
+      "hp_left": [1100.91, 10940.1]
     },
     {
       "t": 1.2,
@@ -638,7 +638,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10939.0]
+      "hp_left": [1100.91, 10939.0]
     },
     {
       "t": 1.2,
@@ -649,7 +649,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10937.8]
+      "hp_left": [1100.91, 10937.8]
     },
     {
       "t": 1.2,
@@ -660,7 +660,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10936.7]
+      "hp_left": [1100.91, 10936.7]
     },
     {
       "t": 1.2,
@@ -671,7 +671,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10935.6]
+      "hp_left": [1100.91, 10935.6]
     },
     {
       "t": 1.2,
@@ -682,7 +682,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10934.4]
+      "hp_left": [1100.91, 10934.4]
     },
     {
       "t": 1.3,
@@ -693,7 +693,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10933.3]
+      "hp_left": [1100.91, 10933.3]
     },
     {
       "t": 1.3,
@@ -704,7 +704,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10932.1]
+      "hp_left": [1100.91, 10932.1]
     },
     {
       "t": 1.3,
@@ -715,7 +715,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10931.0]
+      "hp_left": [1100.91, 10931.0]
     },
     {
       "t": 1.3,
@@ -726,7 +726,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1100.9, 10929.9]
+      "hp_left": [1100.91, 10929.9]
     },
     {
       "t": 1.3,
@@ -737,7 +737,7 @@
       "group_size": 1,
       "damage": 161.7,
       "text_hint": "bite lands",
-      "hp_left": [1089.6, 10929.9]
+      "hp_left": [1089.56, 10929.9]
     },
     {
       "t": 1.3,
@@ -748,7 +748,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1089.6, 10929.9]
+      "hp_left": [1089.56, 10929.9]
     },
     {
       "t": 1.3,
@@ -759,7 +759,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1089.6, 10928.7]
+      "hp_left": [1089.56, 10928.7]
     },
     {
       "t": 1.3,
@@ -770,7 +770,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1089.6, 10927.6]
+      "hp_left": [1089.56, 10927.6]
     },
     {
       "t": 1.3,
@@ -781,7 +781,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1089.6, 10926.5]
+      "hp_left": [1089.56, 10926.5]
     },
     {
       "t": 1.3,
@@ -792,7 +792,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1089.6, 10925.3]
+      "hp_left": [1089.56, 10925.3]
     },
     {
       "t": 1.3,
@@ -803,7 +803,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1089.6, 10924.2]
+      "hp_left": [1089.56, 10924.2]
     },
     {
       "t": 1.4,
@@ -814,7 +814,7 @@
       "group_size": 1,
       "damage": 161.7,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10924.2]
+      "hp_left": [1078.21, 10924.2]
     },
     {
       "t": 1.4,
@@ -825,7 +825,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1078.2, 10924.2]
+      "hp_left": [1078.21, 10924.2]
     },
     {
       "t": 1.4,
@@ -836,7 +836,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10923.0]
+      "hp_left": [1078.21, 10923.0]
     },
     {
       "t": 1.4,
@@ -847,7 +847,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10921.9]
+      "hp_left": [1078.21, 10921.9]
     },
     {
       "t": 1.4,
@@ -858,7 +858,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10920.8]
+      "hp_left": [1078.21, 10920.8]
     },
     {
       "t": 1.4,
@@ -869,7 +869,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10919.6]
+      "hp_left": [1078.21, 10919.6]
     },
     {
       "t": 1.4,
@@ -880,7 +880,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10918.5]
+      "hp_left": [1078.21, 10918.5]
     },
     {
       "t": 1.4,
@@ -891,7 +891,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10917.3]
+      "hp_left": [1078.21, 10917.3]
     },
     {
       "t": 1.4,
@@ -902,7 +902,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10916.2]
+      "hp_left": [1078.21, 10916.2]
     },
     {
       "t": 1.4,
@@ -913,7 +913,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10915.1]
+      "hp_left": [1078.21, 10915.1]
     },
     {
       "t": 1.4,
@@ -924,7 +924,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10913.9]
+      "hp_left": [1078.21, 10913.9]
     },
     {
       "t": 1.4,
@@ -935,7 +935,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10912.8]
+      "hp_left": [1078.21, 10912.8]
     },
     {
       "t": 1.4,
@@ -946,7 +946,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10911.7]
+      "hp_left": [1078.21, 10911.7]
     },
     {
       "t": 1.5,
@@ -957,7 +957,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10910.5]
+      "hp_left": [1078.21, 10910.5]
     },
     {
       "t": 1.5,
@@ -968,7 +968,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10909.4]
+      "hp_left": [1078.21, 10909.4]
     },
     {
       "t": 1.5,
@@ -979,7 +979,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10908.2]
+      "hp_left": [1078.21, 10908.2]
     },
     {
       "t": 1.5,
@@ -990,7 +990,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10907.1]
+      "hp_left": [1078.21, 10907.1]
     },
     {
       "t": 1.5,
@@ -1001,7 +1001,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10906.0]
+      "hp_left": [1078.21, 10906.0]
     },
     {
       "t": 1.5,
@@ -1012,7 +1012,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10904.8]
+      "hp_left": [1078.21, 10904.8]
     },
     {
       "t": 1.5,
@@ -1023,7 +1023,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10903.7]
+      "hp_left": [1078.21, 10903.7]
     },
     {
       "t": 1.5,
@@ -1034,7 +1034,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10902.6]
+      "hp_left": [1078.21, 10902.6]
     },
     {
       "t": 1.5,
@@ -1045,7 +1045,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10901.4]
+      "hp_left": [1078.21, 10901.4]
     },
     {
       "t": 1.5,
@@ -1056,7 +1056,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10900.3]
+      "hp_left": [1078.21, 10900.3]
     },
     {
       "t": 1.9,
@@ -1067,7 +1067,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10899.1]
+      "hp_left": [1078.21, 10899.1]
     },
     {
       "t": 1.9,
@@ -1078,7 +1078,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10898.0]
+      "hp_left": [1078.21, 10898.0]
     },
     {
       "t": 1.9,
@@ -1089,7 +1089,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1078.2, 10896.9]
+      "hp_left": [1078.21, 10896.9]
     },
     {
       "t": 1.9,
@@ -1100,7 +1100,7 @@
       "group_size": 1,
       "damage": 161.7,
       "text_hint": "bite lands",
-      "hp_left": [1066.9, 10896.9]
+      "hp_left": [1066.86, 10896.9]
     },
     {
       "t": 1.9,
@@ -1111,7 +1111,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1066.9, 10896.9]
+      "hp_left": [1066.86, 10896.9]
     },
     {
       "t": 1.9,
@@ -1122,7 +1122,7 @@
       "group_size": 1,
       "damage": 161.7,
       "text_hint": "bite lands",
-      "hp_left": [1055.5, 10896.9]
+      "hp_left": [1055.51, 10896.9]
     },
     {
       "t": 1.9,
@@ -1133,7 +1133,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1055.5, 10896.9]
+      "hp_left": [1055.51, 10896.9]
     },
     {
       "t": 2.0,
@@ -1144,7 +1144,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1055.5, 10895.7]
+      "hp_left": [1055.51, 10895.7]
     },
     {
       "t": 2.0,
@@ -1155,7 +1155,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1055.5, 10894.6]
+      "hp_left": [1055.51, 10894.6]
     },
     {
       "t": 2.0,
@@ -1166,7 +1166,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1055.5, 10893.5]
+      "hp_left": [1055.51, 10893.5]
     },
     {
       "t": 2.0,
@@ -1177,7 +1177,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1055.5, 10892.3]
+      "hp_left": [1055.51, 10892.3]
     },
     {
       "t": 2.0,
@@ -1188,7 +1188,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1055.5, 10891.2]
+      "hp_left": [1055.51, 10891.2]
     },
     {
       "t": 2.0,
@@ -1199,7 +1199,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1055.5, 10890.0]
+      "hp_left": [1055.51, 10890.0]
     },
     {
       "t": 2.0,
@@ -1210,7 +1210,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1055.5, 10888.9]
+      "hp_left": [1055.51, 10888.9]
     },
     {
       "t": 2.0,
@@ -1221,7 +1221,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1055.5, 10887.8]
+      "hp_left": [1055.51, 10887.8]
     },
     {
       "t": 2.0,
@@ -1232,7 +1232,7 @@
       "group_size": 1,
       "damage": 161.7,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10887.8]
+      "hp_left": [1044.16, 10887.8]
     },
     {
       "t": 2.0,
@@ -1243,7 +1243,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1044.2, 10887.8]
+      "hp_left": [1044.16, 10887.8]
     },
     {
       "t": 2.1,
@@ -1254,7 +1254,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10886.6]
+      "hp_left": [1044.16, 10886.6]
     },
     {
       "t": 2.1,
@@ -1265,7 +1265,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10885.5]
+      "hp_left": [1044.16, 10885.5]
     },
     {
       "t": 2.1,
@@ -1276,7 +1276,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10884.4]
+      "hp_left": [1044.16, 10884.4]
     },
     {
       "t": 2.1,
@@ -1287,7 +1287,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10883.2]
+      "hp_left": [1044.16, 10883.2]
     },
     {
       "t": 2.1,
@@ -1298,7 +1298,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10882.1]
+      "hp_left": [1044.16, 10882.1]
     },
     {
       "t": 2.1,
@@ -1309,7 +1309,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10880.9]
+      "hp_left": [1044.16, 10880.9]
     },
     {
       "t": 2.1,
@@ -1320,7 +1320,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10879.8]
+      "hp_left": [1044.16, 10879.8]
     },
     {
       "t": 2.1,
@@ -1331,7 +1331,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10878.7]
+      "hp_left": [1044.16, 10878.7]
     },
     {
       "t": 2.1,
@@ -1342,7 +1342,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10877.5]
+      "hp_left": [1044.16, 10877.5]
     },
     {
       "t": 2.1,
@@ -1353,7 +1353,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10876.4]
+      "hp_left": [1044.16, 10876.4]
     },
     {
       "t": 2.1,
@@ -1364,7 +1364,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10875.3]
+      "hp_left": [1044.16, 10875.3]
     },
     {
       "t": 2.1,
@@ -1375,7 +1375,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10874.1]
+      "hp_left": [1044.16, 10874.1]
     },
     {
       "t": 2.2,
@@ -1386,7 +1386,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10873.0]
+      "hp_left": [1044.16, 10873.0]
     },
     {
       "t": 2.2,
@@ -1397,7 +1397,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10871.8]
+      "hp_left": [1044.16, 10871.8]
     },
     {
       "t": 2.2,
@@ -1408,7 +1408,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10870.7]
+      "hp_left": [1044.16, 10870.7]
     },
     {
       "t": 2.2,
@@ -1419,7 +1419,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10869.6]
+      "hp_left": [1044.16, 10869.6]
     },
     {
       "t": 2.2,
@@ -1430,7 +1430,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10868.4]
+      "hp_left": [1044.16, 10868.4]
     },
     {
       "t": 2.2,
@@ -1441,7 +1441,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10867.3]
+      "hp_left": [1044.16, 10867.3]
     },
     {
       "t": 2.2,
@@ -1452,7 +1452,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10866.2]
+      "hp_left": [1044.16, 10866.2]
     },
     {
       "t": 2.2,
@@ -1463,7 +1463,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10865.0]
+      "hp_left": [1044.16, 10865.0]
     },
     {
       "t": 2.2,
@@ -1474,7 +1474,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10863.9]
+      "hp_left": [1044.16, 10863.9]
     },
     {
       "t": 2.2,
@@ -1485,7 +1485,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10862.7]
+      "hp_left": [1044.16, 10862.7]
     },
     {
       "t": 2.2,
@@ -1496,7 +1496,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10861.6]
+      "hp_left": [1044.16, 10861.6]
     },
     {
       "t": 2.2,
@@ -1507,7 +1507,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10860.5]
+      "hp_left": [1044.16, 10860.5]
     },
     {
       "t": 2.2,
@@ -1518,7 +1518,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10859.3]
+      "hp_left": [1044.16, 10859.3]
     },
     {
       "t": 2.2,
@@ -1529,7 +1529,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10858.2]
+      "hp_left": [1044.16, 10858.2]
     },
     {
       "t": 2.2,
@@ -1540,7 +1540,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10857.1]
+      "hp_left": [1044.16, 10857.1]
     },
     {
       "t": 2.2,
@@ -1551,7 +1551,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10855.9]
+      "hp_left": [1044.16, 10855.9]
     },
     {
       "t": 2.3,
@@ -1562,7 +1562,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10854.8]
+      "hp_left": [1044.16, 10854.8]
     },
     {
       "t": 2.3,
@@ -1573,7 +1573,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1044.2, 10853.6]
+      "hp_left": [1044.16, 10853.6]
     },
     {
       "t": 2.4,
@@ -1584,7 +1584,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "bite misses",
-      "hp_left": [1044.2, 10853.6]
+      "hp_left": [1044.16, 10853.6]
     },
     {
       "t": 2.4,
@@ -1595,7 +1595,7 @@
       "group_size": 1,
       "damage": 161.7,
       "text_hint": "bite lands",
-      "hp_left": [1032.8, 10853.6]
+      "hp_left": [1032.81, 10853.6]
     },
     {
       "t": 2.4,
@@ -1606,7 +1606,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1032.8, 10853.6]
+      "hp_left": [1032.81, 10853.6]
     },
     {
       "t": 2.5,
@@ -1617,7 +1617,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1032.8, 10852.5]
+      "hp_left": [1032.81, 10852.5]
     },
     {
       "t": 2.7,
@@ -1628,7 +1628,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1032.8, 10851.4]
+      "hp_left": [1032.81, 10851.4]
     },
     {
       "t": 2.7,
@@ -1639,7 +1639,7 @@
       "group_size": 1,
       "damage": 1.1,
       "text_hint": "bite lands",
-      "hp_left": [1032.8, 10850.2]
+      "hp_left": [1032.81, 10850.2]
     },
     {
       "t": 2.9,
@@ -1650,7 +1650,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1021.5, 10830.9]
+      "hp_left": [1021.46, 10830.9]
     },
     {
       "t": 2.9,
@@ -1661,7 +1661,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [1010.1, 10830.9]
+      "hp_left": [1010.11, 10830.9]
     },
     {
       "t": 3.0,
@@ -1672,7 +1672,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [998.8, 10815.0]
+      "hp_left": [998.759, 10815.0]
     },
     {
       "t": 3.4,
@@ -1683,7 +1683,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [987.4, 10807.0]
+      "hp_left": [987.41, 10807.0]
     },
     {
       "t": 3.5,
@@ -1694,7 +1694,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [976.1, 10800.2]
+      "hp_left": [976.06, 10800.2]
     },
     {
       "t": 4.4,
@@ -1705,7 +1705,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [964.7, 10752.4]
+      "hp_left": [964.711, 10752.4]
     },
     {
       "t": 4.5,
@@ -1716,7 +1716,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [953.4, 10727.3]
+      "hp_left": [953.361, 10727.3]
     },
     {
       "t": 4.9,
@@ -1727,7 +1727,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [942.0, 10721.7]
+      "hp_left": [942.012, 10721.7]
     },
     {
       "t": 5.1,
@@ -1738,7 +1738,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [930.7, 10703.5]
+      "hp_left": [930.662, 10703.5]
     },
     {
       "t": 5.4,
@@ -1749,7 +1749,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [919.3, 10679.6]
+      "hp_left": [919.312, 10679.6]
     },
     {
       "t": 5.5,
@@ -1760,7 +1760,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [908.0, 10678.4]
+      "hp_left": [907.963, 10678.4]
     },
     {
       "t": 5.9,
@@ -1771,7 +1771,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [896.6, 10657.9]
+      "hp_left": [896.613, 10657.9]
     },
     {
       "t": 6.0,
@@ -1782,7 +1782,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [885.3, 10651.1]
+      "hp_left": [885.264, 10651.1]
     },
     {
       "t": 6.4,
@@ -1793,7 +1793,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [873.9, 10631.8]
+      "hp_left": [873.914, 10631.8]
     },
     {
       "t": 6.5,
@@ -1804,7 +1804,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [862.6, 10629.5]
+      "hp_left": [862.565, 10629.5]
     },
     {
       "t": 7.0,
@@ -1815,7 +1815,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [851.2, 10590.8]
+      "hp_left": [851.215, 10590.8]
     },
     {
       "t": 7.9,
@@ -1826,7 +1826,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [839.9, 10544.2]
+      "hp_left": [839.866, 10544.2]
     },
     {
       "t": 8.0,
@@ -1837,7 +1837,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [828.5, 10541.9]
+      "hp_left": [828.516, 10541.9]
     },
     {
       "t": 8.1,
@@ -1848,7 +1848,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [817.2, 10524.8]
+      "hp_left": [817.167, 10524.8]
     },
     {
       "t": 8.4,
@@ -1859,7 +1859,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [805.8, 10503.2]
+      "hp_left": [805.817, 10503.2]
     },
     {
       "t": 8.5,
@@ -1870,7 +1870,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [794.5, 10503.2]
+      "hp_left": [794.468, 10503.2]
     },
     {
       "t": 9.0,
@@ -1881,7 +1881,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [783.1, 10470.2]
+      "hp_left": [783.118, 10470.2]
     },
     {
       "t": 9.1,
@@ -1892,7 +1892,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [771.8, 10464.5]
+      "hp_left": [771.768, 10464.5]
     },
     {
       "t": 9.4,
@@ -1903,7 +1903,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [760.4, 10461.1]
+      "hp_left": [760.419, 10461.1]
     },
     {
       "t": 9.5,
@@ -1914,7 +1914,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [749.1, 10450.9]
+      "hp_left": [749.069, 10450.9]
     },
     {
       "t": 10.0,
@@ -1925,7 +1925,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [737.7, 10419.0]
+      "hp_left": [737.72, 10419.0]
     },
     {
       "t": 10.0,
@@ -1936,7 +1936,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [726.4, 10419.0]
+      "hp_left": [726.37, 10419.0]
     },
     {
       "t": 10.4,
@@ -1947,7 +1947,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [715.0, 10397.4]
+      "hp_left": [715.021, 10397.4]
     },
     {
       "t": 10.5,
@@ -1958,7 +1958,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [703.7, 10384.9]
+      "hp_left": [703.671, 10384.9]
     },
     {
       "t": 11.0,
@@ -1969,7 +1969,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [692.3, 10364.4]
+      "hp_left": [692.322, 10364.4]
     },
     {
       "t": 11.1,
@@ -1980,7 +1980,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [681.0, 10356.5]
+      "hp_left": [680.972, 10356.5]
     },
     {
       "t": 11.5,
@@ -1991,7 +1991,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [669.6, 10330.3]
+      "hp_left": [669.623, 10330.3]
     },
     {
       "t": 11.5,
@@ -2002,7 +2002,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [658.3, 10329.1]
+      "hp_left": [658.273, 10329.1]
     },
     {
       "t": 12.0,
@@ -2013,7 +2013,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [646.9, 10303.0]
+      "hp_left": [646.924, 10303.0]
     },
     {
       "t": 12.0,
@@ -2024,7 +2024,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [635.6, 10292.7]
+      "hp_left": [635.574, 10292.7]
     },
     {
       "t": 12.1,
@@ -2035,7 +2035,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [624.2, 10285.9]
+      "hp_left": [624.224, 10285.9]
     },
     {
       "t": 12.6,
@@ -2046,7 +2046,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [612.9, 10268.8]
+      "hp_left": [612.875, 10268.8]
     },
     {
       "t": 13.0,
@@ -2057,7 +2057,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [601.5, 10242.7]
+      "hp_left": [601.525, 10242.7]
     },
     {
       "t": 13.0,
@@ -2068,7 +2068,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [590.2, 10242.7]
+      "hp_left": [590.176, 10242.7]
     },
     {
       "t": 13.2,
@@ -2079,7 +2079,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [578.8, 10239.3]
+      "hp_left": [578.826, 10239.3]
     },
     {
       "t": 13.5,
@@ -2090,7 +2090,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [567.5, 10219.9]
+      "hp_left": [567.477, 10219.9]
     },
     {
       "t": 14.2,
@@ -2101,7 +2101,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [556.1, 10175.6]
+      "hp_left": [556.127, 10175.6]
     },
     {
       "t": 14.2,
@@ -2112,7 +2112,7 @@
       "group_size": 49,
       "damage": null,
       "text_hint": "breaks and runs",
-      "hp_left": [556.1, 10175.6]
+      "hp_left": [556.127, 10175.6]
     },
     {
       "t": 14.5,
@@ -2123,7 +2123,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [544.8, 10175.6]
+      "hp_left": [544.778, 10175.6]
     },
     {
       "t": 15.1,
@@ -2134,7 +2134,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [533.4, 10175.6]
+      "hp_left": [533.428, 10175.6]
     },
     {
       "t": 15.2,
@@ -2145,7 +2145,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [522.1, 10175.6]
+      "hp_left": [522.079, 10175.6]
     },
     {
       "t": 15.5,
@@ -2156,7 +2156,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [510.7, 10175.6]
+      "hp_left": [510.729, 10175.6]
     },
     {
       "t": 15.6,
@@ -2167,7 +2167,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [499.4, 10175.6]
+      "hp_left": [499.38, 10175.6]
     },
     {
       "t": 16.0,
@@ -2178,7 +2178,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [488.0, 10175.6]
+      "hp_left": [488.03, 10175.6]
     },
     {
       "t": 16.1,
@@ -2189,7 +2189,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [476.7, 10175.6]
+      "hp_left": [476.681, 10175.6]
     },
     {
       "t": 16.2,
@@ -2200,7 +2200,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [465.3, 10175.6]
+      "hp_left": [465.331, 10175.6]
     },
     {
       "t": 16.5,
@@ -2211,7 +2211,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [454.0, 10175.6]
+      "hp_left": [453.981, 10175.6]
     },
     {
       "t": 16.6,
@@ -2222,7 +2222,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [442.6, 10175.6]
+      "hp_left": [442.632, 10175.6]
     },
     {
       "t": 17.0,
@@ -2233,7 +2233,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [431.3, 10175.6]
+      "hp_left": [431.282, 10175.6]
     },
     {
       "t": 17.1,
@@ -2244,7 +2244,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [419.9, 10175.6]
+      "hp_left": [419.933, 10175.6]
     },
     {
       "t": 17.2,
@@ -2255,7 +2255,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [408.6, 10175.6]
+      "hp_left": [408.583, 10175.6]
     },
     {
       "t": 17.5,
@@ -2266,7 +2266,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [397.2, 10175.6]
+      "hp_left": [397.234, 10175.6]
     },
     {
       "t": 18.1,
@@ -2277,7 +2277,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [385.9, 10175.6]
+      "hp_left": [385.884, 10175.6]
     },
     {
       "t": 18.2,
@@ -2288,7 +2288,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [374.5, 10175.6]
+      "hp_left": [374.535, 10175.6]
     },
     {
       "t": 18.5,
@@ -2299,7 +2299,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [363.2, 10175.6]
+      "hp_left": [363.185, 10175.6]
     },
     {
       "t": 18.6,
@@ -2310,7 +2310,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [351.8, 10175.6]
+      "hp_left": [351.836, 10175.6]
     },
     {
       "t": 19.6,
@@ -2321,7 +2321,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [340.5, 10175.6]
+      "hp_left": [340.486, 10175.6]
     },
     {
       "t": 20.1,
@@ -2332,7 +2332,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [329.1, 10175.6]
+      "hp_left": [329.137, 10175.6]
     },
     {
       "t": 20.1,
@@ -2343,7 +2343,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [317.8, 10175.6]
+      "hp_left": [317.787, 10175.6]
     },
     {
       "t": 20.2,
@@ -2354,7 +2354,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [306.4, 10175.6]
+      "hp_left": [306.437, 10175.6]
     },
     {
       "t": 20.6,
@@ -2365,7 +2365,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [295.1, 10175.6]
+      "hp_left": [295.088, 10175.6]
     },
     {
       "t": 20.6,
@@ -2376,7 +2376,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [283.7, 10175.6]
+      "hp_left": [283.738, 10175.6]
     },
     {
       "t": 21.1,
@@ -2387,7 +2387,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [272.4, 10175.6]
+      "hp_left": [272.389, 10175.6]
     },
     {
       "t": 21.1,
@@ -2398,7 +2398,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [261.0, 10175.6]
+      "hp_left": [261.039, 10175.6]
     },
     {
       "t": 21.2,
@@ -2409,7 +2409,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [249.7, 10175.6]
+      "hp_left": [249.69, 10175.6]
     },
     {
       "t": 21.6,
@@ -2420,7 +2420,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [238.3, 10175.6]
+      "hp_left": [238.34, 10175.6]
     },
     {
       "t": 21.7,
@@ -2431,7 +2431,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [227.0, 10175.6]
+      "hp_left": [226.991, 10175.6]
     },
     {
       "t": 22.1,
@@ -2442,7 +2442,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [215.6, 10175.6]
+      "hp_left": [215.641, 10175.6]
     },
     {
       "t": 22.1,
@@ -2453,7 +2453,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [204.3, 10175.6]
+      "hp_left": [204.292, 10175.6]
     },
     {
       "t": 22.3,
@@ -2464,7 +2464,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [192.9, 10175.6]
+      "hp_left": [192.942, 10175.6]
     },
     {
       "t": 22.6,
@@ -2475,7 +2475,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [181.6, 10175.6]
+      "hp_left": [181.593, 10175.6]
     },
     {
       "t": 22.7,
@@ -2486,7 +2486,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [170.2, 10175.6]
+      "hp_left": [170.243, 10175.6]
     },
     {
       "t": 23.1,
@@ -2497,7 +2497,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [158.9, 10175.6]
+      "hp_left": [158.894, 10175.6]
     },
     {
       "t": 23.1,
@@ -2508,7 +2508,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [147.5, 10175.6]
+      "hp_left": [147.544, 10175.6]
     },
     {
       "t": 23.3,
@@ -2519,7 +2519,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [136.2, 10175.6]
+      "hp_left": [136.194, 10175.6]
     },
     {
       "t": 24.1,
@@ -2530,7 +2530,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [124.8, 10175.6]
+      "hp_left": [124.845, 10175.6]
     },
     {
       "t": 24.6,
@@ -2541,7 +2541,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [113.5, 10175.6]
+      "hp_left": [113.495, 10175.6]
     },
     {
       "t": 24.7,
@@ -2552,7 +2552,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [102.1, 10175.6]
+      "hp_left": [102.146, 10175.6]
     },
     {
       "t": 25.7,
@@ -2563,7 +2563,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [90.8, 10175.6]
+      "hp_left": [90.7963, 10175.6]
     },
     {
       "t": 26.1,
@@ -2574,7 +2574,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [79.4, 10175.6]
+      "hp_left": [79.4468, 10175.6]
     },
     {
       "t": 26.2,
@@ -2585,7 +2585,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [68.1, 10175.6]
+      "hp_left": [68.0972, 10175.6]
     },
     {
       "t": 26.3,
@@ -2596,7 +2596,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [56.7, 10175.6]
+      "hp_left": [56.7477, 10175.6]
     },
     {
       "t": 26.6,
@@ -2607,7 +2607,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [45.4, 10175.6]
+      "hp_left": [45.3981, 10175.6]
     },
     {
       "t": 26.7,
@@ -2618,7 +2618,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [34.0, 10175.6]
+      "hp_left": [34.0486, 10175.6]
     },
     {
       "t": 27.1,
@@ -2629,7 +2629,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [22.7, 10175.6]
+      "hp_left": [22.6991, 10175.6]
     },
     {
       "t": 27.2,
@@ -2640,7 +2640,7 @@
       "group_size": 1,
       "damage": null,
       "text_hint": "goes down",
-      "hp_left": [11.3, 10175.6]
+      "hp_left": [11.3495, 10175.6]
     },
     {
       "t": 27.3,
@@ -2665,5 +2665,5 @@
       "hp_left": null
     }
   ],
-  "start_hp": [1135.0, 10991.3]
+  "start_hp": [1134.95, 10991.3]
 }

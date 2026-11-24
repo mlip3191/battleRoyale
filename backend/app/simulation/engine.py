@@ -52,6 +52,15 @@ def _tick_up(t: float) -> float:
     return round(math.ceil(t / c.TICK_S - 1e-9) * c.TICK_S, 6)
 
 
+def _hp(value: float) -> float:
+    """Hit points for the log (#575): to 0.1 at least, and to 6 significant digits when smaller,
+    so a crowd of tiny fighters (10,000 ants hold about 0.3 in all) still drains visibly."""
+    value = max(value, 0.0)
+    if value == 0.0:
+        return 0.0
+    return round(value, max(1, 5 - math.floor(math.log10(value))))
+
+
 class _Pool:
     """Lanchester linear law for one attacking side: each target takes only so many attackers.
 
@@ -255,7 +264,7 @@ def run_once(
             return
         else:
             left = hp_now[0]() if hp_now else start_hp
-            hp_left = (round(max(left[0], 0.0), 1), round(max(left[1], 0.0), 1))
+            hp_left = (_hp(left[0]), _hp(left[1]))
             events.append(event.model_copy(update={"hp_left": hp_left}))
 
     starts = _starts(sides)
@@ -1126,7 +1135,7 @@ def run(
         deciding_factor_explainer=explainer,
         representative_log=replay.events,
         start_hp=(
-            round(sides[0].max_hp * sides[0].count, 1),
-            round(sides[1].max_hp * sides[1].count, 1),
+            _hp(sides[0].max_hp * sides[0].count),
+            _hp(sides[1].max_hp * sides[1].count),
         ),
     )
