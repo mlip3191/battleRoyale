@@ -69,7 +69,7 @@ cd battleRoyale
 
 ![Terminal showing git clone downloading the project into a battleRoyale folder, then cd battleRoyale](images/user-guide/01b-clone.png)
 
-> **No Git?** On the project's GitHub page you can click the green **Code** button, then **Download ZIP**, and unzip it somewhere easy. To move the terminal into that folder, type `cd ` (with a space), drag the folder from File Explorer or Finder onto the terminal window, and press Enter. Everything works, except that `npm run setup` (step 4) ends with a *"not a git repository"* (or *"git is not recognized"*) error after the installs finish. That last part only turns on a check for people changing the code, so you can ignore it.
+> **No Git?** On the project's GitHub page you can click the green **Code** button, then **Download ZIP**, and unzip it somewhere easy. To move the terminal into that folder, type `cd ` (with a space), drag the folder from File Explorer or Finder onto the terminal window, and press Enter. Everything works the same, and you don't need Git. At the end, `npm run setup` (step 4) says *"Not a git checkout (a ZIP copy?), so the commit guard was skipped"*. That's expected: the guard only matters for people changing the code.
 
 ### Step 3: Connect the course AI endpoints (optional)
 
@@ -248,7 +248,7 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **"Address already in use"** or port 8000 is busy when you run `npm start` | The app (or something else) is already running. Use the window where it's already running, or close it with Ctrl+C and run `npm start` again. Restarting the computer also clears it. |
 | **The page looks old or a button does nothing after you update the code** | Stop the app with Ctrl+C, run `npm run setup` and then `npm start` again, and refresh the browser page. |
 | **No announcer voice** | Sound is optional, and the captions always carry the show. Check that the button says **Sound on** (click it if it says **Sound off**) and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
-| **`npm run setup` ends with "not a git repository" or "git is not recognized"** | You downloaded the ZIP instead of cloning. The installs already finished, so you can ignore it and go on. |
+| **`npm run setup` ends with "Not a git checkout (a ZIP copy?), so the commit guard was skipped"** | You downloaded the ZIP instead of cloning. That's normal: setup finished, so go on to the next step. |
 | **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and the prebuilt knowledge base didn't load (the message just above says why, usually a different embedding model). Stop the app with Ctrl+C, run `npm run ingest` once ([step 5](#step-5-optional-refresh-the-knowledge-base)), then `npm start` again. |
 | **"We have no stat sheet for '…', so its stats are estimates"** on the broadcast | Usually this just means that fighter isn't on the fighter list, so its stats are estimates, which is expected. If it names a listed fighter (for example a grizzly bear), the knowledge base is missing: see [step 5](#step-5-optional-refresh-the-knowledge-base). |
 | **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then restart the app; it loads the prebuilt knowledge base on its first live start. |
