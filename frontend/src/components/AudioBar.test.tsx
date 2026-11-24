@@ -522,6 +522,51 @@ test("unlock: the voice plays muted and pauses at once, inside the call, and the
   expect(screen.getByRole("button", { name: "Sound off" })).toBeTruthy();
 });
 
+// Node's process reports promise rejections nobody handled (jsdom's window doesn't see them).
+type Listener = (reason: unknown) => void;
+const node = (
+  globalThis as unknown as {
+    process: {
+      on: (event: string, f: Listener) => void;
+      off: (event: string, f: Listener) => void;
+    };
+  }
+).process;
+
+test("unlock: a browser that refuses the play: nothing thrown or left unhandled, and the button stays on Sound off (#584)", async () => {
+  const unhandled = vi.fn();
+  node.on("unhandledRejection", unhandled);
+  // A plain function, not a vi.fn: a mock would handle the rejection itself and hide a miss.
+  const spy = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = () =>
+    Promise.reject(new DOMException("", "NotAllowedError"));
+  try {
+    const bar = createRef<AudioBarHandle>();
+    render(<AudioBar ref={bar} narration="/media/intro.wav" music={null} />);
+    expect(() => bar.current!.unlock()).not.toThrow();
+    await new Promise((r) => setTimeout(r, 0)); // let the refusal settle
+    expect(unhandled).not.toHaveBeenCalled();
+    expect(pause).toHaveBeenCalledTimes(1);
+    expect(voiceTrack().muted).toBe(false);
+    expect(screen.getByRole("button", { name: "Sound off" })).toBeTruthy();
+  } finally {
+    HTMLMediaElement.prototype.play = spy;
+    node.off("unhandledRejection", unhandled);
+  }
+});
+
+test("unlock: an older browser whose play() throws: the voice is still paused and unmuted (#584)", () => {
+  play.mockImplementationOnce(() => {
+    throw new DOMException("", "NotAllowedError");
+  });
+  const bar = createRef<AudioBarHandle>();
+  render(<AudioBar ref={bar} narration="/media/intro.wav" music={null} />);
+  expect(() => bar.current!.unlock()).not.toThrow();
+  expect(pause).toHaveBeenCalledTimes(1);
+  expect(voiceTrack().muted).toBe(false);
+  expect(screen.getByRole("button", { name: "Sound off" })).toBeTruthy();
+});
+
 test("unlock: a remembered off, or sound already on, leaves the voice alone (#579)", async () => {
   listen();
   const bar = createRef<AudioBarHandle>();
@@ -712,6 +757,61 @@ test("in sync, a pause, a new moment or Sound off clears the stop timer (#584)",
     voice.currentTime = 8;
     act(() => vi.advanceTimersByTime(5000));
     expect(pause).toHaveBeenCalledTimes(3);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("in sync, leaving the page mid-line clears the stop timer (#584)", async () => {
+  fakeClock();
+  try {
+    const view = render(
+      <AudioBar
+        narration="/media/pbp.wav"
+        music={null}
+        startSound
+        cue={cueOf(0, 0, 2)}
+      />,
+    );
+    const voice = playingNow(voiceTrack());
+    await settle();
+    expect(vi.getTimerCount()).toBe(1); // the stop at the end of the lines
+    view.unmount();
+    expect(vi.getTimerCount()).toBe(0);
+    const stops = pause.mock.calls.length; // leaving the page stops the voice once
+    voice.currentTime = 2;
+    act(() => vi.advanceTimersByTime(5000));
+    expect(pause).toHaveBeenCalledTimes(stops);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("in sync, a new announcer file mid-line clears the old stop timer (#584)", async () => {
+  fakeClock();
+  try {
+    const view = render(
+      <AudioBar
+        narration="/media/pbp.wav"
+        music={null}
+        startSound
+        cue={cueOf(0, 0, 2)}
+      />,
+    );
+    const voice = playingNow(voiceTrack());
+    await settle();
+    expect(vi.getTimerCount()).toBe(1);
+    // The fight ends mid-line: the verdict's file plays on the same track, whole.
+    view.rerender(
+      <AudioBar narration="/media/outro.wav" music={null} startSound />,
+    );
+    await settle();
+    expect(voiceTrack().getAttribute("src")).toBe("/media/outro.wav");
+    expect(vi.getTimerCount()).toBe(0); // the old timer never fires on the new file
+    const stops = pause.mock.calls.length;
+    voice.currentTime = 2;
+    act(() => vi.advanceTimersByTime(5000));
+    expect(pause).toHaveBeenCalledTimes(stops);
   } finally {
     vi.useRealTimers();
   }

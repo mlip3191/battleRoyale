@@ -51,8 +51,9 @@ const BackHome = ({ linkRef }: { linkRef: Ref<HTMLAnchorElement> }) => (
 // What the ticker says while a stage is running and has no detail of its own (#493): the audio
 // stage can take about a minute with the cloned voice, so it must not read "Researching…". The
 // show waits for the voice, so a first-time viewer is told how long, and what comes next (#579).
+// Kept short: a longer message crawls faster across the ticker.
 const RECORDING_ANNOUNCER =
-  "Recording the announcer… the voice takes about a minute to warm up, then the show starts.";
+  "Recording the announcer… can take about a minute, then the show starts.";
 function stageTicker(stage: string | undefined, first: string): string {
   return stage === "audio" ? RECORDING_ANNOUNCER : `Researching the ${first}…`;
 }

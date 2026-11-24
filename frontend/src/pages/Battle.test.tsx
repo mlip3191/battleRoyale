@@ -158,10 +158,10 @@ test("audio running with a detail: the stage's own detail still wins", () => {
 
 test("audio running: the ticker tells a first-time viewer how long the announcer takes, and what comes next (#579)", () => {
   show(onlyRunning("audio"));
-  const text = screen.getByRole("status").textContent ?? "";
-  expect(text).toContain("warm up");
-  expect(text).toContain("about a minute");
-  expect(text).toContain("the show starts");
+  // Short, so the crawl moves at a readable pace.
+  expect(screen.getByRole("status").textContent).toBe(
+    "Recording the announcer… can take about a minute, then the show starts.",
+  );
 });
 
 test("research running without a detail still says it is researching (#493)", () => {
