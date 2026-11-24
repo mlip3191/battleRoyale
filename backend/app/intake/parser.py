@@ -7,6 +7,7 @@ pending clarifications (D08) live elsewhere.
 import asyncio
 import json
 import re
+from collections.abc import Sequence
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -16,6 +17,8 @@ from app.intake.llm_io import CALL_ERRORS, as_data, data_block
 from app.intake.llm_io import INPUT_END as INPUT_END  # re-exported for tests and golden checks
 from app.intake.llm_io import INPUT_START as INPUT_START
 from app.intake.rules import (
+    ARTICLES,
+    GROUP_WORDS,
     MULTIPLIERS,
     SCALES,
     UNITS,
@@ -24,9 +27,13 @@ from app.intake.rules import (
     map_terrain,
     normalize_entity,
     read_count,
+    singular_word,
     terrain_in_text,
+    tidy_numbers,
+    without_group,
 )
 from app.intake.schema import Clarification, ParsedFighter, ParsedMatchup
+from app.intake.steps import PARSE, intake_step
 from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.models.terrain import Terrain
 from app.providers.base import ChatLLM, ChatMessage
@@ -79,6 +86,8 @@ REPHRASE_QUESTION = "Sorry, we couldn't make out that matchup. Could you put it 
 COMMON_KIND_NOTE = "Still not sure which kind you meant, so we'll use the most common one."
 # Names the fighter code picked for a bare kind (#168), from the same table research uses.
 DEFAULT_KIND_NOTE = "Not sure which {kind}, so we used the {pick}."
+# Says so when the fighter we kept isn't the words the user typed (#500): "kimono dragon" -> dragon.
+MISREAD_NOTE = "We read '{raw}' as {used}. Not what you meant? Edit it and fight again."
 EXAMPLE_OPTIONS = [
     "a grizzly bear vs 6 gray wolves",
     "a dozen house cats vs a golden retriever",
@@ -91,6 +100,7 @@ TERRAIN_PHRASES = {
     Terrain.SHORELINE: " on the shoreline",
     Terrain.URBAN: " in the city",
     Terrain.MOUNTAIN: " on the mountain",
+    Terrain.SKY: " in the sky",
 }
 
 
@@ -176,6 +186,7 @@ def read_reply(reply: str, text: str) -> ParsedMatchup:
 # Ask the model, retrying once with the problem described; None if the replies were unusable.
 # Raises IntakeUnavailable when any call failed and no reply was usable, so a provider error
 # isn't blamed on the user's wording; only all-replies-unusable means "please rephrase".
+@intake_step(PARSE)
 async def ask_model(chat: ChatLLM, text: str) -> ParsedMatchup | None:
     messages = build_messages(text)
     schema = ParsedMatchup.model_json_schema()
@@ -282,14 +293,26 @@ def has_number(text: str) -> bool:
     return any(word in NUMBER_WORDS for word in re.findall(r"[a-z]+", text.lower()))
 
 
+# Text without model names that hold a digit after a letter ("m1", "t72", "b2"), which are names,
+# not numbers (#561).
+def _no_names(text: str) -> str:
+    return re.sub(r"\b[a-z]+\d[a-z0-9]*\b", " ", text.lower())
+
+
 # One side, with every number decided by code; the second value lists its assumptions.
 def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterRequest, list[str]]:
-    entity = normalize_entity(fighter.entity) or normalize_entity(fighter.raw)
+    entity = without_group(normalize_entity(fighter.entity) or normalize_entity(fighter.raw))
     notes: list[str] = []
-    count = read_count(fighter.raw).count
+    reading = read_count(fighter.raw)
+    count = reading.count
     if count is None:
         count = 1
         notes.append(f"Assumed 1 {entity}, since no number was given.")
+    elif reading.group:
+        notes.append(
+            f"Assumed {count:,} {pluralize(entity)} for '{reading.group}', since no number "
+            "was given."
+        )
     count, clamp_note = clamp_count(count, entity, max_count)
     if clamp_note:
         notes.append(clamp_note)
@@ -297,8 +320,9 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
     variant = None if not variant or has_number(variant) else variant  # number rule
     if variant is None and entity in DEFAULT_KINDS:
         # The model dropped a named kind ("a polar bear" read as "bear"): keep the user's word.
-        named = named_kind_words(entity, fighter.raw)
-        variant = named[:MAX_VARIANT_CHARS] if named and not has_number(named) else None
+        # A product name like "m1" is the user's word, not a number, so only a count blocks it.
+        named = named_kind_words(entity, _GROUP_PHRASE.sub("", fighter.raw))  # never "packs"
+        variant = named[:MAX_VARIANT_CHARS] if named and not has_number(_no_names(named)) else None
     request = FighterRequest(
         entity=entity,
         count=count,
@@ -361,6 +385,7 @@ async def parse_matchup(
         return clarify("Who's fighting? Name two sides.", EXAMPLE_OPTIONS)
     if len(text) > MAX_TEXT_CHARS:
         return too_long()
+    text, number_notes = tidy_numbers(text)  # "1e3" and "-3" become counts we can read (#561)
     rules = check_text_rules(text)
     if not rules.allowed:
         return blocked_result(rules)
@@ -369,7 +394,7 @@ async def parse_matchup(
         parsed, verdict = await parse_and_classify(text, chat or get_intake_chat(), safety_chat)
         if not verdict.allowed:
             return blocked_result(verdict)
-        result = read_matchup(text, parsed, ask=ask)
+        result = read_matchup(text, parsed, ask=ask, notes=number_notes)
         if result.matchup is not None:
             sides = await check_parsed_sides(result.matchup.fighters, text, chat=safety_chat)
             if not sides.allowed:
@@ -392,9 +417,59 @@ def default_kind_notes(fighters: list[FighterRequest]) -> list[str]:
     return notes
 
 
+# A name's words, singular, no hyphens or articles: "Main-battle tanks" -> main, battle, tank.
+def _name_words(name: str) -> list[str]:
+    words = normalize_entity(name).replace("-", " ").split()
+    return [singular_word(w) for w in words if w not in ARTICLES]
+
+
+# Country tags that may drop without changing the fighter: "US Navy SEALs" -> navy seal (D-69).
+_IGNORED_TYPED_WORDS = {"us", "usa", "uk"}
+
+
+# A side's raw without its trailing battlefield: "6 gray wolves in a forest" -> "6 gray wolves".
+def _without_place(raw: str) -> str:
+    place = terrain_in_text(raw)
+    return raw[: raw.lower().rfind(place.lower())].rstrip() if place else raw
+
+
+# A group phrase in a side's words, "swarm of " in "a swarm of bees": its count is noted already.
+_GROUP_PHRASE = re.compile(rf"\b(?:{'|'.join(GROUP_WORDS)})s?\s+of\s+", re.I)
+
+
+# A fighter's words as kept, for the card: no articles or hyphens, and never singularized, so a
+# name like "Abrams" keeps its "s" (#561).
+def _kept_words(fighter: FighterRequest) -> str:
+    names = (fighter.variant or "", fighter.entity)
+    words = [w for name in names for w in name.lower().replace("-", " ").split()]
+    return " ".join(dict.fromkeys(w for w in words if w not in ARTICLES))
+
+
+# One note per side whose typed words didn't all make it into the fighter we kept (#500), e.g.
+# "We read 'kimono dragon' as dragon." Code-built, so a typed number in raw is fine here.
+def misread_notes(fighters: list[FighterRequest]) -> list[str]:
+    notes = []
+    for fighter in fighters:
+        raw = _without_place(fighter.raw).strip()
+        words = _name_words(_GROUP_PHRASE.sub("", raw))
+        typed = [w for w in words if w not in _IGNORED_TYPED_WORDS]
+        used = list(dict.fromkeys(_name_words(fighter.variant or "") + _name_words(fighter.entity)))
+        if not typed or not used or set(typed) <= set(used):
+            continue
+        kept = _kept_words(fighter)
+        room = max(1, MAX_NOTE_CHARS - len(MISREAD_NOTE.format(raw="", used=kept)))
+        if len(raw) > room:
+            raw = raw[: room - 1].rstrip() + "…"
+        notes.append(MISREAD_NOTE.format(raw=raw, used=kept))
+    return notes
+
+
 # The model's reading -> IntakeResult (ok or clarify), with every number decided by code.
-# ask=False accepts a still-vague fighter with a note instead of asking again.
-def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -> IntakeResult:
+# ask=False accepts a still-vague fighter with a note instead of asking again. notes are code
+# notes from before the model call (tidy_numbers), shown first.
+def read_matchup(
+    text: str, parsed: ParsedMatchup | None, *, ask: bool = True, notes: Sequence[str] = ()
+) -> IntakeResult:
     if parsed is None:
         return clarify(REPHRASE_QUESTION, EXAMPLE_OPTIONS)
     if len(parsed.fighters) > 2:
@@ -414,12 +489,12 @@ def read_matchup(text: str, parsed: ParsedMatchup | None, *, ask: bool = True) -
         typed, typed_note = map_terrain(typed_place)
         if typed != Terrain.ARENA:
             terrain, terrain_note = typed, typed_note
-    notes = _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
+    notes = list(notes) + _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
     if terrain_note:
         notes.append(terrain_note)
     fighters = [request for request, _ in built]
     picks = default_kind_notes(fighters)
-    notes += picks
+    notes += picks + misread_notes(fighters)
     if parsed.needs_clarification and not picks:
         notes.append(COMMON_KIND_NOTE)
     matchup = Matchup(

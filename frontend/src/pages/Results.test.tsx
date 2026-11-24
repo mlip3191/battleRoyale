@@ -16,7 +16,10 @@ import * as client from "../api/client.ts";
 import { NOT_FOUND } from "../api/useBattle.ts";
 import type { BattleRecord, StatSheet } from "../api/client.ts";
 import Results from "./Results.tsx";
-import { isTooCloseToCall } from "../components/Verdict.tsx";
+import {
+  FAIR_FIGHT_UNFINISHED,
+  isTooCloseToCall,
+} from "../components/Verdict.tsx";
 
 const state = vi.hoisted(() => ({
   value: { battle: null as unknown, error: null as string | null },
@@ -279,6 +282,24 @@ test("fair fight: shows the no-fair-fight message when there is no count", () =>
   const card = screen.getByRole("region", { name: "No fair fight" });
   expect(card.textContent).toContain(message);
   expect(card.textContent).not.toContain("Tested with");
+});
+
+test("fair fight: a search that ran out of time still shows a box, without claiming there is none (#509)", () => {
+  const message = "We couldn't work out a fair fight in time for this one."; // as the backend saves it
+  expect(message.startsWith(FAIR_FIGHT_UNFINISHED)).toBe(true);
+  show({
+    ...record,
+    fair_fight: {
+      varied_side: 0,
+      count: null,
+      win_prob_at_count: null,
+      message,
+    },
+  });
+  const card = screen.getByRole("region", { name: "Fair fight" });
+  expect(card.textContent).toContain(message);
+  expect(card.textContent).not.toContain("Tested with");
+  expect(screen.queryByRole("region", { name: "No fair fight" })).toBeNull();
 });
 
 test("fair fight: varying side 0 names side 0's fighter", () => {

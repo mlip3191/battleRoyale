@@ -103,6 +103,20 @@ test("ok: Enter submits, shows the confirmation card, and its start button start
   expect(await screen.findByText("broadcast page")).toBeTruthy();
 });
 
+test("the sky is one of the battlefields (D-70)", async () => {
+  api.postIntake.mockResolvedValue(ok);
+  ask(open(), "a grizzly bear vs 6 gray wolves");
+  const card = await screen.findByRole("region", { name: "Tonight's card" });
+  const field = screen.getByLabelText("Battlefield") as HTMLSelectElement;
+  expect(within(field).getByRole("option", { name: "Sky" })).toBeTruthy();
+  fireEvent.change(field, { target: { value: "sky" } });
+  fireEvent.click(within(card).getByRole("button", { name: START_LABEL }));
+  expect(api.createBattle).toHaveBeenCalledWith({
+    ...ok.matchup,
+    terrain: "sky",
+  });
+});
+
 test("Shift+Enter adds a line instead of submitting", () => {
   const box = open();
   fireEvent.change(box, { target: { value: "a goose" } });
@@ -178,12 +192,26 @@ test("a network failure shows a way to retry and keeps the text", async () => {
 
 test("the Showcase row lists five battles that link to their broadcasts", async () => {
   open();
-  const row = await screen.findByRole("region", { name: "Showcase" });
+  const row = await screen.findByRole("region", {
+    name: "Showcase (Ready Made)", // says these play instantly (#513)
+  });
   const links = within(row).getAllByRole("link");
   expect(links).toHaveLength(5);
   expect(links[1].getAttribute("href")).toBe(
     `/battle/${SHOWCASE[1].battle_id}`,
   );
+});
+
+test("the example chips sit under a heading that says to try one (#511)", () => {
+  open();
+  const examples = screen.getByRole("region", { name: "Try one of these" });
+  const chips = within(examples).getAllByRole("button");
+  expect(chips.map((chip) => chip.textContent)).toEqual(EXAMPLES);
+  expect(
+    within(examples).getByText(
+      "Click one to fill in the box, then press FIGHT!",
+    ),
+  ).toBeTruthy();
 });
 
 test("example chips fill the box", () => {

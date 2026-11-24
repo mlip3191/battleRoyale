@@ -6,6 +6,7 @@ import thousand from "./fixtures/thousand-vs-one.json";
 import twoHundredVsFive from "./fixtures/two-hundred-vs-five.json";
 import {
   MAX_REPLAY_MS,
+  MISS_LABEL,
   MIN_BEAT_MS,
   ReplayClock,
   beatTimes,
@@ -264,6 +265,11 @@ describe("who acts and who is affected", () => {
       count: 6,
       damage: 8.6,
     });
+  });
+
+  test("a miss is labeled in plain words, not 'whiff' (#505)", () => {
+    expect(MISS_LABEL).toBe("miss!");
+    expect(MISS_LABEL.toLowerCase()).not.toContain("whiff");
   });
 
   test("attack is a lunge, miss has no damage, retreat and flee are the runner's side", () => {

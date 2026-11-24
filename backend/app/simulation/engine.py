@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from app.config import get_settings
 from app.models.matchup import Matchup
 from app.models.simulation import EventType, FightEvent, SimulationResult
-from app.models.stats import Body, StatName, StatSheet
+from app.models.stats import Body, Habitat, StatName, StatSheet
 from app.models.terrain import Terrain
 from app.simulation import constants as c
 from app.simulation.decide import decide
@@ -26,6 +26,7 @@ from app.simulation.fighters import (
     plural_word,
     sample_template,
     scale_factor,
+    shoots,
     venom_dose,
 )
 from app.simulation.rng import make_seed, run_rng
@@ -876,6 +877,12 @@ def _notes(matchup: Matchup, ks: tuple[float, float]) -> tuple[str, str]:
     return note(0), note(1)
 
 
+def _reachable(matchup: Matchup, sheets: list[StatSheet]) -> bool:
+    """Whether the two sides can reach each other on this battlefield (see terrain.can_engage)."""
+    a, b = (effective_habitat(sheet) for sheet in sheets)
+    return can_engage(matchup.terrain, a, b, ranged_a=shoots(sheets[0]), ranged_b=shoots(sheets[1]))
+
+
 def _no_contest(
     matchup: Matchup, sheets: list[StatSheet], seed: int, runs: int, harmless: bool = False
 ) -> SimulationResult:
@@ -888,11 +895,19 @@ def _no_contest(
     else:
         terrain = matchup.terrain.value.replace("_", " ")
         factor = "habitat"
+        habitats = [effective_habitat(sheet) for sheet in sheets]
         explainer = (
-            f"No contest: {names[0]} ({effective_habitat(sheets[0]).value}) and {names[1]} "
-            f"({effective_habitat(sheets[1]).value}) can't reach each other in the {terrain}."
+            f"No contest: {names[0]} ({habitats[0].value}) and {names[1]} "
+            f"({habitats[1].value}) can't reach each other in the {terrain}."
         )
         hint = "no contest: neither can reach the other"
+        if matchup.terrain is Terrain.SKY:  # D-70: a flier stays up out of the other's reach
+            flier = 0 if habitats[0] is Habitat.AIR else 1
+            explainer = (
+                f"No contest: {names[flier]} stays up in the sky, and {names[1 - flier]} has "
+                "no way to reach it from the ground."
+            )
+            hint = "no contest: the flier stays out of reach"
     return SimulationResult(
         seed=seed,
         runs=runs,
@@ -958,8 +973,7 @@ def too_big_for_venom(
     needs no ENGINE_VERSION bump. Fights that end at once (no contest) are never too big.
     """
     ks = scale_factors(matchup, stat_sheets, reference_sheets)
-    habitats = [effective_habitat(sheet) for sheet in stat_sheets]
-    if not can_engage(matchup.terrain, habitats[0], habitats[1]):
+    if not _reachable(matchup, stat_sheets):
         return False
     central = [
         apply_terrain(
@@ -1017,8 +1031,7 @@ def run(
         raise ValueError("runs must be at least 1")
     seed = make_seed(matchup, stat_sheets[0].sheet_hash, stat_sheets[1].sheet_hash)
     ks = scale_factors(matchup, stat_sheets, reference_sheets)
-    habitats = [effective_habitat(sheet) for sheet in stat_sheets]
-    if not can_engage(matchup.terrain, habitats[0], habitats[1]):
+    if not _reachable(matchup, stat_sheets):
         return _no_contest(matchup, stat_sheets, seed, runs)
     central = [
         apply_terrain(

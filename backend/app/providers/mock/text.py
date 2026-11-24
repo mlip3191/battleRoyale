@@ -182,8 +182,8 @@ class MockChatLLM:
                     return json.dumps(echoed)
         # #240: the safety_classify default allows everything, so the mock also checks the
         # user's text against a short keyword list (mock/safety.py) for obvious real people,
-        # named characters, gods, and firearms. Keywords only tighten: a fixture reply that
-        # already blocks is kept. Live mode never comes here.
+        # named characters, and religious figures (D-69). Keywords only tighten: a fixture reply
+        # that already blocks is kept. Live mode never comes here.
         if prompt_name == "safety_classify":
             text = _user_matchup_text(messages)
             if text and _says_allowed(reply):

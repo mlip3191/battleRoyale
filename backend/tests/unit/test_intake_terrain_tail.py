@@ -34,6 +34,7 @@ def terrain_of(text: str, terrain: str | None) -> Terrain:
         ("a bear vs a wolf at the mountain", Terrain.MOUNTAIN),
         ("a bear vs a wolf in the open field", Terrain.OPEN_FIELD),
         ("a bear vs a wolf in a city", Terrain.URBAN),
+        ("a bald eagle vs a dragon in the sky", Terrain.SKY),  # D-70
     ],
 )
 def test_a_trailing_place_is_read_when_the_model_drops_it(text, expected) -> None:

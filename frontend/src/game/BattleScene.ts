@@ -16,6 +16,7 @@ import {
   type SideLayout,
 } from "./layout.ts";
 import {
+  MISS_LABEL,
   ReplayClock,
   keyFrames,
   type Beat,
@@ -387,7 +388,7 @@ export function createBattleScene(P: typeof Phaser) {
       });
     }
 
-    // Lunge toward the other side; a hit adds a small shake and floating damage, a miss a whiff.
+    // Lunge toward the other side; a hit adds a small shake and floating damage, a miss a "miss!".
     private strike(beat: Beat, ms: number) {
       if (beat.actorSide === null || beat.affectedSide === null) return;
       const attackers = this.pick(
@@ -418,7 +419,7 @@ export function createBattleScene(P: typeof Phaser) {
             ms,
           );
       } else if (beat.kind === "miss") {
-        this.floatText(at.x, at.y, "whiff!", "#b8c1e8", ms);
+        this.floatText(at.x, at.y, MISS_LABEL, "#b8c1e8", ms);
       }
     }
 
@@ -602,7 +603,8 @@ export function createBattleScene(P: typeof Phaser) {
     }
 
     // After a skip, put every sprite back on its spot, upright, and fully shown or gone
-    // (killed tweens can leave one mid-lunge or half-faded and tilted mid-fall).
+    // (killed tweens can leave one mid-lunge or half-faded and tilted mid-fall), and each
+    // health bar at its side's current share (a killed tween can leave it mid-drain, #528).
     private snapHome() {
       for (const squad of this.squads!) {
         squad.sprites.forEach((sprite, i) =>
@@ -611,6 +613,7 @@ export function createBattleScene(P: typeof Phaser) {
             .setAngle(0)
             .setAlpha(squad.down[i] ? 0 : 1),
         );
+        this.showHealth(squad, 0, true);
       }
     }
 

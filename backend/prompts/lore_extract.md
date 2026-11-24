@@ -33,7 +33,7 @@ a kind of monster. Answer found false, and leave the other fields null or empty,
 article is about any of these instead:
 - a real animal, breed, or species, even a rare or extinct one (for example a pug, a moose, an
   okapi, a dodo);
-- a real person, a group of people, a god or goddess, or any deity;
+- a real person, a group of people, a military unit, a god or goddess, or any deity;
 - a named individual character, from myth or from fiction (for example Cerberus, Medusa,
   Smaug, the Minotaur of Crete): one particular creature with its own name, not a
   kind of creature;
@@ -49,22 +49,37 @@ fits the article best:
 - "generic_kind": a generic TYPE of human or supernatural being, never one named individual: a
   priest, a monk, a samurai, a knight, a god, an angel, a demon, a valkyrie, a titan. A creature
   named in the plural or with a lower-case type word ("god", "gods", "angel") is a generic kind
-  even when the article is about a particular figure of that name; a specific god's own name
-  (Zeus, Thor, Anubis, Odin, Satan, Lucifer, Buddha, Jesus, Allah) is always "deity", whatever
-  its case. A generic kind is NEVER a person defined by a firearm, an explosive or violence as a
-  crime (a gunman, sniper, terrorist, assassin, shooter, bomber, criminal, gangster) or by a hate
-  movement (a nazi): choose "person" for those. When unsure whether a human type qualifies,
-  choose "person".
+  even when the article is about a particular figure of that name. A generic kind is NEVER a
+  person defined by violence as a crime (a gunman, sniper, terrorist, assassin, shooter, bomber,
+  criminal, gangster) or by a hate movement (a nazi): choose "person" for those. When unsure
+  whether a human type qualifies, choose "person".
+- "armed_unit": soldiers of a modern military or police unit, generic or named, who fight with
+  firearms (a Navy SEAL, SEAL Team Six, a Green Beret, a Marine, a paratrooper, a modern
+  infantryman, a SWAT officer). Never a terrorist, militant, militia, extremist or hate group
+  or its members (ISIS fighters, the Taliban, Nazi soldiers): choose "person" for those.
+- "myth_deity": one named god or goddess of a mythology that is no longer widely worshipped
+  (Zeus, Thor, Odin, Anubis, Ra, Athena, Poseidon, Freya, Quetzalcoatl as the god).
 - "person": a real person (alive or historical), a named individual, a human religious figure
-  (the Pope, a prophet, a saint), or a group of people (an army, a nation, a team).
-- "deity": one named god or goddess (Zeus, Thor, Anubis, Allah, a capitalized "God").
-- "named_character": one particular named individual from myth or fiction.
-- "weapon": any firearm (a rifle, pistol, shotgun, machine gun, cannon), explosive (a bomb,
-  grenade, dynamite, a missile) or weapon of mass destruction. Always choose "weapon" for these.
-  A sword, a bow, a spear, an axe, a club or a vehicle is NOT a weapon here: choose
-  "object_or_machine".
+  (the Pope, a prophet, a saint), or a group of people that is not a military unit (a nation, a
+  sports team, a band).
+- "deity": a god or central figure of a living religion (God, Allah, Yahweh, Jesus, Muhammad,
+  Buddha, Vishnu, Shiva, Krishna, Ganesha, Satan, Lucifer), whatever its case.
+- "named_character": one particular named individual from myth or fiction who is not a god
+  (Hercules, Medusa, Cerberus).
+- "weapon": not used. A firearm, explosive or other weapon on its own (a rifle, a grenade, a
+  nuclear bomb, a sword, a bow) is "object_or_machine".
 - "nonsense": anything else (a place, a film, a band, a list of meanings, gibberish, or when
   you are not sure).
+With "real_animal", also give "category": exactly one of "mammal", "bird", "reptile",
+"amphibian", "fish", "insect", "arachnid" or "mollusk". With "real_animal", "generic_kind",
+"myth_deity" or "object_or_machine", also give "size_class", how big a typical adult animal
+or person, or a typical object or machine, is: "tiny" (mouse- or phone-sized or smaller), "small"
+(cat- or toaster-sized), "medium" (person- or motorcycle-sized), "large" (horse-, bear- or
+car-sized) or "huge" (elephant- or bus-sized or bigger). Words only, never a number. Otherwise
+leave both null.
+With "real_animal", also give "flies": true when a typical adult flies under its own power (a
+hawk, a bat, a bee), false when it doesn't (an ostrich, a penguin, an ant, a flying fish that
+only glides). Otherwise leave it null.
 If the message says no Wikipedia article was found, answer found false and pick the reason
 from the name alone. A made-up or unclear name is "nonsense".
 When in doubt, choose "nonsense". Code uses the reason only to decide what happens next; it
@@ -73,4 +88,4 @@ never changes a number.
 Reply with JSON only, matching the schema:
 {"found": true, "body_analog": "<fighter>", "size_analog": "<fighter or null>", "abilities": ["<ability>"], "heads": null, "quote": "<sentence>"}
 or
-{"found": false, "body_analog": null, "size_analog": null, "abilities": [], "heads": null, "quote": null, "reason": "<one word from the list>"}
+{"found": false, "body_analog": null, "size_analog": null, "abilities": [], "heads": null, "quote": null, "reason": "<one word from the list>", "category": "<animal kind or null>", "size_class": "<size word or null>", "flies": <true, false or null>}

@@ -42,6 +42,8 @@ class Blocklist:
     owners: frozenset[str]
     relations: frozenset[str]
     self_harm: frozenset[str] = frozenset()
+    religious_figures: frozenset[str] = frozenset()
+    hate_groups: frozenset[str] = frozenset()
     attack_ask: frozenset[str] = frozenset()
     attack: re.Pattern[str] = re.compile(r"(?!)")
     """A harm word, then within four words a target not followed by "of" (on _clean text)."""
@@ -53,6 +55,8 @@ class Blocklist:
     not_fighters: frozenset[str] = frozenset()
     ask_opener: re.Pattern[str] = re.compile(r"(?!)")
     """An ask phrase and its comma at the start of the text, see strip_ask_opener (#344)."""
+    instruction_head: frozenset[str] = frozenset()
+    """Head nouns that name an instruction to the app, not a fighter ("system prompt", #561)."""
 
 
 # Phrases as one regex alternative, longest first, each as whole words.
@@ -96,6 +100,8 @@ def load_blocklist() -> Blocklist:
         owners=words("real_person", "owners"),
         relations=words("real_person", "relations"),
         self_harm=words("self_harm", "anywhere"),
+        religious_figures=words("religious_figure", "anywhere"),
+        hate_groups=words("hate_group", "anywhere"),
         attack_ask=words("attack_planning", "ask"),
         attack=_attack_pattern(
             words("attack_planning", "harm"), words("attack_planning", "targets")
@@ -113,6 +119,7 @@ def load_blocklist() -> Blocklist:
             rf"^\s*(?:please\s+)?(?:{_alternatives(words('real_person', 'ask_openers'))})\s*,\s*",
             re.IGNORECASE,
         ),
+        instruction_head=words("not_a_fighter", "head"),
     )
 
 
@@ -190,6 +197,8 @@ def _check_side(words: list[str], lists: Blocklist) -> SafetyVerdict:
         return blocked("hate", "rules")
     if _in(head, lists.people_words) and any(_in(w, lists.group_head) for w in words[:-1]):
         return blocked("hate", "rules")
+    if _in(head, lists.instruction_head):  # "prompt" or "prompts"
+        return blocked("nonsense", "rules")
     return ALLOWED
 
 
@@ -266,6 +275,10 @@ def check_text_rules(text: str) -> SafetyVerdict:
         return blocked("minor", "rules")
     if _names_someone_known(text, lists):
         return blocked("real_person", "rules")
+    if _has_phrase(text, lists.religious_figures):  # a living religion's figure (D-69)
+        return blocked("deity", "rules")
+    if _has_phrase(text, lists.hate_groups):  # never a "military unit" (D-69, #523 review)
+        return blocked("hate", "rules")
     for words in sides(strip_ask_opener(text, lists)):
         verdict = _check_side(words, lists)
         if not verdict.allowed:

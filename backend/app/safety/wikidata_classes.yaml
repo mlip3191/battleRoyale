@@ -41,8 +41,9 @@
 # Version 11 (#340): character is individuals_only, so kinds of mythical creature ("a centaur",
 # "a harpy") are allowed while named individuals (Cerberus, Medusa) still block; fictional
 # species blocks kinds from a franchise (Pikachu, Dalek). deity is individuals_only too (#400
-# review): named deities (Zeus, Thor) still block, kinds ("a valkyrie") are left to the
-# classifier. Cached rows block differently.
+# review); since D-69 the gate ignores Wikidata's deity and weapon answers (gate.py), so gods of
+# mythology (Zeus) fight and the code rules and classifier stop living religions' figures.
+# Cached rows block differently.
 # Version 11 (#378): fossil taxon is a kind item, so an extinct animal's own item counts as a kind
 # and "a stegosaurus" is no longer judged by the Dungeons & Dragons monster of the same name.
 # Version 12 (#340 + #378 merged): both branches had bumped to 11 separately, so the merge bumps
@@ -283,9 +284,9 @@ classes:
   - qid: Q21192438
     label: fictional species
     reason: copyrighted_character
-  # deity is individuals_only (Mike, #400 review; D-38 blocks named deities only): Zeus, Thor and
-  # Anubis are individuals (no P279) and still block, while kinds such as "a valkyrie" (live
-  # Q131087 reaches deity) stay allowed here and are left to the classifier.
+  # deity is individuals_only (Mike, #400 review): Zeus, Thor and Anubis are individuals (no P279)
+  # and still classify as deity, while kinds such as "a valkyrie" (live Q131087 reaches deity) do
+  # not. Since D-69 the gate ignores the deity and weapon answers (NOT_BLOCKED_BY_WIKIDATA).
   - qid: Q178885
     label: deity
     reason: deity

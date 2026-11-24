@@ -72,11 +72,24 @@ GIANT_ANALOGS = {
 }
 BIG_WORDS = r"big|large|huge|giant\w*|enormous|massive|colossal|monstrous|immense"
 NO_ARTICLE = "(no Wikipedia article was found)"  # sent in place of the article text (#403)
-# Why the model answers found false (#403). Only the first three (#444 added generic_kind) mean "a
-# plausible fighter, just not a legend"; the rest, and anything else, are refusals. Fixed here and
-# in prompts/lore_extract.md.
-NOT_A_LEGEND_REASONS = frozenset({"real_animal", "object_or_machine", "generic_kind"})
+# Why the model answers found false (#403). Only these (#444 added generic_kind, D-69 armed_unit
+# and myth_deity) mean "a plausible fighter, just not a legend"; the rest, and anything else, are
+# refusals. Fixed here and in prompts/lore_extract.md.
+NOT_A_LEGEND_REASONS = frozenset(
+    {"real_animal", "object_or_machine", "generic_kind", "armed_unit", "myth_deity"}
+)
+# "weapon" stays a refusal here on purpose: since D-69 the prompt says it is unused (a weapon is
+# object_or_machine), so an answer of "weapon" is a stray one and failing closed is the safe side.
 REFUSAL_REASONS = frozenset({"person", "deity", "named_character", "weapon", "nonsense"})
+# With a not-a-legend answer the model may also pick, from fixed lists, what kind of animal it is
+# and how big a living fighter is (#517). Code turns the labels into numbers (estimate_sheet.py);
+# a missing or unknown label means today's defaults (a medium mammal).
+ANIMAL_CATEGORIES = frozenset(
+    {"mammal", "bird", "reptile", "amphibian", "fish", "insect", "arachnid", "mollusk"}
+)
+SIZE_CLASSES = frozenset({"tiny", "small", "medium", "large", "huge"})
+# Soldiers stay human-sized. An object or machine is sized too (#562), so a school bus isn't 1 kg.
+SIZED_REASONS = frozenset({"real_animal", "generic_kind", "myth_deity", "object_or_machine"})
 # Generic supernatural kinds D-65 allows. Their Wikipedia article ("God") is about one named
 # figure, so the lookup would answer "deity"; code calls them generic_kind without asking (#444).
 # Intake lowercases the name, so a capitalized "God" (a named deity, D-65) is stopped there.
@@ -104,8 +117,16 @@ class LoreReply(BaseModel):
     quote: str | None = None
     """The sentence that supports the choices, copied word for word."""
     reason: Any = None  # Any on purpose: a wrongly typed reason must fail closed, not raise
-    """Only with found false: why (real_animal, object_or_machine, generic_kind, person, deity,
-    named_character, weapon or nonsense). Code checks it; anything else is a refusal."""
+    """Only with found false: why (real_animal, object_or_machine, generic_kind, armed_unit,
+    myth_deity, person, deity, named_character, weapon or nonsense). Code checks it; anything
+    else is a refusal."""
+    category: Any = None  # Any for the same reason: an odd label falls back, never raises
+    """Only with real_animal: mammal, bird, reptile, amphibian, fish, insect, arachnid or
+    mollusk."""
+    size_class: Any = None
+    """Only with found false, for a living fighter: tiny, small, medium, large or huge."""
+    flies: Any = None
+    """Only with real_animal: true when a typical adult flies under its own power (#542)."""
 
 
 @dataclass(frozen=True)
@@ -117,8 +138,14 @@ class LoreOutcome:
     blocked: bool = False
     not_a_legend: bool = False
     kind: str | None = None
-    """With not_a_legend: the fixed reason ("real_animal", "object_or_machine" or "generic_kind")
-    (#453, #444)."""
+    """With not_a_legend: the fixed reason ("real_animal", "object_or_machine", "generic_kind",
+    "armed_unit" or "myth_deity") (#453, #444, D-69)."""
+    category: str | None = None
+    """With real_animal: the kind of animal from ANIMAL_CATEGORIES, or None (#517)."""
+    size_class: str | None = None
+    """With a sized reason: tiny to huge from SIZE_CLASSES, or None (#517)."""
+    flies: bool | None = None
+    """With real_animal: whether it flies, or None when the answer was not a plain yes/no."""
 
 
 UNAVAILABLE = LoreOutcome()
@@ -260,17 +287,50 @@ async def fetch_legend_article(client: httpx.AsyncClient, name: str) -> SourceDo
     return None
 
 
-# True for a generic supernatural kind ("god", "angel"): not a legend, and no lookup is needed.
-def is_generic_supernatural(name: str) -> bool:
-    return name.strip().lower() in GENERIC_SUPERNATURAL_KINDS
+# Common military types (D-69), as intake names them ("US Navy SEALs" is "navy seal"). Their
+# articles are about one real unit, so the lookup tends to answer "person"; code calls them
+# armed_unit without asking. Other units still go through the lookup.
+MILITARY_KINDS = frozenset(
+    {"navy seal", "green beret", "marine", "paratrooper", "infantryman", "soldier"}
+    | {"modern soldier", "commando", "army ranger", "special forces soldier", "swat officer"}
+)
+
+
+# The fixed reason code gives a name without asking the model ("god" is a generic kind, "navy
+# seal" an armed unit), or None when the lookup should decide.
+def code_kind(name: str) -> str | None:
+    word = name.strip().lower()
+    if word in GENERIC_SUPERNATURAL_KINDS:
+        return "generic_kind"
+    if word in MILITARY_KINDS:
+        return "armed_unit"
+    return None
 
 
 # What a found-false answer means: "not a legend" only for a stated harmless reason (#403),
-# otherwise a block, so a missing, unknown or oddly typed reason fails closed.
-def outcome_for_not_found(reason: object) -> LoreOutcome:
-    if isinstance(reason, str) and reason.strip().lower() in NOT_A_LEGEND_REASONS:
-        return LoreOutcome(not_a_legend=True, kind=reason.strip().lower())  # the reason goes on
-    return NONSENSE
+# otherwise a block, so a missing, unknown or oddly typed reason fails closed. The animal kind
+# and size class are kept only when they are on their fixed lists and fit the reason (#517), and
+# "flies" only as a real true/false for a real animal (#542).
+def outcome_for_not_found(
+    reason: object, category: object = None, size_class: object = None, flies: object = None
+) -> LoreOutcome:
+    kind = _label(reason, NOT_A_LEGEND_REASONS)
+    if kind is None:
+        return NONSENSE
+    return LoreOutcome(
+        not_a_legend=True,
+        kind=kind,  # the reason goes on
+        category=_label(category, ANIMAL_CATEGORIES) if kind == "real_animal" else None,
+        size_class=_label(size_class, SIZE_CLASSES) if kind in SIZED_REASONS else None,
+        flies=flies if kind == "real_animal" and isinstance(flies, bool) else None,
+    )
+
+
+# A label from a fixed list, case and spaces aside, or None for anything else.
+def _label(value: object, allowed: frozenset[str]) -> str | None:
+    if isinstance(value, str) and value.strip().lower() in allowed:
+        return value.strip().lower()
+    return None
 
 
 # The creature for a legend not in mythical.yaml, a block, "not a legend", or nothing when a
@@ -288,7 +348,7 @@ async def lore_for(name: str, client: httpx.AsyncClient, chat: ChatLLM) -> LoreO
     if reply is None:
         return UNAVAILABLE
     if not reply.found:
-        return outcome_for_not_found(reply.reason)
+        return outcome_for_not_found(reply.reason, reply.category, reply.size_class, reply.flies)
     if article is None:  # a legend claimed with no article: no text to check a quote against
         return NONSENSE
     source = {

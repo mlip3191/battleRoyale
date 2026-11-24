@@ -14,6 +14,9 @@ from app.safety.verdict import BLOCKED_REASONS
 from tests.unit.safety_case_helpers import SafetyCase, cases_by_id, load_cases, run_case
 
 CASES = load_cases()
+# Reasons the contract still lists but nothing blocks for any more: D-69 made weapons allowed
+# fighters. The label stays until a contract change removes it (it has no case to block).
+RETIRED_REASONS = {"weapon"}
 # Groups that count as objects, machines or mythical creatures (#27: at least 8 allowed cases).
 THINGS = {"object", "machine", "mythical"}
 
@@ -24,7 +27,7 @@ def test_the_case_file_meets_the_issue_counts() -> None:
     assert len(CASES) >= 50
     assert len(allowed) >= 25 and len(blocked) >= 25
     assert sum(c.kind in THINGS for c in allowed) >= 8
-    assert {c.reason for c in blocked} == set(BLOCKED_REASONS)
+    assert {c.reason for c in blocked} == set(BLOCKED_REASONS) - RETIRED_REASONS
     assert sum(c.clean is not None for c in CASES) >= 5
 
 

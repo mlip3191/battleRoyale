@@ -125,7 +125,7 @@ Wait until you see **"Battle Royale is starting at http://localhost:8000"** and 
 
 Open your web browser (Chrome, Edge, Safari or Firefox) and go to **http://localhost:8000**.
 
-![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button, example matchups and the showcase battles](images/user-guide/05-home.png)
+![The Battle Royale home page: "Who would win?" with a text box, a FIGHT! button, the "Try one of these" example matchups and the "Showcase (Ready Made)" battles](images/user-guide/05-home.png)
 
 On the battle and results pages, a **Home** button in the top bar brings you back here.
 
@@ -135,7 +135,7 @@ On the battle and results pages, a **Home** button in the top bar brings you bac
 
 ### Type a matchup
 
-Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under the box: it fills in the box, and then you click **FIGHT!**.
+Type two sides into the box, with how many of each and, if you like, a place. Then press Enter or click **FIGHT!**. You can also click one of the example matchups under **Try one of these**, below the box: it fills in the box, and then you click **FIGHT!**. An example starts a new fight, researched and simulated live, so it takes about a minute or two.
 
 Good examples:
 
@@ -158,7 +158,7 @@ If a fighter is vague, the app asks **one** question, such as *"Which type of be
 
 ### Check tonight's card and pick a battlefield
 
-The page scrolls down to the card, which shows how the app read your matchup: each side, how many, and any assumptions it made. Pick a **Battlefield** from the list (arena, open field, forest, open water, shoreline, city streets or mountain), then click **Start the fight!** on the card.
+The page scrolls down to the card, which shows how the app read your matchup: each side, how many, and any assumptions it made. Pick a **Battlefield** from the list (arena, open field, forest, open water, shoreline, city streets, mountain or sky), then click **Start the fight!** on the card. In the **sky**, fliers fight each other; a fighter on the ground can only reach a flier with a ranged attack (a rifle, or a breath weapon on a creature that can't fly), so "a bald eagle vs a grizzly bear in the sky" is a no contest.
 
 ![The "Tonight's card" panel showing Bear (grizzly) vs 6 × Wolf (gray), the Battlefield set to Forest, and a Start the fight! button](images/user-guide/08-card.png)
 
@@ -168,7 +168,7 @@ While the app researches and simulates, a ticker shows what it's doing and a lis
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 
-Then the show starts: the announcer introduces the fighters, with captions on screen. The intro has its own **Start the fight** button (a second one, after the card's): click it when you're ready, or **Skip to verdict** to jump straight to the result. A note may appear at the top. **"Some effects unavailable: …"** names the parts that used a stand-in this time (for example the voice or the music); **"Some commentary used the template script"** means the AI announcer was slow, so ready-made commentary was used. Either way the captions always carry the show, and the fight and its numbers are the same.
+Then the show starts: the announcer introduces the fighters, with captions on screen. The intro has its own **Start the fight** button (a second one, after the card's): click it when you're ready, or **Skip to verdict** to jump straight to the result. A note may appear at the top. **"Some effects unavailable: …"** names the parts that used a stand-in this time (for example the voice or the pictures; music is cut, so it is never listed); **"Some commentary used the template script"** means the AI announcer was slow, so ready-made commentary was used. Either way the captions always carry the show, and the fight and its numbers are the same.
 
 ![The intro: Grizzly bear VS 6 gray wolves, an announcer caption, and Start the fight and Skip to verdict buttons](images/user-guide/10-intro.png)
 
@@ -210,7 +210,7 @@ Click **See the full results**. Each part, top to bottom:
 
 ### Showcase battles
 
-Ready-made battles show off what the app can do. They load automatically when the app starts and appear under **Showcase** on the home page. Click one to watch it straight away, with no waiting:
+Ready-made battles show off what the app can do. They load automatically when the app starts and appear under **Showcase (Ready Made)** on the home page. Unlike the examples above the box, they're saved battles: click one to watch it straight away, with no waiting:
 
 1. 100 duck-sized horses vs 1 horse-sized duck
 2. Grizzly bear vs 4 gray wolves
@@ -226,14 +226,14 @@ The app politely turns some requests away, and tells you why:
 |---|---|---|
 | **Real people** (alive or historical) | It's not fair or kind to stage fights between real people. | "We keep real people out of the ring. Try a type of fighter instead, like a Roman legionary or a medieval knight." |
 | **Named characters**, from stories or from myth | They belong to their creators or their legends, and they have no real-world stats to look up. | "Named characters, from stories or from myth, sit this one out. Try a creature type instead, like a dragon or a giant robot." |
-| **Named deities** (Zeus, Thor) | No sources measure them, and they matter to many people. Generic kinds (a god, an angel) are allowed by the rules, but in live mode the app can't find stats for them yet, so the fight is called off (a known limit). | "Gods are above our pay grade. Try a mythical creature, like a griffin, instead." |
-| **Firearms and explosives** | The app keeps things PG. | "No firearms or explosives in this arena. Vehicles and machines are welcome, like a bulldozer." |
-| **Groups of people** (nations, armies, teams) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
+| **Gods and figures of living religions** (Allah, Jesus, Shiva, the Pope) | They matter to many people. Gods of mythology (Zeus, Thor) and generic kinds (a god, an angel) can fight (D-69). | "Gods of living religions are above our pay grade. Try a god of myth, like Zeus, or a mythical creature, like a griffin." |
+| **Groups of people** (nations, teams, bands) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
 | **Abstract ideas, places, landforms, planets** | They aren't physical fighters with measurable stats. | A message explaining what kinds of fighters work. |
 | **More than two sides** | The arena only fits two sides for now. | It offers each pair as a two-sided matchup. Group a pack into one side, like "3 wolves". |
 | **More than 10,000 on a side, or fractions** | It keeps the simulation fast and the fighters whole. | It lowers the count to 10,000 and says so on tonight's card, or asks how many whole fighters you meant. |
+| **A group with no number, an odd number** ("a swarm of bees", "1e3 ants", "-3 lions") | The simulation needs a whole, positive count. | It reads the count for you and says so on tonight's card: a swarm or colony is 1,000, a school 100, a flock 30, a herd or troop 20, a pod or gaggle 10, a pack or pride 6; "1e3" is 1,000; "-3" is 3. A number you type always wins: "a pack of 12 wolves" is 12 wolves. |
 
-**What does work:** animals, historical fighter types (a Roman legionary, a medieval knight), objects, plants, vehicles and machines (a bulldozer, a tank), and mythical creature types (a dragon, a griffin). A mythical creature is modeled on the real animals its legends compare it to, and every one of its stats is tagged as an assumption.
+**What does work:** animals, historical fighter types (a Roman legionary, a medieval knight), military units (US Navy SEALs, who fight with a rifle), objects and weapons (a toaster, a sword, a grenade), plants, vehicles and machines (a bulldozer, a tank), gods of mythology (Zeus), and mythical creature types (a dragon, a griffin). Fighters off our list fight on labeled estimates. A mythical creature is modeled on the real animals its legends compare it to, and every one of its stats is tagged as an assumption.
 
 The show is PG: knockouts and retreats, no blood or gore.
 
@@ -250,7 +250,7 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **No announcer voice** | Sound is optional, and the captions always carry the show. Check that the button says **Sound on** (click it if it says **Sound off**) and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
 | **`npm run setup` ends with "not a git repository" or "git is not recognized"** | You downloaded the ZIP instead of cloning. The installs already finished, so you can ignore it and go on. |
 | **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and the prebuilt knowledge base didn't load (the message just above says why, usually a different embedding model). Stop the app with Ctrl+C, run `npm run ingest` once ([step 5](#step-5-optional-refresh-the-knowledge-base)), then `npm start` again. |
-| **"Some effects unavailable: research"** on the broadcast | Usually this just means a fighter isn't on the fighter list, so its stats are estimates, which is expected. If it appears for a listed fighter (for example a grizzly bear), the knowledge base is missing: see [step 5](#step-5-optional-refresh-the-knowledge-base). |
+| **"We have no stat sheet for '…', so its stats are estimates"** on the broadcast | Usually this just means that fighter isn't on the fighter list, so its stats are estimates, which is expected. If it names a listed fighter (for example a grizzly bear), the knowledge base is missing: see [step 5](#step-5-optional-refresh-the-knowledge-base). |
 | **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then restart the app; it loads the prebuilt knowledge base on its first live start. |
 
 Still stuck? Run `npm run env:check`. It checks your settings file and says what to fix, without showing any secret values.

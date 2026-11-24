@@ -13,6 +13,7 @@ from collections.abc import Awaitable, Sequence
 from typing import Protocol
 
 from app.intake.rules import singular_word
+from app.intake.steps import WIKIDATA, intake_step
 from app.models.matchup import Matchup
 from app.providers.base import ChatLLM
 from app.providers.registry import get_provider
@@ -134,7 +135,15 @@ async def _run_together(*checks: Awaitable[SafetyVerdict]) -> list[SafetyVerdict
         raise
 
 
-# The Wikidata name check on the sides' names, telling it which ones the model wrote.
+# Wikidata reasons that no longer block on their own (D-69): weapons are allowed fighters, and
+# Wikidata can't tell a god of mythology (Zeus, allowed) from one of a living religion, so the
+# code rules' fixed list and the classifier decide deities.
+NOT_BLOCKED_BY_WIKIDATA = frozenset({"deity", "weapon"})
+
+
+# The Wikidata name check on the sides' names, telling it which ones the model wrote. Marked as
+# a step so a hang there is named when intake times out; its fail-open rules are unchanged.
+@intake_step(WIKIDATA)
 async def _check_side_names(
     fighters: Sequence[Side], lookup: WikidataLookup | None, cache: WikidataCache | None
 ) -> SafetyVerdict:
@@ -143,6 +152,7 @@ async def _check_side_names(
         lookup=lookup,
         cache=cache,
         model_written=model_written_names(fighters),
+        ignore=NOT_BLOCKED_BY_WIKIDATA,
     )
 
 

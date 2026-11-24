@@ -61,6 +61,10 @@ logger = logging.getLogger(__name__)
 AUDIO_VERSION = "a1"  # bump when the way files are made changes, so old caches are not reused
 ITEM_TIMEOUT_S = 96.0  # per file (120 s audio budget x 0.8, D-68); the stage passes its own share
 LINE_PAUSE_S = 0.4  # silence between two spoken lines
+# At most this many TTS calls run at once, so a long script's voice takes about ceil(lines / 3)
+# line latencies instead of one per line and fits the audio budget (#548). The three scripts of
+# a show share one limit, so a stock-voice show never fills the speech service's queue (#568).
+SPEAK_CONCURRENCY = 3
 MUSIC_SECONDS = 30.0
 MUSIC_STYLE = "upbeat retro sports-broadcast theme, brass and synth"
 MUSIC_TAIL = "instrumental, no vocals"
@@ -227,10 +231,11 @@ async def make_audio(
             provider = get_provider("tts")
         except Exception as error:  # live settings missing: cached files can still be used
             logger.warning("tts provider unavailable (%s)", type(error).__name__)
+    limit = asyncio.Semaphore(SPEAK_CONCURRENCY)  # one for the whole show (#568)
     jobs = [
         _bounded(
             narration_request(script, voice_id, options, voice_ref),
-            functools.partial(_speak, script=script, voice_id=voice_id),
+            functools.partial(_speak, script=script, voice_id=voice_id, limit=limit),
             provider,
             media_dir,
             timeout_s,
@@ -275,11 +280,28 @@ async def make_music(
 # --- helpers -----------------------------------------------------------------------------------
 
 
-# Speak each line in turn, then join them with a short pause between lines. If the provider says
-# which voice spoke (live TTS), the joined file says it too; lines in two voices are tagged
-# "mixed" so they are not cached under the reference or stock key.
-async def _speak(tts: TTS, script: Script, voice_id: str) -> bytes:
-    clips = [await tts.speak(text, voice_id) for text in speech_lines(script)]
+# Speak the lines a few at a time (SPEAK_CONCURRENCY, #548), sharing the show's `limit` when given
+# one (#568), keep the clips in the script's line order, then join them with a short pause between
+# lines. If the provider says which voice spoke (live TTS), the joined file says it too; lines in
+# two voices are tagged "mixed" so they are not cached under the reference or stock key.
+async def _speak(
+    tts: TTS, script: Script, voice_id: str, limit: asyncio.Semaphore | None = None
+) -> bytes:
+    slots = asyncio.Semaphore(SPEAK_CONCURRENCY) if limit is None else limit
+
+    # One line, waiting for a free slot first.
+    async def one(text: str) -> bytes:
+        async with slots:
+            return await tts.speak(text, voice_id)
+
+    # A TaskGroup cancels the script's other lines as soon as one fails (#568). Re-raise that
+    # line's own error, so the audio log still names it rather than ExceptionGroup.
+    try:
+        async with asyncio.TaskGroup() as group:
+            tasks = [group.create_task(one(text)) for text in speech_lines(script)]
+    except ExceptionGroup as errors:
+        raise errors.exceptions[0] from None
+    clips = [task.result() for task in tasks]  # in the script's line order
     voices = {getattr(clip, "voice", None) for clip in clips}
     joined = await asyncio.to_thread(join_wavs, clips, LINE_PAUSE_S)
     if voices == {None}:

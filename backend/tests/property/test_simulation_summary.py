@@ -296,7 +296,8 @@ def test_size_that_helps_a_smaller_crowd_says_the_smaller_side_and_how():
     matchup = matchup_of(6, 1)  # the favorite (side 0) is the smaller side, and a crowd
     text = _explained(StatName.SIZE, True, matchup, [wolf, bear])
     assert text.startswith("Size decided it, in the smaller side's favor:")
-    assert "6 gray wolves (1.6 m) against 1 Grizzly bear (2.4 m)" in text  # #458: a crowd is plural
+    # #458: a crowd is plural. make_sheet marks every stat an estimate, so both carry the label.
+    assert "6 gray wolves (1.6 m, estimate) against 1 Grizzly bear (2.4 m, estimate)" in text
     assert "easier target" in text and "fit around it" in text
     assert sorted(numbers_in(text, [wolf, bear])) == [1.0, 1.6, 2.4, 6.0]
 
@@ -305,7 +306,8 @@ def test_size_that_helps_a_lone_smaller_fighter_skips_the_crowd_reason():
     small, big = make_sheet("small", size_m=1.0), make_sheet("big", size_m=2.4)
     text = _explained(StatName.SIZE, True, matchup_of(1, 1), [small, big])
     assert text == (
-        "Size decided it, in the smaller side's favor: Small (1 m) against Big (2.4 m). "
+        "Size decided it, in the smaller side's favor: "
+        "Small (1 m, estimate) against Big (2.4 m, estimate). "
         "A bigger body is an easier target."
     )
 
@@ -313,14 +315,15 @@ def test_size_that_helps_a_lone_smaller_fighter_skips_the_crowd_reason():
 def test_size_that_helps_the_bigger_side_keeps_the_plain_sentence():
     big, small = make_sheet("big", size_m=2.4), make_sheet("small", size_m=1.0)
     text = _explained(StatName.SIZE, True, matchup_of(1, 6), [big, small])
-    assert text == "Size decided it: Big (2.4 m) against Small (1 m)."
+    assert text == "Size decided it: Big (2.4 m, estimate) against Small (1 m, estimate)."
 
 
 def test_weight_that_helps_the_lighter_side_says_the_lighter_side():
     light, heavy = make_sheet("light", mass_kg=40), make_sheet("heavy", mass_kg=400)
     text = _explained(StatName.MASS, True, matchup_of(1, 1), [light, heavy])
     assert text == (
-        "Size decided it, in the lighter side's favor: Light (40 kg) against Heavy (400 kg)."
+        "Size decided it, in the lighter side's favor: "
+        "Light (40 kg, estimate) against Heavy (400 kg, estimate)."
     )
 
 
@@ -329,7 +332,8 @@ def test_a_crowd_against_a_slightly_bigger_foe_does_not_claim_more_attackers_fit
     small, big = make_sheet("small", size_m=1.6), make_sheet("big", size_m=2.0)
     text = _explained(StatName.SIZE, True, matchup_of(6, 1), [small, big])
     assert text == (
-        "Size decided it, in the smaller side's favor: 6 smalls (1.6 m) against 1 Big (2 m). "
+        "Size decided it, in the smaller side's favor: "
+        "6 smalls (1.6 m, estimate) against 1 Big (2 m, estimate). "
         "A bigger body is an easier target."
     )
 
@@ -338,7 +342,45 @@ def test_a_size_reference_keeps_the_plain_sentence():
     # A scaled fighter's sheet size isn't the size it fought at, so "smaller" could be wrong.
     small, big = make_sheet("small", size_m=1.0), make_sheet("big", size_m=2.4)
     text = _explained(StatName.SIZE, True, matchup_of(1, 1, ref_0="horse"), [small, big])
-    assert text == "Size decided it: Small (1 m) against Big (2.4 m)."
+    assert text == "Size decided it: Small (1 m, estimate) against Big (2.4 m, estimate)."
+
+
+# --- #552: an estimated number is labeled in the deciding-factor sentence ----------------------
+
+
+def _with_estimate(sheet, key, is_estimate):
+    """The same sheet with one stat marked as an estimate (or as sourced)."""
+    stats = dict(sheet.stats)
+    stats[key] = stats[key].model_copy(update={"is_estimate": is_estimate})
+    return sheet.model_copy(update={"stats": stats})
+
+
+def _strength_pair(seal_estimate, gorilla_estimate, seal_force=7000):
+    key = StatName.ATTACK_FORCE
+    seal = _with_estimate(make_sheet("navy seal", attack_force_n=seal_force), key, seal_estimate)
+    gorilla = _with_estimate(make_sheet("gorilla", attack_force_n=1020), key, gorilla_estimate)
+    return [seal, gorilla]
+
+
+def test_a_strength_that_is_an_estimate_is_labeled_in_the_sentence():
+    text = _explained(StatName.ATTACK_FORCE, True, matchup_of(1, 1), _strength_pair(True, False))
+    assert text == "Strength decided it: Navy seal (7000 N, estimate) against Gorilla (1020 N)."
+
+
+def test_an_estimate_is_labeled_when_the_favorite_won_in_spite_of_the_stat():
+    sheets = _strength_pair(True, False, seal_force=700)
+    text = _explained(StatName.ATTACK_FORCE, False, matchup_of(1, 1), sheets)
+    assert "Navy seal (700 N, estimate) against Gorilla (1020 N)" in text
+
+
+def test_an_estimate_on_the_other_side_is_labeled_too():
+    text = _explained(StatName.ATTACK_FORCE, True, matchup_of(1, 1), _strength_pair(False, True))
+    assert text == "Strength decided it: Navy seal (7000 N) against Gorilla (1020 N, estimate)."
+
+
+def test_a_sourced_number_stays_plain():
+    text = _explained(StatName.ATTACK_FORCE, True, matchup_of(1, 1), _strength_pair(False, False))
+    assert text == "Strength decided it: Navy seal (7000 N) against Gorilla (1020 N)."
 
 
 # --- #474: the deciding-factor sentence names the verdict's favorite, not the sample's ----------
@@ -429,3 +471,43 @@ def test_wins_comfortably_follows_the_full_run_not_the_sample() -> None:
     # And the reverse: a 0.85 sample (170 of 200) inside a 0.95 full run (950 of 1,000).
     base = _mixed(170, 30, 0) + _mixed(780, 20, 0)
     assert "comfortably" in _decide_text(base)
+
+
+# --- #552 review: the label also shows in the smaller-side, lighter-side and scaling sentences ---
+
+
+def test_the_smaller_side_sentence_labels_only_the_estimated_size():
+    key = StatName.SIZE
+    small = _with_estimate(make_sheet("small", size_m=1.0), key, True)
+    big = _with_estimate(make_sheet("big", size_m=2.4), key, False)
+    text = _explained(key, True, matchup_of(1, 1), [small, big])
+    assert "Small (1 m, estimate) against Big (2.4 m)." in text
+
+
+def test_the_lighter_side_sentence_labels_only_the_estimated_mass():
+    key = StatName.MASS
+    light = _with_estimate(make_sheet("light", mass_kg=40), key, False)
+    heavy = _with_estimate(make_sheet("heavy", mass_kg=400), key, True)
+    text = _explained(key, True, matchup_of(1, 1), [light, heavy])
+    assert text.endswith("Light (40 kg) against Heavy (400 kg, estimate).")
+
+
+def test_the_scaling_sentence_labels_an_estimated_mass():
+    from app.simulation.decide import _explain_scaling
+
+    key = StatName.MASS
+    duck_ = _with_estimate(make_sheet("duck", mass_kg=2), key, False)
+    horse_ = _with_estimate(make_sheet("horse", mass_kg=500), key, True)
+    matchup = matchup_of(1, 1, ref_0="horse")
+    text = _explain_scaling(matchup, [duck_, horse_], 0, True)
+    assert "Duck (2 kg normally, scaled to horse size)" in text
+    assert "Horse (500 kg, estimate)" in text
+    sized = _explain_scaling(matchup, [horse_, duck_], 1, True)  # the scaled side, estimated
+    assert "Horse (500 kg normally, scaled to horse size, estimate)" in sized
+
+
+def test_a_strength_estimated_on_both_sides_is_labeled_on_both():
+    text = _explained(StatName.ATTACK_FORCE, True, matchup_of(1, 1), _strength_pair(True, True))
+    assert text == (
+        "Strength decided it: Navy seal (7000 N, estimate) against Gorilla (1020 N, estimate)."
+    )

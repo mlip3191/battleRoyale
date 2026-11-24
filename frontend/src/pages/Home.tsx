@@ -51,6 +51,7 @@ export const TERRAINS = {
   shoreline: "Shoreline",
   urban: "City streets",
   mountain: "Mountain",
+  sky: "Sky",
 } satisfies Record<Terrain, string>;
 
 // The card's own button, so it isn't a second "FIGHT!" next to the form's (#462).
@@ -228,19 +229,26 @@ export default function Home() {
         <p className={styles.muted} role="status" aria-live="polite">
           {slow ? STILL_WORKING : ""}
         </p>
-        <ul className={styles.chips} aria-label="Examples">
-          {EXAMPLES.map((example) => (
-            <li key={example}>
-              <button
-                type="button"
-                className={styles.chip}
-                onClick={() => pick(example)}
-              >
-                {example}
-              </button>
-            </li>
-          ))}
-        </ul>
+        {/* A heading so the chips read as clickable examples, not decoration (#511). */}
+        <section className={styles.examples} aria-labelledby="examples-title">
+          <h2 id="examples-title">Try one of these</h2>
+          <p className={styles.muted}>
+            Click one to fill in the box, then press FIGHT!
+          </p>
+          <ul className={styles.chips}>
+            {EXAMPLES.map((example) => (
+              <li key={example}>
+                <button
+                  type="button"
+                  className={styles.chip}
+                  onClick={() => pick(example)}
+                >
+                  {example}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       </form>
 
       {step.kind === "error" && <ErrorPanel message={step.message} />}
@@ -272,7 +280,8 @@ export default function Home() {
 
       {showcase.length > 0 && (
         <section className={styles.showcase} aria-labelledby="showcase-title">
-          <h2 id="showcase-title">Showcase</h2>
+          {/* "Ready made": these saved battles play instantly; the chips start a new one (#513). */}
+          <h2 id="showcase-title">Showcase (Ready Made)</h2>
           <ul>
             {showcase.map((s) => (
               <li key={s.battle_id}>

@@ -890,7 +890,7 @@ export interface components {
          * @description The battlefield; it changes who can reach whom and how fast they move.
          * @enum {string}
          */
-        Terrain: "arena" | "open_field" | "forest" | "water" | "shoreline" | "urban" | "mountain";
+        Terrain: "arena" | "open_field" | "forest" | "water" | "shoreline" | "urban" | "mountain" | "sky";
         /** ValidationError */
         ValidationError: {
             /** Location */

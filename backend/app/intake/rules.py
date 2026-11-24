@@ -6,6 +6,7 @@ user's own words for each side and the model's proposed names, and uses what com
 
 import re
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Literal
 
 from app.models.terrain import Terrain
@@ -33,6 +34,18 @@ QUANTITY_WORDS = ARTICLES | set(UNITS) | set(SCALES) | set(MULTIPLIERS) | {"and"
 NUMBER_TOKEN = re.compile(r"^\d[\d,]*(?:\.\d+)?(?:/\d+)?$")
 # A token plus a trailing hyphen, if any ("three-" in "three-headed"), to spot descriptions.
 TOKEN = re.compile(r"(\d[\d,]*(?:\.\d+)?(?:/\d+)?|[a-z]+)(-?)")
+# Group words with no number ("a swarm of bees") and the count code assumes for one group (#561).
+# Rough, typical sizes, not sourced figures: the card says the count was assumed, and the user can
+# type a number instead. "army" is left out on purpose: it names a military unit (D-69).
+GROUP_WORDS = {
+    "pack": 6, "pride": 6, "pod": 10, "gaggle": 10, "herd": 20, "troop": 20, "flock": 30,
+    "school": 100, "swarm": 1_000, "colony": 1_000,
+}  # fmt: skip
+# Scientific notation as typed, "1e3" or "2.5E2", up to e99 (#561).
+SCIENTIFIC = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)[eE]\+?(\d{1,2})(?![\w.])")
+SCIENTIFIC_MAX = 1_000_000  # past this, the note says "more than" instead of every digit
+# A minus sign stuck to a number at the start of a word, "-3" (not "T-1000" or "1-3") (#561).
+MINUS = re.compile(r"(?<![\w.])[-−](\d[\d,]*(?:\.\d+)?)")
 
 
 @dataclass(frozen=True)
@@ -43,6 +56,59 @@ class CountReading:
     """Whole number of fighters; None when the words hold no quantity at all."""
     problem: Literal["fraction", "zero"] | None = None
     """Set when the quantity is a fraction or zero, which the app can't simulate."""
+    group: str | None = None
+    """The group word the count was assumed from ("swarm"), when no number was typed for it."""
+
+
+# The group word at index when "of" follows it ("swarm" in "a swarm of bees"), else None.
+def _group_word(tokens: list[str], index: int) -> str | None:
+    word = singular_word(tokens[index])
+    return word if word in GROUP_WORDS and _next(tokens, index) == "of" else None
+
+
+# True for a token that states a count: digits or a number word.
+def _is_count_word(token: str) -> bool:
+    return (
+        bool(NUMBER_TOKEN.match(token)) or token in UNITS or token in SCALES or token in MULTIPLIERS
+    )
+
+
+# Drop a group phrase that a typed count follows, so the count is read as typed: "a pack of 12
+# wolves" -> "a 12 wolves" (#561 review). Only the first group phrase is looked at.
+def _without_group_before_count(
+    tokens: list[str], hyphens: list[str]
+) -> tuple[list[str], list[str]]:
+    for index in range(len(tokens)):
+        if _group_word(tokens, index):
+            if index + 2 < len(tokens) and _is_count_word(tokens[index + 2]):
+                return tokens[:index] + tokens[index + 2 :], hyphens[:index] + hyphens[index + 2 :]
+            break
+    return tokens, hyphens
+
+
+# Numbers written in ways the count reader can't use, rewritten with a note for the card (#561):
+# "1e3 ants" -> "1000 ants", "-3 lions" -> "3 lions".
+def tidy_numbers(text: str) -> tuple[str, list[str]]:
+    notes: list[str] = []
+
+    def expand(match: re.Match[str]) -> str:
+        value = Decimal(match.group(1)) * 10 ** int(match.group(2))
+        if value > SCIENTIFIC_MAX:  # "1e99": a short note; the side is capped later anyway
+            notes.append(f"We read '{match.group(0)}' as more than {SCIENTIFIC_MAX:,}.")
+            return str(SCIENTIFIC_MAX)
+        plain = f"{value.normalize():f}"
+        notes.append(f"We read '{match.group(0)}' as {Decimal(plain):,}.")
+        return plain
+
+    def unsign(match: re.Match[str]) -> str:
+        notes.append(
+            f"We read '{match.group(0)}' as {match.group(1)}, since a side can't have "
+            "fewer than zero fighters."
+        )
+        return match.group(1)
+
+    text = SCIENTIFIC.sub(expand, text)
+    return MINUS.sub(unsign, text), notes
 
 
 # Value of a digit token, or "fraction" for "1/2" and "1.5" (but "2.0" is just 2).
@@ -72,6 +138,7 @@ def _is_description(tokens: list[str], hyphens: list[str], index: int) -> bool:
 def read_count(raw: str) -> CountReading:
     pairs = TOKEN.findall(raw.lower())
     tokens, hyphens = [t for t, _ in pairs], [h for _, h in pairs]
+    tokens, hyphens = _without_group_before_count(tokens, hyphens)
     total = current = 0
     saw_number = saw_article = False
     for index, token in enumerate(tokens):
@@ -92,6 +159,10 @@ def read_count(raw: str) -> CountReading:
             current, saw_number = max(current, 1) * MULTIPLIERS[token], True
         elif token in SCALES:
             total, current, saw_number = total + max(current, 1) * SCALES[token], 0, True
+        elif group := _group_word(tokens, index):
+            if saw_number:  # "2 packs of wolves": the typed count, as typed (#561 review)
+                break
+            return CountReading(GROUP_WORDS[group], None, group)  # "a swarm of bees" -> 1,000
         elif token in ARTICLES and not saw_number and index == 0:
             saw_article = True
         elif token in {"and", "of"} and saw_number:
@@ -147,6 +218,18 @@ def normalize_entity(name: str) -> str:
         return ""
     words[-1] = singular_word(words[-1])
     return " ".join(words)
+
+
+# A normalized name without a leading group phrase, for the fighter intake keeps: "swarm of bee"
+# -> "bee" (#561). The safety lookups keep the whole name, so they search exactly as before.
+def without_group(name: str) -> str:
+    words = name.split()
+    if len(words) > 2 and singular_word(words[0]) in GROUP_WORDS and words[1] == "of":
+        words = words[2:]
+        while len(words) > 1 and (words[0] in QUANTITY_WORDS or NUMBER_TOKEN.match(words[0])):
+            words = words[1:]  # "pack of 12 wolf" -> "wolf"
+        return " ".join(words)
+    return name
 
 
 # --- Size references ----------------------------------------------------------------------
@@ -213,6 +296,8 @@ TERRAIN_WORDS: dict[str, tuple[Terrain, bool]] = {
     "mountain": (Terrain.MOUNTAIN, True), "mountainside": (Terrain.MOUNTAIN, True),
     "cliff": (Terrain.MOUNTAIN, True), "hill": (Terrain.MOUNTAIN, False),
     "canyon": (Terrain.MOUNTAIN, False),
+    "sky": (Terrain.SKY, True), "air": (Terrain.SKY, True),
+    "midair": (Terrain.SKY, True), "cloud": (Terrain.SKY, False),  # a cloud forest is a forest
 }  # fmt: skip
 TERRAIN_FILLER = {"in", "on", "at", "a", "an", "the", "of", "inside", "into", "middle"}
 

@@ -11,7 +11,9 @@ Reply with JSON only, matching the schema you were given:
   - "raw": the user's exact words for that side, copied character for character from the
     request, including any number or size words (for example "100 duck-sized horses").
   - "entity": what the fighter is, as a plain lowercase singular name ("horse", "army ant",
-    "main battle tank"). Leave out numbers and size phrases.
+    "main battle tank"). Leave out numbers and size phrases. Keep a military or police unit's
+    name whole, never as an animal it shares a word with ("US Navy SEALs" is "navy seal", not
+    "seal"; "Green Berets" is "green beret").
   - "count": how many, if the user said.
   - "variant": which kind, if the user said ("polar", "adult male"); otherwise null.
   - "size_reference": for phrases like "horse-sized duck", the name of the thing it is sized

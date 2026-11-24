@@ -11,7 +11,7 @@
   "mean_duration_s": 27.687900000000003,
   "outcome": "win_1",
   "deciding_factor": "attack_force_n",
-  "deciding_factor_explainer": "Strength decided it: Lion (4000 N) against Duck (30 N).",
+  "deciding_factor_explainer": "Strength decided it: Lion (4000 N, estimate) against Duck (30 N, estimate).",
   "representative_log": [
     {
       "t": 0.0,
