@@ -298,3 +298,150 @@ test("held at 10x when the fight ends: the outro still plays (#577)", async () =
   await waitFor(() => expect(play).toHaveBeenCalled());
   expect(tracks()[0].getAttribute("src")).toBe("/media/outro.mp3");
 });
+
+// --- in sync with the fight (#576) ----------------------------------------------------------------
+
+const voiceTrack = () => tracks()[0];
+const cueOf = (at: number, start: number, end: number) => ({ at, start, end });
+
+test("in sync, the announcer plays each moment's lines from their start and stops at their end", async () => {
+  const view = render(
+    <AudioBar narration="/media/pbp.wav" music={null} startSound cue={null} />,
+  );
+  // Sound is on, but nothing is said before the first line's moment.
+  expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
+  expect(play).not.toHaveBeenCalled();
+  view.rerender(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(0, 0, 1.4)}
+    />,
+  );
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+  expect(voiceTrack().currentTime).toBe(0);
+  voiceTrack().currentTime = 1.5; // the lines are done
+  fireEvent.timeUpdate(voiceTrack());
+  expect(pause).toHaveBeenCalledTimes(1);
+  view.rerender(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(7, 1.8, 3.2)}
+    />,
+  );
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
+  expect(voiceTrack().currentTime).toBe(1.8); // jumped to the next moment's lines
+});
+
+test("in sync, a re-render of the same moment never restarts its lines", async () => {
+  const view = render(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(3, 2, 4)}
+    />,
+  );
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+  view.rerender(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(3, 2, 4)}
+    />,
+  );
+  await new Promise((r) => setTimeout(r, 0));
+  expect(play).toHaveBeenCalledTimes(1);
+});
+
+test("in sync, the announcer waits with the fight and finishes only lines not yet done", async () => {
+  const view = render(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(0, 0, 2)}
+    />,
+  );
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+  view.rerender(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(0, 0, 2)}
+      hold
+    />,
+  );
+  expect(pause).toHaveBeenCalled();
+  voiceTrack().currentTime = 0.5; // paused mid-line
+  view.rerender(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(0, 0, 2)}
+    />,
+  );
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(2)); // finishes the line
+  view.rerender(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(0, 0, 2)}
+      hold
+    />,
+  );
+  voiceTrack().currentTime = 2; // that line was done before the pause
+  view.rerender(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(0, 0, 2)}
+    />,
+  );
+  await new Promise((r) => setTimeout(r, 0));
+  expect(play).toHaveBeenCalledTimes(2); // nothing more to say until the next moment
+});
+
+test("in sync, the announcer talks at the fight's speed", async () => {
+  const view = render(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(0, 0, 2)}
+      rate={2}
+    />,
+  );
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+  expect(voiceTrack().playbackRate).toBe(2);
+  view.rerender(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      startSound
+      cue={cueOf(0, 0, 2)}
+      rate={1}
+    />,
+  );
+  expect(voiceTrack().playbackRate).toBe(1);
+});
+
+test("the wait note can say why the announcer waits", () => {
+  render(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      hold
+      holdNote="Announcer paused with the fight"
+    />,
+  );
+  expect(screen.getByText("Announcer paused with the fight")).toBeTruthy();
+});

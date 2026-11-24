@@ -9,8 +9,21 @@ export interface AudioBarProps {
   narration: string | null; // the announcer's voice track, if one can be played
   music: string | null; // the background music, if any
   startSound?: boolean; // the viewer started the fight: turn the sound on, unless they switched it off
-  hold?: boolean; // the fight runs too fast to talk over (5x and 10x, #577): the announcer waits
+  hold?: boolean; // the announcer waits: the fight is paused or too fast to talk over (#577)
+  holdNote?: string; // what the bar says while the announcer waits
+  cue?: VoiceCue | null; // in sync with the fight (#576): the stretch of the file to play now
+  rate?: number; // the fight's speed: the announcer talks at it (1x or 2x)
 }
+
+// A stretch of the announcer's file, in seconds, for one moment of the fight (#576). `at` names the
+// moment, so the same lines are not started twice.
+export interface VoiceCue {
+  at: number;
+  start: number;
+  end: number;
+}
+
+const WAIT_NOTE = "Announcer waits at this speed";
 
 const OFF_KEY = "battle-royale-sound-off"; // the viewer's "off" choice, kept in this browser
 
@@ -51,12 +64,20 @@ export default function AudioBar({
   music,
   startSound = false,
   hold = false,
+  holdNote = WAIT_NOTE,
+  cue,
+  rate = 1,
 }: AudioBarProps) {
   const voice = useRef<HTMLAudioElement>(null);
   const song = useRef<HTMLAudioElement>(null);
   const soundOn = useRef(false); // sound is wanted: turned on by the viewer or the fight starting
   const autoStarted = useRef(false); // the fight's start has already had its say
   const held = useRef(hold); // the latest hold, for the effects and the button below
+  // In sync with the fight (#576): the announcer only plays the cued lines, never the whole file.
+  const cued = useRef(cue !== undefined);
+  const cueNow = useRef(cue ?? null);
+  const speed = useRef(rate);
+  const stopAt = useRef<number | null>(null); // where the cued lines end in the file
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(80); // percent
 
@@ -68,15 +89,32 @@ export default function AudioBar({
       song.current.volume = narration ? level * MUSIC_UNDER_VOICE : level;
   }, [volume, narration]);
 
-  // At 5x and 10x the announcer waits; once the fight slows down it picks up where it stopped,
-  // if the sound is on (#577). The music, if any, plays on.
+  // The latest props for the effects below (they run in this order, after this one).
+  useEffect(() => {
+    cued.current = cue !== undefined;
+    cueNow.current = cue ?? null;
+    speed.current = rate;
+  });
+
+  // The announcer talks at the fight's speed (1x or 2x; it waits at 5x and 10x).
+  useEffect(() => {
+    if (voice.current) voice.current.playbackRate = rate;
+  }, [rate]);
+
+  // While the fight is paused or too fast, the announcer waits; then it picks up where it stopped,
+  // if the sound is on (#577) and, in sync, its cued lines are not done yet (#576). The music, if
+  // any, plays on.
   useEffect(() => {
     held.current = hold;
     const track = voice.current;
     if (!track) return;
+    const unfinished =
+      !cued.current ||
+      (stopAt.current !== null && track.currentTime < stopAt.current);
     if (hold) {
       track.pause(); // a no-op if it was not playing
-    } else if (soundOn.current && track.paused && !track.ended) {
+    } else if (soundOn.current && track.paused && !track.ended && unfinished) {
+      track.playbackRate = speed.current;
       void Promise.resolve()
         .then(() => track.play())
         .then(
@@ -98,8 +136,10 @@ export default function AudioBar({
   // everything. (React has already let go of the elements when the cleanup runs, so it can't read
   // the refs then; the tracks are picked up again whenever they change.)
   useEffect(() => {
+    stopAt.current = null; // a new announcer file has no cued lines yet
     const all = present([voice.current, song.current]);
-    const tracks = present([held.current ? null : voice.current, song.current]);
+    const quiet = held.current || cued.current; // in sync, the voice waits for its cue
+    const tracks = present([quiet ? null : voice.current, song.current]);
     if (startSound && !autoStarted.current) {
       autoStarted.current = true;
       if (!savedOff()) soundOn.current = true;
@@ -109,10 +149,41 @@ export default function AudioBar({
         // Refused: don't keep retrying. A voice the hold paused mid-load was cut short instead,
         // and while the announcer waits the sound is still on (#577).
         if (tracks.length > 0 && !on && !held.current) soundOn.current = false;
-        setPlaying(on || held.current);
+        setPlaying(on || quiet);
       });
     return () => all.forEach((t) => !t.paused && t.pause());
   }, [narration, music, startSound]);
+
+  // In sync with the fight (#576): at each moment with lines, jump to them in the announcer's file
+  // and play them, stopping where they end. Lines still talking when the next moment's lines
+  // arrive are cut off, so the voice never runs ahead of the fight.
+  const cueAt = cue ? cue.at : null;
+  useEffect(() => {
+    const track = voice.current;
+    const lines = cueNow.current;
+    if (!track || !lines) return;
+    stopAt.current = lines.end;
+    track.currentTime = lines.start;
+    if (!soundOn.current || held.current) return;
+    track.playbackRate = speed.current;
+    void Promise.resolve()
+      .then(() => track.play())
+      .then(
+        () => setPlaying(true),
+        () => {
+          if (held.current) return; // told to wait mid-load: cut short, not refused
+          soundOn.current = false;
+          setPlaying(false);
+        },
+      );
+  }, [cueAt, narration]);
+
+  // In sync, stop at the end of the cued lines; the next moment's lines start them again.
+  const onVoiceTime = () => {
+    const track = voice.current;
+    if (cued.current && track && stopAt.current !== null)
+      if (track.currentTime >= stopAt.current) track.pause();
+  };
 
   if (!narration && !music) return null;
 
@@ -130,15 +201,13 @@ export default function AudioBar({
       return;
     }
     saveOff(false);
-    if (held.current && !song.current) {
-      soundOn.current = true; // only the announcer, who waits until the fight slows down
+    const quiet = held.current || cued.current; // the announcer waits for the fight or its cue
+    if (quiet && !song.current) {
+      soundOn.current = true;
       setPlaying(true);
       return;
     }
-    const startable = present([
-      held.current ? null : voice.current,
-      song.current,
-    ]);
+    const startable = present([quiet ? null : voice.current, song.current]);
     void startAll(startable).then((on) => {
       soundOn.current = on;
       setPlaying(on);
@@ -151,7 +220,13 @@ export default function AudioBar({
   return (
     <div className={styles.bar} role="group" aria-label="Sound controls">
       {narration && (
-        <audio ref={voice} src={narration} preload="none" onEnded={onEnded} />
+        <audio
+          ref={voice}
+          src={narration}
+          preload="none"
+          onEnded={onEnded}
+          onTimeUpdate={onVoiceTime}
+        />
       )}
       {music && (
         <audio ref={song} src={music} preload="none" loop onEnded={onEnded} />
@@ -173,7 +248,7 @@ export default function AudioBar({
       </label>
       <span className={styles.what} aria-live="polite">
         {hold && narration
-          ? "Announcer waits at this speed"
+          ? holdNote
           : narration && music
             ? "Announcer and music"
             : narration

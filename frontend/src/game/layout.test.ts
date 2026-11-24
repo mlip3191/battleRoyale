@@ -27,6 +27,7 @@ const sprite = (asset_id: string, url: string): Asset => ({
   prompt_hash: "x",
   fallback: false,
   script_kind: null,
+  line_times_s: null,
 });
 
 describe("sprite cap and badges", () => {

@@ -30,6 +30,7 @@ import {
   shownStage,
   tooFastToTalk,
   unavailableNote,
+  voiceCue,
   verdictReveal,
   type Show,
   type ShowAction,
@@ -92,6 +93,7 @@ function Broadcast({ id }: { id: string }) {
   // so a pause belongs to one part only: the outro never starts out paused from the intro.
   const [pausedIn, setPausedIn] = useState<Show | null>(null);
   const [fightSpeed, setFightSpeed] = useState<Speed>(1); // the replay's speed button (#577)
+  const [fightMoving, setFightMoving] = useState(false); // the replay is playing (#576)
   const controls = useFocusRescue();
   const startButton = useRef<HTMLButtonElement>(null);
   const verdictTitle = useRef<HTMLHeadingElement>(null);
@@ -162,6 +164,14 @@ function Broadcast({ id }: { id: string }) {
         ? [current]
         : [];
   const sound = battle ? audioPlan(battle.assets, show.phase) : null;
+  // During the fight the announcer follows the replay (#576): each moment's lines play when the
+  // replay reaches them, and it waits while the replay is paused or too fast to talk over (#577).
+  const fighting = show.phase === "fight";
+  const tooFast = tooFastToTalk(fightSpeed);
+  const cue =
+    fighting && sound?.lineTimes
+      ? voiceCue(placed, eventIndex, sound.lineTimes)
+      : undefined;
   const note = battle ? unavailableNote(battle.stages) : null;
   const reveal = result && show.revealed ? verdictReveal(result, names) : null;
 
@@ -204,6 +214,7 @@ function Broadcast({ id }: { id: string }) {
           claimFocus={controls.claim}
           onEvent={setEventIndex}
           onSpeedChange={setFightSpeed}
+          onPlayingChange={setFightMoving}
           onFinish={() => act({ type: "fight-done" })}
           onReplay={() => {
             setEventIndex(-1);
@@ -253,7 +264,10 @@ function Broadcast({ id }: { id: string }) {
           narration={sound.narration}
           music={sound.music}
           startSound={show.phase === "fight" || show.phase === "verdict"}
-          hold={show.phase === "fight" && tooFastToTalk(fightSpeed)}
+          hold={fighting && (tooFast || !fightMoving)}
+          holdNote={tooFast ? undefined : "Announcer paused with the fight"}
+          cue={cue}
+          rate={fighting ? fightSpeed : 1}
         />
       )}
 

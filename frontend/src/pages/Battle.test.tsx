@@ -19,7 +19,7 @@ import Battle from "./Battle.tsx";
 import Results from "./Results.tsx";
 import { layoutStage } from "../game/layout.ts";
 import type { PhaserStageProps } from "../game/PhaserStage.tsx";
-import { linesOf, lineMs } from "./broadcast-flow.ts";
+import { linesOf, lineMs, placeLines } from "./broadcast-flow.ts";
 
 const state = vi.hoisted(() => ({
   value: { battle: null as unknown, error: null as string | null },
@@ -486,6 +486,7 @@ const perScript = (...missing: Asset["script_kind"][]) => {
     prompt_hash: k,
     fallback: false,
     script_kind: k,
+    line_times_s: null,
   }));
   return { ...record, assets: [...record.assets, ...voices] };
 };
@@ -540,9 +541,10 @@ test("audio: sound turned on in the intro carries into the fight's announcer fil
     await screen.findByRole("button", { name: "Sound on" });
     play.mockClear();
     startFight();
+    act(() => stageProps().onPlayingChange!(true)); // the replay starts moving (#576)
     await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
     const started = play.mock.contexts as unknown as HTMLAudioElement[];
-    expect(started.map((t) => t.getAttribute("src"))).toEqual([
+    expect(started.map((t) => t.getAttribute("src")).sort()).toEqual([
       "/media/audio/b1-play_by_play.mp3",
       MUSIC,
     ]);
@@ -631,6 +633,45 @@ test("audio: at 5x and 10x the announcer waits, only while the fight plays (#577
   act(() => stageProps().onFinish!()); // the verdict: the outro is never held
   expect(waiting()).toBeNull();
   expect(trackSources()).toEqual(["/media/audio/b1-outro.mp3", MUSIC]);
+});
+
+test("audio: in sync, the announcer says each moment's lines as the replay reaches them (#576)", async () => {
+  const play = vi
+    .spyOn(HTMLMediaElement.prototype, "play")
+    .mockResolvedValue(undefined);
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+  try {
+    // Each play-by-play line gets a second in the voice file, in script order.
+    const times = pbp.map((_, i): [number, number] => [i * 2, i * 2 + 1]);
+    const record = perScript();
+    const timed = {
+      ...record,
+      assets: record.assets.map((a) =>
+        a.script_kind === "play_by_play" ? { ...a, line_times_s: times } : a,
+      ),
+    };
+    show(timed);
+    startFight();
+    act(() => stageProps().onPlayingChange!(true));
+    const placed = placeLines(
+      pbp,
+      doneRecord.result!.representative_log.length,
+    );
+    const first = placed[0].at;
+    play.mockClear();
+    act(() => stageProps().onEvent!(first));
+    await waitFor(() => expect(play).toHaveBeenCalled());
+    const voice = screen
+      .getByRole("group", { name: "Sound controls" })
+      .querySelector("audio")!;
+    expect(voice.getAttribute("src")).toBe("/media/audio/b1-play_by_play.mp3");
+    expect(voice.currentTime).toBe(times[0][0]);
+    act(() => stageProps().onPlayingChange!(false)); // the viewer pauses the fight
+    expect(screen.getByText("Announcer paused with the fight")).toBeTruthy();
+  } finally {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  }
 });
 
 test("results page links back to this battle's broadcast", () => {

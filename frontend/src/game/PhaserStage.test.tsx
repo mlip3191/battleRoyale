@@ -258,6 +258,26 @@ test("5x and 10x reach the scene and are reported to the page (#577)", async () 
   }
 });
 
+test("the page hears when the replay starts and stops moving (#576)", async () => {
+  const onPlayingChange = vi.fn();
+  render(
+    <PhaserStage
+      result={result}
+      matchup={battle.matchup}
+      onPlayingChange={onPlayingChange}
+      autoPlay
+    />,
+  );
+  // The report comes from an effect after each render, so wait for it (a slow runner can be a beat
+  // behind the button it follows).
+  const pause = await screen.findByRole("button", { name: "Pause" });
+  await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(true));
+  fireEvent.click(pause);
+  await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(false));
+  fireEvent.click(screen.getByRole("button", { name: "Play" }));
+  await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(true));
+});
+
 test("autoPlay starts the replay as soon as it is ready", async () => {
   render(<PhaserStage result={result} matchup={battle.matchup} autoPlay />);
   const pause = await screen.findByRole("button", { name: "Pause" });
