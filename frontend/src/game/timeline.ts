@@ -32,6 +32,7 @@ export interface Beat {
   group: boolean; // true when a crowd acted or fell together (no single fighter to point at)
   count: number; // how many acted or fell (group_size)
   damage: number | null; // hit points from the log, shown as-is (never computed here)
+  hpLeft: [number, number] | null; // each side's hit points still standing after it (#575), from the log
   winner: Side | null; // END only: the winning side, null for a draw or no contest
   hint: string; // flavor text for captions; never used to decide anything
 }
@@ -40,6 +41,7 @@ export interface Timeline {
   beats: Beat[];
   totalMs: number; // length at 1x speed
   swarm: boolean; // the fight ran in swarm mode: a side over SWARM_THRESHOLD, or group events in the log
+  startHp: [number, number] | null; // each side's starting hit points (#575); null for an older result
 }
 
 export const SWARM_THRESHOLD = 200;
@@ -80,7 +82,10 @@ export const isSwarm = (
   counts[1] > SWARM_THRESHOLD ||
   log.some((e) => e.type === "hit" && e.actor == null);
 
-type Who = Omit<Beat, "index" | "start" | "duration" | "hint" | "damage">;
+type Who = Omit<
+  Beat,
+  "index" | "start" | "duration" | "hint" | "damage" | "hpLeft"
+>;
 
 // Who acts and who is affected for one event, applying the per-type meanings of side/actor/target.
 function describe(
@@ -173,7 +178,8 @@ function describe(
 // Beat lengths depend only on the kind of event; the log's `t` is ignored on purpose (a summary
 // KO's `t` is the last logged event, not when that crowd fell), so do not time beats from `t`.
 export function buildTimeline(
-  result: Pick<SimulationResult, "representative_log" | "outcome">,
+  result: Pick<SimulationResult, "representative_log" | "outcome"> &
+    Partial<Pick<SimulationResult, "start_hp">>,
   counts: readonly [number, number],
 ): Timeline {
   const log = result.representative_log;
@@ -188,13 +194,15 @@ export function buildTimeline(
       start: clock,
       duration,
       damage: event.damage ?? null,
+      hpLeft: event.hp_left ?? null,
       hint: event.text_hint,
       ...describe(event, result.outcome),
     };
     clock += duration;
     return beat;
   });
-  return { beats, totalMs: clock, swarm: isSwarm(counts, log) };
+  const startHp = result.start_hp ?? null;
+  return { beats, totalMs: clock, swarm: isSwarm(counts, log), startHp };
 }
 
 // A beat's start and length in real ms at the given speed.

@@ -172,7 +172,7 @@ Then the show starts: the announcer introduces the fighters, with captions on sc
 
 ![The intro: Grizzly bear VS 6 gray wolves, an announcer caption, and Start the fight and Skip to verdict buttons](images/user-guide/10-intro.png)
 
-The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log. Use **Pause**, **1×** and **2×** to control the speed, or **Skip to end**. Sound turns on when you click **Start the fight**; the **Sound on / Sound off** button and a volume slider control the announcer's voice, and switching sound off is remembered in your browser. The captions always carry the show, with or without sound.
+The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log, and each side's health bar drops with every hit: it shows the side's combined hit points left, and a group also shows how many are still standing. Use **Pause**, **1×** and **2×** to control the speed, or **Skip to end**. Sound turns on when you click **Start the fight**; the **Sound on / Sound off** button and a volume slider control the announcer's voice, and switching sound off is remembered in your browser. The captions always carry the show, with or without sound.
 
 ![The animated fight: a grizzly bear facing six wolves in a pixel-art forest, with a damage number above the bear](images/user-guide/11-fight.jpg)
 

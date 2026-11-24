@@ -377,6 +377,16 @@ export interface components {
              * @description Short neutral description for narration, e.g. "bite lands".
              */
             text_hint: string;
+            /**
+             * Hp Left
+             * @description Each side's combined hit points still standing after this event, from the engine (#575):
+             *     knocked-out and out-of-action fighters count 0. None on closing summaries and old logs.
+             * @default null
+             */
+            hp_left: [
+                number,
+                number
+            ] | null;
         };
         /**
          * FighterMatch
@@ -706,6 +716,16 @@ export interface components {
              * @description Events of one typical fight, capped at 300.
              */
             representative_log: components["schemas"]["FightEvent"][];
+            /**
+             * Start Hp
+             * @description Each side's combined hit points at the start of the representative fight (#575), so a
+             *     health bar can show `hp_left` as a share; None on results made before it existed.
+             * @default null
+             */
+            start_hp: [
+                number,
+                number
+            ] | null;
         };
         /**
          * Source
