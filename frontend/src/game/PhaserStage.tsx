@@ -19,6 +19,7 @@ export interface PhaserStageProps {
   onFinish?: () => void; // the replay reached its last event (D07 verdict)
   onReplay?: () => void; // the viewer pressed Replay; events start again from 0
   onSpeedChange?: (speed: Speed) => void; // the replay speed, whenever it changes (#577)
+  onPlayingChange?: (playing: boolean) => void; // the replay started or stopped moving (#576)
   autoPlay?: boolean; // start playing as soon as the stage is ready
   claimFocus?: () => boolean; // asked once ready: true moves keyboard focus to Play/Pause
   reducedMotion?: boolean; // defaults to the browser's prefers-reduced-motion setting
@@ -65,6 +66,7 @@ export default function PhaserStage({
   onFinish,
   onReplay,
   onSpeedChange,
+  onPlayingChange,
   autoPlay = false,
   reducedMotion,
   claimFocus,
@@ -75,6 +77,7 @@ export default function PhaserStage({
   const onFinishRef = useRef(onFinish);
   const claimFocusRef = useRef(claimFocus);
   const onSpeedRef = useRef(onSpeedChange);
+  const onPlayingRef = useRef(onPlayingChange);
   const playButton = useRef<HTMLButtonElement>(null);
   const replayButton = useRef<HTMLButtonElement>(null);
   const controls = useFocusRescue();
@@ -97,6 +100,7 @@ export default function PhaserStage({
     onFinishRef.current = onFinish;
     claimFocusRef.current = claimFocus;
     onSpeedRef.current = onSpeedChange;
+    onPlayingRef.current = onPlayingChange;
     latest.current = { result, fighters, assets, motionless, autoPlay };
   });
 
@@ -168,6 +172,11 @@ export default function PhaserStage({
       game = null;
     };
   }, [key, round]);
+
+  // Tell the page when the replay starts or stops moving, so the announcer can follow it (#576).
+  useEffect(() => {
+    onPlayingRef.current?.(playing);
+  }, [playing]);
 
   // Skip to end and the fight's end disable the button in use, and Replay removes itself. When the
   // viewer was on one of them, focus goes to Replay at the end, or to Play/Pause once a game is

@@ -591,3 +591,51 @@ async def test_the_music_prompt_never_uses_the_display_name(tmp_path: Path) -> N
     await audio.make_music(matchup(), None, [truck], provider=music, media_dir=tmp_path)
     [(prompt, _)] = music.calls
     assert "electric pickup truck" in prompt and "tesla" not in prompt.lower()
+
+
+# --- line times (#576) ---------------------------------------------------------------------------
+
+
+async def test_the_voice_file_says_where_each_line_starts_and_ends() -> None:
+    # The mock speaks one second per line, with LINE_PAUSE_S of silence between lines.
+    joined = await audio._speak(MockTTS(), script("outro", "One.", "Two.", "Three."), STOCK_VOICE)
+    gap = audio.LINE_PAUSE_S
+    assert joined.line_times == [(0.0, 1.0), (1.0 + gap, 2.0 + gap), (2.0 + 2 * gap, 3.0 + 2 * gap)]
+    assert wav_seconds(joined) == pytest.approx(3.0 + 2 * gap)
+
+
+async def test_line_times_follow_each_clips_own_length_and_skip_blank_lines() -> None:
+    texts = ["Short.", "  ", "A much longer line."]
+    spoken = [t for t in texts if t.strip()]
+    clips = [
+        tone_wav(level=1, frames=MOCK_SAMPLE_RATE // 2),
+        tone_wav(level=2, frames=MOCK_SAMPLE_RATE * 2),
+    ]
+    tts = DelayedTTS(spoken, lambda _: 0.0, lambda i: clips[i])
+    joined = await audio._speak(tts, script("play_by_play", *texts), STOCK_VOICE)
+    gap = audio.LINE_PAUSE_S
+    assert joined.line_times == [(0.0, 0.5), None, (0.5 + gap, 2.5 + gap)]
+
+
+async def test_a_cached_voice_file_keeps_its_line_times(tmp_path: Path) -> None:
+    [made] = await audio.make_audio(
+        [script("intro", "Hi!", "Bye!")], provider=SpyTTS(), media_dir=tmp_path
+    )
+    gap = audio.LINE_PAUSE_S
+    assert made.line_times_s == [(0.0, 1.0), (1.0 + gap, 2.0 + gap)]
+    tts = SpyTTS()
+    [again] = await audio.make_audio(
+        [script("intro", "Hi!", "Bye!")], provider=tts, media_dir=tmp_path
+    )
+    assert tts.calls == []  # from the cache
+    assert again.line_times_s == made.line_times_s
+
+
+async def test_a_voice_file_cached_without_line_times_still_plays(tmp_path: Path) -> None:
+    [made] = await audio.make_audio([script("intro", "Hi!")], provider=SpyTTS(), media_dir=tmp_path)
+    times = tmp_path / made.url.removeprefix("/media/").replace(".wav", ".lines.json")
+    times.unlink()  # as if the file had been saved before #576
+    [again] = await audio.make_audio(
+        [script("intro", "Hi!")], provider=SpyTTS(), media_dir=tmp_path
+    )
+    assert again.url == made.url and again.line_times_s is None

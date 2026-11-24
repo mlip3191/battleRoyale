@@ -189,6 +189,17 @@ export interface components {
              * @default null
              */
             script_kind: ("intro" | "play_by_play" | "outro") | null;
+            /**
+             * Line Times S
+             * @description For narration_audio: where each line of its Script is in the file, (start, end) in seconds,
+             *     in the script's line order; None for a blank line, which is not spoken (#576). None for other
+             *     kinds and for files made before it existed.
+             * @default null
+             */
+            line_times_s: ([
+                number,
+                number
+            ] | null)[] | null;
         };
         /**
          * BattleCreated

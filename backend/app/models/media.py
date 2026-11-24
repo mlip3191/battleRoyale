@@ -20,3 +20,7 @@ class Asset(Contract):
     """True when a stock file was used because generation failed."""
     script_kind: Literal["intro", "play_by_play", "outro"] | None = None
     """For narration_audio: which Script it reads. None for every other kind."""
+    line_times_s: list[tuple[float, float] | None] | None = None
+    """For narration_audio: where each line of its Script is in the file, (start, end) in seconds,
+    in the script's line order; None for a blank line, which is not spoken (#576). None for other
+    kinds and for files made before it existed."""

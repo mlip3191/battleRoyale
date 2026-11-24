@@ -64,6 +64,39 @@
           "default": null,
           "description": "For narration_audio: which Script it reads. None for every other kind.",
           "title": "Script Kind"
+        },
+        "line_times_s": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "maxItems": 2,
+                    "minItems": 2,
+                    "prefixItems": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "number"
+                      }
+                    ],
+                    "type": "array"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For narration_audio: where each line of its Script is in the file, (start, end) in seconds,\nin the script's line order; None for a blank line, which is not spoken (#576). None for other\nkinds and for files made before it existed.",
+          "title": "Line Times S"
         }
       },
       "required": [
