@@ -54,6 +54,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   localStorage.clear();
+  sessionStorage.clear();
   vi.useRealTimers();
   stage.props = null;
 });
@@ -757,7 +758,7 @@ test("audio: sound switched off in one fight stays off for the next; Start the f
   expect(button("Sound off")).toBeTruthy();
   cleanup();
   log.length = 0;
-  show(timedRecord()); // a later fight in the same browser
+  show(timedRecord()); // a later fight in the same visit
   startFight();
   act(() => stageProps().onPlayingChange!(true));
   const first = placeLines(pbp, doneRecord.result!.representative_log.length)[0]
@@ -769,7 +770,7 @@ test("audio: sound switched off in one fight stays off for the next; Start the f
 });
 
 test("audio: Sound on during the fight unlocks the voice inside the click, before its next line (#584)", async () => {
-  localStorage.setItem("battle-royale-sound-off", "1"); // switched off in an earlier fight
+  sessionStorage.setItem("battle-royale-sound-off", "1"); // switched off in an earlier fight
   const log = mediaLog();
   show(timedRecord());
   startFight();

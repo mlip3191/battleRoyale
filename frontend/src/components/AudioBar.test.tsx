@@ -21,6 +21,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  sessionStorage.clear();
   vi.restoreAllMocks();
   play.mockClear();
   pause.mockClear();
@@ -191,7 +192,36 @@ test("switching the sound off is remembered: the next fight starts silent (#499)
   // Switching it back on forgets the "off".
   fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
   await screen.findByRole("button", { name: "Sound on" });
-  expect(localStorage.getItem("battle-royale-sound-off")).toBeNull();
+  expect(sessionStorage.getItem("battle-royale-sound-off")).toBeNull();
+});
+
+test("an off left browser-wide by an older version doesn't silence a new visit (#579)", async () => {
+  localStorage.setItem("battle-royale-sound-off", "1"); // saved for the whole browser before
+  render(<AudioBar narration="/media/a.mp3" music={null} startSound />);
+  expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
+  expect(play).toHaveBeenCalledTimes(1);
+});
+
+test("switching the sound off lasts this visit: later fights start silent, a new visit starts with sound (#579)", async () => {
+  const first = render(
+    <AudioBar narration="/media/a.mp3" music={null} startSound />,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Sound on" }));
+  expect(sessionStorage.getItem("battle-royale-sound-off")).toBe("1");
+  expect(localStorage.getItem("battle-royale-sound-off")).toBeNull(); // nothing beyond this visit
+  first.unmount();
+  play.mockClear();
+  const later = render(
+    <AudioBar narration="/media/a.mp3" music={null} startSound />,
+  ); // a later fight in the same visit
+  await new Promise((r) => setTimeout(r, 0)); // give a wrong start the chance to happen
+  expect(play).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "Sound off" })).toBeTruthy();
+  later.unmount();
+  sessionStorage.clear(); // a new visit (a new tab) starts with an empty session
+  render(<AudioBar narration="/media/a.mp3" music={null} startSound />);
+  expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
+  expect(play).toHaveBeenCalledTimes(1);
 });
 
 test("a browser that refuses the automatic start leaves the button on Sound off", async () => {
@@ -495,14 +525,14 @@ test("unlock: the voice plays muted and pauses at once, inside the call, and the
 test("unlock: a remembered off, or sound already on, leaves the voice alone (#579)", async () => {
   listen();
   const bar = createRef<AudioBarHandle>();
-  localStorage.setItem("battle-royale-sound-off", "1");
+  sessionStorage.setItem("battle-royale-sound-off", "1");
   const view = render(
     <AudioBar ref={bar} narration="/media/intro.wav" music={null} />,
   );
   bar.current!.unlock();
   expect(told).toEqual([]);
   view.unmount();
-  localStorage.clear();
+  sessionStorage.clear();
   render(<AudioBar ref={bar} narration="/media/intro.wav" music={null} />);
   fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
   await screen.findByRole("button", { name: "Sound on" });

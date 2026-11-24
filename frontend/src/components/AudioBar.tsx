@@ -1,6 +1,7 @@
 // The broadcast's sound controls (D07, #499): a Sound on/off switch and volume for the narration and
 // music. Sound turns on when the viewer starts the fight (a click, so browsers allow it) unless they
-// switched it off before (remembered in this browser); once on, it follows the show from part to
+// switched it off earlier in this visit (#579: remembered for this tab only, so a new visit, or the
+// next person on a shared laptop, starts with sound); once on, it follows the show from part to
 // part until they switch it off. Captions carry the show whenever sound can't play.
 import {
   useEffect,
@@ -39,22 +40,24 @@ export interface VoiceCue {
 
 const WAIT_NOTE = "Announcer waits at this speed";
 
-const OFF_KEY = "battle-royale-sound-off"; // the viewer's "off" choice, kept in this browser
+// The viewer's "off" choice, kept for this visit (session storage, #579). An "off" an older version
+// left in the browser-wide store is ignored.
+const OFF_KEY = "battle-royale-sound-off";
 
-// Whether the viewer switched sound off earlier; storage may be blocked, then the answer is no.
+// Whether the viewer switched sound off earlier in this visit; storage may be blocked, then no.
 const savedOff = () => {
   try {
-    return localStorage.getItem(OFF_KEY) === "1";
+    return sessionStorage.getItem(OFF_KEY) === "1";
   } catch {
     return false;
   }
 };
 
-// Remember (or forget) the viewer's "off" choice; a blocked store is fine, the choice lasts the visit.
+// Remember (or forget) the viewer's "off" choice for this visit; a blocked store is fine.
 const saveOff = (off: boolean) => {
   try {
-    if (off) localStorage.setItem(OFF_KEY, "1");
-    else localStorage.removeItem(OFF_KEY);
+    if (off) sessionStorage.setItem(OFF_KEY, "1");
+    else sessionStorage.removeItem(OFF_KEY);
   } catch {
     /* nothing to do */
   }
@@ -211,7 +214,7 @@ export default function AudioBar({
   // ones stop. If the viewer turned the sound on, the new ones carry on: the next announcer file
   // from its start, the music where it was; with nothing left to play, the button goes back to
   // "Sound off". Sound the viewer switched off stays off. The first time the fight starts, the
-  // sound turns on unless the viewer switched it off in an earlier visit. Leaving the page stops
+  // sound turns on unless the viewer switched it off earlier in this visit. Leaving the page stops
   // everything. (React has already let go of the elements when the cleanup runs, so it can't read
   // the refs then; the tracks are picked up again whenever they change.)
   useEffect(() => {
