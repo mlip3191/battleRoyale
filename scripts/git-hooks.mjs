@@ -4,7 +4,7 @@
 
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -23,9 +23,11 @@ export function setHooks(dir = root, run = spawnSync, log = console.log) {
     return 0;
   }
   const r = run("git", ["config", "core.hooksPath", ".githooks"], { cwd: dir, stdio: "inherit" });
+  if (r.error) log(`Couldn't run git to turn on the commit guard: ${r.error.message}`);
   return r.status ?? 1;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+// import.meta.main, not a path comparison: a path through a symlink or junction must still run it.
+if (import.meta.main) {
   process.exit(setHooks());
 }
