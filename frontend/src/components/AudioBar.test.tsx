@@ -1,13 +1,15 @@
 // The sound controls: nothing plays until asked; play/pause, mute, and volume reach every track.
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
 } from "@testing-library/react";
+import { createRef } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import AudioBar from "./AudioBar.tsx";
+import AudioBar, { type AudioBarHandle, type VoiceCue } from "./AudioBar.tsx";
 
 // jsdom has no media playback; record what the bar asks for instead.
 const play = vi.fn(() => Promise.resolve());
@@ -19,6 +21,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  sessionStorage.clear();
   vi.restoreAllMocks();
   play.mockClear();
   pause.mockClear();
@@ -189,7 +192,36 @@ test("switching the sound off is remembered: the next fight starts silent (#499)
   // Switching it back on forgets the "off".
   fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
   await screen.findByRole("button", { name: "Sound on" });
-  expect(localStorage.getItem("battle-royale-sound-off")).toBeNull();
+  expect(sessionStorage.getItem("battle-royale-sound-off")).toBeNull();
+});
+
+test("an off left browser-wide by an older version doesn't silence a new visit (#579)", async () => {
+  localStorage.setItem("battle-royale-sound-off", "1"); // saved for the whole browser before
+  render(<AudioBar narration="/media/a.mp3" music={null} startSound />);
+  expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
+  expect(play).toHaveBeenCalledTimes(1);
+});
+
+test("switching the sound off lasts this visit: later fights start silent, a new visit starts with sound (#579)", async () => {
+  const first = render(
+    <AudioBar narration="/media/a.mp3" music={null} startSound />,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Sound on" }));
+  expect(sessionStorage.getItem("battle-royale-sound-off")).toBe("1");
+  expect(localStorage.getItem("battle-royale-sound-off")).toBeNull(); // nothing beyond this visit
+  first.unmount();
+  play.mockClear();
+  const later = render(
+    <AudioBar narration="/media/a.mp3" music={null} startSound />,
+  ); // a later fight in the same visit
+  await new Promise((r) => setTimeout(r, 0)); // give a wrong start the chance to happen
+  expect(play).not.toHaveBeenCalled();
+  expect(screen.getByRole("button", { name: "Sound off" })).toBeTruthy();
+  later.unmount();
+  sessionStorage.clear(); // a new visit (a new tab) starts with an empty session
+  render(<AudioBar narration="/media/a.mp3" music={null} startSound />);
+  expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
+  expect(play).toHaveBeenCalledTimes(1);
 });
 
 test("a browser that refuses the automatic start leaves the button on Sound off", async () => {
@@ -444,4 +476,343 @@ test("the wait note can say why the announcer waits", () => {
     />,
   );
   expect(screen.getByText("Announcer paused with the fight")).toBeTruthy();
+});
+
+// --- unlocking the voice inside the viewer's click, and stopping on time (#579, #584) -------------
+
+// What the tracks were told, in order: "play" (heard), "muted play" (the silent unlock), "pause".
+const told: string[] = [];
+const listen = () => {
+  play.mockImplementation(function (this: HTMLMediaElement) {
+    told.push(this.muted ? "muted play" : "play");
+    return Promise.resolve();
+  });
+  pause.mockImplementation(() => {
+    told.push("pause");
+  });
+};
+afterEach(() => {
+  told.length = 0;
+  play.mockImplementation(() => Promise.resolve());
+  pause.mockImplementation(() => undefined);
+});
+
+// jsdom never really plays: make a track look like it is playing.
+const playingNow = (track: HTMLAudioElement) => {
+  Object.defineProperty(track, "paused", {
+    configurable: true,
+    get: () => false,
+  });
+  return track;
+};
+
+// Let the bar's play() promises settle without moving the (fake) clock.
+const settle = () =>
+  act(async () => {
+    for (let i = 0; i < 10; i += 1) await Promise.resolve();
+  });
+
+test("unlock: the voice plays muted and pauses at once, inside the call, and the sound stays off (#579, #584)", () => {
+  listen();
+  const bar = createRef<AudioBarHandle>();
+  render(<AudioBar ref={bar} narration="/media/intro.wav" music={null} />);
+  bar.current!.unlock();
+  expect(told).toEqual(["muted play", "pause"]); // nothing is heard
+  expect(voiceTrack().muted).toBe(false);
+  expect(screen.getByRole("button", { name: "Sound off" })).toBeTruthy();
+});
+
+// Node's process reports promise rejections nobody handled (jsdom's window doesn't see them).
+type Listener = (reason: unknown) => void;
+const node = (
+  globalThis as unknown as {
+    process: {
+      on: (event: string, f: Listener) => void;
+      off: (event: string, f: Listener) => void;
+    };
+  }
+).process;
+
+test("unlock: a browser that refuses the play: nothing thrown or left unhandled, and the button stays on Sound off (#584)", async () => {
+  const unhandled = vi.fn();
+  node.on("unhandledRejection", unhandled);
+  // A plain function, not a vi.fn: a mock would handle the rejection itself and hide a miss.
+  const spy = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = () =>
+    Promise.reject(new DOMException("", "NotAllowedError"));
+  try {
+    const bar = createRef<AudioBarHandle>();
+    render(<AudioBar ref={bar} narration="/media/intro.wav" music={null} />);
+    expect(() => bar.current!.unlock()).not.toThrow();
+    await new Promise((r) => setTimeout(r, 0)); // let the refusal settle
+    expect(unhandled).not.toHaveBeenCalled();
+    expect(pause).toHaveBeenCalledTimes(1);
+    expect(voiceTrack().muted).toBe(false);
+    expect(screen.getByRole("button", { name: "Sound off" })).toBeTruthy();
+  } finally {
+    HTMLMediaElement.prototype.play = spy;
+    node.off("unhandledRejection", unhandled);
+  }
+});
+
+test("unlock: an older browser whose play() throws: the voice is still paused and unmuted (#584)", () => {
+  play.mockImplementationOnce(() => {
+    throw new DOMException("", "NotAllowedError");
+  });
+  const bar = createRef<AudioBarHandle>();
+  render(<AudioBar ref={bar} narration="/media/intro.wav" music={null} />);
+  expect(() => bar.current!.unlock()).not.toThrow();
+  expect(pause).toHaveBeenCalledTimes(1);
+  expect(voiceTrack().muted).toBe(false);
+  expect(screen.getByRole("button", { name: "Sound off" })).toBeTruthy();
+});
+
+test("unlock: a remembered off, or sound already on, leaves the voice alone (#579)", async () => {
+  listen();
+  const bar = createRef<AudioBarHandle>();
+  sessionStorage.setItem("battle-royale-sound-off", "1");
+  const view = render(
+    <AudioBar ref={bar} narration="/media/intro.wav" music={null} />,
+  );
+  bar.current!.unlock();
+  expect(told).toEqual([]);
+  view.unmount();
+  sessionStorage.clear();
+  render(<AudioBar ref={bar} narration="/media/intro.wav" music={null} />);
+  fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
+  await screen.findByRole("button", { name: "Sound on" });
+  told.length = 0;
+  bar.current!.unlock(); // the viewer's own click already started it
+  expect(told).toEqual([]);
+});
+
+test("in sync, Sound on before the first line unlocks the voice inside the click, then waits for its cue (#584)", async () => {
+  listen();
+  render(<AudioBar narration="/media/pbp.wav" music={null} cue={null} />);
+  fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
+  expect(told).toEqual(["muted play", "pause"]); // during the click itself
+  expect(screen.getByRole("button", { name: "Sound on" })).toBeTruthy();
+  await settle();
+  expect(told).toEqual(["muted play", "pause"]); // nothing to say yet
+});
+
+test("in sync, Sound on partway through a moment finishes its lines (#584)", async () => {
+  listen();
+  render(
+    <AudioBar narration="/media/pbp.wav" music={null} cue={cueOf(4, 1.5, 3)} />,
+  );
+  expect(told).toEqual([]); // sound off: the lines are only lined up
+  fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
+  await waitFor(() => expect(told).toEqual(["muted play", "pause", "play"]));
+  expect(voiceTrack().currentTime).toBe(1.5); // from the start of the moment's lines
+  expect(screen.getByRole("button", { name: "Sound on" })).toBeTruthy();
+});
+
+test("in sync, Sound on after a moment's lines are done waits for the next moment (#584)", async () => {
+  listen();
+  render(
+    <AudioBar narration="/media/pbp.wav" music={null} cue={cueOf(4, 1.5, 3)} />,
+  );
+  voiceTrack().currentTime = 3; // already said
+  fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
+  await settle();
+  expect(told).toEqual(["muted play", "pause"]);
+  expect(screen.getByRole("button", { name: "Sound on" })).toBeTruthy();
+});
+
+test("in sync, Sound on while the fight is paused waits for it, then finishes the lines (#584)", async () => {
+  listen();
+  const view = render(
+    <AudioBar
+      narration="/media/pbp.wav"
+      music={null}
+      cue={cueOf(4, 1.5, 3)}
+      hold
+    />,
+  );
+  told.length = 0;
+  fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
+  await settle();
+  expect(told).toEqual([]); // nothing plays while held, not even muted
+  view.rerender(
+    <AudioBar narration="/media/pbp.wav" music={null} cue={cueOf(4, 1.5, 3)} />,
+  );
+  await waitFor(() => expect(told).toEqual(["play"])); // the rest of the moment's lines
+  expect(voiceTrack().currentTime).toBe(1.5);
+});
+
+// Fake only the timers the bar uses to stop the voice; promises still settle.
+const fakeClock = () =>
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+
+test("in sync, a timer stops the voice where the cued lines end, with no timeupdate needed (#584)", async () => {
+  fakeClock();
+  try {
+    render(
+      <AudioBar
+        narration="/media/pbp.wav"
+        music={null}
+        startSound
+        cue={cueOf(0, 0, 2)}
+      />,
+    );
+    const voice = playingNow(voiceTrack());
+    await settle();
+    expect(play).toHaveBeenCalledTimes(1);
+    act(() => vi.advanceTimersByTime(1999));
+    expect(pause).not.toHaveBeenCalled();
+    voice.currentTime = 2; // the lines are said; no timeupdate event comes
+    act(() => vi.advanceTimersByTime(1));
+    expect(pause).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("in sync at 2x, the stop timer is half as long (#584)", async () => {
+  fakeClock();
+  try {
+    render(
+      <AudioBar
+        narration="/media/pbp.wav"
+        music={null}
+        startSound
+        cue={cueOf(0, 0, 2)}
+        rate={2}
+      />,
+    );
+    const voice = playingNow(voiceTrack());
+    await settle();
+    act(() => vi.advanceTimersByTime(999));
+    expect(pause).not.toHaveBeenCalled();
+    voice.currentTime = 2;
+    act(() => vi.advanceTimersByTime(1));
+    expect(pause).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("in sync, a voice that fell behind (still loading) is not cut short by the stop timer (#584)", async () => {
+  fakeClock();
+  try {
+    render(
+      <AudioBar
+        narration="/media/pbp.wav"
+        music={null}
+        startSound
+        cue={cueOf(0, 0, 2)}
+      />,
+    );
+    const voice = playingNow(voiceTrack());
+    await settle();
+    voice.currentTime = 1; // it stalled for a second
+    act(() => vi.advanceTimersByTime(2000));
+    expect(pause).not.toHaveBeenCalled();
+    voice.currentTime = 2;
+    act(() => vi.advanceTimersByTime(1000)); // the rest of its lines
+    expect(pause).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("in sync, a pause, a new moment or Sound off clears the stop timer (#584)", async () => {
+  fakeClock();
+  try {
+    const at = (cue: VoiceCue, hold = false) => (
+      <AudioBar
+        narration="/media/pbp.wav"
+        music={null}
+        startSound
+        cue={cue}
+        hold={hold}
+      />
+    );
+    const view = render(at(cueOf(0, 0, 2)));
+    const voice = playingNow(voiceTrack());
+    await settle();
+    // The fight pauses: the announcer stops there, and the old timer does nothing later.
+    view.rerender(at(cueOf(0, 0, 2), true));
+    expect(pause).toHaveBeenCalledTimes(1);
+    voice.currentTime = 2;
+    act(() => vi.advanceTimersByTime(5000));
+    expect(pause).toHaveBeenCalledTimes(1);
+
+    // A new moment starts its own timer, from its own lines.
+    view.rerender(at(cueOf(5, 4, 5)));
+    await settle();
+    expect(voice.currentTime).toBe(4);
+    act(() => vi.advanceTimersByTime(999));
+    expect(pause).toHaveBeenCalledTimes(1);
+    voice.currentTime = 5;
+    act(() => vi.advanceTimersByTime(1));
+    expect(pause).toHaveBeenCalledTimes(2);
+
+    // Sound off mid-line clears it too.
+    view.rerender(at(cueOf(9, 6, 8)));
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Sound on" }));
+    expect(pause).toHaveBeenCalledTimes(3);
+    voice.currentTime = 8;
+    act(() => vi.advanceTimersByTime(5000));
+    expect(pause).toHaveBeenCalledTimes(3);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("in sync, leaving the page mid-line clears the stop timer (#584)", async () => {
+  fakeClock();
+  try {
+    const view = render(
+      <AudioBar
+        narration="/media/pbp.wav"
+        music={null}
+        startSound
+        cue={cueOf(0, 0, 2)}
+      />,
+    );
+    const voice = playingNow(voiceTrack());
+    await settle();
+    expect(vi.getTimerCount()).toBe(1); // the stop at the end of the lines
+    view.unmount();
+    expect(vi.getTimerCount()).toBe(0);
+    const stops = pause.mock.calls.length; // leaving the page stops the voice once
+    voice.currentTime = 2;
+    act(() => vi.advanceTimersByTime(5000));
+    expect(pause).toHaveBeenCalledTimes(stops);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("in sync, a new announcer file mid-line clears the old stop timer (#584)", async () => {
+  fakeClock();
+  try {
+    const view = render(
+      <AudioBar
+        narration="/media/pbp.wav"
+        music={null}
+        startSound
+        cue={cueOf(0, 0, 2)}
+      />,
+    );
+    const voice = playingNow(voiceTrack());
+    await settle();
+    expect(vi.getTimerCount()).toBe(1);
+    // The fight ends mid-line: the verdict's file plays on the same track, whole.
+    view.rerender(
+      <AudioBar narration="/media/outro.wav" music={null} startSound />,
+    );
+    await settle();
+    expect(voiceTrack().getAttribute("src")).toBe("/media/outro.wav");
+    expect(vi.getTimerCount()).toBe(0); // the old timer never fires on the new file
+    const stops = pause.mock.calls.length;
+    voice.currentTime = 2;
+    act(() => vi.advanceTimersByTime(5000));
+    expect(pause).toHaveBeenCalledTimes(stops);
+  } finally {
+    vi.useRealTimers();
+  }
 });

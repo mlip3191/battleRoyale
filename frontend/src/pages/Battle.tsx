@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, type Ref } from "react";
 import { Link, useParams } from "react-router-dom";
 import { NOT_FOUND, useBattle } from "../api/useBattle.ts";
-import AudioBar from "../components/AudioBar.tsx";
+import AudioBar, { type AudioBarHandle } from "../components/AudioBar.tsx";
 import {
   ErrorPanel,
   LoadingTicker,
@@ -49,11 +49,13 @@ const BackHome = ({ linkRef }: { linkRef: Ref<HTMLAnchorElement> }) => (
 );
 
 // What the ticker says while a stage is running and has no detail of its own (#493): the audio
-// stage can take about a minute with the cloned voice, so it must not read "Researching…".
+// stage can take about a minute with the cloned voice, so it must not read "Researching…". The
+// show waits for the voice, so a first-time viewer is told how long, and what comes next (#579).
+// Kept short: a longer message crawls faster across the ticker.
+const RECORDING_ANNOUNCER =
+  "Recording the announcer… can take about a minute, then the show starts.";
 function stageTicker(stage: string | undefined, first: string): string {
-  return stage === "audio"
-    ? "Recording the announcer…"
-    : `Researching the ${first}…`;
+  return stage === "audio" ? RECORDING_ANNOUNCER : `Researching the ${first}…`;
 }
 
 // The captions box: one live region, always mounted, so screen readers hear each new line.
@@ -96,6 +98,7 @@ function Broadcast({ id }: { id: string }) {
   const [fightMoving, setFightMoving] = useState(false); // the replay is playing (#576)
   const controls = useFocusRescue();
   const startButton = useRef<HTMLButtonElement>(null);
+  const soundBar = useRef<AudioBarHandle>(null);
   const verdictTitle = useRef<HTMLHeadingElement>(null);
   const backHome = useRef<HTMLAnchorElement>(null);
 
@@ -244,7 +247,12 @@ function Broadcast({ id }: { id: string }) {
             ref={startButton}
             type="button"
             className={styles.button}
-            onClick={() => act({ type: "intro-done" })}
+            onClick={() => {
+              // Inside this click, so browsers that only allow sound a click started (Safari)
+              // let the announcer speak when the fight reaches its first line (#579, #584).
+              soundBar.current?.unlock();
+              act({ type: "intro-done" });
+            }}
           >
             Start the fight
           </button>
@@ -261,6 +269,7 @@ function Broadcast({ id }: { id: string }) {
       </div>
       {show.phase !== "waiting" && sound && (
         <AudioBar
+          ref={soundBar}
           narration={sound.narration}
           music={sound.music}
           startSound={show.phase === "fight" || show.phase === "verdict"}

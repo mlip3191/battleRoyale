@@ -54,6 +54,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   localStorage.clear();
+  sessionStorage.clear();
   vi.useRealTimers();
   stage.props = null;
 });
@@ -152,6 +153,14 @@ test("audio running with a detail: the stage's own detail still wins", () => {
   });
   expect(screen.getByRole("status").textContent).toContain(
     "Warming up the microphone",
+  );
+});
+
+test("audio running: the ticker tells a first-time viewer how long the announcer takes, and what comes next (#579)", () => {
+  show(onlyRunning("audio"));
+  // Short, so the crawl moves at a readable pace.
+  expect(screen.getByRole("status").textContent).toBe(
+    "Recording the announcer… can take about a minute, then the show starts.",
   );
 });
 
@@ -695,4 +704,81 @@ test("audio: Start the fight turns the sound on by itself (#499)", async () => {
     vi.restoreAllMocks();
     localStorage.clear();
   }
+});
+
+// The per-script battle whose play-by-play file says where each line is (#576): a second per line.
+const timedRecord = () => {
+  const record = perScript();
+  const times = pbp.map((_, i): [number, number] => [i * 2, i * 2 + 1]);
+  return {
+    ...record,
+    assets: record.assets.map((a) =>
+      a.script_kind === "play_by_play" ? { ...a, line_times_s: times } : a,
+    ),
+  };
+};
+const soundBar = () => screen.getByRole("group", { name: "Sound controls" });
+
+// Every play() and pause() on the page's tracks, in order: "muted play" is the silent unlock.
+type MediaCall = { track: HTMLMediaElement; call: string };
+const mediaLog = () => {
+  const log: MediaCall[] = [];
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(function (
+    this: HTMLMediaElement,
+  ) {
+    log.push({ track: this, call: this.muted ? "muted play" : "play" });
+    return Promise.resolve();
+  });
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(function (
+    this: HTMLMediaElement,
+  ) {
+    log.push({ track: this, call: "pause" });
+  });
+  return log;
+};
+const callsOn = (log: MediaCall[], track: Element) =>
+  log.filter((c) => c.track === track).map((c) => c.call);
+
+test("audio: Start the fight unlocks the announcer's voice inside the click (#579, #584)", () => {
+  const log = mediaLog();
+  show(timedRecord());
+  const voice = soundBar().querySelector("audio")!;
+  startFight();
+  // During the click itself: a silent play and pause, so Safari lets the first line play later.
+  expect(callsOn(log, voice).slice(0, 2)).toEqual(["muted play", "pause"]);
+  expect(callsOn(log, voice)).not.toContain("play"); // nothing is said before the first line
+  expect(voice.muted).toBe(false);
+});
+
+test("audio: sound switched off in one fight stays off for the next; Start the fight doesn't override it (#579)", async () => {
+  const log = mediaLog();
+  show(timedRecord());
+  startFight();
+  fireEvent.click(await screen.findByRole("button", { name: "Sound on" }));
+  expect(button("Sound off")).toBeTruthy();
+  cleanup();
+  log.length = 0;
+  show(timedRecord()); // a later fight in the same visit
+  startFight();
+  act(() => stageProps().onPlayingChange!(true));
+  const first = placeLines(pbp, doneRecord.result!.representative_log.length)[0]
+    .at;
+  act(() => stageProps().onEvent!(first));
+  await new Promise((r) => setTimeout(r, 0)); // give a wrong start the chance to happen
+  expect(log.filter((c) => c.call !== "pause")).toEqual([]); // not even the silent unlock
+  expect(button("Sound off")).toBeTruthy();
+});
+
+test("audio: Sound on during the fight unlocks the voice inside the click, before its next line (#584)", async () => {
+  sessionStorage.setItem("battle-royale-sound-off", "1"); // switched off in an earlier fight
+  const log = mediaLog();
+  show(timedRecord());
+  startFight();
+  act(() => stageProps().onPlayingChange!(true));
+  const voice = soundBar().querySelector("audio")!;
+  expect(log.filter((c) => c.call !== "pause")).toEqual([]);
+  log.length = 0;
+  fireEvent.click(button("Sound off"));
+  expect(callsOn(log, voice)).toEqual(["muted play", "pause"]); // during the click itself
+  expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
 });
