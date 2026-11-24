@@ -596,3 +596,18 @@ test("leaving the page mid-wait stops the still-working timer", async () => {
   cleanup();
   expect(vi.getTimerCount()).toBe(0);
 });
+
+// #581: T3 found the confirm card a confusing extra step. It stays, but says plainly that it is
+// the last step and what to press, in the card and ahead of the button.
+test("the card says it is the last step and points at the Start button (#581)", async () => {
+  api.postIntake.mockResolvedValue(ok);
+  open();
+  fireEvent.click(screen.getByRole("button", { name: EXAMPLES[0] }));
+  fireEvent.click(screen.getByRole("button", { name: "FIGHT!" }));
+  const card = await screen.findByRole("region", { name: "Tonight's card" });
+  expect(card.textContent).toContain(
+    "Last step: check the card, then press the big button below.",
+  );
+  const text = card.textContent ?? "";
+  expect(text.indexOf("Last step")).toBeLessThan(text.indexOf(START_LABEL));
+});
