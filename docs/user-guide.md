@@ -164,7 +164,7 @@ The page scrolls down to the card, which shows how the app read your matchup: ea
 
 ### Watch the broadcast
 
-While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute.
+While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute. Recording the announcer's voice can take about another minute; the ticker says so while it runs, and the show starts as soon as the voice is ready.
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 
@@ -172,7 +172,7 @@ Then the show starts: the announcer introduces the fighters, with captions on sc
 
 ![The intro: Grizzly bear VS 6 gray wolves, an announcer caption, and Start the fight and Skip to verdict buttons](images/user-guide/10-intro.png)
 
-The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log. Use **Pause**, **1×**, **2×**, **5×** and **10×** to control the speed, or **Skip to end**. The announcer says each moment's lines as the fight reaches them: it pauses when you pause, talks faster at 2×, and waits at 5× and 10× until you slow back down. The captions keep going either way. Sound turns on when you click **Start the fight**; the **Sound on / Sound off** button and a volume slider control the announcer's voice, and switching sound off is remembered in your browser. The captions always carry the show, with or without sound.
+The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log. Use **Pause**, **1×**, **2×**, **5×** and **10×** to control the speed, or **Skip to end**. The announcer says each moment's lines as the fight reaches them: it pauses when you pause, talks faster at 2×, and waits at 5× and 10× until you slow back down. The captions keep going either way. Sound turns on when you click **Start the fight**; the **Sound on / Sound off** button and a volume slider control the announcer's voice, and switching sound off is remembered in your browser, so later fights start silent until you switch it back on. Switching sound on partway through a moment finishes that moment's lines. The captions always carry the show, with or without sound.
 
 ![The animated fight: a grizzly bear facing six wolves in a pixel-art forest, with a damage number above the bear](images/user-guide/11-fight.jpg)
 
