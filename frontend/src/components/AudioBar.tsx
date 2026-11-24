@@ -4,6 +4,7 @@
 // next person on a shared laptop, starts with sound); once on, it follows the show from part to
 // part until they switch it off. Captions carry the show whenever sound can't play.
 import {
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -11,6 +12,9 @@ import {
   type Ref,
 } from "react";
 import styles from "./audio-bar.module.css";
+import { arrive, next, type VoiceCue } from "./voice-queue.ts";
+
+export type { VoiceCue };
 
 export interface AudioBarProps {
   narration: string | null; // the announcer's voice track, if one can be played
@@ -20,6 +24,8 @@ export interface AudioBarProps {
   holdNote?: string; // what the bar says while the announcer waits
   cue?: VoiceCue | null; // in sync with the fight (#576): the stretch of the file to play now
   rate?: number; // the fight's speed: the announcer talks at it (1x or 2x)
+  finishing?: boolean; // the replay reached its last moment: say what is left, then call onSettled (#601)
+  onSettled?: () => void; // the announcer has nothing left to say, or waited as long as it may (#601)
   ref?: Ref<AudioBarHandle>; // lets the page unlock the voice inside its own click (#579, #584)
 }
 
@@ -30,13 +36,9 @@ export interface AudioBarHandle {
   unlock: () => void;
 }
 
-// A stretch of the announcer's file, in seconds, for one moment of the fight (#576). `at` names the
-// moment, so the same lines are not started twice.
-export interface VoiceCue {
-  at: number;
-  start: number;
-  end: number;
-}
+// The longest the show waits at the end of the replay for the announcer to finish (#601), so a
+// stalled voice can never hold up the verdict.
+export const FINISH_WAIT_MS = 8000;
 
 const WAIT_NOTE = "Announcer waits at this speed";
 
@@ -109,17 +111,24 @@ const STOP_SLACK_S = 0.02; // this close to the end of the cued lines, stop now
 // In sync, stop the playing voice where its cued lines end (#584): a timer for the time left at
 // its speed, so the next line never slips out early; the timeupdate check is the backstop. A voice
 // that fell behind (it stalled to load) is given the rest of its time instead of being cut short.
+// `done` is told when the lines have ended, so the next waiting moment can start (#601).
 function stopAtEnd(
   track: HTMLAudioElement,
   end: { current: number | null },
   timer: Timer,
+  done?: () => void,
 ) {
   cancel(timer);
   if (end.current === null || track.paused) return;
   const left = (end.current - track.currentTime) / (track.playbackRate || 1);
-  if (left <= STOP_SLACK_S) track.pause();
-  else
-    timer.current = setTimeout(() => stopAtEnd(track, end, timer), left * 1000);
+  if (left <= STOP_SLACK_S) {
+    track.pause();
+    done?.();
+  } else
+    timer.current = setTimeout(
+      () => stopAtEnd(track, end, timer, done),
+      left * 1000,
+    );
 }
 
 export default function AudioBar({
@@ -130,6 +139,8 @@ export default function AudioBar({
   holdNote = WAIT_NOTE,
   cue,
   rate = 1,
+  finishing = false,
+  onSettled,
   ref,
 }: AudioBarProps) {
   const voice = useRef<HTMLAudioElement>(null);
@@ -143,8 +154,62 @@ export default function AudioBar({
   const speed = useRef(rate);
   const stopAt = useRef<number | null>(null); // where the cued lines end in the file
   const stopTimer = useRef<Timer["current"]>(null); // stops the voice right there (#584)
+  // Moments whose lines arrived while earlier lines were still talking wait their turn (#601).
+  const waiting = useRef<VoiceCue[]>([]);
+  const speaking = useRef(false); // cued lines have been started and have not ended yet
+  const settle = useRef(onSettled); // the latest onSettled, for the finish wait
+  const idle = useRef<(() => void) | null>(null); // runs when nothing is left to say (#601)
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(80); // percent
+
+  // Tell whoever is waiting at the end of the replay that the announcer has nothing left to say.
+  const flushIdle = useCallback(() => idle.current?.(), []);
+  const cueDoneRef = useRef<() => void>(() => {}); // the latest cueDone, for the stop timer
+
+  // Start a moment's lines: jump to them and, with the sound on and the fight moving, play them.
+  // Where they end, the next waiting moment starts, or the finish wait is over (#601).
+  const startCue = useCallback(
+    (track: HTMLAudioElement, lines: VoiceCue) => {
+      cancel(stopTimer);
+      stopAt.current = lines.end;
+      track.currentTime = lines.start;
+      speaking.current = false;
+      if (!soundOn.current || held.current) return;
+      speaking.current = true;
+      track.playbackRate = speed.current;
+      void Promise.resolve()
+        .then(() => track.play())
+        .then(
+          () => {
+            setPlaying(true);
+            stopAtEnd(track, stopAt, stopTimer, () => cueDoneRef.current());
+          },
+          () => {
+            if (held.current) return; // told to wait mid-load: cut short, not refused
+            speaking.current = false;
+            waiting.current = [];
+            soundOn.current = false;
+            setPlaying(false);
+            flushIdle();
+          },
+        );
+    },
+    [flushIdle],
+  );
+
+  // The talking lines ended: the next waiting moment starts, or nothing is left to say.
+  const cueDone = useCallback(() => {
+    if (!speaking.current) return; // already handled (the timer and timeupdate can both land)
+    speaking.current = false;
+    const track = voice.current;
+    const turn = next(waiting.current);
+    waiting.current = turn.waiting;
+    if (turn.play && track) startCue(track, turn.play);
+    else flushIdle();
+  }, [startCue, flushIdle]);
+  useEffect(() => {
+    cueDoneRef.current = cueDone;
+  }, [cueDone]);
 
   // The page's click that starts the fight unlocks the voice for its first line (#579, #584).
   useImperativeHandle(
@@ -170,6 +235,7 @@ export default function AudioBar({
     cued.current = cue !== undefined;
     cueNow.current = cue ?? null;
     speed.current = rate;
+    settle.current = onSettled;
   });
 
   // The announcer talks at the fight's speed (1x or 2x; it waits at 5x and 10x), so the time left
@@ -178,8 +244,9 @@ export default function AudioBar({
     const track = voice.current;
     if (!track) return;
     track.playbackRate = rate;
-    if (stopTimer.current !== null) stopAtEnd(track, stopAt, stopTimer);
-  }, [rate]);
+    if (stopTimer.current !== null)
+      stopAtEnd(track, stopAt, stopTimer, cueDone);
+  }, [rate, cueDone]);
 
   // While the fight is paused or too fast, the announcer waits; then it picks up where it stopped,
   // if the sound is on (#577) and, in sync, its cued lines are not done yet (#576). The music, if
@@ -199,7 +266,7 @@ export default function AudioBar({
         .then(
           () => {
             setPlaying(true);
-            if (cued.current) stopAtEnd(track, stopAt, stopTimer);
+            if (cued.current) stopAtEnd(track, stopAt, stopTimer, cueDone);
           },
           () => {
             if (held.current) return; // told to wait mid-load: cut short, not refused
@@ -207,8 +274,10 @@ export default function AudioBar({
             setPlaying(false);
           },
         );
+    } else if (soundOn.current && speaking.current && cued.current) {
+      cueDone(); // the lines ended while the fight was held: the next waiting moment starts (#601)
     }
-  }, [hold]);
+  }, [hold, cueDone]);
 
   // The tracks change with the part of the show (each part has its own announcer file). The old
   // ones stop. If the viewer turned the sound on, the new ones carry on: the next announcer file
@@ -235,43 +304,74 @@ export default function AudioBar({
       });
     return () => {
       cancel(stopTimer);
+      speaking.current = false; // a new file has nothing queued from the old one (#601)
+      waiting.current = [];
+      idle.current = null;
       all.forEach((t) => !t.paused && t.pause());
     };
   }, [narration, music, startSound]);
 
   // In sync with the fight (#576): at each moment with lines, jump to them in the announcer's file
-  // and play them, stopping where they end (#584). Lines still talking when the next moment's
-  // lines arrive are cut off, so the voice never runs ahead of the fight.
+  // and play them, stopping where they end (#584). Lines that arrive while earlier lines are still
+  // talking wait their turn rather than cutting them off (#601). A moment that arrives while the
+  // voice is silent, paused or off replaces the one before. With no moment (the replay started
+  // over), nothing is left to say: the stop timer, the queue and the old lines all end (#601).
   const cueAt = cue ? cue.at : null;
   useEffect(() => {
     const track = voice.current;
     const lines = cueNow.current;
-    if (!track || !lines) return;
-    cancel(stopTimer);
-    stopAt.current = lines.end;
-    track.currentTime = lines.start;
-    if (!soundOn.current || held.current) return;
-    track.playbackRate = speed.current;
-    void Promise.resolve()
-      .then(() => track.play())
-      .then(
-        () => {
-          setPlaying(true);
-          stopAtEnd(track, stopAt, stopTimer);
-        },
-        () => {
-          if (held.current) return; // told to wait mid-load: cut short, not refused
-          soundOn.current = false;
-          setPlaying(false);
-        },
-      );
-  }, [cueAt, narration]);
+    if (!lines) {
+      cancel(stopTimer);
+      waiting.current = [];
+      if (speaking.current) track?.pause();
+      speaking.current = false;
+      return;
+    }
+    if (!track) return;
+    const talking =
+      speaking.current &&
+      soundOn.current &&
+      !held.current &&
+      linesLeft(track, stopAt.current);
+    const turn = arrive(waiting.current, lines, talking);
+    waiting.current = turn.waiting;
+    if (turn.play) startCue(track, turn.play);
+  }, [cueAt, narration, startCue]);
+
+  // The replay reached its last moment (#601): the show waits for the announcer to finish what it
+  // is saying (and what is lined up), for at most FINISH_WAIT_MS, then moves to the verdict. With
+  // nothing being said (sound off, the fight held, no lines) it moves on at once. This effect
+  // follows the cue one, so the last moment's lines have already been started.
+  useEffect(() => {
+    if (!finishing) return;
+    const busy =
+      soundOn.current &&
+      !held.current &&
+      (speaking.current || waiting.current.length > 0);
+    if (!busy) {
+      settle.current?.();
+      return;
+    }
+    const timer = setTimeout(() => flushIdle(), FINISH_WAIT_MS);
+    idle.current = () => {
+      clearTimeout(timer);
+      idle.current = null;
+      settle.current?.();
+    };
+    return () => {
+      clearTimeout(timer);
+      idle.current = null;
+    };
+  }, [finishing, flushIdle]);
 
   // In sync, stop at the end of the cued lines; the next moment's lines start them again.
   const onVoiceTime = () => {
     const track = voice.current;
     if (cued.current && track && stopAt.current !== null)
-      if (track.currentTime >= stopAt.current) track.pause();
+      if (track.currentTime >= stopAt.current) {
+        track.pause();
+        cueDone();
+      }
   };
 
   if (!narration && !music) return null;
@@ -287,16 +387,21 @@ export default function AudioBar({
     if (playing) {
       tracks().forEach((t) => t.pause());
       cancel(stopTimer);
+      speaking.current = false;
+      waiting.current = [];
       soundOn.current = false;
       saveOff(true);
       setPlaying(false);
+      flushIdle(); // the viewer wants quiet: nothing left to wait for (#601)
       return;
     }
     saveOff(false);
     const track = voice.current;
     const waits = held.current || cued.current; // the announcer waits for the fight or its cue
     const inSync = cued.current && !held.current;
-    if (inSync) wake(track);
+    // A muted play and pause makes no sound, so it can unlock the voice even while the fight is
+    // paused or too fast; Safari then needs no second click when the fight moves on (#601).
+    if (waits) wake(track);
     const finish = inSync && track !== null && linesLeft(track, stopAt.current);
     const quiet = waits && !finish;
     if (quiet && !song.current) {
@@ -308,12 +413,18 @@ export default function AudioBar({
     void startAll(startable).then((on) => {
       soundOn.current = on;
       setPlaying(on);
-      if (on && finish) stopAtEnd(track, stopAt, stopTimer);
+      if (on && finish) {
+        speaking.current = true;
+        stopAtEnd(track, stopAt, stopTimer, cueDone);
+      }
     });
   };
 
   // A track that ends (the announcer is done) leaves the button on Sound off once nothing is left playing.
-  const onEnded = () => setPlaying(tracks().some((t) => !t.paused && !t.ended));
+  const onEnded = () => {
+    setPlaying(tracks().some((t) => !t.paused && !t.ended));
+    cueDone(); // a cue that ran to the end of the file is over too (#601)
+  };
 
   return (
     <div className={styles.bar} role="group" aria-label="Sound controls">
