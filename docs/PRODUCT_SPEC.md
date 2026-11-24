@@ -103,7 +103,7 @@ The Structured Decisions model rates candidate opponents for the winner (a choic
 - **Respect:** jokes are about the fighters and the absurdity, never about groups of people.
 - **Legends:** a mythical creature's numbers are introduced as legend ("according to legend, this dragon…"); objects get the same dead-serious treatment as a grizzly.
 - **Honesty:** estimates are called estimates on air ("our best guess puts this badger at…").
-- **Length:** intro 4–8 lines; play-by-play 8–12 beats (one per logged event, so a long fight is cut down to 12 key moments); every line under 200 characters.
+- **Length:** intro 4–8 lines; play-by-play 4–6 short beats of about 12 words or fewer (one per logged event, so a long fight is cut down to 6 key moments: the start, a hit or a miss, each side's first and last knockout at most, and the end; no line is said more than twice, #580); every line under 200 characters. The fight replay lasts at most about 20 seconds at 1× (a short fight plays at its natural pace).
 
 ## 6. Look and feel [added]
 

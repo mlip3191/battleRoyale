@@ -72,6 +72,7 @@ print(fair.message)
 | `mean_survivors`, `mean_duration_s` | Averages over all runs |
 | `deciding_factor`, `deciding_factor_explainer` | A stat name or `numbers` / `terrain` / `habitat` / `abilities`, plus a plain sentence made by a code template |
 | `representative_log` | Up to 300 `FightEvent`s of one typical fight: the replay for Phaser and the script |
+| `start_hp` | Each side's combined hit points at the start of that fight (#575), for the health bars. `None` on results made before it existed |
 | `seed`, `runs` | Reproducibility |
 
 **`summary(result, names)`** returns a `Summary` (not a contract): `win_pct` (per side, percent to 1 decimal), `draw_pct`, `survivors`, `duration_s`, `outcome`, `favorite` (`0`, `1`, or `None`), `favorite_name`, `deciding_factor`, `deciding_factor_text`. Use it for the results card and for the script generator's inputs.
@@ -125,6 +126,7 @@ Weapon words: bite, claw swipe, goring thrust, kick, venom strike, squeeze, tusk
 - **Positions:** events carry none. The scene places the fighters itself.
 - **Arrival:** there is one APPROACH per side at `t = 0` and no "arrived" event; the first HIT or MISS is the first contact.
 - **`damage`** is in hit points (relative, not real units): per hit for single fighters, the group total for swarm hits, `None` on misses and knock-outs.
+- **`hp_left`** (#575) is each side's combined hit points still standing after the event, counted by the engine, so it already includes that event's damage. Knocked-out and out-of-action fighters count 0. Healing (regeneration) is included: one by one, a fighter's healing shows up the next time it is touched, and a swarm heals every step, so a regenerating side's total can rise on a hit event. Values (and `start_hp`) are kept to 0.1, or to 6 significant digits when that is finer, so a crowd of tiny fighters (10,000 ants hold about 0.3 in all) still drains visibly; a side with nothing left reads exactly 0. The health bar is `hp_left / start_hp` per side. It is `None` on the events added after the fight (END, STALEMATE, "more go down") and on logs made before #575: keep the last value. Because hits and misses stop being logged partway through a crowded fight, `hp_left` can drop in one step at the next knock-out.
 - **`EventType.ATTACK`** exists in the contract but is never emitted.
 - **Time:** events are in time order, `t` in simulated seconds, and all fall within 600 s.
 - **Length and summary:** the log has at most 300 events. Hits and misses fill only about the first half, so knock-outs keep their room. Knock-outs that still do not fit are summed into one extra KO event per side, with `group_size` set to how many fell and the hint "more go down", placed just before the ending. So the `group_size` values of a log's KO events (counting 1 where it is `None`) add up to the number of fighters who fell. Retreats and escapes can still be dropped from a very crowded log, so use `outcome` and `mean_survivors` for the result, and treat the log as a highlight reel.

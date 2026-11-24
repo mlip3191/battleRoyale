@@ -13,6 +13,7 @@ import {
   visibleSlots,
   sideTitle,
   winnerBanner,
+  type HitPoints,
   type SideLayout,
 } from "./layout.ts";
 import {
@@ -68,6 +69,7 @@ interface Squad {
   badge: Phaser.GameObjects.Text | null;
   bar: Phaser.GameObjects.Rectangle; // the health bar's fill (#503); its scaleX is the share left
   barLabel: Phaser.GameObjects.Text | null; // "3 of 6 standing" under a crowd's bar
+  hp: HitPoints | null; // the side's hit points from the log (#575); null for an older log
 }
 
 // Build the scene class on top of the Phaser namespace that was loaded at runtime.
@@ -203,6 +205,7 @@ export function createBattleScene(P: typeof Phaser) {
     private apply(beat: Beat, instant: boolean) {
       if (!this.squads) return;
       const ms = beat.duration / this.clock.speed;
+      const hurt = this.takeHitPoints(beat);
       switch (beat.kind) {
         case "approach":
           if (beat.actorSide !== null)
@@ -228,6 +231,30 @@ export function createBattleScene(P: typeof Phaser) {
           this.banner(this.endText(beat), ms, instant, true);
           break;
       }
+      // Every hit drains the bar (#575): redraw each side whose hit points moved, unless the beat
+      // already did (a knock-out redraws the fallen side, a flight the side that ran).
+      const redrawn =
+        beat.kind === "ko" || beat.kind === "crowd-ko"
+          ? beat.affectedSide
+          : beat.kind === "flee"
+            ? beat.actorSide
+            : null;
+      for (const side of hurt)
+        if (side !== redrawn) this.showHealth(this.squads[side], ms, instant);
+    }
+
+    // Take a beat's hit points from the log (#575) and return the sides whose total moved.
+    private takeHitPoints(beat: Beat): Side[] {
+      const moved: Side[] = [];
+      if (!beat.hpLeft) return moved;
+      for (const side of [0, 1] as const) {
+        const hp = this.squads![side].hp;
+        if (hp && hp.left !== beat.hpLeft[side]) {
+          hp.left = beat.hpLeft[side];
+          moved.push(side);
+        }
+      }
+      return moved;
     }
 
     private drawBackdrop() {
@@ -353,6 +380,7 @@ export function createBattleScene(P: typeof Phaser) {
               )
               .setOrigin(origin, 0)
           : null;
+      const start = this.opts.timeline.startHp?.[side] ?? 0;
       return {
         layout,
         sprites,
@@ -363,12 +391,19 @@ export function createBattleScene(P: typeof Phaser) {
         badge,
         bar,
         barLabel,
+        hp: start > 0 ? { left: start, start } : null,
       };
     }
 
-    // Show how many of a side are still in the fight; the bar eases down unless motion is off.
+    // Show how much of a side is still in the fight: its hit points left when the log has them
+    // (#575), else its fighters standing. The bar eases down unless motion is off.
     private showHealth(squad: Squad, ms: number, instant: boolean) {
-      const share = healthFraction(squad.alive, squad.layout.count, squad.gone);
+      const share = healthFraction(
+        squad.alive,
+        squad.layout.count,
+        squad.gone,
+        squad.hp,
+      );
       squad.barLabel?.setText(
         healthLabel(squad.alive, squad.layout.count, squad.gone),
       );

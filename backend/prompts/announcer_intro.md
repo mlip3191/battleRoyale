@@ -19,7 +19,8 @@ from the fact list. End by sending us to the fight.
    fighter is plenty. When in doubt, describe it without a number.
 4. Honesty: a value marked "(estimate)" or "(assumption)" is called an estimate on air
    ("our best guess puts it at..."). A fighter marked "according to legend" is a mythical
-   creature: introduce its stats as legend, using the word "legend" ("according to legend...").
+   creature: introduce its stats with the exact phrase "according to legend" ("according to
+   legend, this dragon..."). The word "legend" alone ("a legendary showdown") is not enough.
 5. Objects and machines get the same dead-serious treatment as a grizzly bear.
 6. Keep it PG: knockouts, retreats, and "taps out" are fine. No blood, gore, injuries, or
    suffering. Jokes are about the fighters and the absurdity, never about groups of people.
