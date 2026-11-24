@@ -706,3 +706,42 @@ async def test_mythical_intro_without_legend_is_rejected() -> None:
     intro, _, _ = await _write(sample, chat)
     assert intro.fallback is True and chat.count("announcer_intro") == 2
     assert "legend" in " ".join(line.text for line in intro.lines).lower()
+
+
+# "A legendary showdown" says the word but frames no stat as legend (#572): the intro must say
+# "according to legend", or it is rejected, retried once, and replaced by the template.
+async def test_mythical_intro_that_only_says_legendary_is_rejected() -> None:
+    sample = SAMPLES[GRIFFIN]
+    lines = [dict(line) for line in sample.replies["announcer_intro"]["lines"]]
+    lines[0]["text"] = (
+        "Good evening, fight fans! Tonight, a legendary showdown in a very real arena."
+    )
+    lines[1]["text"] = "In the red corner: part lion, part eagle, all business. The Griffin!"
+    lines[2]["text"] = "Our best guess puts it at 300 kilograms. A legendary appetite, too."
+    said = " ".join(line["text"] for line in lines).lower()
+    assert "legend" in said and "according to legend" not in said
+    chat = _chat_with(sample, "announcer_intro", {"lines": lines})
+    intro, pbp, outro = await _write(sample, chat)
+    assert intro.fallback is True and chat.count("announcer_intro") == 2
+    assert intro == _templates(sample)[0]
+    assert "according to legend" in " ".join(line.text for line in intro.lines).lower()
+    first, second = [m for name, m, _ in chat.calls if name == "announcer_intro"]
+    assert 'exact phrase "according to legend"' in first[0]["content"]  # the system prompt
+    assert '"according to legend"' in second[-1]["content"]  # the retry names it too
+    assert pbp.fallback is False and outro.fallback is False  # the others are unaffected
+
+
+# The phrase is matched in any case, and only a fight with a mythical fighter needs it.
+def test_legend_phrase_is_case_insensitive_and_only_for_mythical_fights() -> None:
+    griffin, grizzly = SAMPLES[GRIFFIN], SAMPLES[GRIZZLY]
+    lines = [dict(line) for line in griffin.replies["announcer_intro"]["lines"]]
+    lines[1]["text"] = "ACCORDING TO LEGEND: part lion, part eagle, all business. The Griffin!"
+    assert not any("according to legend" in line["text"] for line in lines)  # only upper case
+    intro = read_reply("intro", json.dumps({"lines": lines}), _facts(griffin), 10)
+    assert intro.fallback is False
+    plain = " ".join(line["text"] for line in grizzly.replies["announcer_intro"]["lines"])
+    assert "legend" not in plain.lower()
+    grizzly_intro = read_reply(
+        "intro", json.dumps(grizzly.replies["announcer_intro"]), _facts(grizzly), 13
+    )
+    assert grizzly_intro.fallback is False

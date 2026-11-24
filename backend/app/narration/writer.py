@@ -93,6 +93,10 @@ TOO_CLOSE_HELP = {
 # Words that crown a winner; a too-close outro may not use them (placeholders are removed first).
 CROWNS_A_WINNER = re.compile(r"\bwinner\b|takes the win|\bwon\b|\bwins\b", re.I)
 TOO_CLOSE_REJECTED = "the verdict is too close to call: call it a near coin flip with a slight edge"
+# A mythical fighter's stats are introduced with this exact phrase (PRODUCT_SPEC "Legends",
+# D-38); the word "legend" alone, as in "a legendary showdown", frames no stat (#572).
+LEGEND_PHRASE = "according to legend"
+LEGEND_MISSING = f'a mythical fighter is in this fight: introduce its stats with "{LEGEND_PHRASE}"'
 
 
 class ScriptRejected(ValueError):
@@ -181,8 +185,9 @@ def check_script(script: Script, facts: NarrationFacts, log_len: int) -> list[st
     if kind == "play_by_play":
         problems += _repeat_problems(script)
     legend = any(f.is_legend for f in facts.fighters)
-    if kind == "intro" and legend and not any("legend" in ln.text.lower() for ln in script.lines):
-        problems.append('a mythical fighter is in this fight: say its stats come from "legend"')
+    framed = any(LEGEND_PHRASE in ln.text.lower() for ln in script.lines)
+    if kind == "intro" and legend and not framed:
+        problems.append(LEGEND_MISSING)
     return problems
 
 
