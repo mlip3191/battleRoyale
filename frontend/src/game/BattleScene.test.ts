@@ -12,7 +12,7 @@ import {
 } from "./BattleScene.ts";
 import { FakeScene, fakePhaser } from "./fake-phaser.ts";
 import { HEALTH_BAR, MAX_SPRITES_PER_SIDE, layoutStage } from "./layout.ts";
-import { buildTimeline, keyFrames } from "./timeline.ts";
+import { buildTimeline, keyFrames, type Speed } from "./timeline.ts";
 
 const BattleScene = createBattleScene(fakePhaser as unknown as typeof Phaser);
 type Scene = InstanceType<typeof BattleScene> & FakeScene;
@@ -145,6 +145,35 @@ function freezeTweensHalfway(scene: Scene) {
     }
   }
 }
+
+describe("fast replays (#577)", () => {
+  const bite = [
+    ev({ type: "approach", side: 0 }),
+    ev({ type: "approach", side: 1, group_size: 6 }),
+    ev({ type: "hit", side: 1, actor: 0, target: 0, damage: 23.3 }),
+    ev({ type: "end", side: 1 }),
+  ];
+
+  // How long the bite's lunge and its floating damage last at a speed.
+  const biteEffects = (speed: Speed) => {
+    const { scene } = stage(withLog(bite), [1, 6], false);
+    scene.setSpeed(speed);
+    playAll(scene);
+    const lunge = scene.tweens.list.find((t) => t.yoyo)!;
+    const label = scene.texts.find((t) => t.text.startsWith("-23"))!;
+    const float = scene.tweens.list.find((t) => t.targets === label)!;
+    return [lunge.duration as number, float.duration as number];
+  };
+
+  test("at 5x and 10x a hit's effects shrink with the speed instead of holding their 1x minimum", () => {
+    const [lunge, float] = biteEffects(1);
+    for (const speed of [5, 10] as const) {
+      const [fastLunge, fastFloat] = biteEffects(speed);
+      expect(fastLunge).toBeCloseTo(lunge / speed);
+      expect(fastFloat).toBeCloseTo(float / speed);
+    }
+  });
+});
 
 describe("skip to end mid-animation", () => {
   const log = [

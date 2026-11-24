@@ -217,3 +217,35 @@ test("music alone plays at the full chosen level, on a loop", () => {
   expect(song.volume).toBeCloseTo(0.8);
   expect(screen.getByText("Music only")).toBeTruthy();
 });
+
+test("at 5x and 10x the announcer waits, then picks up when the fight slows down (#577)", async () => {
+  const view = render(
+    <AudioBar narration="/media/a.mp3" music={null} startSound />,
+  );
+  await screen.findByRole("button", { name: "Sound on" });
+  expect(play).toHaveBeenCalledTimes(1);
+  view.rerender(
+    <AudioBar narration="/media/a.mp3" music={null} startSound hold />,
+  );
+  expect(pause).toHaveBeenCalled();
+  expect(screen.getByText("Announcer waits at this speed")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Sound on" })).toBeTruthy(); // still wanted
+  view.rerender(<AudioBar narration="/media/a.mp3" music={null} startSound />);
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
+  expect(screen.getByText("Announcer only")).toBeTruthy();
+});
+
+test("switching the sound on while held waits for the fight to slow; switched off, it stays off", async () => {
+  const view = render(<AudioBar narration="/media/a.mp3" music={null} hold />);
+  fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
+  expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
+  expect(play).not.toHaveBeenCalled(); // nothing talks over a 10x fight
+  view.rerender(<AudioBar narration="/media/a.mp3" music={null} />);
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+
+  view.rerender(<AudioBar narration="/media/a.mp3" music={null} hold />);
+  fireEvent.click(screen.getByRole("button", { name: "Sound on" })); // off, while held
+  view.rerender(<AudioBar narration="/media/a.mp3" music={null} />);
+  await new Promise((r) => setTimeout(r, 0));
+  expect(play).toHaveBeenCalledTimes(1); // off stays off
+});

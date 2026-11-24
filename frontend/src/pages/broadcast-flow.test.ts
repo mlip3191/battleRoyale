@@ -14,6 +14,7 @@ import {
   START,
   audioPlan,
   canSkip,
+  tooFastToTalk,
   captionsAt,
   lineMs,
   linesOf,
@@ -418,4 +419,8 @@ describe("notes and verdict", () => {
       verdictReveal({ ...result, outcome: "no_contest" }, names).headline,
     ).toBe("No contest!");
   });
+});
+
+test("the announcer talks at 1x and 2x and waits at 5x and 10x (#577)", () => {
+  expect([1, 2, 5, 10].map(tooFastToTalk)).toEqual([false, false, true, true]);
 });

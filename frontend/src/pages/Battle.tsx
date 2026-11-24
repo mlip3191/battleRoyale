@@ -15,6 +15,7 @@ import {
 import { useFocusRescue } from "../components/focus-rescue.ts";
 import { usePageTitle } from "../components/page-title.ts";
 import PhaserStage from "../game/PhaserStage.tsx";
+import type { Speed } from "../game/timeline.ts";
 import {
   SPEAKERS,
   START,
@@ -27,6 +28,7 @@ import {
   placeLines,
   sideNames,
   shownStage,
+  tooFastToTalk,
   unavailableNote,
   verdictReveal,
   type Show,
@@ -89,6 +91,7 @@ function Broadcast({ id }: { id: string }) {
   // The part of the show whose captions the viewer paused. Every step of the show is a new object,
   // so a pause belongs to one part only: the outro never starts out paused from the intro.
   const [pausedIn, setPausedIn] = useState<Show | null>(null);
+  const [fightSpeed, setFightSpeed] = useState<Speed>(1); // the replay's speed button (#577)
   const controls = useFocusRescue();
   const startButton = useRef<HTMLButtonElement>(null);
   const verdictTitle = useRef<HTMLHeadingElement>(null);
@@ -200,6 +203,7 @@ function Broadcast({ id }: { id: string }) {
           autoPlay={show.phase === "fight"}
           claimFocus={controls.claim}
           onEvent={setEventIndex}
+          onSpeedChange={setFightSpeed}
           onFinish={() => act({ type: "fight-done" })}
           onReplay={() => {
             setEventIndex(-1);
@@ -249,6 +253,7 @@ function Broadcast({ id }: { id: string }) {
           narration={sound.narration}
           music={sound.music}
           startSound={show.phase === "fight" || show.phase === "verdict"}
+          hold={show.phase === "fight" && tooFastToTalk(fightSpeed)}
         />
       )}
 
