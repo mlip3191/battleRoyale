@@ -250,6 +250,11 @@ test("5x and 10x reach the scene and are reported to the page (#577)", async () 
     fireEvent.click(screen.getByRole("button", { name: `${speed}× speed` }));
     expect(scene.clock.speed).toBe(speed);
     expect(onSpeedChange).toHaveBeenLastCalledWith(speed);
+    expect(
+      screen
+        .getByRole("button", { name: `${speed}× speed` })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
   }
 });
 

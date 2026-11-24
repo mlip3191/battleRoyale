@@ -82,6 +82,7 @@ export default function AudioBar({
         .then(
           () => setPlaying(true),
           () => {
+            if (held.current) return; // told to wait mid-load: cut short, not refused
             soundOn.current = false; // refused: stay quiet, as on any other start
             setPlaying(false);
           },
@@ -97,6 +98,7 @@ export default function AudioBar({
   // everything. (React has already let go of the elements when the cleanup runs, so it can't read
   // the refs then; the tracks are picked up again whenever they change.)
   useEffect(() => {
+    const all = present([voice.current, song.current]);
     const tracks = present([held.current ? null : voice.current, song.current]);
     if (startSound && !autoStarted.current) {
       autoStarted.current = true;
@@ -104,10 +106,12 @@ export default function AudioBar({
     }
     if (soundOn.current)
       void startAll(tracks).then((on) => {
-        if (tracks.length > 0 && !on) soundOn.current = false; // refused: don't keep retrying
-        setPlaying(on);
+        // Refused: don't keep retrying. A voice the hold paused mid-load was cut short instead,
+        // and while the announcer waits the sound is still on (#577).
+        if (tracks.length > 0 && !on && !held.current) soundOn.current = false;
+        setPlaying(on || held.current);
       });
-    return () => tracks.forEach((t) => !t.paused && t.pause());
+    return () => all.forEach((t) => !t.paused && t.pause());
   }, [narration, music, startSound]);
 
   if (!narration && !music) return null;
@@ -167,7 +171,7 @@ export default function AudioBar({
           onChange={(e) => setVolume(Number(e.target.value))}
         />
       </label>
-      <span className={styles.what}>
+      <span className={styles.what} aria-live="polite">
         {hold && narration
           ? "Announcer waits at this speed"
           : narration && music
