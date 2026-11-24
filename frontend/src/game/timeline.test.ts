@@ -45,7 +45,41 @@ const ev = (e: Partial<FightEvent> & Pick<FightEvent, "type">): FightEvent => ({
   group_size: 1,
   damage: null,
   text_hint: "",
+  hp_left: null,
   ...e,
+});
+
+describe("hit points (#575)", () => {
+  test("each beat carries the log's hit points and the timeline the starting totals", () => {
+    const log = [
+      ev({ type: "approach", hp_left: [400, 1200] }),
+      ev({
+        type: "hit",
+        side: 1,
+        actor: 0,
+        target: 0,
+        damage: 23.3,
+        hp_left: [376.7, 1200],
+      }),
+      ev({ type: "end", side: 1 }), // a closing event has none
+    ];
+    const timeline = buildTimeline(
+      { representative_log: log, outcome: "win_1", start_hp: [400, 1200] },
+      [1, 6],
+    );
+    expect(timeline.startHp).toEqual([400, 1200]);
+    expect(timeline.beats.map((b) => b.hpLeft)).toEqual([
+      [400, 1200],
+      [376.7, 1200],
+      null,
+    ]);
+  });
+
+  test("a result made before #575 has no hit points", () => {
+    const timeline = buildTimeline(result, WOLF_COUNTS);
+    expect(timeline.startHp).toBeNull();
+    expect(timeline.beats.every((b) => b.hpLeft === null)).toBe(true);
+  });
 });
 
 describe("every event is visited exactly once, in order", () => {

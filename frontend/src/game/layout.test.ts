@@ -246,6 +246,16 @@ describe("health bar (#503)", () => {
     expect(healthFraction(1, 1, false)).toBe(1);
   });
 
+  test("with the engine's hit points, the bar is the hit points left over the start (#575)", () => {
+    const hp = (left: number) => ({ left, start: 400 });
+    expect(healthFraction(1, 1, false, hp(300))).toBe(0.75); // a lone fighter, hit once
+    expect(healthFraction(6, 6, false, hp(100))).toBe(0.25); // nobody down yet, badly hurt
+    expect(healthFraction(1, 1, false, hp(500))).toBe(1); // never over full
+    expect(healthFraction(4, 6, true, hp(300))).toBe(0); // fled: empty, as before
+    expect(healthFraction(0, 6, false, hp(5))).toBe(0); // nobody standing: empty
+    expect(healthFraction(3, 6, false, { left: 0, start: 0 })).toBe(0.5); // no total: standing share
+  });
+
   test("a crowd says how many are left of its total; a lone fighter says nothing", () => {
     expect(healthLabel(3, 6, false)).toBe("3 of 6 standing");
     expect(healthLabel(1000, 1000, false)).toBe("1,000 of 1,000 standing");

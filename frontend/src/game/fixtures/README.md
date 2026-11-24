@@ -8,7 +8,7 @@ Three real `SimulationResult` logs for big crowds, used to check the battle scen
 | `two-hundred-vs-five.json` | 200 ducks vs 5 lions  | 100    | A swarm replay below 200 per side (D-50, since engine version 9; regenerated at 13): group hits and knock-outs, never individual misses.                                                    |
 | `hundred-vs-five.json`     | 100 ducks vs 5 lions  | 241    | A dense one-by-one log (the work rule keeps it out of swarm mode): individual hits, misses and knock-outs near the 300-event cap, so the stage and frame rate are tested under load (#300). |
 
-- **Made by:** the simulation engine at `ENGINE_VERSION = 13` (`backend/app/simulation/constants.py`).
+- **Made by:** the simulation engine at `ENGINE_VERSION = 13` (`backend/app/simulation/constants.py`). Regenerated for #575, which added each event's `hp_left` and the result's `start_hp`; nothing else in them changed.
 - **Fighters:** the stand-in `duck()` and `lion()` sheets from `backend/tests/property/sim_helpers.py` (round numbers, not sourced), in an open field, via `matchup_of(1000, 1)`, `matchup_of(200, 5)` and `matchup_of(100, 5)`.
 - **Seeds:** `7153663249441148750` (thousand-vs-one), `6181270970681810532` (two-hundred-vs-five) and `5591432779290323704` (hundred-vs-five). The same engine version always gives the identical files.
 
