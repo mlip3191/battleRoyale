@@ -18,7 +18,9 @@ from app.intake.llm_io import INPUT_END as INPUT_END  # re-exported for tests an
 from app.intake.llm_io import INPUT_START as INPUT_START
 from app.intake.rules import (
     ARTICLES,
+    COUNT_FILLERS,
     GROUP_WORDS,
+    MAX_COUNT_FILLERS,
     MULTIPLIERS,
     SCALES,
     UNITS,
@@ -313,6 +315,8 @@ def build_fighter(fighter: ParsedFighter, max_count: int) -> tuple[FighterReques
             f"Assumed {count:,} {pluralize(entity)} for '{reading.group}', since no number "
             "was given."
         )
+    elif reading.multiplied:  # "2 packs of 5" -> 10: both numbers typed, code multiplied (#573)
+        notes.append(f"We read '{reading.multiplied}' as {count:,}.")
     count, clamp_note = clamp_count(count, entity, max_count)
     if clamp_note:
         notes.append(clamp_note)
@@ -434,7 +438,12 @@ def _without_place(raw: str) -> str:
 
 
 # A group phrase in a side's words, "swarm of " in "a swarm of bees": its count is noted already.
-_GROUP_PHRASE = re.compile(rf"\b(?:{'|'.join(GROUP_WORDS)})s?\s+of\s+", re.I)
+# Small words after "of" go too, so "about" in "a pack of about 12 wolves" is not a name (#573).
+_GROUP_PHRASE = re.compile(
+    rf"\b(?:{'|'.join(GROUP_WORDS)})s?\s+of\s+"
+    rf"(?:(?:{'|'.join(sorted(COUNT_FILLERS))})\s+){{0,{MAX_COUNT_FILLERS}}}",
+    re.I,
+)
 
 
 # A fighter's words as kept, for the card: no articles or hyphens, and never singularized, so a
