@@ -438,9 +438,10 @@ def _without_place(raw: str) -> str:
 
 
 # A group phrase in a side's words, "swarm of " in "a swarm of bees": its count is noted already.
-# Small words after "of" go too, so "about" in "a pack of about 12 wolves" is not a name (#573).
+# Small words after "of" go too, so "about" in "a pack of about 12 wolves" is not a name, and
+# the plural "colonies" counts as a group word (#573).
 _GROUP_PHRASE = re.compile(
-    rf"\b(?:{'|'.join(GROUP_WORDS)})s?\s+of\s+"
+    rf"\b(?:{'|'.join(GROUP_WORDS)}|colonies)s?\s+of\s+"
     rf"(?:(?:{'|'.join(sorted(COUNT_FILLERS))})\s+){{0,{MAX_COUNT_FILLERS}}}",
     re.I,
 )

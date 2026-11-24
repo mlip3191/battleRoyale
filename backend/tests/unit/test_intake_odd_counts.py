@@ -307,10 +307,19 @@ def test_a_zero_or_fraction_with_groups_is_still_flagged(raw: str, problem: str)
         ("a pack of the wolves", CountReading(6, None, "pack")),
         ("a pack of 12-foot wolves", CountReading(6, None, "pack")),
         ("a wolf from a pack of 12", CountReading(1)),
+        ("a pack of A-10 Warthogs", CountReading(6, None, "pack")),
+        ("2 packs of A-10s", CountReading(2)),
     ],
 )
 def test_a_group_with_no_count_after_it_keeps_its_default(raw: str, reading: CountReading) -> None:
     assert read_count(raw) == reading
+
+
+async def test_five_colonies_of_four_ants_are_twenty_ants_with_no_stray_colonies() -> None:
+    ants, notes = await first_side("5 colonies of 4 ants vs a frog")
+    assert (ants.entity, ants.count, ants.variant) == ("ant", 20, None)
+    assert "We read '5 colonies of 4' as 20." in notes
+    assert not [n for n in notes if "colonies" in n and not n.startswith("We read '5 colonies")]
 
 
 async def test_a_filler_word_never_ends_up_in_the_fighters_name() -> None:

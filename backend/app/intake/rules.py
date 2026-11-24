@@ -90,8 +90,8 @@ def _count_after_group(
     tokens: list[str], hyphens: list[str], index: int
 ) -> tuple[CountReading, int] | None:
     start, limit = index + 2, min(len(tokens), index + 2 + MAX_COUNT_FILLERS)
-    while start < limit and tokens[start] in COUNT_FILLERS:
-        start += 1
+    while start < limit and tokens[start] in COUNT_FILLERS and not hyphens[start]:
+        start += 1  # a hyphenated "a" starts a name ("A-10"), so it is not a filler
     if start >= len(tokens) or not _is_count_word(tokens[start]):
         return None
     reading, used = _read_tokens(tokens[start:], hyphens[start:])
