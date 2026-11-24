@@ -268,12 +268,14 @@ test("the page hears when the replay starts and stops moving (#576)", async () =
       autoPlay
     />,
   );
+  // The report comes from an effect after each render, so wait for it (a slow runner can be a beat
+  // behind the button it follows).
   const pause = await screen.findByRole("button", { name: "Pause" });
-  expect(onPlayingChange).toHaveBeenLastCalledWith(true);
+  await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(true));
   fireEvent.click(pause);
-  expect(onPlayingChange).toHaveBeenLastCalledWith(false);
+  await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(false));
   fireEvent.click(screen.getByRole("button", { name: "Play" }));
-  expect(onPlayingChange).toHaveBeenLastCalledWith(true);
+  await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(true));
 });
 
 test("autoPlay starts the replay as soon as it is ready", async () => {
