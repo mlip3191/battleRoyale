@@ -11,10 +11,12 @@ file is on disk, and ANNOUNCER_VOICE_REF_CLIP names a readable WAV, each line is
 with the clip added as base64 `ref_audio` (a shorter timeout, with retries
 on a full queue). If that fails
 or the reply is not a WAV, the same line is requested again exactly as without a clip, so the
-show still gets the stock voice. A 429 or a timeout is retried and does not disable the clip
-for later lines; only a response that rejects the clip (such as HTTP 422) does. Reference
-requests on one adapter are spoken one at a time, because make_audio starts all three scripts
-together and a burst of clip requests fills the speech queue.
+show still gets the stock voice. A 429 is retried and does not disable the clip for later
+lines. A response that rejects the clip (such as HTTP 422) disables it at once, and so do two
+lines in a row that time out or get a 5xx (#570); after the first such line the next clip try
+gets no retries, so a hung service leaves time for the stock voice. Any clip success resets the
+count. Reference requests on one adapter are spoken one at a time, because make_audio starts
+all three scripts together and a burst of clip requests fills the speech queue.
 
 speak() returns a SpokenWav: plain WAV bytes plus `.voice`, "cloned" when the reference clip
 spoke the line and "stock" otherwise. app/media/audio.py reads it per line, so a stock-voiced file
@@ -43,8 +45,15 @@ logger = logging.getLogger(__name__)
 RESPONSE_FORMAT = "wav"
 REF_RETRIES = 2  # retry 429/5xx/timeout on the clip request; a queue-full is transient
 REF_CONCURRENCY = 1  # one in-flight clip request; make_audio starts all three scripts together
-# Statuses that mean the clip itself was rejected, so later lines should not resend it.
-REF_REJECTED_STATUSES = frozenset({400, 413, 415, 422})
+# Statuses that mean the clip itself was rejected, so later lines should not resend it. 400 is
+# left out: nothing shows the service uses it for a bad clip, and a bad line of text would
+# otherwise switch the whole show to the stock voice (#570).
+REF_REJECTED_STATUSES = frozenset({413, 415, 422})
+# Clip lines in a row that may time out or get a 5xx before the show stops trying the clip (#570).
+REF_FAILURES_TO_STOP = 2
+# Retries for the clip once a line has just failed that way: one quick check, so a hung service
+# costs about 50 s, not 75 s, and the rest of the show still fits audio.ITEM_TIMEOUT_S (#570).
+REF_PROBE_RETRIES = 0
 # A normal line takes about 5 s; a hung clip request must leave time for the stock fallback
 # inside the per-file limit (audio.ITEM_TIMEOUT_S), including retries.
 REF_TIMEOUT_S = 12.0
@@ -90,6 +99,7 @@ class LiveTTS:
         clip = reference_clip(settings)
         self.ref_audio = None if clip is None else base64.b64encode(clip).decode("ascii")
         self._ref_limit = asyncio.Semaphore(REF_CONCURRENCY)
+        self._ref_failures = 0  # clip lines in a row that timed out or got a 5xx (#570)
 
     # Return WAV bytes of text read in voice_id (blank or placeholder ids use the service default).
     # With a reference clip loaded, try it first and fall back to the plain request if it fails.
@@ -99,28 +109,56 @@ class LiveTTS:
         if is_usable_voice(voice_id):
             payload["voice"] = voice_id.strip()
         if self.ref_audio is not None:
-            try:
-                timeout_s = min(self.timeout_s, REF_TIMEOUT_S)
-                # One clip request at a time on this adapter (shared by the whole show).
-                async with self._ref_limit:
-                    if self.ref_audio is not None:
-                        data = await self._post(
-                            payload | {"ref_audio": self.ref_audio}, REF_RETRIES, timeout_s
-                        )
-                        return SpokenWav(_checked_wav(data), "cloned")
-            except (ProviderError, httpx.HTTPError) as error:  # a timeout arrives as ProviderError
-                if _clip_rejected(error):
-                    self.ref_audio = None
-                    logger.warning(
-                        "reference voice rejected (%s); the rest of this show uses the stock voice",
-                        _ref_failure_label(error),
-                    )
-                else:
-                    logger.warning(
-                        "reference voice failed for this line (%s); using stock for this line",
-                        _ref_failure_label(error),
-                    )
+            cloned = await self._speak_cloned(payload)
+            if cloned is not None:
+                return cloned
         return SpokenWav(_checked_wav(await self._post(payload)), "stock")
+
+    # The line in the reference voice, or None when the stock voice should read it. One clip
+    # request at a time on this adapter (shared by the whole show); a clip turned off while
+    # this line waited is not sent, and right after a timeout or 5xx it is tried only once.
+    async def _speak_cloned(self, payload: dict[str, Any]) -> SpokenWav | None:
+        timeout_s = min(self.timeout_s, REF_TIMEOUT_S)
+        async with self._ref_limit:
+            if self.ref_audio is None:
+                return None
+            retries = REF_RETRIES if self._ref_failures == 0 else REF_PROBE_RETRIES
+            try:
+                data = await self._post(payload | {"ref_audio": self.ref_audio}, retries, timeout_s)
+            except (ProviderError, httpx.HTTPError) as error:  # a timeout arrives as ProviderError
+                self._clip_failed(error, service_failing=_service_failing(error))
+                return None
+            try:
+                wav = SpokenWav(_checked_wav(data), "cloned")
+            except ProviderError as error:  # a reply, but not a WAV: not the service failing
+                self._clip_failed(error, service_failing=False)
+                return None
+            self._ref_failures = 0
+            return wav
+
+    # Log one failed clip line and decide whether later lines still try the clip: a rejected
+    # clip stops at once; REF_FAILURES_TO_STOP timeouts or 5xx in a row stop it too (#570).
+    def _clip_failed(self, error: BaseException, service_failing: bool) -> None:
+        label = _ref_failure_label(error)
+        if _clip_rejected(error):
+            self.ref_audio = None
+            logger.warning(
+                "reference voice rejected (%s); the rest of this show uses the stock voice", label
+            )
+            return
+        if service_failing:
+            self._ref_failures += 1
+            if self._ref_failures >= REF_FAILURES_TO_STOP:
+                self.ref_audio = None
+                logger.warning(
+                    "reference voice turned off for this show after %d failures in a row (%s)",
+                    self._ref_failures,
+                    label,
+                )
+                return
+        logger.warning(
+            "reference voice failed for this line (%s); using stock for this line", label
+        )
 
     # POST one speech request and return the raw reply bytes.
     async def _post(
@@ -158,6 +196,16 @@ class LiveTTS:
 # True when the speech service rejected the clip itself, not a transient queue or timeout.
 def _clip_rejected(error: BaseException) -> bool:
     return getattr(error, "status", None) in REF_REJECTED_STATUSES
+
+
+# True when a clip request failed because the service is struggling: a 5xx, or no reply at
+# all (a timeout or lost connection, which post_bytes raises as a ProviderError without a
+# status). A 429 (queue full) or another 4xx is not counted.
+def _service_failing(error: BaseException) -> bool:
+    status = getattr(error, "status", None)
+    if isinstance(status, int):
+        return status >= 500
+    return isinstance(error, (ProviderError, httpx.TransportError))
 
 
 # HTTP status when we have one, otherwise the error type. Never includes a host or key.
