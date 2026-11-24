@@ -20,6 +20,7 @@ from app.models.stats import StatSheet
 from app.pipeline import stages
 from app.pipeline.orchestrator import FALLBACK_DETAILS, FALLBACK_WITH_VALUE, run_battle
 from app.pipeline.store import BattleStore
+from app.providers.live.http import ProviderError
 from app.providers.live.tts import SpokenVoice, SpokenWav
 from app.providers.mock.audio import MOCK_SAMPLE_RATE, MockMusicGen, MockTTS
 from app.research.seed_fighters import find_seed_sheet
@@ -171,6 +172,73 @@ async def test_the_lines_are_spoken_a_few_at_a_time_not_one_after_another() -> N
     assert elapsed < (rounds + 1.5) * delay  # one by one would be 6 delays
     assert tts.most_in_flight == audio.SPEAK_CONCURRENCY
     assert tts.in_flight == 0 and wav_seconds(joined) > 0
+
+
+class BusyTTS(MockTTS):
+    """A speech service with a small queue: a line sent while `room` are in flight gets a 429."""
+
+    def __init__(self, room: int) -> None:
+        self.room = room
+        self.in_flight = 0
+        self.most_in_flight = 0
+
+    async def speak(self, text: str, voice_id: str) -> bytes:
+        if self.in_flight >= self.room:
+            raise ProviderError("Live 'tts' call to /v1/audio/speech failed: HTTP 429.", 429)
+        self.in_flight += 1
+        self.most_in_flight = max(self.most_in_flight, self.in_flight)
+        try:
+            await asyncio.sleep(0.02)
+        finally:
+            self.in_flight -= 1
+        return await super().speak(text, voice_id)
+
+
+async def test_a_whole_show_shares_one_limit_so_a_small_queue_never_drops_a_script(
+    tmp_path: Path,
+) -> None:
+    # #568: three scripts, each three lines at a time, sent up to 9 stock lines at once; the course
+    # service answered 429 and a script lost its voice. The whole show now shares one limit.
+    scripts = [script(kind, *(f"{kind} line {n}." for n in range(1, 7))) for kind in KINDS]
+    tts = BusyTTS(room=audio.SPEAK_CONCURRENCY)
+    assets = await audio.make_audio(scripts, provider=tts, media_dir=tmp_path)
+    assert [a.script_kind for a in assets] == KINDS
+    assert tts.most_in_flight == audio.SPEAK_CONCURRENCY and tts.in_flight == 0
+
+
+class FailFirstTTS(MockTTS):
+    """The first line fails at once; the others take a while, so they are still running then."""
+
+    def __init__(self, first: str) -> None:
+        self.first = first
+        self.started = 0
+        self.in_flight = 0
+        self.finished = 0
+
+    async def speak(self, text: str, voice_id: str) -> bytes:
+        self.started += 1
+        if text == self.first:
+            raise ProviderError("Live 'tts' call to /v1/audio/speech failed: HTTP 429.", 429)
+        self.in_flight += 1
+        try:
+            await asyncio.sleep(0.2)
+        finally:
+            self.in_flight -= 1
+        self.finished += 1
+        return await super().speak(text, voice_id)
+
+
+async def test_a_failed_line_stops_the_rest_of_its_script() -> None:
+    # #568: gather raised on the first failure but left the other lines calling the service.
+    texts = ["First!", "Second!", "Third!", "Fourth!", "Fifth!", "Sixth!"]
+    tts = FailFirstTTS(first=texts[0])
+    # The line's own error, not an ExceptionGroup, so the audio log still names it.
+    with pytest.raises(ProviderError):
+        await audio._speak(tts, script("play_by_play", *texts), STOCK_VOICE)
+    assert tts.in_flight == 0
+    await asyncio.sleep(0.3)  # long enough for any leftover line to finish
+    # The failed line's slot can let one more line start before the cancel lands; the rest never do.
+    assert tts.finished == 0 and tts.started < len(texts)
 
 
 async def test_the_joined_file_keeps_line_order_when_later_lines_finish_first() -> None:
@@ -424,10 +492,10 @@ async def test_a_partial_narration_keeps_the_saved_files(
     # Only the play-by-play's narration fails; the real scripts' text isn't known up front.
     real_speak = audio._speak
 
-    async def speak(tts: Any, script: Script, voice_id: str) -> bytes:
+    async def speak(tts: Any, script: Script, voice_id: str, **kwargs: Any) -> bytes:
         if script.kind == "play_by_play":
             raise RuntimeError("tts down")
-        return await real_speak(tts, script, voice_id)
+        return await real_speak(tts, script, voice_id, **kwargs)
 
     monkeypatch.setattr(audio, "_speak", speak)
     record = await run_to_the_end(tmp_path)
