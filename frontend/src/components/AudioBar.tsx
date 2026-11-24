@@ -9,6 +9,7 @@ export interface AudioBarProps {
   narration: string | null; // the announcer's voice track, if one can be played
   music: string | null; // the background music, if any
   startSound?: boolean; // the viewer started the fight: turn the sound on, unless they switched it off
+  hold?: boolean; // the fight runs too fast to talk over (5x and 10x, #577): the announcer waits
 }
 
 const OFF_KEY = "battle-royale-sound-off"; // the viewer's "off" choice, kept in this browser
@@ -49,11 +50,13 @@ export default function AudioBar({
   narration,
   music,
   startSound = false,
+  hold = false,
 }: AudioBarProps) {
   const voice = useRef<HTMLAudioElement>(null);
   const song = useRef<HTMLAudioElement>(null);
   const soundOn = useRef(false); // sound is wanted: turned on by the viewer or the fight starting
   const autoStarted = useRef(false); // the fight's start has already had its say
+  const held = useRef(hold); // the latest hold, for the effects and the button below
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(80); // percent
 
@@ -65,6 +68,28 @@ export default function AudioBar({
       song.current.volume = narration ? level * MUSIC_UNDER_VOICE : level;
   }, [volume, narration]);
 
+  // At 5x and 10x the announcer waits; once the fight slows down it picks up where it stopped,
+  // if the sound is on (#577). The music, if any, plays on.
+  useEffect(() => {
+    held.current = hold;
+    const track = voice.current;
+    if (!track) return;
+    if (hold) {
+      track.pause(); // a no-op if it was not playing
+    } else if (soundOn.current && track.paused && !track.ended) {
+      void Promise.resolve()
+        .then(() => track.play())
+        .then(
+          () => setPlaying(true),
+          () => {
+            if (held.current) return; // told to wait mid-load: cut short, not refused
+            soundOn.current = false; // refused: stay quiet, as on any other start
+            setPlaying(false);
+          },
+        );
+    }
+  }, [hold]);
+
   // The tracks change with the part of the show (each part has its own announcer file). The old
   // ones stop. If the viewer turned the sound on, the new ones carry on: the next announcer file
   // from its start, the music where it was; with nothing left to play, the button goes back to
@@ -73,17 +98,20 @@ export default function AudioBar({
   // everything. (React has already let go of the elements when the cleanup runs, so it can't read
   // the refs then; the tracks are picked up again whenever they change.)
   useEffect(() => {
-    const tracks = present([voice.current, song.current]);
+    const all = present([voice.current, song.current]);
+    const tracks = present([held.current ? null : voice.current, song.current]);
     if (startSound && !autoStarted.current) {
       autoStarted.current = true;
       if (!savedOff()) soundOn.current = true;
     }
     if (soundOn.current)
       void startAll(tracks).then((on) => {
-        if (tracks.length > 0 && !on) soundOn.current = false; // refused: don't keep retrying
-        setPlaying(on);
+        // Refused: don't keep retrying. A voice the hold paused mid-load was cut short instead,
+        // and while the announcer waits the sound is still on (#577).
+        if (tracks.length > 0 && !on && !held.current) soundOn.current = false;
+        setPlaying(on || held.current);
       });
-    return () => tracks.forEach((t) => !t.paused && t.pause());
+    return () => all.forEach((t) => !t.paused && t.pause());
   }, [narration, music, startSound]);
 
   if (!narration && !music) return null;
@@ -102,7 +130,16 @@ export default function AudioBar({
       return;
     }
     saveOff(false);
-    void startAll(tracks()).then((on) => {
+    if (held.current && !song.current) {
+      soundOn.current = true; // only the announcer, who waits until the fight slows down
+      setPlaying(true);
+      return;
+    }
+    const startable = present([
+      held.current ? null : voice.current,
+      song.current,
+    ]);
+    void startAll(startable).then((on) => {
       soundOn.current = on;
       setPlaying(on);
     });
@@ -134,12 +171,14 @@ export default function AudioBar({
           onChange={(e) => setVolume(Number(e.target.value))}
         />
       </label>
-      <span className={styles.what}>
-        {narration && music
-          ? "Announcer and music"
-          : narration
-            ? "Announcer only"
-            : "Music only"}
+      <span className={styles.what} aria-live="polite">
+        {hold && narration
+          ? "Announcer waits at this speed"
+          : narration && music
+            ? "Announcer and music"
+            : narration
+              ? "Announcer only"
+              : "Music only"}
       </span>
     </div>
   );

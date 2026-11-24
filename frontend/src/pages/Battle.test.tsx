@@ -617,6 +617,22 @@ test("screen readers hear the matchup once: the banner is decorative", () => {
   expect(heard[0].tagName).toBe("H1");
 });
 
+test("audio: at 5x and 10x the announcer waits, only while the fight plays (#577)", () => {
+  const waiting = () => screen.queryByText("Announcer waits at this speed");
+  show(perScript());
+  expect(waiting()).toBeNull();
+  startFight();
+  act(() => stageProps().onSpeedChange!(10));
+  expect(waiting()).toBeTruthy();
+  act(() => stageProps().onSpeedChange!(2));
+  expect(waiting()).toBeNull();
+  act(() => stageProps().onSpeedChange!(5));
+  expect(waiting()).toBeTruthy();
+  act(() => stageProps().onFinish!()); // the verdict: the outro is never held
+  expect(waiting()).toBeNull();
+  expect(trackSources()).toEqual(["/media/audio/b1-outro.mp3", MUSIC]);
+});
+
 test("results page links back to this battle's broadcast", () => {
   show(done, null, "/battle/b1/results");
   const link = screen.getByRole("link", { name: "Back to the broadcast" });

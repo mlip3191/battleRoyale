@@ -66,6 +66,9 @@ export function nextShow(show: Show, action: ShowAction): Show {
   }
 }
 
+// The announcer can't talk over a 5x or 10x replay, so it waits until the fight slows (#577).
+export const tooFastToTalk = (speed: number) => speed > 2;
+
 // "Skip to verdict" is offered as soon as the result exists, until the verdict is up.
 export const canSkip = (show: Show, battle: BattleRecord | null) =>
   Boolean(battle?.result) && show.phase !== "verdict";

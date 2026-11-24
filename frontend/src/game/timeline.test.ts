@@ -11,6 +11,7 @@ import {
   MISS_LABEL,
   MIN_BEAT_MS,
   ReplayClock,
+  SPEEDS,
   beatTimes,
   buildTimeline,
   keyFrames,
@@ -85,11 +86,11 @@ describe("hit points (#575)", () => {
 });
 
 describe("every event is visited exactly once, in order", () => {
-  test.each([1, 2] as const)("fixture log at %ix", (speed) => {
+  test.each(SPEEDS)("fixture log at %ix", (speed) => {
     expect(playThrough(result, speed).seen).toEqual(allIndexes(result));
   });
 
-  test.each([1, 2] as const)("1,000-v-1 engine log at %ix", (speed) => {
+  test.each(SPEEDS)("1,000-v-1 engine log at %ix", (speed) => {
     const { seen } = playThrough(bigResult, speed, [1000, 1]);
     expect(seen).toEqual(allIndexes(bigResult));
   });
@@ -99,6 +100,14 @@ describe("every event is visited exactly once, in order", () => {
     const fast = playThrough(result, 2).frames;
     expect(fast).toBeLessThan(slow);
     expect(Math.abs(fast * 2 - slow)).toBeLessThanOrEqual(2);
+  });
+
+  test("5x and 10x take about a fifth and a tenth of the 1x time (#577)", () => {
+    const slow = playThrough(result, 1).frames;
+    for (const speed of [5, 10] as const) {
+      const fast = playThrough(result, speed).frames;
+      expect(Math.abs(fast * speed - slow)).toBeLessThanOrEqual(speed);
+    }
   });
 
   test("switching speed mid-replay still visits each event once", () => {

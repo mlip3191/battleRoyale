@@ -217,3 +217,84 @@ test("music alone plays at the full chosen level, on a loop", () => {
   expect(song.volume).toBeCloseTo(0.8);
   expect(screen.getByText("Music only")).toBeTruthy();
 });
+
+test("at 5x and 10x the announcer waits, then picks up when the fight slows down (#577)", async () => {
+  const view = render(
+    <AudioBar narration="/media/a.mp3" music={null} startSound />,
+  );
+  await screen.findByRole("button", { name: "Sound on" });
+  expect(play).toHaveBeenCalledTimes(1);
+  view.rerender(
+    <AudioBar narration="/media/a.mp3" music={null} startSound hold />,
+  );
+  expect(pause).toHaveBeenCalled();
+  expect(screen.getByText("Announcer waits at this speed")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Sound on" })).toBeTruthy(); // still wanted
+  view.rerender(<AudioBar narration="/media/a.mp3" music={null} startSound />);
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
+  expect(screen.getByText("Announcer only")).toBeTruthy();
+});
+
+test("switching the sound on while held waits for the fight to slow; switched off, it stays off", async () => {
+  const view = render(<AudioBar narration="/media/a.mp3" music={null} hold />);
+  fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
+  expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
+  expect(play).not.toHaveBeenCalled(); // nothing talks over a 10x fight
+  view.rerender(<AudioBar narration="/media/a.mp3" music={null} />);
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+
+  view.rerender(<AudioBar narration="/media/a.mp3" music={null} hold />);
+  fireEvent.click(screen.getByRole("button", { name: "Sound on" })); // off, while held
+  view.rerender(<AudioBar narration="/media/a.mp3" music={null} />);
+  await new Promise((r) => setTimeout(r, 0));
+  expect(play).toHaveBeenCalledTimes(1); // off stays off
+});
+
+test("picking 5x or 10x while the voice is still loading doesn't switch the sound off (#577)", async () => {
+  // A browser rejects a play() that is still loading with AbortError when pause() cuts it short.
+  let abort: (() => void) | null = null;
+  play.mockImplementation(
+    () =>
+      new Promise<void>((_, reject) => {
+        abort = () => reject(new DOMException("", "AbortError"));
+      }),
+  );
+  pause.mockImplementation(() => {
+    abort?.();
+    abort = null;
+  });
+  try {
+    const view = render(
+      <AudioBar narration="/media/a.mp3" music={null} startSound />,
+    );
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(1)); // still loading
+    view.rerender(
+      <AudioBar narration="/media/a.mp3" music={null} startSound hold />,
+    );
+    await new Promise((r) => setTimeout(r, 0)); // let the cut-short load settle
+    play.mockImplementation(() => Promise.resolve());
+    view.rerender(
+      <AudioBar narration="/media/a.mp3" music={null} startSound />,
+    );
+    await waitFor(() => expect(play).toHaveBeenCalledTimes(2)); // the voice picks up again
+    expect(
+      await screen.findByRole("button", { name: "Sound on" }),
+    ).toBeTruthy();
+  } finally {
+    play.mockImplementation(() => Promise.resolve());
+    pause.mockImplementation(() => undefined);
+  }
+});
+
+test("held at 10x when the fight ends: the outro still plays (#577)", async () => {
+  const view = render(
+    <AudioBar narration="/media/fight.mp3" music={null} startSound hold />,
+  );
+  await screen.findByRole("button", { name: "Sound on" });
+  expect(play).not.toHaveBeenCalled();
+  view.rerender(
+    <AudioBar narration="/media/outro.mp3" music={null} startSound />,
+  );
+  await waitFor(() => expect(play).toHaveBeenCalled());
+  expect(tracks()[0].getAttribute("src")).toBe("/media/outro.mp3");
+});

@@ -4,7 +4,9 @@
 import type { FightEvent, SimulationResult } from "../api/client.ts";
 
 export type Side = 0 | 1;
-export type Speed = 1 | 2;
+export type Speed = 1 | 2 | 5 | 10;
+// The replay speeds offered under the stage; 5x and 10x get through a long fight quickly (#577).
+export const SPEEDS: readonly Speed[] = [1, 2, 5, 10];
 
 // What the scene should animate for one event.
 export type BeatKind =
