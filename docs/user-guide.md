@@ -117,7 +117,7 @@ It downloads the reference articles the app researches fighters from. It takes a
 npm start
 ```
 
-Wait until you see **"Battle Royale is starting at http://localhost:8000"** and **"Application startup complete"**. Leave this window open: closing it stops the app.
+It builds the page first, then starts. Wait until you see **"Uvicorn running on http://127.0.0.1:8000"**, a few lines after "Battle Royale is starting at http://localhost:8000". A "Some chunks are larger than 500 kB" warning while it builds is normal. Leave this window open: closing it stops the app.
 
 ![Terminal showing npm start building the page and then "Battle Royale is starting at http://localhost:8000"](images/user-guide/04-start.png)
 
@@ -243,9 +243,9 @@ The show is PG: knockouts and retreats, no blood or gore.
 |---|---|
 | **Windows: "running scripts is disabled on this system"** when you type `npm` | Type `npm.cmd` instead of `npm`, for example `npm.cmd run setup` and `npm.cmd start`. There's no need to change any Windows security settings. |
 | **"'node' (or 'uv') is not recognized" / "command not found"** | Close the terminal and open a new one after installing, so it finds the new programs. If it still fails, install that program again (step 1). |
-| **The page says "We couldn't reach the studio"**, or the browser says it can't connect to localhost:8000 | The app isn't running. Check that the `npm start` window is still open and shows "Application startup complete". If you closed it, run `npm start` again, then refresh the page (F5, or Cmd+R on Mac). |
+| **The page says "We couldn't reach the studio"**, or the browser says it can't connect to localhost:8000 | The app isn't running. Check that the `npm start` window is still open and shows "Uvicorn running on http://127.0.0.1:8000". If you closed it, run `npm start` again, then refresh the page (F5, or Cmd+R on Mac). |
 | **"This fight was called off"** with "We don't have a stat sheet for …" | The app couldn't place that fighter. Pick one of the 15 fighters listed in [Type a matchup](#type-a-matchup), a mythical creature such as "a griffin", or click an example matchup. |
-| **"Address already in use"** or port 8000 is busy when you run `npm start` | The app (or something else) is already running. Use the window where it's already running, or close it with Ctrl+C and run `npm start` again. Restarting the computer also clears it. |
+| **"Address already in use"** or port 8000 is busy when you run `npm start` | The app (or something else) is already running. Use the window where it's already running, or close it with Ctrl+C and run `npm start` again. Restarting the computer also clears it. Or use another port: run `npm start -- --port 8001` and open http://localhost:8001 (the "Battle Royale is starting" line still says 8000). |
 | **The page looks old or a button does nothing after you update the code** | Stop the app with Ctrl+C, run `npm run setup` and then `npm start` again, and refresh the browser page. |
 | **No announcer voice** | Sound is optional, and the captions always carry the show. Check that the button says **Sound on** (click it if it says **Sound off**) and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
 | **`npm run setup` ends with "not a git repository" or "git is not recognized"** | You downloaded the ZIP instead of cloning. The installs already finished, so you can ignore it and go on. |
@@ -253,4 +253,4 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **"We have no stat sheet for '…', so its stats are estimates"** on the broadcast | Usually this just means that fighter isn't on the fighter list, so its stats are estimates, which is expected. If it names a listed fighter (for example a grizzly bear), the knowledge base is missing: see [step 5](#step-5-optional-refresh-the-knowledge-base). |
 | **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then restart the app; it loads the prebuilt knowledge base on its first live start. |
 
-Still stuck? Run `npm run env:check`. It checks your settings file and says what to fix, without showing any secret values.
+Still stuck in live mode (with a course key)? Run `npm run env:check`. It checks your settings file and says what to fix, without showing any secret values. If you skipped step 3 (mock mode), there's no settings file, so it just says "No .env file yet", which is fine.
