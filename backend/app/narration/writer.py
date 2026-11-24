@@ -2,10 +2,11 @@
 
 The model only writes words. Code gives it the compact fact list (display names from the stat
 sheets, never the user's raw text), fills every outro number into placeholders, and checks every
-reply: the Script shape, speakers, line counts and lengths, at_event indexes, and the number
-guard. An invalid reply is regenerated once; a second invalid reply, or any provider error, falls
-back to the matching template script (fallback=True). Each script falls back on its own, and the
-writer never raises because of the model.
+reply: the Script shape, speakers, line counts and lengths, at_event indexes, no play-by-play
+line said more than twice (#580), and the number guard. An invalid reply is regenerated once; a
+second invalid reply, or any provider error, falls back to the matching template script
+(fallback=True). Each script falls back on its own, and the writer never raises because of the
+model.
 """
 
 import asyncio
@@ -13,6 +14,7 @@ import json
 import logging
 import re
 import unicodedata
+from collections import Counter
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Literal
@@ -27,6 +29,7 @@ from app.narration.number_guard import FoundNumber, find_unsupported_numbers
 from app.narration.templates import (
     MAX_BEATS,
     MAX_LINE,
+    MAX_SAME_LINE,
     MIN_BEATS,
     _hint,
     fair_fight_line,
@@ -34,6 +37,7 @@ from app.narration.templates import (
     mask_names,
     outro_script,
     play_by_play_script,
+    same_line_key,
 )
 from app.providers.base import ChatLLM, ChatMessage
 from app.providers.registry import get_script_chat
@@ -50,6 +54,7 @@ PROMPT_NAMES: dict[Kind, str] = {
     "outro": "outro",
 }
 # Allowed number of lines per script (PRODUCT_SPEC tone guide; the outro has four parts + sign-off).
+# The play-by-play is 4 to 6 beats since #580, so it fits a replay of about 20 s.
 LINE_COUNTS: dict[Kind, tuple[int, int]] = {
     "intro": (4, 8),
     "play_by_play": (MIN_BEATS, MAX_BEATS),
@@ -88,6 +93,10 @@ TOO_CLOSE_HELP = {
 # Words that crown a winner; a too-close outro may not use them (placeholders are removed first).
 CROWNS_A_WINNER = re.compile(r"\bwinner\b|takes the win|\bwon\b|\bwins\b", re.I)
 TOO_CLOSE_REJECTED = "the verdict is too close to call: call it a near coin flip with a slight edge"
+# A mythical fighter's stats are introduced with this exact phrase (PRODUCT_SPEC "Legends",
+# D-38); the word "legend" alone, as in "a legendary showdown", frames no stat (#572).
+LEGEND_PHRASE = "according to legend"
+LEGEND_MISSING = f'a mythical fighter is in this fight: introduce its stats with "{LEGEND_PHRASE}"'
 
 
 class ScriptRejected(ValueError):
@@ -173,9 +182,12 @@ def check_script(script: Script, facts: NarrationFacts, log_len: int) -> list[st
     for n, line in enumerate(script.lines):
         problems += [f"line {n}: {p}" for p in _line_problems(line, facts)]
     problems += _event_problems(script, log_len)
+    if kind == "play_by_play":
+        problems += _repeat_problems(script)
     legend = any(f.is_legend for f in facts.fighters)
-    if kind == "intro" and legend and not any("legend" in ln.text.lower() for ln in script.lines):
-        problems.append('a mythical fighter is in this fight: say its stats come from "legend"')
+    framed = any(LEGEND_PHRASE in ln.text.lower() for ln in script.lines)
+    if kind == "intro" and legend and not framed:
+        problems.append(LEGEND_MISSING)
     return problems
 
 
@@ -192,6 +204,20 @@ def _line_problems(line: ScriptLine, facts: NarrationFacts) -> list[str]:
     if bad:
         problems.append(f"{NUMBERS_NOT_LISTED}: " + ", ".join(repr(b.text) for b in bad))
     return problems
+
+
+# A line said more than MAX_SAME_LINE times (case and punctuation aside), like a crowd's
+# "goes down! That is a knockout!" again and again (#580).
+def _repeat_problems(script: Script) -> list[str]:
+    counts = Counter(same_line_key(line.text) for line in script.lines)
+    first: dict[str, str] = {}
+    for line in script.lines:
+        first.setdefault(same_line_key(line.text), line.text)
+    return [
+        f'"{first[key]}" is said {count} times; say each line at most twice and vary the rest'
+        for key, count in counts.items()
+        if count > MAX_SAME_LINE
+    ]
 
 
 # at_event rules: play-by-play lines point at real events in order; other scripts point at none.
@@ -279,7 +305,7 @@ def read_reply(kind: Kind, reply: object, facts: NarrationFacts, log_len: int) -
 
 # How many beats to ask for: one per event, kept between MIN_BEATS and MAX_BEATS.
 def beat_target(log_len: int) -> int:
-    """8 for a short log, one per event up to 12."""
+    """4 for a short log, one per event up to 6."""
     return max(MIN_BEATS, min(MAX_BEATS, log_len))
 
 

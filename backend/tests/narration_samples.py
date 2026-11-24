@@ -195,20 +195,14 @@ def grizzly_vs_gorilla() -> Sample:
         ),
         _a("Two heavyweights. One arena. No refunds. Let the science begin!"),
     ]
-    # 13 events but 12 beats, the most the writer asks for (#363): the Gorilla's miss is skipped.
+    # 13 events but 6 short beats, the most the writer asks for (#363, #580).
     pbp = [
         _a("The Grizzly bear lumbers forward like a refrigerator with a grudge.", 0),
-        _a("The Gorilla steps up to answer. Here we go!", 1),
         _a("Gorilla charges in early. Bold strategy!", 2),
-        _c("The Grizzly bear swings and misses. The air has been defeated, at least.", 3),
-        _a("Gorilla connects! A clean punch lands!", 4),
-        _a("And the Grizzly bear answers with a claw swipe! That one landed!", 5),
+        _a("The Grizzly bear answers with a claw swipe! That one landed!", 5),
         _c("The Gorilla backs off to reconsider some life choices.", 6),
-        _a("He is back! The Gorilla closes in again!", 7),
-        _a("Grizzly bear connects again! The momentum has a mailing address now.", 8),
-        _a("Shoulder charge from the Grizzly bear! Like a sofa falling down the stairs!", 10),
         _a("The Gorilla goes down! That is a knockout!", 11),
-        _c("And that is the fight. A very productive evening for the bear.", 12),
+        _c("And that is the fight. A productive evening for the bear.", 12),
     ]
     outro = [
         _a("Ladies and gentlemen, your winner: the {winner}!"),
@@ -260,16 +254,11 @@ def truck_vs_wolves() -> Sample:
     ]  # fmt: skip
     pbp = [
         _a("The Gray wolf pack fans out. They have done this before.", 0),
-        _a("The Pickup truck revs its engine. It is not here to make friends.", 1),
-        _c("The pack surrounds the truck. The truck does not appear to notice.", 2),
         _a("Gray wolf goes for the bumper! A bite lands!", 3),
         _a("Pickup truck answers with a ramming hit! That one landed!", 4),
         _c("One wolf backs off to rethink the whole bumper plan.", 5),
-        _a("Pickup truck goes for another ramming run and finds nothing but air.", 6),
-        _a("Gray wolf gets the tire! The tire has filed a complaint.", 7),
-        _a("Another ramming hit from the Pickup truck! The pack is rattled!", 8),
         _a("The pack has seen enough and heads for the exit!", 9),
-        _c("And that is the fight. The truck would like you to know it was never worried.", 10),
+        _c("And that is the fight. The truck was never worried.", 10),
     ]
     outro = [
         _a("It's over! Your winner, by way of sheer stubborn steel: the {winner}!"),
@@ -318,18 +307,13 @@ def griffin_vs_horse() -> Sample:
         _a("Feathers versus hooves. Myth versus mane. Let's fight!"),
     ]  # fmt: skip
     pbp = [
-        _a("The Griffin takes to the air. According to legend, it does that a lot.", 0),
-        _a("The Horse trots in, ears forward. Here we go!", 1),
-        _a("The Griffin dives from above!", 2),
-        _a("Talon strike lands! The Horse did not see that coming from up there!", 3),
-        _c("The Horse kicks and finds only sky. The sky is unbothered.", 4),
-        _a("But the Horse connects! A kick lands! That one landed!", 5),
+        _a("The Griffin takes off. According to legend, it does that a lot.", 0),
+        _a("Talon strike lands! The Horse never saw it coming!", 3),
+        _a("But the Horse connects! A kick lands!", 5),
         _c("The Griffin circles back up to think about what just happened.", 6),
-        _a("Down it comes again! Another talon strike lands!", 7),
         _a("The Horse has seen enough and gallops for the exit!", 8),
-        _c("And that is the fight. The legend lives on. The horse lives on too. Everybody wins.",
-           9),
-    ]  # fmt: skip
+        _c("And that is the fight. The legend lives on. So does the horse.", 9),
+    ]
     outro = [
         _a("The myth is real tonight, folks! Your winner: the {winner}!"),
         _c("The {winner} won {win_pct} of the time. Wings: still undefeated as a concept."),

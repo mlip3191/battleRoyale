@@ -191,16 +191,28 @@ export function sideTitle(layout: Pick<SideLayout, "name" | "count">) {
   return `${layout.count.toLocaleString("en-US")} ${pluralOf(layout.name)}`.toUpperCase();
 }
 
-// The health bar under each side's name (#503). It is driven only by the replay log's knock-outs
-// and escapes: the share of the side's fighters still in the fight. The log has no hit points per
-// fighter, so a lone fighter's bar stays full until it falls or flees.
+// The health bar under each side's name (#503). With the engine's hit points in the log (#575) it
+// shows the side's combined hit points left, so every hit drains it. A log without them (made
+// before #575) falls back to the share of the side's fighters still in the fight.
 export const HEALTH_BAR = { y: 96, width: 260, height: 14 } as const;
 
-// How full a side's bar is, 0 to 1: fighters still standing over the side's total; empty once the
-// side has fled.
-export function healthFraction(alive: number, count: number, gone: boolean) {
-  if (gone || count <= 0) return 0;
-  return Math.min(1, Math.max(0, alive / count));
+// A side's combined hit points: what is left now and what it started with, from the engine.
+export interface HitPoints {
+  left: number;
+  start: number;
+}
+
+// How full a side's bar is, 0 to 1: hit points left over the starting total when the log has them,
+// else fighters still standing over the side's total. Empty once the side has fled or fallen.
+export function healthFraction(
+  alive: number,
+  count: number,
+  gone: boolean,
+  hp: HitPoints | null = null,
+) {
+  if (gone || count <= 0 || alive <= 0) return 0;
+  const share = hp && hp.start > 0 ? hp.left / hp.start : alive / count;
+  return Math.min(1, Math.max(0, share));
 }
 
 // The words under a crowd's bar ("3 of 6 standing"); a lone fighter has none.
