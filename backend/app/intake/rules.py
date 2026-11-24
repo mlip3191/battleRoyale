@@ -41,6 +41,10 @@ GROUP_WORDS = {
     "pack": 6, "pride": 6, "pod": 10, "gaggle": 10, "herd": 20, "troop": 20, "flock": 30,
     "school": 100, "swarm": 1_000, "colony": 1_000,
 }  # fmt: skip
+# Small words that may sit between a group word's "of" and a typed count, which still wins over
+# the group's default: "a pack of the 12 wolves", "a pack of maybe a dozen wolves" (#573).
+COUNT_FILLERS = {"the", "a", "an", "about", "some", "around", "roughly", "maybe"}
+MAX_COUNT_FILLERS = 2  # past this many, the words after "of" are not read as a count
 # Scientific notation as typed, "1e3" or "2.5E2", up to e99 (#561).
 SCIENTIFIC = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)[eE]\+?(\d{1,2})(?![\w.])")
 SCIENTIFIC_MAX = 1_000_000  # past this, the note says "more than" instead of every digit
@@ -58,6 +62,8 @@ class CountReading:
     """Set when the quantity is a fraction or zero, which the app can't simulate."""
     group: str | None = None
     """The group word the count was assumed from ("swarm"), when no number was typed for it."""
+    multiplied: str | None = None
+    """The typed words a count of groups was multiplied from ("2 packs of 5"), for the card."""
 
 
 # The group word at index when "of" follows it ("swarm" in "a swarm of bees"), else None.
@@ -73,17 +79,39 @@ def _is_count_word(token: str) -> bool:
     )
 
 
-# Drop a group phrase that a typed count follows, so the count is read as typed: "a pack of 12
-# wolves" -> "a 12 wolves" (#561 review). Only the first group phrase is looked at.
-def _without_group_before_count(
-    tokens: list[str], hyphens: list[str]
-) -> tuple[list[str], list[str]]:
-    for index in range(len(tokens)):
-        if _group_word(tokens, index):
-            if index + 2 < len(tokens) and _is_count_word(tokens[index + 2]):
-                return tokens[:index] + tokens[index + 2 :], hyphens[:index] + hyphens[index + 2 :]
-            break
-    return tokens, hyphens
+# Tokens back into the words as typed, for a note: "twenty", "five" -> "twenty-five".
+def _typed_words(tokens: list[str], hyphens: list[str]) -> str:
+    return "".join(t + (h or " ") for t, h in zip(tokens, hyphens, strict=True)).strip(" -")
+
+
+# The count typed after the group phrase at index, and where its words end; None when no number
+# follows. Up to MAX_COUNT_FILLERS small words may sit in between: "pack of the 12" (#573).
+def _count_after_group(
+    tokens: list[str], hyphens: list[str], index: int
+) -> tuple[CountReading, int] | None:
+    start, limit = index + 2, min(len(tokens), index + 2 + MAX_COUNT_FILLERS)
+    while start < limit and tokens[start] in COUNT_FILLERS and not hyphens[start]:
+        start += 1  # a hyphenated "a" starts a name ("A-10"), so it is not a filler
+    if start >= len(tokens) or not _is_count_word(tokens[start]):
+        return None
+    reading, used = _read_tokens(tokens[start:], hyphens[start:])
+    return (reading, start + used) if used else None  # "12-foot" describes, so it isn't a count
+
+
+# A count typed after a group phrase, times the number of groups when that was typed too: the
+# user typed both numbers, so code multiplies them. "2 packs of 5" -> 10, with the typed words
+# kept for the card's note (#573). groups is None for "a pack of 12": the 12 is used as typed.
+def _times_groups(
+    after: tuple[CountReading, int], groups: int | None, tokens: list[str], hyphens: list[str]
+) -> tuple[CountReading, int]:
+    each, end = after
+    if groups is None or each.count is None:
+        return each, end
+    count = groups * each.count
+    if count == 0:
+        return CountReading(0, "zero"), end
+    typed = _typed_words(tokens[:end], hyphens[:end]) if groups > 1 else None
+    return CountReading(count, multiplied=typed), end
 
 
 # Numbers written in ways the count reader can't use, rewritten with a note for the card (#561):
@@ -134,45 +162,49 @@ def _is_description(tokens: list[str], hyphens: list[str], index: int) -> bool:
     return is_number and bool(hyphens[index]) and bool(following) and not joins_number
 
 
-# Read the quantity at the start of one side's words: "a dozen house cats" -> 12.
-def read_count(raw: str) -> CountReading:
-    pairs = TOKEN.findall(raw.lower())
-    tokens, hyphens = [t for t, _ in pairs], [h for _, h in pairs]
-    tokens, hyphens = _without_group_before_count(tokens, hyphens)
-    total = current = 0
-    saw_number = saw_article = False
+# Read the quantity at the start of tokens; the second value is where the quantity's words end
+# (0 when no number was typed), so a note can quote them.
+def _read_tokens(tokens: list[str], hyphens: list[str]) -> tuple[CountReading, int]:
+    total = current = end = 0
     for index, token in enumerate(tokens):
         if _is_description(tokens, hyphens, index):
             break
         if NUMBER_TOKEN.match(token):
             value = _digit_value(token)
             if value == "fraction":
-                return CountReading(None, "fraction")
-            current, saw_number = current + value, True
+                return CountReading(None, "fraction"), index + 1
+            current += value
         elif token in FRACTION_WORDS and _next(tokens, index) in FRACTION_FOLLOWERS:
-            return CountReading(None, "fraction")
+            return CountReading(None, "fraction"), index + 1
         elif token in ZERO_WORDS:
-            return CountReading(0, "zero")
+            return CountReading(0, "zero"), index + 1
         elif token in UNITS:
-            current, saw_number = current + UNITS[token], True
+            current += UNITS[token]
         elif token in MULTIPLIERS:
-            current, saw_number = max(current, 1) * MULTIPLIERS[token], True
+            current = max(current, 1) * MULTIPLIERS[token]
         elif token in SCALES:
-            total, current, saw_number = total + max(current, 1) * SCALES[token], 0, True
+            total, current = total + max(current, 1) * SCALES[token], 0
         elif group := _group_word(tokens, index):
-            if saw_number:  # "2 packs of wolves": the typed count, as typed (#561 review)
+            if after := _count_after_group(tokens, hyphens, index):  # a typed count wins (#573)
+                return _times_groups(after, total + current if end else None, tokens, hyphens)
+            if end:  # "2 packs of wolves": the typed count, as typed (#561 review)
                 break
-            return CountReading(GROUP_WORDS[group], None, group)  # "a swarm of bees" -> 1,000
-        elif token in ARTICLES and not saw_number and index == 0:
-            saw_article = True
-        elif token in {"and", "of"} and saw_number:
+            return CountReading(GROUP_WORDS[group], None, group), 0  # "a swarm of bees" -> 1,000
+        elif (token in ARTICLES and index == 0) or (token in {"and", "of"} and end):
             continue
         else:
             break
-    if saw_number:
+        end = index + 1
+    if end:
         count = total + current
-        return CountReading(count, "zero" if count == 0 else None)
-    return CountReading(1 if saw_article else None)
+        return CountReading(count, "zero" if count == 0 else None), end
+    return CountReading(1 if tokens[:1] and tokens[0] in ARTICLES else None), 0
+
+
+# Read the quantity at the start of one side's words: "a dozen house cats" -> 12.
+def read_count(raw: str) -> CountReading:
+    pairs = TOKEN.findall(raw.lower())
+    return _read_tokens([t for t, _ in pairs], [h for _, h in pairs])[0]
 
 
 # Keep a count within the per-side limit; the second value is the assumption to show, if any.
@@ -220,14 +252,19 @@ def normalize_entity(name: str) -> str:
     return " ".join(words)
 
 
+# True for a word before a name that is only part of its quantity: "a", "12", "dozen", "about".
+def _is_quantity_word(word: str) -> bool:
+    return word in QUANTITY_WORDS or word in COUNT_FILLERS or bool(NUMBER_TOKEN.match(word))
+
+
 # A normalized name without a leading group phrase, for the fighter intake keeps: "swarm of bee"
 # -> "bee" (#561). The safety lookups keep the whole name, so they search exactly as before.
 def without_group(name: str) -> str:
     words = name.split()
     if len(words) > 2 and singular_word(words[0]) in GROUP_WORDS and words[1] == "of":
         words = words[2:]
-        while len(words) > 1 and (words[0] in QUANTITY_WORDS or NUMBER_TOKEN.match(words[0])):
-            words = words[1:]  # "pack of 12 wolf" -> "wolf"
+        while len(words) > 1 and _is_quantity_word(words[0]):
+            words = words[1:]  # "pack of about 12 wolf" -> "wolf" (#573)
         return " ".join(words)
     return name
 
