@@ -19,7 +19,7 @@ import Battle from "./Battle.tsx";
 import Results from "./Results.tsx";
 import { layoutStage } from "../game/layout.ts";
 import type { PhaserStageProps } from "../game/PhaserStage.tsx";
-import { linesOf, lineMs } from "./broadcast-flow.ts";
+import { linesOf, lineMs, placeLines } from "./broadcast-flow.ts";
 
 const state = vi.hoisted(() => ({
   value: { battle: null as unknown, error: null as string | null },
@@ -54,6 +54,7 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   localStorage.clear();
+  sessionStorage.clear();
   vi.useRealTimers();
   stage.props = null;
 });
@@ -152,6 +153,14 @@ test("audio running with a detail: the stage's own detail still wins", () => {
   });
   expect(screen.getByRole("status").textContent).toContain(
     "Warming up the microphone",
+  );
+});
+
+test("audio running: the ticker tells a first-time viewer how long the announcer takes, and what comes next (#579)", () => {
+  show(onlyRunning("audio"));
+  // Short, so the crawl moves at a readable pace.
+  expect(screen.getByRole("status").textContent).toBe(
+    "Recording the announcer… can take about a minute, then the show starts.",
   );
 });
 
@@ -486,6 +495,7 @@ const perScript = (...missing: Asset["script_kind"][]) => {
     prompt_hash: k,
     fallback: false,
     script_kind: k,
+    line_times_s: null,
   }));
   return { ...record, assets: [...record.assets, ...voices] };
 };
@@ -540,9 +550,10 @@ test("audio: sound turned on in the intro carries into the fight's announcer fil
     await screen.findByRole("button", { name: "Sound on" });
     play.mockClear();
     startFight();
+    act(() => stageProps().onPlayingChange!(true)); // the replay starts moving (#576)
     await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
     const started = play.mock.contexts as unknown as HTMLAudioElement[];
-    expect(started.map((t) => t.getAttribute("src"))).toEqual([
+    expect(started.map((t) => t.getAttribute("src")).sort()).toEqual([
       "/media/audio/b1-play_by_play.mp3",
       MUSIC,
     ]);
@@ -617,6 +628,61 @@ test("screen readers hear the matchup once: the banner is decorative", () => {
   expect(heard[0].tagName).toBe("H1");
 });
 
+test("audio: at 5x and 10x the announcer waits, only while the fight plays (#577)", () => {
+  const waiting = () => screen.queryByText("Announcer waits at this speed");
+  show(perScript());
+  expect(waiting()).toBeNull();
+  startFight();
+  act(() => stageProps().onSpeedChange!(10));
+  expect(waiting()).toBeTruthy();
+  act(() => stageProps().onSpeedChange!(2));
+  expect(waiting()).toBeNull();
+  act(() => stageProps().onSpeedChange!(5));
+  expect(waiting()).toBeTruthy();
+  act(() => stageProps().onFinish!()); // the verdict: the outro is never held
+  expect(waiting()).toBeNull();
+  expect(trackSources()).toEqual(["/media/audio/b1-outro.mp3", MUSIC]);
+});
+
+test("audio: in sync, the announcer says each moment's lines as the replay reaches them (#576)", async () => {
+  const play = vi
+    .spyOn(HTMLMediaElement.prototype, "play")
+    .mockResolvedValue(undefined);
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+  try {
+    // Each play-by-play line gets a second in the voice file, in script order.
+    const times = pbp.map((_, i): [number, number] => [i * 2, i * 2 + 1]);
+    const record = perScript();
+    const timed = {
+      ...record,
+      assets: record.assets.map((a) =>
+        a.script_kind === "play_by_play" ? { ...a, line_times_s: times } : a,
+      ),
+    };
+    show(timed);
+    startFight();
+    act(() => stageProps().onPlayingChange!(true));
+    const placed = placeLines(
+      pbp,
+      doneRecord.result!.representative_log.length,
+    );
+    const first = placed[0].at;
+    play.mockClear();
+    act(() => stageProps().onEvent!(first));
+    await waitFor(() => expect(play).toHaveBeenCalled());
+    const voice = screen
+      .getByRole("group", { name: "Sound controls" })
+      .querySelector("audio")!;
+    expect(voice.getAttribute("src")).toBe("/media/audio/b1-play_by_play.mp3");
+    expect(voice.currentTime).toBe(times[0][0]);
+    act(() => stageProps().onPlayingChange!(false)); // the viewer pauses the fight
+    expect(screen.getByText("Announcer paused with the fight")).toBeTruthy();
+  } finally {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  }
+});
+
 test("results page links back to this battle's broadcast", () => {
   show(done, null, "/battle/b1/results");
   const link = screen.getByRole("link", { name: "Back to the broadcast" });
@@ -638,4 +704,81 @@ test("audio: Start the fight turns the sound on by itself (#499)", async () => {
     vi.restoreAllMocks();
     localStorage.clear();
   }
+});
+
+// The per-script battle whose play-by-play file says where each line is (#576): a second per line.
+const timedRecord = () => {
+  const record = perScript();
+  const times = pbp.map((_, i): [number, number] => [i * 2, i * 2 + 1]);
+  return {
+    ...record,
+    assets: record.assets.map((a) =>
+      a.script_kind === "play_by_play" ? { ...a, line_times_s: times } : a,
+    ),
+  };
+};
+const soundBar = () => screen.getByRole("group", { name: "Sound controls" });
+
+// Every play() and pause() on the page's tracks, in order: "muted play" is the silent unlock.
+type MediaCall = { track: HTMLMediaElement; call: string };
+const mediaLog = () => {
+  const log: MediaCall[] = [];
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(function (
+    this: HTMLMediaElement,
+  ) {
+    log.push({ track: this, call: this.muted ? "muted play" : "play" });
+    return Promise.resolve();
+  });
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(function (
+    this: HTMLMediaElement,
+  ) {
+    log.push({ track: this, call: "pause" });
+  });
+  return log;
+};
+const callsOn = (log: MediaCall[], track: Element) =>
+  log.filter((c) => c.track === track).map((c) => c.call);
+
+test("audio: Start the fight unlocks the announcer's voice inside the click (#579, #584)", () => {
+  const log = mediaLog();
+  show(timedRecord());
+  const voice = soundBar().querySelector("audio")!;
+  startFight();
+  // During the click itself: a silent play and pause, so Safari lets the first line play later.
+  expect(callsOn(log, voice).slice(0, 2)).toEqual(["muted play", "pause"]);
+  expect(callsOn(log, voice)).not.toContain("play"); // nothing is said before the first line
+  expect(voice.muted).toBe(false);
+});
+
+test("audio: sound switched off in one fight stays off for the next; Start the fight doesn't override it (#579)", async () => {
+  const log = mediaLog();
+  show(timedRecord());
+  startFight();
+  fireEvent.click(await screen.findByRole("button", { name: "Sound on" }));
+  expect(button("Sound off")).toBeTruthy();
+  cleanup();
+  log.length = 0;
+  show(timedRecord()); // a later fight in the same visit
+  startFight();
+  act(() => stageProps().onPlayingChange!(true));
+  const first = placeLines(pbp, doneRecord.result!.representative_log.length)[0]
+    .at;
+  act(() => stageProps().onEvent!(first));
+  await new Promise((r) => setTimeout(r, 0)); // give a wrong start the chance to happen
+  expect(log.filter((c) => c.call !== "pause")).toEqual([]); // not even the silent unlock
+  expect(button("Sound off")).toBeTruthy();
+});
+
+test("audio: Sound on during the fight unlocks the voice inside the click, before its next line (#584)", async () => {
+  sessionStorage.setItem("battle-royale-sound-off", "1"); // switched off in an earlier fight
+  const log = mediaLog();
+  show(timedRecord());
+  startFight();
+  act(() => stageProps().onPlayingChange!(true));
+  const voice = soundBar().querySelector("audio")!;
+  expect(log.filter((c) => c.call !== "pause")).toEqual([]);
+  log.length = 0;
+  fireEvent.click(button("Sound off"));
+  expect(callsOn(log, voice)).toEqual(["muted play", "pause"]); // during the click itself
+  expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
 });

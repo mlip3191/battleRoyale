@@ -10,6 +10,7 @@ import type {
   StageStatus,
   StatSheet,
 } from "../api/client.ts";
+import type { VoiceCue } from "../components/AudioBar.tsx";
 import {
   explainerOf,
   sideName,
@@ -65,6 +66,9 @@ export function nextShow(show: Show, action: ShowAction): Show {
       return show.phase === "verdict" ? { ...show, phase: "fight" } : show;
   }
 }
+
+// The announcer can't talk over a 5x or 10x replay, so it waits until the fight slows (#577).
+export const tooFastToTalk = (speed: number) => speed > 2;
 
 // "Skip to verdict" is offered as soon as the result exists, until the verdict is up.
 export const canSkip = (show: Show, battle: BattleRecord | null) =>
@@ -126,6 +130,7 @@ export const SPEAKERS: Record<ScriptLine["speaker"], string> = {
 export interface AudioPlan {
   music: string | null;
   narration: string | null;
+  lineTimes: Asset["line_times_s"]; // where each line sits in the narration file, if known (#576)
 }
 
 // The script each part of the show reads aloud (nothing while the ticker runs).
@@ -140,13 +145,40 @@ export function audioPlan(assets: readonly Asset[], phase: Phase): AudioPlan {
   const ours = assets.filter((a) => a.url.startsWith("/media/"));
   const narration = ours.filter((a) => a.kind === "narration_audio");
   const tagged = narration.filter((a) => a.script_kind); // older records leave it out
-  const untagged = narration.length === 1 ? narration[0].url : null;
+  const untagged = narration.length === 1 ? narration[0] : null;
+  const voice =
+    tagged.length > 0
+      ? (tagged.find((a) => a.script_kind === SCRIPT_OF[phase]) ?? null)
+      : untagged;
   return {
     music: ours.find((a) => a.kind === "music")?.url ?? null,
-    narration:
-      tagged.length > 0
-        ? (tagged.find((a) => a.script_kind === SCRIPT_OF[phase])?.url ?? null)
-        : untagged,
+    narration: voice?.url ?? null,
+    lineTimes: voice?.line_times_s ?? null,
+  };
+}
+
+// The stretch of the announcer's file for the replay's current moment (#576): the lines of the
+// latest reached event that has any (the lines captionsAt shows), from the first one's start to
+// the last one's end. Null before the first line, or when none of them was spoken.
+export function voiceCue(
+  placed: readonly PlacedLine[],
+  index: number,
+  lineTimes: NonNullable<AudioPlan["lineTimes"]>,
+): VoiceCue | null {
+  const reached = placed
+    .map((p, line) => ({ at: p.at, line }))
+    .filter((p) => p.at <= index);
+  if (reached.length === 0) return null;
+  const at = Math.max(...reached.map((p) => p.at));
+  const times = reached
+    .filter((p) => p.at === at)
+    .map((p) => lineTimes[p.line])
+    .filter((t): t is [number, number] => Array.isArray(t));
+  if (times.length === 0) return null;
+  return {
+    at,
+    start: Math.min(...times.map(([start]) => start)),
+    end: Math.max(...times.map(([, end]) => end)),
   };
 }
 

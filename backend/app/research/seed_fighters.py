@@ -165,7 +165,8 @@ def named_kind_words(entity: str, raw: str | None) -> str | None:
         return None
     entity_words = {w for part in _canonical_slug(entity).split("-") for w in (part, part + "s")}
     kept = []
-    for word in re.findall(r"[A-Za-z]+", _side_words(raw)):
+    # Words start with a letter and may hold digits, so "m1" stays "m1", not "m" (#561).
+    for word in re.findall(r"[A-Za-z][A-Za-z0-9]*", _side_words(raw)):
         low = _canonical_slug(word)
         plural_of_entity = low.endswith("s") and low[:-1] in entity_words
         if low and low not in _FILLER_WORDS and low not in entity_words and not plural_of_entity:

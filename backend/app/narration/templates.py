@@ -7,6 +7,7 @@ checks. Every Script comes back with fallback=True.
 """
 
 import re
+from collections import Counter
 from collections.abc import Sequence
 from decimal import Decimal
 
@@ -19,14 +20,23 @@ from app.text import counted_name, pluralize
 
 MAX_LINE = 200
 MAX_HINT = 60
-MIN_BEATS = 8
-# At most 12 beats, so the play-by-play and its one retry fit the per-script deadline (#363).
-MAX_BEATS = 12
+# 4 to 6 short beats: a replay lasts about 20 s at 1x (#580), and each line is spoken at its
+# event, so more lines would talk over each other. 4 is no more than the events in the
+# shortest real fights (both sides close in, a hit, a knockout, the end).
+MIN_BEATS = 4
+# At most 6 beats (12 before #580), which also keeps the play-by-play and its one retry within
+# the per-script deadline (#363).
+MAX_BEATS = 6
+# A crowd falls one at a time, so its knockout line would repeat: a side's knockout is called
+# only for its first and last fall (pick_events), and no line is said more often than this (#580).
+MAX_SAME_LINE = 2
 # Stands in for a fighter's name while the number guard reads a line ("Three-toed sloth").
 NAME_MASK = "Fighter"
 
-# Events worth keeping when a long log is cut down to the beat limit.
-KEY_EVENTS = {EventType.KO, EventType.FLEE, EventType.RETREAT, EventType.STALEMATE, EventType.END}
+# Moments that end or turn a fight; one of each is kept when a long log is cut down.
+TURNING_POINTS = (EventType.FLEE, EventType.STALEMATE)
+# Kinds of moment that keep the play-by-play varied, in the order they are added.
+VARIETY = (EventType.HIT, EventType.MISS, EventType.RETREAT, EventType.ATTACK, EventType.APPROACH)
 
 # Deadpan reactions for when a short log means an event is mentioned again.
 REACTIONS = (
@@ -178,25 +188,72 @@ def intro_script(facts: NarrationFacts) -> Script:
     return Script(kind="intro", lines=lines, fallback=True)
 
 
-# Choose which events get a beat: all of a short log, or key moments plus an even spread.
+# Choose which events get a beat: key moments first, then varied ones spread through the fight.
 def pick_events(log: list[FightEvent]) -> list[int]:
-    """Event indices to narrate, in order; repeats fill a log shorter than MIN_BEATS."""
+    """Event indices to narrate, in order: at most MAX_BEATS, repeated up to MIN_BEATS.
+
+    The first and last events come first, then the fall that decided it, a flee or stalemate,
+    each side's first fall, one hit, miss, retreat, attack and walk-in (each the one farthest
+    from the moments already chosen), each side's last fall, then any other event, spread out.
+    A side's knockout is called only for its first and last fall, and the same moment at most
+    MAX_SAME_LINE times, so a crowd going down one at a time is not one line over and over (#580).
+    A log that fits is still narrated whole.
+    """
     n = len(log)
     if n == 0:
         return []
-    if n <= MAX_BEATS:
-        chosen = list(range(n))
-    else:
-        keep = {0, n - 1} | {i for i, e in enumerate(log) if e.type in KEY_EVENTS}
-        keep = set(sorted(keep, key=lambda i: (i not in (0, n - 1), i))[:MAX_BEATS])
-        step = n / MAX_BEATS
-        for k in range(MAX_BEATS):
-            if len(keep) >= MAX_BEATS:
-                break
-            keep.add(int(k * step))
-        chosen = sorted(keep)
+    kos = [i for i, e in enumerate(log) if e.type == EventType.KO]
+    falls = [[i for i in kos if log[i].side == side] for side in (0, 1)]
+    callable_kos = {
+        f for side_falls in falls if side_falls for f in (side_falls[0], side_falls[-1])
+    }
+    chosen: list[int] = []
+    said: Counter[tuple[object, ...]] = Counter()
+
+    # Whether event i may still get a beat (room left, a called fall, not a third same moment).
+    def can_add(i: int) -> bool:
+        e = log[i]
+        return (
+            len(chosen) < MAX_BEATS
+            and i not in chosen
+            and (e.type != EventType.KO or i in callable_kos)
+            and said[_moment(e)] < MAX_SAME_LINE
+        )
+
+    # Give the farthest allowed event among `candidates` a beat (spread out through the fight).
+    def add_farthest(candidates: Sequence[int]) -> None:
+        allowed = [i for i in candidates if can_add(i)]
+        if allowed:
+            far = max(allowed, key=lambda i: (min((abs(i - c) for c in chosen), default=n), -i))
+            chosen.append(far)
+            said[_moment(log[far])] += 1
+
+    for key in [[0], [n - 1], kos[-1:]]:  # the start, the end, the fall that decided it
+        add_farthest(key)
+    for kind in TURNING_POINTS:
+        add_farthest([i for i, e in enumerate(log) if e.type == kind][:1])
+    for side_falls in falls:  # each side's first fall
+        add_farthest(side_falls[:1])
+    for kind in VARIETY:
+        add_farthest([i for i, e in enumerate(log) if e.type == kind])
+    for side_falls in falls:  # each side's last fall
+        add_farthest(side_falls[-1:])
+    while len(chosen) < MAX_BEATS and any(can_add(i) for i in range(n)):
+        add_farthest(range(n))
+    chosen.sort()
     extra = [chosen[i % len(chosen)] for i in range(max(0, MIN_BEATS - len(chosen)))]
     return sorted(chosen + extra)
+
+
+# What makes two events read the same in the play-by-play: who did what, how many, and the hint.
+def _moment(event: FightEvent) -> tuple[object, ...]:
+    return (event.type, event.side, event.group_size, event.text_hint)
+
+
+# How two lines compare when counting repeats: the words only, in any case, without punctuation.
+def same_line_key(text: str) -> str:
+    """ "The Duck goes down!" and "the duck goes DOWN." give the same key."""
+    return " ".join(re.findall(r"\w+", text.casefold()))
 
 
 # A short neutral hint from the engine, kept to letters and spaces and at most MAX_HINT long.
@@ -239,20 +296,26 @@ def beat_text(event: FightEvent, facts: NarrationFacts, use_hint: bool = True) -
 
 
 def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Script:
-    """Play-by-play: 8 to 12 beats, each pointing at a real event in the representative log."""
+    """Play-by-play: 4 to 6 beats, each pointing at a real event in the representative log.
+
+    No line is said more than MAX_SAME_LINE times: a beat that would read the same as two
+    earlier ones (say, two hints that clean up alike) becomes a deadpan reaction instead (#580).
+    """
     log = result.representative_log
     lines: list[ScriptLine] = []
     seen: set[int] = set()
+    said: Counter[str] = Counter()
     names = [f.display_name for f in facts.fighters]
     for n, idx in enumerate(pick_events(log)):
-        if idx in seen:
+        speaker = "announcer" if n % 3 != 2 else "color_commentator"
+        safe = beat_text(log[idx], facts, use_hint=False)
+        text = guarded(beat_text(log[idx], facts), safe, facts.allowed, names)
+        if idx in seen or said[same_line_key(text)] >= MAX_SAME_LINE:
             text = REACTIONS[len(lines) % len(REACTIONS)]
             lines.append(line("color_commentator", text, idx))
             continue
         seen.add(idx)
-        speaker = "announcer" if n % 3 != 2 else "color_commentator"
-        safe = beat_text(log[idx], facts, use_hint=False)
-        text = guarded(beat_text(log[idx], facts), safe, facts.allowed, names)
+        said[same_line_key(text)] += 1
         lines.append(line(speaker, text, idx, names))
     if not lines:  # no events at all: the sides never engaged, so nothing to sync to
         standoff = ["They size each other up.", "Nobody moves.", "Still nobody moves."]

@@ -52,6 +52,15 @@ def _tick_up(t: float) -> float:
     return round(math.ceil(t / c.TICK_S - 1e-9) * c.TICK_S, 6)
 
 
+def _hp(value: float, start: float = 0.0) -> float:
+    """Hit points for the log (#575): to 0.1, or to 6 significant digits when that is finer, so a
+    crowd of tiny fighters (10,000 ants hold about 0.3 in all) still drains visibly. `start` is the
+    side's starting total: a running total drifts by about 1e-14, so next to nothing reads 0."""
+    if value <= 1e-9 * start or value <= 0.0:
+        return 0.0
+    return round(value, max(1, 5 - math.floor(math.log10(value))))
+
+
 class _Pool:
     """Lanchester linear law for one attacking side: each target takes only so many attackers.
 
@@ -241,6 +250,9 @@ def run_once(
     flow_room = int(room * c.LOG_FLOW_SHARE)
 
     dropped_kos = [0, 0]  # knock-outs that did not fit, per side that went down
+    # Each side's hit points still in the fight; the runner below sets the live source (#575).
+    start_hp = (sides[0].max_hp * sides[0].count, sides[1].max_hp * sides[1].count)
+    hp_now: list[Callable[[], tuple[float, float]]] = []
 
     def log(event: FightEvent) -> None:
         if not record_events:
@@ -251,7 +263,9 @@ def run_once(
         elif full or (event.type in (EventType.HIT, EventType.MISS) and len(events) >= flow_room):
             return
         else:
-            events.append(event)
+            left = hp_now[0]() if hp_now else start_hp
+            hp_left = (_hp(left[0], start_hp[0]), _hp(left[1], start_hp[1]))
+            events.append(event.model_copy(update={"hp_left": hp_left}))
 
     starts = _starts(sides)
     if not any(sides[s].can_attack and starts[s] != math.inf for s in (0, 1)):
@@ -282,10 +296,10 @@ def run_once(
             )
 
     if max(sides[0].count, sides[1].count) > c.SWARM_THRESHOLD if swarm is None else swarm:
-        outcome = _run_swarm(sides, rng, starts, log, events, record_events)
+        outcome = _run_swarm(sides, rng, starts, log, events, record_events, hp_now)
     else:
         counter = [0]
-        outcome = _run_individuals(sides, rng, starts, log, events, record_events, counter)
+        outcome = _run_individuals(sides, rng, starts, log, events, record_events, counter, hp_now)
         outcome.attacks = counter[0]
     _summarize_dropped_kos(outcome.events, dropped_kos)
     return outcome
@@ -318,6 +332,7 @@ def _run_individuals(
     events: list[FightEvent],
     record_events: bool,
     counter: list[int],
+    hp_now: list[Callable[[], tuple[float, float]]] | None = None,
 ) -> RunOutcome:
     alive_list = [list(range(sides[0].count)), list(range(sides[1].count))]
     alive_set = [set(a) for a in alive_list]
@@ -325,6 +340,8 @@ def _run_individuals(
     hp = [[sides[s].max_hp] * sides[s].count for s in (0, 1)]
     start_hp = [sides[s].max_hp * sides[s].count for s in (0, 1)]
     total_hp = list(start_hp)
+    if hp_now is not None:
+        hp_now.append(lambda: (total_hp[0], total_hp[1]))  # the log's hit points (#575)
     retreating: int | None = None
     bonus = [group_bonus(sides[0]), group_bonus(sides[1])]
     hit_p = [hit_chance(sides[0], sides[1]), hit_chance(sides[1], sides[0])]
@@ -401,6 +418,7 @@ def _run_individuals(
                     for i in doomed:
                         alive_list[side].remove(i)
                         alive_set[side].discard(i)
+                        total_hp[side] -= max(hp[side][i], 0.0)  # out of the fight (#575)
                         log(
                             FightEvent(
                                 t=end, type=EventType.KO, side=side, actor=i,
@@ -628,10 +646,19 @@ def _run_swarm(
     log: Callable[[FightEvent], None],
     events: list[FightEvent],
     record_events: bool,
+    hp_now: list[Callable[[], tuple[float, float]]] | None = None,
 ) -> RunOutcome:
     """Aggregated fight for big groups: each side is one bin of identical fighters."""
     n = [sides[0].count, sides[1].count]
     hurt: list[tuple[list[float], list[float]]] = [([], []), ([], [])]  # (fronts, reserve)
+
+    # A side's hit points still standing: the unhurt at full health plus the wounded.
+    def standing_hp(side: int) -> float:
+        wounded = hurt[side][0] + hurt[side][1]
+        return (n[side] - len(wounded)) * sides[side].max_hp + sum(wounded) if n[side] else 0.0
+
+    if hp_now is not None:
+        hp_now.append(lambda: (standing_hp(0), standing_hp(1)))  # the log's hit points (#575)
     hit_p = [hit_chance(sides[0], sides[1]), hit_chance(sides[1], sides[0])]
     dmg = [damage_per_hit(sides[0], sides[1]), damage_per_hit(sides[1], sides[0])]
     spike = [damage_per_hit(sides[s], sides[1 - s]) if sides[s].spiky else 0.0 for s in (0, 1)]
@@ -666,17 +693,17 @@ def _run_swarm(
             if sides[s].body == Body.MACHINE and n[s] > 0 and t >= sides[s].endurance_s:
                 # It stopped at its exact operating time, which falls after the previous step.
                 stopped_at = sides[s].endurance_s
+                stopped, n[s] = n[s], 0  # out of the fight before the log reads its hit points
                 if record_events:
                     log(
                         FightEvent(
                             t=stopped_at,
                             type=EventType.KO,
                             side=s,
-                            group_size=n[s],
+                            group_size=stopped,
                             text_hint=OUT_OF_ACTION,
                         )
                     )
-                n[s] = 0
                 return _outcome(n, stopped_at, events, record_events)
         if n[0] == 0 or n[1] == 0:
             return _outcome(n, t, events, record_events)
@@ -700,7 +727,11 @@ def _run_swarm(
             hits = rng.binomialvariate(attempts, chance) if attempts else 0
             if not hits or dmg[s] <= 0:
                 continue
-            if record_events:
+            g = n[foe] if me.ranged else min(n[foe], engaged)
+            kills, n[foe], hurt[foe] = _spread_tracked(
+                hits, dmg[s], n[foe], hurt[foe], sides[foe].max_hp, g, rng
+            )
+            if record_events:  # logged after the damage, so its hit points include it (#575)
                 log(
                     FightEvent(
                         t=t,
@@ -711,10 +742,6 @@ def _run_swarm(
                         text_hint=f"{plural_word(me.weapon_word)} land",
                     )
                 )
-            g = n[foe] if me.ranged else min(n[foe], engaged)
-            kills, n[foe], hurt[foe] = _spread_tracked(
-                hits, dmg[s], n[foe], hurt[foe], sides[foe].max_hp, g, rng
-            )
             if kills:
                 if record_events:
                     log(
@@ -726,10 +753,7 @@ def _run_swarm(
                             text_hint="go down" if kills > 1 else "goes down",
                         )
                     )
-            wounded = hurt[foe][0] + hurt[foe][1]
-            remaining = (
-                (n[foe] - len(wounded)) * sides[foe].max_hp + sum(wounded) if n[foe] else 0.0
-            )
+            remaining = standing_hp(foe)
             if (
                 retreating is None
                 and n[foe] > 0
@@ -760,7 +784,10 @@ def _run_swarm(
                     return _outcome(n, t, events, record_events, winner=s)
             if spike[foe] > 0 and n[foe] > 0:
                 # Spines: the targets hurt whoever hit them.
-                if record_events:
+                back, n[s], hurt[s] = _spread_tracked(
+                    hits, spike[foe], n[s], hurt[s], sides[s].max_hp, engaged, rng
+                )
+                if record_events:  # after the damage, as above (#575)
                     log(
                         FightEvent(
                             t=t,
@@ -771,9 +798,6 @@ def _run_swarm(
                             text_hint="spines jab back",
                         )
                     )
-                back, n[s], hurt[s] = _spread_tracked(
-                    hits, spike[foe], n[s], hurt[s], sides[s].max_hp, engaged, rng
-                )
                 if back:
                     if record_events:
                         log(
@@ -1110,4 +1134,8 @@ def run(
         deciding_factor=factor,
         deciding_factor_explainer=explainer,
         representative_log=replay.events,
+        start_hp=(
+            _hp(sides[0].max_hp * sides[0].count),
+            _hp(sides[1].max_hp * sides[1].count),
+        ),
     )

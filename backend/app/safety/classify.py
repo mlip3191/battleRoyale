@@ -11,6 +11,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from app.intake.llm_io import CALL_ERRORS, data_block
+from app.intake.steps import SAFETY_CLASSIFY, intake_step
 from app.providers.base import ChatLLM, ChatMessage
 from app.safety.verdict import ALLOWED, SafetyVerdict, blocked
 
@@ -68,6 +69,7 @@ def read_reply(reply: str) -> ClassifierReply | None:
 
 
 # Ask the classifier about text; tries twice, then fails closed with SafetyUnavailable.
+@intake_step(SAFETY_CLASSIFY)
 async def classify_text(text: str, *, chat: ChatLLM) -> SafetyVerdict:
     messages = build_messages(text)
     schema = ClassifierReply.model_json_schema()

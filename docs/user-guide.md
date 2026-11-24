@@ -69,7 +69,7 @@ cd battleRoyale
 
 ![Terminal showing git clone downloading the project into a battleRoyale folder, then cd battleRoyale](images/user-guide/01b-clone.png)
 
-> **No Git?** On the project's GitHub page you can click the green **Code** button, then **Download ZIP**, and unzip it somewhere easy. To move the terminal into that folder, type `cd ` (with a space), drag the folder from File Explorer or Finder onto the terminal window, and press Enter. Everything works, except that `npm run setup` (step 4) ends with a *"not a git repository"* (or *"git is not recognized"*) error after the installs finish. That last part only turns on a check for people changing the code, so you can ignore it.
+> **No Git?** On the project's GitHub page you can click the green **Code** button, then **Download ZIP**, and unzip it somewhere easy. To move the terminal into that folder, type `cd ` (with a space), drag the folder from File Explorer or Finder onto the terminal window, and press Enter. Everything works the same, and you don't need Git. At the end, `npm run setup` (step 4) says *"Not a git checkout (a ZIP copy?), so the commit guard was skipped"*. That's expected: the guard only matters for people changing the code.
 
 ### Step 3: Connect the course AI endpoints (optional)
 
@@ -164,7 +164,7 @@ The page scrolls down to the card, which shows how the app read your matchup: ea
 
 ### Watch the broadcast
 
-While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute.
+While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute. Recording the announcer's voice can take about another minute; the ticker says so while it runs, and the show starts as soon as the voice is ready.
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 
@@ -172,7 +172,7 @@ Then the show starts: the announcer introduces the fighters, with captions on sc
 
 ![The intro: Grizzly bear VS 6 gray wolves, an announcer caption, and Start the fight and Skip to verdict buttons](images/user-guide/10-intro.png)
 
-The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log. Use **Pause**, **1×** and **2×** to control the speed, or **Skip to end**. Sound turns on when you click **Start the fight**; the **Sound on / Sound off** button and a volume slider control the announcer's voice, and switching sound off is remembered in your browser. The captions always carry the show, with or without sound.
+The fight replays one of the simulated fights. The floating minus numbers are damage from the simulation's own log, and each side's health bar drops with every hit: it shows the side's combined hit points left, and a group also shows how many are still standing. Use **Pause**, **1×**, **2×**, **5×** and **10×** to control the speed, or **Skip to end**. The announcer says each moment's lines as the fight reaches them: it pauses when you pause, talks faster at 2×, and waits at 5× and 10× until you slow back down. The captions keep going either way. Sound turns on when you click **Start the fight**; the **Sound on / Sound off** button and a volume slider control the announcer's voice, and switching sound off is remembered for this visit, so later fights in the same browser tab start silent until you switch it back on; a new tab or visit starts with sound. Switching sound on partway through a moment finishes that moment's lines. The captions always carry the show, with or without sound.
 
 ![The animated fight: a grizzly bear facing six wolves in a pixel-art forest, with a damage number above the bear](images/user-guide/11-fight.jpg)
 
@@ -231,6 +231,7 @@ The app politely turns some requests away, and tells you why:
 | **Abstract ideas, places, landforms, planets** | They aren't physical fighters with measurable stats. | A message explaining what kinds of fighters work. |
 | **More than two sides** | The arena only fits two sides for now. | It offers each pair as a two-sided matchup. Group a pack into one side, like "3 wolves". |
 | **More than 10,000 on a side, or fractions** | It keeps the simulation fast and the fighters whole. | It lowers the count to 10,000 and says so on tonight's card, or asks how many whole fighters you meant. |
+| **A group with no number, an odd number** ("a swarm of bees", "1e3 ants", "-3 lions") | The simulation needs a whole, positive count. | It reads the count for you and says so on tonight's card: a swarm or colony is 1,000, a school 100, a flock 30, a herd or troop 20, a pod or gaggle 10, a pack or pride 6; "1e3" is 1,000; "-3" is 3. A number you type always wins: "a pack of 12 wolves" and "a pack of about 12 wolves" are both 12 wolves. Two numbers are multiplied: "2 packs of 5 wolves" is 10 wolves, and the card says so. |
 
 **What does work:** animals, historical fighter types (a Roman legionary, a medieval knight), military units (US Navy SEALs, who fight with a rifle), objects and weapons (a toaster, a sword, a grenade), plants, vehicles and machines (a bulldozer, a tank), gods of mythology (Zeus), and mythical creature types (a dragon, a griffin). Fighters off our list fight on labeled estimates. A mythical creature is modeled on the real animals its legends compare it to, and every one of its stats is tagged as an assumption.
 
@@ -247,7 +248,7 @@ The show is PG: knockouts and retreats, no blood or gore.
 | **"Address already in use"** or port 8000 is busy when you run `npm start` | The app (or something else) is already running. Use the window where it's already running, or close it with Ctrl+C and run `npm start` again. Restarting the computer also clears it. |
 | **The page looks old or a button does nothing after you update the code** | Stop the app with Ctrl+C, run `npm run setup` and then `npm start` again, and refresh the browser page. |
 | **No announcer voice** | Sound is optional, and the captions always carry the show. Check that the button says **Sound on** (click it if it says **Sound off**) and your computer isn't muted. A note at the top of the broadcast says when the voice couldn't be made this time. |
-| **`npm run setup` ends with "not a git repository" or "git is not recognized"** | You downloaded the ZIP instead of cloning. The installs already finished, so you can ignore it and go on. |
+| **`npm run setup` ends with "Not a git checkout (a ZIP copy?), so the commit guard was skipped"** | You downloaded the ZIP instead of cloning. That's normal: setup finished, so go on to the next step. |
 | **"The knowledge base is empty, so new fighters can't be researched yet"** when you start the app | You're in live mode and the prebuilt knowledge base didn't load (the message just above says why, usually a different embedding model). Stop the app with Ctrl+C, run `npm run ingest` once ([step 5](#step-5-optional-refresh-the-knowledge-base)), then `npm start` again. |
 | **"We have no stat sheet for '…', so its stats are estimates"** on the broadcast | Usually this just means that fighter isn't on the fighter list, so its stats are estimates, which is expected. If it names a listed fighter (for example a grizzly bear), the knowledge base is missing: see [step 5](#step-5-optional-refresh-the-knowledge-base). |
 | **Everything looks like sample data** | You're in mock mode, which is fine for trying the app. To use the real AI endpoints, do [step 3](#step-3-connect-the-course-ai-endpoints-optional), then restart the app; it loads the prebuilt knowledge base on its first live start. |
