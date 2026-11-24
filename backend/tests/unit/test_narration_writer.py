@@ -138,8 +138,12 @@ async def test_short_log_may_repeat_events_like_the_template() -> None:
     short = sample.result.model_copy(
         update={"representative_log": sample.result.representative_log[:3]}
     )
-    beats = [0, 0, 1, 1, 1, 2, 2, 2]
-    lines = [{"speaker": "announcer", "text": "Here we go!", "at_event": e} for e in beats]
+    beats = [0, 1, 1, 2]  # MIN_BEATS beats for 3 events, each line different (#580)
+    texts = ["Here we go!", "What a swing!", "Look at that!", "And that is that!"]
+    lines = [
+        {"speaker": "announcer", "text": t, "at_event": e}
+        for t, e in zip(texts, beats, strict=True)
+    ]
     chat = _chat_with(sample, "play_by_play", {"lines": lines})
     _, pbp, _ = await _write(sample, chat, short)
     assert pbp.fallback is False and [line.at_event for line in pbp.lines] == beats
@@ -384,19 +388,56 @@ async def test_too_many_lines_is_rejected() -> None:
 
 async def test_too_many_beats_is_rejected() -> None:
     sample = SAMPLES[GRIZZLY]
-    line = {"speaker": "announcer", "text": "Here we go!", "at_event": 0}
-    chat = _chat_with(sample, "play_by_play", {"lines": [line] * (MAX_BEATS + 1)})
+    # The sample's beats plus one more, all different, so only the count is wrong (#580).
+    extra = {"speaker": "color_commentator", "text": "One more for the road.", "at_event": 12}
+    lines = [*sample.replies["play_by_play"]["lines"], extra]
+    assert len(lines) == MAX_BEATS + 1
+    chat = _chat_with(sample, "play_by_play", {"lines": lines})
     _, pbp, _ = await _write(sample, chat)
     assert pbp.fallback is True
 
 
-# A long fight asks the model for 12 beats, not one per event, so a retry fits the deadline (#363).
-def test_a_long_log_asks_for_twelve_beats() -> None:
+# A long fight asks the model for MAX_BEATS beats (12 before #580), not one per event, so a retry
+# fits the deadline (#363) and the lines fit a replay of about 20 s (#580).
+def test_a_long_log_asks_for_the_most_beats() -> None:
     sample = SAMPLES[GRIZZLY]
     log = (sample.result.representative_log * 109)[:109]
     messages = writer.build_messages("play_by_play", _facts(sample), log)
-    assert "TASK: write exactly 12 beats" in messages[1]["content"]
+    assert f"TASK: write exactly {MAX_BEATS} beats" in messages[1]["content"]
     assert "from 0 to 108" in messages[1]["content"]
+
+
+# T3 (#580): "Guinea pig goes down! That is a knockout!" again and again. A play-by-play that
+# says one line three times is rejected (case and punctuation aside), retried once, then the
+# template is used.
+@pytest.mark.parametrize(
+    "said",
+    [
+        ["The Gorilla goes down!"] * 3,
+        ["The Gorilla goes down!", "the gorilla goes down.", "THE GORILLA GOES DOWN!!"],
+    ],
+)
+async def test_a_line_said_three_times_is_rejected_then_falls_back(said: list[str]) -> None:
+    sample = SAMPLES[GRIZZLY]
+    lines = [dict(line) for line in sample.replies["play_by_play"]["lines"]]
+    for n, text in zip((1, 2, 4), said, strict=True):
+        lines[n]["text"] = text
+    with pytest.raises(ScriptRejected, match="3 times"):
+        read_reply("play_by_play", json.dumps({"lines": lines}), _facts(sample), 13)
+    chat = _chat_with(sample, "play_by_play", {"lines": lines})
+    _, pbp, _ = await _write(sample, chat)
+    assert pbp.fallback is True and pbp == _templates(sample)[1]
+    assert chat.count("play_by_play") == 2
+    retry = [m for name, m, _ in chat.calls if name == "play_by_play"][1][-1]["content"]
+    assert "The Gorilla goes down!" in retry and "at most twice" in retry
+
+
+async def test_a_line_said_twice_is_fine() -> None:
+    sample = SAMPLES[GRIZZLY]
+    lines = [dict(line) for line in sample.replies["play_by_play"]["lines"]]
+    lines[1]["text"] = lines[4]["text"]
+    script = read_reply("play_by_play", json.dumps({"lines": lines}), _facts(sample), 13)
+    assert script.fallback is False and len(script.lines) == len(lines)
 
 
 async def test_a_line_over_the_limit_is_rejected() -> None:

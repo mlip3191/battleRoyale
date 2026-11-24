@@ -3,6 +3,7 @@
 import dataclasses
 import json
 import socket
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -136,15 +137,81 @@ def test_long_log_keeps_first_last_and_knockouts() -> None:
     assert any(log[i].type == "ko" for i in indices)
 
 
-# A 109-event fight gets 12 template beats, from the first event to the last (#363).
-def test_a_109_event_log_narrates_twelve_events_first_to_last() -> None:
+# A 109-event fight gets the most template beats (MAX_BEATS, 12 before #580), from the first
+# event to the last (#363).
+def test_a_109_event_log_narrates_the_most_beats_first_to_last() -> None:
     log = (RESULT.representative_log * 109)[:109]
     result = RESULT.model_copy(update={"representative_log": log})
     _, pbp, _ = template_scripts(_facts("bear-vs-wolves", result), result)
     indices = [line.at_event for line in pbp.lines]
-    assert len(indices) == 12
+    assert len(indices) == MAX_BEATS
     assert indices[0] == 0 and indices[-1] == 108
     assert indices == sorted(indices)
+
+
+# The play-by-play is 4 to 6 short beats, so it can be spoken over a replay of about 20 s (#580).
+def test_play_by_play_is_four_to_six_beats() -> None:
+    assert (MIN_BEATS, MAX_BEATS) == (4, 6)
+
+
+# A one-by-one crowd log like the engine's: the crowd (side 0, `crowd` strong) closes in, the
+# big fighter knocks them out one at a time, with a few misses, and `falls` of them go down.
+# With `big_falls`, the big fighter goes down at the end instead of the crowd running out.
+def _crowd_log(crowd: int, falls: int, big_falls: bool) -> list[FightEvent]:
+    event = RESULT.representative_log[0]
+
+    def make(kind: EventType, side: int, **extra: object) -> FightEvent:
+        return event.model_copy(update={"type": kind, "side": side, "group_size": 1, **extra})
+
+    log = [make(EventType.APPROACH, 0, group_size=crowd), make(EventType.APPROACH, 1)]
+    for k in range(falls):
+        log.append(make(EventType.MISS if k % 10 == 3 else EventType.HIT, 1, text_hint="bite"))
+        log.append(make(EventType.KO, 0, actor=k, text_hint="goes down"))
+    if big_falls:
+        log.append(make(EventType.HIT, 0, text_hint="bites land"))
+        log.append(make(EventType.KO, 1, actor=0, text_hint="goes down"))
+    log.append(make(EventType.END, 0 if big_falls else 1, text_hint="the fight is over"))
+    return log
+
+
+# T3 (#580): "Guinea pig goes down! That is a knockout!" over and over for a crowd of 100.
+@pytest.mark.parametrize(("falls", "big_falls"), [(100, False), (60, True)])
+def test_a_crowd_gets_at_most_two_knockout_calls_a_side_and_no_line_three_times(
+    falls: int, big_falls: bool
+) -> None:
+    log = _crowd_log(100, falls, big_falls)
+    result = RESULT.model_copy(update={"representative_log": log})
+    a, b = MATCHUPS["bear-vs-wolves"]
+    facts = build_facts([_sheet(b), _sheet(a)], result, FAIR, counts=(100, 1))
+    pbp = play_by_play_script(facts, result)
+    events = [ln.at_event for ln in pbp.lines]
+    assert all(i is not None for i in events)
+    knockouts = [log[i] for i in events if i is not None and log[i].type == EventType.KO]
+    assert sum(e.side == 0 for e in knockouts) <= 2
+    assert sum(e.side == 1 for e in knockouts) <= 2
+    texts = Counter(ln.text for ln in pbp.lines)
+    assert max(texts.values()) <= 2, texts
+    # The first fall is called; the rest are varied moments (the walk-in, a hit, the end).
+    crowd_kos = [i for i, e in enumerate(log) if e.type == EventType.KO and e.side == 0]
+    assert crowd_kos[0] in events
+    if not big_falls:  # the crowd ran out: its last fall is the one that decided it
+        assert crowd_kos[-1] in events
+    kinds = {log[i].type for i in events if i is not None}
+    assert {EventType.APPROACH, EventType.KO, EventType.END} <= kinds
+    assert kinds & {EventType.HIT, EventType.MISS}
+    assert MIN_BEATS <= len(pbp.lines) <= MAX_BEATS
+
+
+# Any log: never more than two knock-out calls for one side, and never one line three times.
+@pytest.mark.parametrize("repeats", [1, 2, 5, 9])
+def test_no_template_line_is_said_three_times(repeats: int) -> None:
+    result = _long_result(repeats)
+    log = result.representative_log
+    pbp = play_by_play_script(_facts("bear-vs-wolves", result), result)
+    assert max(Counter(ln.text for ln in pbp.lines).values()) <= 2
+    for side in (0, 1):
+        called = [i for i in {ln.at_event for ln in pbp.lines} if i is not None]
+        assert sum(log[i].type == EventType.KO and log[i].side == side for i in called) <= 2
 
 
 def test_empty_log_still_gives_min_beats_without_events() -> None:
