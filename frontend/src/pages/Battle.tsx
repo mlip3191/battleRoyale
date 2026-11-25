@@ -285,7 +285,9 @@ function Broadcast({ id }: { id: string }) {
           narration={sound.narration}
           music={sound.music}
           startSound={show.phase === "fight" || show.phase === "verdict"}
-          hold={fighting && (tooFast || !fightMoving)}
+          // The replay stops moving when it ends; that is not a pause, so the announcer keeps
+          // saying its closing lines instead of being held mid-line (#601).
+          hold={fighting && (tooFast || (!fightMoving && !finishing))}
           holdNote={tooFast ? undefined : "Announcer paused with the fight"}
           cue={cue}
           rate={fighting ? fightSpeed : 1}

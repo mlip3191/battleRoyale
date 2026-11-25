@@ -796,10 +796,13 @@ describe("the verdict waits for the announcer's last lines (#601)", () => {
     );
     return Math.max(...placed.map((p) => p.at));
   };
+  // As the real stage does: the last event, then the finish, and right after it the stage reports
+  // it is no longer playing (found live: that used to hold the announcer mid-line).
   const reachEnd = () => {
     act(() => stageProps().onPlayingChange!(true));
     act(() => stageProps().onEvent!(lastMoment()));
     act(() => stageProps().onFinish!());
+    act(() => stageProps().onPlayingChange!(false));
   };
   const verdictUp = () => screen.queryByRole("heading", { level: 2 });
 
@@ -807,13 +810,19 @@ describe("the verdict waits for the announcer's last lines (#601)", () => {
     const play = vi
       .spyOn(HTMLMediaElement.prototype, "play")
       .mockResolvedValue(undefined);
-    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    const pause = vi
+      .spyOn(HTMLMediaElement.prototype, "pause")
+      .mockImplementation(() => {});
     show(timedRecord());
     startFight();
     play.mockClear();
+    pause.mockClear();
     reachEnd();
     await waitFor(() => expect(play).toHaveBeenCalled()); // the last moment's lines start
     expect(verdictUp()).toBeNull(); // the show is still on the fight
+    // The replay stopping at its end is not a pause: the announcer is not held mid-line (#601).
+    expect(pause).not.toHaveBeenCalled();
+    expect(screen.queryByText("Announcer paused with the fight")).toBeNull();
     const voice = soundBar().querySelector("audio")!;
     const end = timedRecord().assets.find(
       (a) => a.script_kind === "play_by_play",
@@ -824,7 +833,7 @@ describe("the verdict waits for the announcer's last lines (#601)", () => {
     expect(verdictUp()?.textContent).toBe("Winner: 6 gray wolves!");
   });
 
-  test("a voice that never finishes holds the verdict for the maximum wait only", async () => {
+  test("a voice that never finishes holds the verdict for the speech left plus the slack only", async () => {
     vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
     vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
@@ -835,7 +844,8 @@ describe("the verdict waits for the announcer's last lines (#601)", () => {
       for (let i = 0; i < 10; i += 1) await Promise.resolve();
     });
     expect(verdictUp()).toBeNull();
-    act(() => vi.advanceTimersByTime(FINISH_WAIT_MS - 1));
+    const speechLeftMs = 1000; // each line of the test record is a second long
+    act(() => vi.advanceTimersByTime(speechLeftMs + FINISH_WAIT_MS - 1));
     expect(verdictUp()).toBeNull();
     act(() => vi.advanceTimersByTime(1));
     expect(verdictUp()?.textContent).toBe("Winner: 6 gray wolves!");

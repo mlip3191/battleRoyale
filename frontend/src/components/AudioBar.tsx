@@ -38,6 +38,9 @@ export interface AudioBarHandle {
 
 // The longest the show waits at the end of the replay for the announcer to finish (#601), so a
 // stalled voice can never hold up the verdict.
+// The slack the show gives the announcer beyond the speech still to come (#601). The wait is for a
+// voice that stalls, not for a backlog of lines: the time left to say what is lined up is added to
+// it, and the wait starts over each time the voice moves on to the next lines.
 export const FINISH_WAIT_MS = 8000;
 
 const WAIT_NOTE = "Announcer waits at this speed";
@@ -159,6 +162,7 @@ export default function AudioBar({
   const speaking = useRef(false); // cued lines have been started and have not ended yet
   const settle = useRef(onSettled); // the latest onSettled, for the finish wait
   const idle = useRef<(() => void) | null>(null); // runs when nothing is left to say (#601)
+  const rearm = useRef<(() => void) | null>(null); // starts the finish wait over (#601)
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(80); // percent
 
@@ -176,6 +180,7 @@ export default function AudioBar({
       speaking.current = false;
       if (!soundOn.current || held.current) return;
       speaking.current = true;
+      rearm.current?.(); // the voice moved on: the finish wait starts over
       track.playbackRate = speed.current;
       void Promise.resolve()
         .then(() => track.play())
@@ -339,7 +344,8 @@ export default function AudioBar({
   }, [cueAt, narration, startCue]);
 
   // The replay reached its last moment (#601): the show waits for the announcer to finish what it
-  // is saying (and what is lined up), for at most FINISH_WAIT_MS, then moves to the verdict. With
+  // is saying (and what is lined up), allowing FINISH_WAIT_MS of slack for a stall, then moves to
+  // the verdict. With
   // nothing being said (sound off, the fight held, no lines) it moves on at once. This effect
   // follows the cue one, so the last moment's lines have already been started.
   useEffect(() => {
@@ -352,15 +358,37 @@ export default function AudioBar({
       settle.current?.();
       return;
     }
-    const timer = setTimeout(() => flushIdle(), FINISH_WAIT_MS);
+    // The speech still to come (the lines talking now and those lined up), at the voice's speed,
+    // plus the slack for a stall.
+    const waitMs = () => {
+      const track = voice.current;
+      const left =
+        track && stopAt.current !== null
+          ? Math.max(0, stopAt.current - track.currentTime)
+          : 0;
+      const queued = waiting.current.reduce(
+        (sum, c) => sum + (c.end - c.start),
+        0,
+      );
+      return ((left + queued) / (speed.current || 1)) * 1000 + FINISH_WAIT_MS;
+    };
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const arm = () => {
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(() => flushIdle(), waitMs());
+    };
+    arm();
+    rearm.current = arm;
     idle.current = () => {
-      clearTimeout(timer);
+      if (timer !== null) clearTimeout(timer);
       idle.current = null;
+      rearm.current = null;
       settle.current?.();
     };
     return () => {
-      clearTimeout(timer);
+      if (timer !== null) clearTimeout(timer);
       idle.current = null;
+      rearm.current = null;
     };
   }, [finishing, flushIdle]);
 
