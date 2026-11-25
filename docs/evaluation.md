@@ -2,42 +2,72 @@
 
 Does the GenAI actually work? Numbers from the real course endpoints, made by `backend/scripts/evaluate_ai.py`. Hosts and keys are never written here.
 
-Last run: 2026-11-19 on commit `f900d4c` (measured: 1. Extraction accuracy, 3. Coverage on new fighters, 6. Benchmark: seed vs research-only sheets).
+Last run: 2026-11-25 on commit `1052bef` (measured: 1. Extraction accuracy).
 
 ## Summary
 
 <!-- section:summary -->
-_Written 2026-11-20 from the sections below._
+_Written 2026-11-20 from the sections below; extraction updated 2026-11-25 (#522)._
 
-Measured on the live course endpoints: extraction, coverage and the benchmark on Nov 19 (commit `f900d4c`, after the number-check fixes #448 and #452); intake, safety, retrieval, and cost and speed on Nov 16–17. The parts that keep the app safe and find evidence work well. The safety gate caught 66 of the 68 requests it should block and wrongly blocked 2 of 52 allowed ones (both mythical creatures, #340), which still misses its zero-false-blocks bar, and every one of 7 prompt-injection attempts behaved like its clean version. Retrieval found the right passage in the top 5 for 14 of 15 cases. Reading matchups is good but not perfect: 85% of 105 readings got every field right, and 71% of phrasings were read the same way three times running. Extracting numbers is still the weak link, though it improved after the number-check fixes: of 51 hand-verified stats rebuilt from research alone, 35% landed within 10% and 43% within 25% (29% and 37% on Nov 17), and 33% fell back to labeled estimates. No number the pipeline kept failed its quote check: it errs toward a labeled estimate rather than an invented figure. A showcase battle reaches its verdict in under 2 s (median 0.3 s), and a repeat battle's verdict is answered from the cache at once (5 of 5); the full show takes a median 4.7 s. On the F07 benchmark's held-out matchups, research-only sheets matched the expert answer 7 of 10 times in both runs, and the hand-verified seed sheets 7 of 9 (one fighter has no seed sheet). Both are lower than on Nov 17 (9 of 10 and 8 of 9): the research-only drop comes from the number-check fixes: the horse now gets its sourced 450 kg mass but still a 500 N default attack force (a #425 known limit), which flips two horse matchups (cnt-04, doc-05). The seed-sheet drop is cnt-04 crossing its bound after the simulation was reseeded. No rule or constant was tuned to pass (D-58).
+Measured on the live course endpoints: extraction on Nov 25 (commit `1052bef`, #522); coverage and the benchmark on Nov 19 (commit `f900d4c`, after the number-check fixes #448 and #452); intake, safety, retrieval, and cost and speed on Nov 16–17. The parts that keep the app safe and find evidence work well. The safety gate caught 66 of the 68 requests it should block and wrongly blocked 2 of 52 allowed ones (both mythical creatures, #340), which still misses its zero-false-blocks bar, and every one of 7 prompt-injection attempts behaved like its clean version. Retrieval found the right passage in the top 5 for 14 of 15 cases. Reading matchups is good but not perfect: 85% of 105 readings got every field right, and 71% of phrasings were read the same way three times running. Extracting numbers is still the weak link. Of 51 hand-verified stats rebuilt from research alone on Nov 25, 39% landed within 10% and 47% within 25%, and 33% fell back to labeled estimates. Before #522 the same day it was 35% and 43% (29% and 37% on Nov 17). That gain is 2 values, about the size of the run-to-run noise (see below). No number the pipeline kept failed its quote check: it errs toward a labeled estimate rather than an invented figure. A showcase battle reaches its verdict in under 2 s (median 0.3 s), and a repeat battle's verdict is answered from the cache at once (5 of 5); the full show takes a median 4.7 s. On the F07 benchmark's held-out matchups, research-only sheets matched the expert answer 7 of 10 times in both runs, and the hand-verified seed sheets 7 of 9 (one fighter has no seed sheet). Both are lower than on Nov 17 (9 of 10 and 8 of 9): the research-only drop comes from the number-check fixes: the horse now gets its sourced 450 kg mass but still a 500 N default attack force (a #425 known limit), which flips two horse matchups (cnt-04, doc-05). The seed-sheet drop is cnt-04 crossing its bound after the simulation was reseeded. No rule or constant was tuned to pass (D-58).
+
+**Extraction changes (#522), measured Nov 25.** Four proposals were each measured live after they landed. Each measurement used the extraction section above (51 values) and one research-only run of the F07 benchmark (`run_benchmark.py --live --sheets research --no-edge`).
+
+How to read the table:
+- Counts are of 51 values, and "within 25%" includes those within 10%.
+- "Held-out" is the 10 benchmark matchups never used to set a constant. "Tuning" is the other 20, the ones constants may be set from (D-58).
+- Rows 1 to 4 were measured on a working branch that was not pushed, each part on top of the ones before. The last row is what shipped: parts 1 and 4 only, measured on the shipped code.
+
+| Step | Commit | Within 10% | Within 25% | Wrong | Estimate | Held-out | Tuning |
+|---|---|---|---|---|---|---|---|
+| Before #522 | `0c51b53` | 18 (35%) | 22 (43%) | 12 (24%) | 17 (33%) | 7/10 | 16/20 |
+| 1. Infobox rows read by code | `59b3919` | 16 (31%) | 21 (41%) | 13 (25%) | 17 (33%) | 7/10 | 17/20 |
+| 2. Middle of three answers (rejected) | `b656ecd` | 18 (35%) | 22 (43%) | 12 (24%) | 17 (33%) | 7/10 | 18/20 |
+| 3. Decision model's confidence (rejected) | `f2f1603` | 16 (31%) | 20 (39%) | 10 (20%) | 21 (41%) | 7/10 | 16/20 |
+| 4. Prefer the variant (on top of 1 to 3, with 3 reverted) | `6f86f74` | 20 (39%) | 25 (49%) | 9 (18%) | 17 (33%) | 7/10 | 19/20 |
+| **Shipped: 1 and 4** | `1052bef` | **20 (39%)** | **24 (47%)** | **10 (20%)** | **17 (33%)** | **7/10** | **18/20** |
+
+- **Noise.** The chat model doesn't answer the same way every run, so a change of about ±2 values is noise, not a result. The clearest sign is part 1: it can't change any of the 51 values (below), yet its run moved two. The 15 fighters measured here are the same ones the lion and bald eagle cases came from, so part 4's gain was found and measured on the same data, not on new fighters.
+- **1. Infobox rows, shipped.**
+  - None of the 15 hand-verified fighters' articles has an infobox row for mass, length, height or speed: animal taxoboxes have none. So this part can't change their values, and only the golden retriever gained facts. The two values that moved (the grizzly's speed, the crocodile's mass) were model answers that vary from run to run.
+  - Its gain is coverage. Of 8 new fighters (dog breeds, horses, machines), the St. Bernard and the Clydesdale went from no sourced mass or size to both, and the Labrador gained a mass. The machines' articles have no stat rows.
+- **2. Middle of three answers, rejected.**
+  - Asking the chat model three times per stat and keeping the middle answer that passed the quote check gave the same totals as before: it fixed the horse's speed and lost the crocodile's mass to run-to-run variation.
+  - It tripled the chat calls (92 to 276 for the 15 fighters) and raised the average build from 21 s to 33 s. That is over the 30 s the app gives extraction (`EXTRACTION_BUDGET_S`).
+- **3. Decision model's confidence, rejected.**
+  - The decision model (Structured Decisions, as the challenger uses it) was asked whether each kept quote states the stat for a typical adult. A value was dropped below a probability of one half, a cutoff chosen before measuring and never changed.
+  - It turned two wrong numbers into estimates (the lion's record sprint, the bald eagle's dive), but also two right ones (the lioness bite force, the king cobra's mass), so fewer values landed within 10%.
+- **4. Prefer the variant, shipped.**
+  - The lion's mass is now Wikidata's figure for males (188 kg, not the females' 126 kg), and the bald eagle's is the figure for females (5.35 kg, not the males' 4.13 kg). Both are now within 10%.
+  - In the shipped run the bald eagle's speed is its gliding speed, not its dive, and the horse's speed is a gallop, not a sprint record. The crocodile's mass (1,100 kg, the top of a range) and the elephant's reach (worked out from its size when no tusk length came back) went the other way.
+- **Speed.** With one answer per stat, a fighter's build averaged 21 s (21.4 s for the 15 above, 20.1 s for the 20 benchmark fighters), as before #522. The slowest took 35.0 s (the crocodile), and 5 of 35 builds went over 30 s.
+- **Held-out benchmark.** 7 of 10 in every run: cnt-01, cnt-04 and doc-05 fail, as on Nov 19. These single runs left out the edge-case set to save calls, so they are not added to `docs/benchmark-results.md`.
 <!-- /section -->
 
 ## 1. Extraction accuracy
 
 <!-- section:extraction -->
-_Measured 2026-11-19 on commit `f900d4c`._
+_Measured 2026-11-25 on commit `1052bef`._
 
-Each of the 15 hand-verified seed fighters was built again by the research pipeline alone (stored facts, then model extraction with verified quotes), ignoring its seed file, and every hand-verified stat was compared (51 values, 319 s).
+Each of the 15 hand-verified seed fighters was built again by the research pipeline alone (stored facts, then model extraction with verified quotes), ignoring its seed file, and every hand-verified stat was compared (51 values, 321 s).
 
 | Stat | within 10% | within 25% | wrong | estimate |
 |---|---|---|---|---|
 | attack_force_n | 2 | 0 | 0 | 7 |
 | endurance_s | 0 | 0 | 0 | 2 |
-| mass_kg | 5 | 1 | 7 | 1 |
-| reach_m | 1 | 0 | 1 | 0 |
-| size_m | 7 | 3 | 2 | 2 |
-| top_speed_mps | 3 | 0 | 2 | 5 |
-| **All** | **18 (35%)** | **4 (8%)** | **12 (24%)** | **17 (33%)** |
+| mass_kg | 6 | 1 | 6 | 1 |
+| reach_m | 0 | 0 | 2 | 0 |
+| size_m | 8 | 3 | 1 | 2 |
+| top_speed_mps | 4 | 0 | 1 | 5 |
+| **All** | **20 (39%)** | **4 (8%)** | **10 (20%)** | **17 (33%)** |
 
-Extraction answers rejected by code: 1, of which 0 failed the quote check (the number wasn't in the quote, or the quote wasn't in the passage). A rejected answer leaves the stat to a later level, so it shows up above as an estimate, never as a made-up number.
+Extraction answers rejected by code: 2, of which 1 failed the quote check (the number wasn't in the quote, or the quote wasn't in the passage). A rejected answer leaves the stat to a later level, so it shows up above as an estimate, never as a made-up number.
 
-Research does not use the fighter's variant (sex, age, or which speed), so some "more than 25% off" values compare different things, for example the lion's mass or the bald eagle's dive speed.
+Research prefers figures for the fighter's variant (its sex and age, #522), but it doesn't know which speed is meant, so some "more than 25% off" values may still compare different things, such as a dive speed against a flying speed.
 
 More than 25% off:
-- African lion mass_kg: research 126, hand-verified 174.9
+- African elephant reach_m: research 0.925, hand-verified 2.4
 - African lion top_speed_mps: research 20.5833, hand-verified 16.39
-- Bald eagle mass_kg: research 4.13, hand-verified 5.6
-- Bald eagle top_speed_mps: research 44.4444, hand-verified 19.44
 - Duck mass_kg: research 1.6, hand-verified 1.14
 - Gorilla mass_kg: research 227, hand-verified 140
 - Gray wolf mass_kg: research 22.68, hand-verified 40
@@ -45,7 +75,7 @@ More than 25% off:
 - Honey badger mass_kg: research 12, hand-verified 9
 - House cat mass_kg: research 2.8848, hand-verified 5
 - Roman legionary reach_m: research 0.4375, hand-verified 0.59
-- Saltwater crocodile size_m: research 3.1, hand-verified 4.5
+- Saltwater crocodile mass_kg: research 1100, hand-verified 770
 <!-- /section -->
 
 ## 2. Retrieval
@@ -255,7 +285,7 @@ The 5 showcase battles ran twice through the real pipeline in this process (59 s
 - **Behavioral assumptions.** Aggression, group tactics and armor come from a rubric, not measurements (D-32). Mythical creatures assume every stat by design.
 - **Two-sided matchups only.** Every battle is exactly two sides, each one kind of fighter in any number.
 - **Dependence on the course endpoints.** Every AI number here comes from the course's models as they behaved on Nov 16–19. They can change without notice, and they aren't fully repeatable: the same phrasing was read differently across runs (71% stable), and live reranking occasionally swaps near-tied passages (one rank changed between runs; hit@5 stayed 14/15).
-- **Extraction ignores the fighter's variant.** Research doesn't use sex, age or which speed, so some "more than 25% off" values compare different things (the lion's mass, the bald eagle's dive speed). The extraction table also counts derived values, so one wrong input can spread, such as a crocodile bite force computed from a wrong mass.
+- **Extraction and the variant.** Since #522 research prefers the figure for the fighter's sex and age. It still doesn't know which speed is meant (a sprint record, a gallop), and a figure for the other sex is still used when nothing else is found. The extraction table also counts derived values, so one wrong input can spread, such as a crocodile bite force computed from a wrong mass.
 - **New fighters.** A fighter off the 30-fighter seed list fights on an all-estimate sheet in both modes: since #441 and #453 a real animal fights live as a living fighter on its category's defaults, and an object or machine as an inert one. Those defaults know nothing about the animal's real size, so an unlisted animal is generic: a polar bear counts as about one gray wolf, and two unlisted animals come out near a coin flip. Section 3 measures what research could add for them.
 - **Mythical stand-ins.** Hippogriff built on a horse is sensible. The cockatrice built on a T. rex with fire breath doesn't fit the legend (#391).
 - **Safety misses.** Two mythical creatures are falsely blocked (#340), two blocked requests got the wrong reason, and two were answered "clarify" instead of blocked. In intake, "a T. rex vs a stegosaurus" was falsely blocked on all three readings (#378). A second live safety run on Nov 18 (126 cases, on later code; #426) repeated four of these six (the two false blocks and both "clarify" answers), didn't repeat the two wrong-reason blocks, and added two of the same kinds ("Kraken vs a whale" got "clarify", and "Mars vs a grizzly bear" was blocked as a deity instead of out of scope). None let a blocked request through.
