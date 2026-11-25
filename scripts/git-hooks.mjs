@@ -14,7 +14,7 @@ export const SKIPPED =
 
 // A clone has a .git folder here and a worktree a .git file; a ZIP has neither, even when it was
 // unzipped inside another checkout (asking git would find that outer checkout and change it).
-const isCheckout = (dir) => existsSync(join(dir, ".git"));
+export const isCheckout = (dir) => existsSync(join(dir, ".git"));
 
 // Turn the guard on in a checkout, or say why it was skipped. Returns the exit code for setup.
 export function setHooks(dir = root, run = spawnSync, log = console.log) {
