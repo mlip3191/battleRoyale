@@ -101,7 +101,7 @@ const checks = [
 // asked, because asking would find an outer checkout and inspect that one.
 export function trackedFilesStep({ dir = root, git = (args) => sh("git", args) } = {}) {
   if (!isCheckout(dir)) {
-    return { status: "ok", label: "Committed-files check skipped: this isn't a git checkout (a ZIP copy?), so there are no commits to check" };
+    return { status: "ok", label: "No ignored files are committed: skipped, because this isn't a git checkout (a ZIP copy?) and so has no commits to check" };
   }
   const r = git(["ls-files", "--cached", "--ignored", "--exclude-standard"]);
   return r.ok && r.out === ""
