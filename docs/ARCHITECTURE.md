@@ -354,16 +354,20 @@ Rules:
 
 | Table | Key | Purpose |
 |---|---|---|
-| `fighters` | `fighter_id` | canonical names, aliases, Wikidata QID, category |
-| `documents` | `doc_id` | source title, URL, license, retrieved_at, raw text |
-| `chunks` + `chunks_vec` (sqlite-vec) | `chunk_id` | passages + embeddings for retrieval |
-| `stat_sheets` | `fighter_id`, `sheet_hash` | cached sheets; newest wins; seed sheets marked `hand_verified` |
-| `battles` | `battle_id` | serialized `BattleRecord` |
-| `assets` | `prompt_hash` | generated media paths; reused across battles |
+| `documents` | `doc_id` | source title, URL, license, retrieved_at, raw text and content hash, one per fighter and source |
+| `chunks` + `chunks_vec` (sqlite-vec) | `chunk_id` | passages + embeddings for retrieval (`chunks_vec` is created in code, since its size depends on the embedding model) |
+| `kb_meta` | `key` | small notes about the knowledge base, such as the embedding size it was built with |
+| `facts` | `fact_id` | structured facts such as a body mass from Wikidata, each with its source, reference and license |
+| `stat_sheets` | `fighter_id`, `sheet_hash` | sheets built for earlier battles (including cached legends and animals researched on demand), one row per version; newest wins. The hand-verified seed sheets are files in `data/seed/fighters/`, not rows here |
+| `battles` | `battle_id` | serialized `BattleRecord`, its status, and the repeat-battle `cache_key` |
+| `intake_pending` | `pending_id` | clarifying questions waiting for the user's answer; rows expire after 30 minutes |
+| `wikidata_safety_cache` | `query` | cached Wikidata name checks for the safety layer, one row per lowercased name |
 
+- **Fighter names and aliases** are not a table: the seed list is `data/seed/fighters.yaml`, the hand-verified sheets are `data/seed/fighters/*.json`, the mythical creatures are in `data/seed/mythical.yaml`, and spelling variants are small lists in code; name matching is in `backend/app/research/seed_fighters.py`.
+- **Generated media is files, not rows:** pictures and sound are saved under `data/media/` (files made in mock mode go in its `mock/` folder, so they are never reused live). Sprites and battlefields are named by fighter (or terrain) and art-style version, such as `sprites/gray-wolf-v1.png` and `battlefields/arena-v1.png`; the announcer's voice and the music go in `audio/`, named with the first 16 characters of a hash of the request. A later battle reuses a file that is already there (and not empty) instead of calling the provider again. Each battle record lists its files in `assets`, each with the full request hash as `prompt_hash`.
 - **Seed:** `simulation_seed = hash(matchup normalized, sheet_hash_0, sheet_hash_1, ENGINE_VERSION)`. Re-running a battle reproduces it exactly.
 - **Knowledge base build:** `uv run python -m scripts.ingest_seed` downloads Wikipedia/Wikidata text for seed fighters into `data/kb/`, parses, chunks (≈800 characters, 100 overlap), embeds, and stores. Raw article text and HTML are not committed (size + license); seed stat sheets are, and so are the seed fighters' passages and vectors in `data/prebuilt-kb/` (D-66), which startup loads into an empty knowledge base in live mode when the embedding model matches, so a fresh setup can skip the ingest.
-- **Migrations:** numbered SQL files in `backend/app/db/migrations/`, applied at startup.
+- **Migrations:** numbered SQL files in `backend/app/db/migrations/`, applied at startup; which ones have run is recorded in the `schema_migrations` table, which `db/migrate.py` creates in code.
 - SQLite runs in WAL mode; one writer at a time is fine for a demo app.
 
 ## 9. Simulation model (backend/app/simulation)
