@@ -5,7 +5,9 @@
   "category": "object",
   "body": "inert",
   "habitat": "land",
-  "weapons": ["none"],
+  "weapons": [
+    "none"
+  ],
   "lore": null,
   "stats": {
     "mass_kg": {

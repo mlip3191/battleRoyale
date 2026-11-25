@@ -20,7 +20,9 @@
     ],
     "terrain": "forest",
     "raw_text": "a grizzly bear vs 6 gray wolves in a forest",
-    "assumptions": ["Assumed adult male grizzly"]
+    "assumptions": [
+      "Assumed adult male grizzly"
+    ]
   },
   "stat_sheets": [
     {
@@ -30,7 +32,10 @@
       "category": "mammal",
       "body": "living",
       "habitat": "land",
-      "weapons": ["teeth", "claws"],
+      "weapons": [
+        "teeth",
+        "claws"
+      ],
       "lore": null,
       "stats": {
         "mass_kg": {
@@ -172,7 +177,9 @@
       "category": "mammal",
       "body": "living",
       "habitat": "land",
-      "weapons": ["teeth"],
+      "weapons": [
+        "teeth"
+      ],
       "lore": null,
       "stats": {
         "mass_kg": {
@@ -305,13 +312,25 @@
   "result": {
     "seed": 4021337,
     "runs": 1000,
-    "win_prob": [0.38, 0.55],
+    "win_prob": [
+      0.38,
+      0.55
+    ],
     "draw_prob": 0.07,
     "win_prob_ci95": [
-      [0.35, 0.41],
-      [0.52, 0.58]
+      [
+        0.35,
+        0.41
+      ],
+      [
+        0.52,
+        0.58
+      ]
     ],
-    "mean_survivors": [0.38, 3.9],
+    "mean_survivors": [
+      0.38,
+      3.9
+    ],
     "mean_duration_s": 74.2,
     "outcome": "win_1",
     "deciding_factor": "numbers",

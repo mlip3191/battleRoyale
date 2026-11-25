@@ -19,7 +19,9 @@
     ],
     "terrain": "forest",
     "raw_text": "a grizzly bear vs 6 gray wolves in a forest",
-    "assumptions": ["Assumed adult male grizzly"]
+    "assumptions": [
+      "Assumed adult male grizzly"
+    ]
   },
   "question": null,
   "options": [],

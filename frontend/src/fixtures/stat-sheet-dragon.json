@@ -5,11 +5,18 @@
   "category": "mythical",
   "body": "living",
   "habitat": "air",
-  "weapons": ["teeth", "claws", "breath_weapon"],
+  "weapons": [
+    "teeth",
+    "claws",
+    "breath_weapon"
+  ],
   "lore": {
     "body_analog": "saltwater crocodile",
     "size_analog": "African elephant",
-    "abilities": ["flight", "breath_weapon"],
+    "abilities": [
+      "flight",
+      "breath_weapon"
+    ],
     "heads": null,
     "source": {
       "title": "Dragon",
