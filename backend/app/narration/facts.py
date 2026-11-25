@@ -69,6 +69,16 @@ STAT_WORDS = {
     "group_tactics_0_1": "teamwork",
 }
 
+# Readable labels for the stat sheet's weapon kinds ("none" means no weapon and has no label).
+WEAPON_LABELS = {
+    "weapon_melee": "melee weapon",
+    "weapon_ranged": "ranged weapon",
+    "breath_weapon": "breath weapon",
+}
+
+# What the fact list says when no single factor decided the fight (#351, #620: never "none (...)").
+NO_SINGLE_FACTOR = "no single factor decided it"
+
 
 @dataclass(frozen=True)
 class StatFact:
@@ -91,6 +101,7 @@ class FighterFacts:
     has_lore: bool
     count: int
     stats: tuple[StatFact, ...]
+    weapons: tuple[str, ...] = ()  # the sheet's weapon kinds, "none" left out (#620)
 
     @property
     def is_legend(self) -> bool:
@@ -195,6 +206,7 @@ def _fighter(sheet: StatSheet, side: int, count: int) -> FighterFacts:
         has_lore=sheet.lore is not None,
         count=count,
         stats=stats,
+        weapons=tuple(str(w) for w in sheet.weapons if w != "none"),
     )
 
 
@@ -284,12 +296,13 @@ def fact_lines(facts: NarrationFacts) -> list[str]:
     lines = []
     for f in facts.fighters:
         legend = ", according to legend" if f.is_legend else ""
-        lines.append(f"{f.display_name} x{f.count} ({f.category}, {f.body}{legend})")
+        lines.append(f"{f.display_name}, {_fighters(f.count)} ({f.category}, {f.body}{legend})")
+        lines.append(f"  {f.display_name} weapons: {_weapons_text(f)}")
         for s in f.stats:
             lines.append(f"  {f.display_name} {STAT_WORDS.get(s.name, s.name)}: {_stat_text(s)}")
     factor = FACTOR_WORDS.get(facts.deciding_factor, facts.deciding_factor.replace("_", " "))
     if not facts.factor_decided:
-        factor = "none (no single factor decided it)"
+        factor = NO_SINGLE_FACTOR
     lines.append(
         f"result: {_outcome_text(facts.outcome, names)}; "
         f"{names[0]} wins {facts.win_pct[0]}%, {names[1]} wins {facts.win_pct[1]}%, "
@@ -298,13 +311,24 @@ def fact_lines(facts: NarrationFacts) -> list[str]:
     )
     if facts.fair_count is not None and facts.fair_side is not None:
         # A count without a probability still names the count, never "None%".
-        fair = f"fair fight: {names[facts.fair_side]} x{facts.fair_count}"
+        fair = f"fair fight: {names[facts.fair_side]} with {_fighters(facts.fair_count)}"
         if facts.fair_win_pct is not None:
             fair += f" wins {facts.fair_win_pct}% of the time"
         lines.append(fair)
     elif facts.fair_ran:
         lines.append("fair fight: checked, and no count makes this one fair")
     return lines
+
+
+# A head count in plain words, never "x1" shorthand the model could copy (#620).
+def _fighters(count: int) -> str:
+    return f"{count:,} fighter" if count == 1 else f"{count:,} fighters"
+
+
+# A fighter's weapons as readable labels, or a plain "no weapons" (never the word "none").
+def _weapons_text(f: FighterFacts) -> str:
+    labels = [WEAPON_LABELS.get(w, w.replace("_", " ")) for w in f.weapons]
+    return ", ".join(labels) if labels else "no weapons at all"
 
 
 # A stat's value and unit, tagged as an assumption (0-1 rubric) or an estimate.

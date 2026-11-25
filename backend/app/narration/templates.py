@@ -49,6 +49,24 @@ REACTIONS = (
     "Hold on to your popcorn.",
 )
 
+# Calm play-by-play for a no contest (docs/simulation-api.md: skip the sports commentary, #620),
+# by reason: the sides cannot reach each other, or neither can hurt the other.
+CANT_REACH_BEATS = (
+    "They size each other up from a distance.",
+    "Neither one can get to the other.",
+    "Nobody closes the gap.",
+    "The gap stays exactly where it is.",
+    "The referee checks the map.",
+)
+CANT_HURT_BEATS = (
+    "They size each other up.",
+    "Neither one can hurt the other.",
+    "Nobody is getting hurt tonight.",
+    "A long, polite standoff.",
+    "The referee has nothing to do.",
+)
+NO_CONTEST_CLOSER = "And that is a no contest."
+
 
 # A number as an announcer says it: thousands separators, at most one decimal, small values kept.
 def fmt(value: float) -> str:
@@ -303,13 +321,34 @@ def beat_text(event: FightEvent, facts: NarrationFacts, use_hint: bool = True) -
             return "And that is the fight!"
 
 
+# Whether a no contest is because the sides cannot reach each other (the engine's habitat no
+# contest, incl. a flier out of reach) rather than because neither can hurt the other.
+def cannot_reach(facts: NarrationFacts) -> bool:
+    """True for "no contest: neither can reach the other"; False for "nobody can hurt anybody"."""
+    return facts.deciding_factor == "habitat"
+
+
+# Calm no-contest beats synced to the log's events (or to none when the log is empty).
+def _no_contest_beats(facts: NarrationFacts, log: list[FightEvent]) -> list[ScriptLine]:
+    picked: list[int | None] = [*pick_events(log)] or [None] * MIN_BEATS
+    calm = CANT_REACH_BEATS if cannot_reach(facts) else CANT_HURT_BEATS
+    texts = [calm[i % len(calm)] for i in range(len(picked) - 1)] + [NO_CONTEST_CLOSER]
+    speakers = ("announcer", "color_commentator")
+    return [
+        line(speakers[n % 2], t, idx) for n, (t, idx) in enumerate(zip(texts, picked, strict=True))
+    ]
+
+
 def play_by_play_script(facts: NarrationFacts, result: SimulationResult) -> Script:
     """Play-by-play: 4 to 6 beats, each pointing at a real event in the representative log.
 
     No line is said more than MAX_SAME_LINE times: a beat that would read the same as two
     earlier ones (say, two hints that clean up alike) becomes a deadpan reaction instead (#580).
+    A no contest gets calm standoff lines that fit its reason, never the reactions (#620).
     """
     log = result.representative_log
+    if facts.outcome == "no_contest":
+        return Script(kind="play_by_play", lines=_no_contest_beats(facts, log), fallback=True)
     lines: list[ScriptLine] = []
     seen: set[int] = set()
     said: Counter[str] = Counter()
@@ -417,13 +456,24 @@ def outro_script(facts: NarrationFacts) -> Script:
                 facts,
             ),
         ]
-    else:
+    elif cannot_reach(facts):  # no contest: they cannot get to each other
         lines = [
             line("announcer", "No contest! These two never even met."),
             safe_line(
                 "color_commentator",
-                f"{names[0]} and {names[1]} cannot engage.",
-                "These two cannot engage.",
+                f"{names[0]} and {names[1]} cannot reach each other.",
+                "These two cannot reach each other.",
+                facts,
+                names,
+            ),
+        ]
+    else:  # no contest: they can meet, but neither can hurt the other (#620)
+        lines = [
+            line("announcer", "No contest! Nobody could hurt anybody."),
+            safe_line(
+                "color_commentator",
+                f"{names[0]} and {names[1]} cannot hurt each other.",
+                "Neither one can hurt the other.",
                 facts,
                 names,
             ),

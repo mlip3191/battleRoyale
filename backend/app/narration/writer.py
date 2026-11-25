@@ -97,6 +97,34 @@ TOO_CLOSE_REJECTED = "the verdict is too close to call: call it a near coin flip
 # D-38); the word "legend" alone, as in "a legendary showdown", frames no stat (#572).
 LEGEND_PHRASE = "according to legend"
 LEGEND_MISSING = f'a mythical fighter is in this fight: introduce its stats with "{LEGEND_PHRASE}"'
+# Fact-list shorthand a script must never read out (#620): a count like "x1" / "x6", and the old
+# "none (no single factor decided it)" / "It came down to none".
+FACT_SHORTHAND = re.compile(
+    r"(?<![A-Za-z0-9])[x\u00d7]\d[\d,]*(?![A-Za-z0-9])"
+    r"|\bnone\s*\(\s*no\s+single\s+factor"
+    r"|\bcame\s+down\s+to\s+none\b",
+    re.I,
+)
+SHORTHAND_REJECTED = "fact-list shorthand read out"
+# Words that name each weapon kind on air (#620); a line may name only the fighters' own kinds.
+# Generic kinds (melee, ranged, ramming, crushing) have no words: any fighter can hit or shove.
+WEAPON_WORDS = {
+    "teeth": r"teeth|tooth|fangs?",
+    "claws": r"claws?|talons?",
+    "horns": r"horns?",
+    "hooves": r"hoof|hooves",
+    "venom": r"venom|venomous",
+    "constriction": r"constrict\w*",
+    "tusks": r"tusks?",
+    "beak": r"beaks?",
+    "sting": r"stingers?",
+    "spines": r"spines?|quills?",
+    "breath_weapon": r"fire breath|breathes fire|breathing fire",
+}
+WEAPON_PATTERNS = {
+    kind: re.compile(rf"\b(?:{words})\b", re.I) for kind, words in WEAPON_WORDS.items()
+}
+NOT_THEIR_WEAPON = "names a weapon neither fighter has"
 
 
 class ScriptRejected(ValueError):
@@ -203,7 +231,22 @@ def _line_problems(line: ScriptLine, facts: NarrationFacts) -> list[str]:
     bad = unsupported_numbers(line.text, facts)
     if bad:
         problems.append(f"{NUMBERS_NOT_LISTED}: " + ", ".join(repr(b.text) for b in bad))
+    masked = mask_names(line.text, [f.display_name for f in facts.fighters])
+    shorthand = FACT_SHORTHAND.search(masked)
+    if shorthand:
+        problems.append(f"{SHORTHAND_REJECTED}: {shorthand.group(0)!r}; say it in plain words")
+    problems += _weapon_problems(masked, facts)
     return problems
+
+
+# A weapon word for a kind no fighter has, like "claws" for a goose whose weapons are "none".
+def _weapon_problems(text: str, facts: NarrationFacts) -> list[str]:
+    owned = {w for f in facts.fighters for w in f.weapons}
+    return [
+        f"{NOT_THEIR_WEAPON}: {found.group(0)!r}; use only the weapons in the fact list"
+        for kind, pattern in WEAPON_PATTERNS.items()
+        if kind not in owned and (found := pattern.search(text))
+    ]
 
 
 # A line said more than MAX_SAME_LINE times (case and punctuation aside), like a crowd's
