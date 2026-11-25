@@ -46,17 +46,19 @@ These cost minutes now and save hours on Nov 25:
 - **Evaluation and limitations:** `docs/evaluation.md`, `docs/benchmark-results.md`, `docs/simulation-model.md` (where every constant comes from).
 - **Changes vs. the proposal:** the "Changes from the proposal" list in DECISIONS.md.
 - **Business case:** PRODUCT_SPEC §2a.
-- **Contributions:** lane ownership (LANES.md) plus the git history; a CRediT-style draft follows.
+- **Contributions:** lane ownership (LANES.md) plus the git history; the CRediT-style table follows.
 - **Screenshots/GIFs:** small files in `docs/media/` whenever something visible lands.
 
-### Contributions draft (CRediT-style; update at the end)
+### Contributions (CRediT-style; final at code complete, Nov 25)
+
+Roles only, from the lanes in LANES.md and the work merged on `main`. The git history and each PR show who did what.
 
 | Role | Mike | Adam | Gunnar | Felipe | Dillon |
 |---|---|---|---|---|---|
 | Conceptualization | lead | support | support | support | support |
-| Software | foundation, contracts, providers | intake, safety, pipeline, media | research, RAG, stat sheets | simulation engine, analytics | front end, animation, intake API |
-| Data curation | | | lead (seed sheets, benchmark set) | support | |
-| Validation / formal analysis | AI evaluation (M09), CI | safety test set | traceability | benchmark runner | usability sessions, UI tests |
-| Project administration | lead | | | | |
-| Visualization | | | | | lead |
-| Writing | process docs | | research docs | simulation-model doc | user guide |
+| Software | foundation (Phase 0), contracts, providers, CI and review tooling; integration: research for unlisted animals and objects, the sky battlefield, and after the freeze the draining health bars, replay speeds and in-sync announcer | intake parser, safety gate, pipeline orchestration, announcer scripts and voice, generated sprites and battlefields | knowledge base and ingest, retrieval, stat-sheet builder with verified-quote extraction, mythical creatures and objects, traceability checker, showcase export | simulation engine (swarm mode, venom, terrain, machines, objects and abilities), fair fight and next challenger, benchmark runner; cross-lane fixes to intake, wording and the broadcast and Results pages | front end: app shell, intake page and intake API with the clarifying question, Results page, Phaser battle stage, broadcast page; setup checker (`npm run doctor`); prebuilt knowledge base |
+| Data curation | | | lead (hand-verified seed sheets, mythical creature types, benchmark and edge-case sets, the team dataset, showcase battles) | support (benchmark edge-case pairs) | support (prebuilt knowledge base) |
+| Validation / formal analysis | live AI evaluation (M09), CI and the QA bot, fresh-clone check (Mac) | safety test set and live safety evaluation | traceability checker, quote re-checks | benchmark runner and results, swarm validation, simulation timing, fresh-clone check (Windows) | usability sessions (D10), UI tests |
+| Project administration | lead (plan, issues and board, decisions, scope checks) | | backup approver for critical files | | |
+| Visualization | support (draining health bars, replay speeds) | generated sprites and battlefields | | support (health bars) | lead (battle stage, broadcast and Results pages) |
+| Writing | process docs, decisions log, evaluation, README | safety doc, issue guide, announcer voice record | research docs (sources, benchmark set) | simulation-model doc, review guide, simulation API guide | user guide, onboarding guide, usability plan |
