@@ -315,6 +315,8 @@ def test_the_committed_showcase_has_the_announcer_voice_and_fits_the_cap() -> No
         )
         stages = {s.stage: s.status for s in battle.stages}
         assert stages["script"] == "done" and stages["audio"] == "done", row.title
-        assert any(a.kind == "narration_audio" for a in battle.assets), row.title
+        clips = [a for a in battle.assets if a.kind == "narration_audio"]
+        assert clips, row.title
+        assert all(clip.line_times_s for clip in clips), row.title  # the announcer stays in sync
     size = sum(p.stat().st_size for p in showcase.rglob("*") if p.is_file())
     assert size <= MAX_SHOWCASE_BYTES

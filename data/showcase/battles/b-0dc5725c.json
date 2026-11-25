@@ -1366,104 +1366,104 @@
       "line_times_s": null
     },
     {
-      "asset_id": "narration-intro-175bd144e7bce451",
+      "asset_id": "narration-intro-612ff12b17b0fd4a",
       "kind": "narration_audio",
-      "url": "/media/audio/narration-intro-175bd144e7bce451.wav",
-      "prompt_hash": "175bd144e7bce451d0a0ba6fba470a642721fbd230123b58c1c86eaeb7ae9677",
+      "url": "/media/audio/narration-intro-612ff12b17b0fd4a.wav",
+      "prompt_hash": "612ff12b17b0fd4acba5689d03c1b4ea20b771f96fe5b48325ef9b8548df5e9f",
       "fallback": false,
       "script_kind": "intro",
       "line_times_s": [
         [
           0.0,
-          2.655
+          3.097
         ],
         [
-          3.055,
-          6.075
+          3.497,
+          6.962
         ],
         [
-          6.475,
-          11.312
+          7.362,
+          13.049
         ],
         [
-          11.712,
-          14.596
+          13.449,
+          17.305
         ],
         [
-          14.996,
-          19.039
+          17.705,
+          22.682
         ],
         [
-          19.439,
-          22.54
+          23.082,
+          27.076
         ],
         [
-          22.94,
-          25.868
+          27.476,
+          31.118
         ]
       ]
     },
     {
-      "asset_id": "narration-play_by_play-ab1c84f945c917f1",
+      "asset_id": "narration-play_by_play-6812f92f39353041",
       "kind": "narration_audio",
-      "url": "/media/audio/narration-play_by_play-ab1c84f945c917f1.wav",
-      "prompt_hash": "ab1c84f945c917f16af16d7da646a53fac41b3cebc370242e5cd7423a1ed41ef",
+      "url": "/media/audio/narration-play_by_play-6812f92f39353041.wav",
+      "prompt_hash": "6812f92f39353041f75e2445be6122c5fea3eec19062b81f47d0cbc7f43e2cf8",
       "fallback": false,
       "script_kind": "play_by_play",
       "line_times_s": [
         [
           0.0,
-          2.348
+          3.065
         ],
         [
-          2.748,
-          4.772
+          3.465,
+          6.205
         ],
         [
-          5.172,
-          6.77
+          6.605,
+          8.777
         ],
         [
-          7.17,
-          9.392
+          9.177,
+          11.84
         ],
         [
-          9.792,
-          12.54
+          12.24,
+          15.874
         ],
         [
-          12.94,
-          15.162
+          16.274,
+          18.265
         ]
       ]
     },
     {
-      "asset_id": "narration-outro-b6d4c219758711b4",
+      "asset_id": "narration-outro-c7cd0b86038575a8",
       "kind": "narration_audio",
-      "url": "/media/audio/narration-outro-b6d4c219758711b4.wav",
-      "prompt_hash": "b6d4c219758711b4d371ae2c0c15f513561a26c17cad5d3618686ebf6b2b460a",
+      "url": "/media/audio/narration-outro-c7cd0b86038575a8.wav",
+      "prompt_hash": "c7cd0b86038575a8415f75570026fb65b7080653752e27eb5f59d8a653312ca1",
       "fallback": false,
       "script_kind": "outro",
       "line_times_s": [
         [
           0.0,
-          3.15
+          3.324
         ],
         [
-          3.55,
-          7.103
+          3.724,
+          8.694
         ],
         [
-          7.503,
-          9.412
+          9.094,
+          11.574
         ],
         [
-          9.812,
-          14.956
+          11.974,
+          19.074
         ],
         [
-          15.356,
-          16.688
+          19.474,
+          21.195
         ]
       ]
     }
