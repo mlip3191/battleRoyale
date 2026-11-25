@@ -18,7 +18,9 @@ import {
   type Matchup,
   type ShowcaseBattle,
 } from "../api/client.ts";
+import { savedOff } from "../components/AudioBar.tsx";
 import { ErrorPanel, MAIN_ID } from "../components/Broadcast.tsx";
+import { wakeCrowd } from "../components/crowd-bed.ts";
 import { usePageTitle } from "../components/page-title.ts";
 import styles from "./home.module.css";
 
@@ -398,6 +400,8 @@ function Confirm({
   useReveal(card);
 
   const fight = () => {
+    // Inside this click, so the crowd may play while the announcer records (#592).
+    if (!savedOff()) wakeCrowd();
     setStarting(true);
     setFailed(false);
     createBattle({ ...matchup, terrain })

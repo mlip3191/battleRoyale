@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type Ref } from "react";
 import { Link, useParams } from "react-router-dom";
 import { NOT_FOUND, useBattle } from "../api/useBattle.ts";
 import AudioBar, { type AudioBarHandle } from "../components/AudioBar.tsx";
+import CrowdBar from "../components/CrowdBar.tsx";
 import {
   ErrorPanel,
   LoadingTicker,
@@ -20,6 +21,7 @@ import {
   SPEAKERS,
   START,
   audioPlan,
+  awaitingVoice,
   canSkip,
   captionsAt,
   lineMs,
@@ -279,6 +281,7 @@ function Broadcast({ id }: { id: string }) {
           </button>
         )}
       </div>
+      {awaitingVoice(show, battle) && <CrowdBar focusGroup={controls} />}
       {show.phase !== "waiting" && sound && (
         <AudioBar
           ref={soundBar}

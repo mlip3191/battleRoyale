@@ -74,6 +74,13 @@ export const tooFastToTalk = (speed: number) => speed > 2;
 export const canSkip = (show: Show, battle: BattleRecord | null) =>
   Boolean(battle?.result) && show.phase !== "verdict";
 
+// The show is waiting while the announcer's voice records: the waiting room's crowd plays (#592).
+// Not before, and never when no voice is coming (its stage skipped or fell back: captions only).
+export const awaitingVoice = (show: Show, battle: BattleRecord | null) =>
+  show.phase === "waiting" &&
+  battle?.status === "running" &&
+  battle.stages.some((s) => s.stage === "audio" && s.status === "running");
+
 // A play-by-play line and the replay event it belongs to.
 export interface PlacedLine {
   line: ScriptLine;

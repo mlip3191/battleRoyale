@@ -16,6 +16,8 @@ import done from "../fixtures/battle-record-done.json";
 import type { Asset, BattleRecord } from "../api/client.ts";
 import { NOT_FOUND, RETRYING } from "../api/useBattle.ts";
 import { FINISH_WAIT_MS } from "../components/AudioBar.tsx";
+import { setContextMaker, wakeCrowd } from "../components/crowd-bed.ts";
+import { FakeAudioContext } from "../components/fake-audio-context.ts";
 import Battle from "./Battle.tsx";
 import Results from "./Results.tsx";
 import { layoutStage } from "../game/layout.ts";
@@ -163,6 +165,54 @@ test("audio running: the ticker tells a first-time viewer how long the announcer
   expect(screen.getByRole("status").textContent).toBe(
     "Recording the announcer… can take about a minute, then the show starts.",
   );
+});
+
+describe("the waiting room's crowd while the announcer records (#592)", () => {
+  let fake: FakeAudioContext;
+  beforeEach(() => {
+    fake = new FakeAudioContext();
+    setContextMaker(() => fake as unknown as AudioContext);
+    wakeCrowd(); // the home card's "Start the fight!" click
+  });
+  afterEach(() => setContextMaker());
+  const settle = () => act(() => Promise.resolve());
+  const recording = { ...onlyRunning("audio"), result: asRecord(done).result };
+
+  test("it plays while the announcer records, and fades out when the show starts", async () => {
+    const { rerender } = show(recording);
+    await settle();
+    expect(fake.playing()).toBe(true);
+    state.value = { battle: done, error: null };
+    rerender(page("/battle/b1"));
+    expect(
+      screen.getByRole("button", { name: "Start the fight" }),
+    ).toBeTruthy();
+    expect(fake.playing()).toBe(false);
+    expect(fake.sources).toHaveLength(1);
+  });
+
+  test("Skip to verdict fades it out", async () => {
+    show(recording);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Skip to verdict" }));
+    expect(fake.sources[0].stoppedAt).not.toBeNull();
+  });
+
+  test("no crowd while researching, or when no announcer is coming (captions only)", async () => {
+    const captionsOnly = onlyRunning("images");
+    captionsOnly.stages = captionsOnly.stages.map((s) =>
+      s.stage === "audio" ? { ...s, status: "fallback" } : s,
+    );
+    for (const battle of [onlyRunning("research"), captionsOnly]) {
+      const view = show(battle);
+      await settle();
+      expect(
+        screen.queryByRole("group", { name: "Sound controls" }),
+      ).toBeNull();
+      view.unmount();
+    }
+    expect(fake.sources).toHaveLength(0);
+  });
 });
 
 test("research running without a detail still says it is researching (#493)", () => {

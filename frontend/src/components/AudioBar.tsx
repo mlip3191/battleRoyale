@@ -47,7 +47,8 @@ const WAIT_NOTE = "Announcer waits at this speed";
 const OFF_KEY = "battle-royale-sound-off";
 
 // Whether the viewer switched sound off earlier in this visit; storage may be blocked, then no.
-const savedOff = () => {
+// Shared with the waiting room's crowd (#592).
+export const savedOff = () => {
   try {
     return sessionStorage.getItem(OFF_KEY) === "1";
   } catch {
@@ -56,7 +57,7 @@ const savedOff = () => {
 };
 
 // Remember (or forget) the viewer's "off" choice for this visit; a blocked store is fine.
-const saveOff = (off: boolean) => {
+export const saveOff = (off: boolean) => {
   try {
     if (off) sessionStorage.setItem(OFF_KEY, "1");
     else sessionStorage.removeItem(OFF_KEY);

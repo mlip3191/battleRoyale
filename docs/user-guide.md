@@ -164,7 +164,7 @@ The page scrolls down to the card, which shows how the app read your matchup: ea
 
 ### Watch the broadcast
 
-While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute. Recording the announcer's voice can take about another minute; the ticker says so while it runs, and the show starts as soon as the voice is ready.
+While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute. Recording the announcer's voice can take about another minute; the ticker says so while it runs, and the show starts as soon as the voice is ready. Meanwhile a quiet crowd murmur plays, made by your browser (no sound file), with its own **Sound on / Sound off** button and volume slider; it fades out when the show starts. Switching it off counts as switching sound off for this visit. If you opened the battle from a link instead of the **Start the fight!** button, it stays silent until you click **Sound off** to switch it on.
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 

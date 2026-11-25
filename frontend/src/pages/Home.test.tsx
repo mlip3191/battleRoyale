@@ -21,6 +21,9 @@ import okResult from "../fixtures/intake-result.json";
 import * as client from "../api/client.ts";
 import { SHOWCASE } from "../api/fixtures.ts";
 import Home, { EXAMPLES, PLACEHOLDER, START_LABEL } from "./Home.tsx";
+import { saveOff } from "../components/AudioBar.tsx";
+import { setContextMaker } from "../components/crowd-bed.ts";
+import { FakeAudioContext } from "../components/fake-audio-context.ts";
 
 vi.mock("../api/client.ts", async (original) => ({
   ...(await original<typeof import("../api/client.ts")>()),
@@ -101,6 +104,25 @@ test("ok: Enter submits, shows the confirmation card, and its start button start
   fireEvent.click(within(card).getByRole("button", { name: START_LABEL }));
   expect(api.createBattle).toHaveBeenCalledWith(ok.matchup);
   expect(await screen.findByText("broadcast page")).toBeTruthy();
+});
+
+test("the start button's click wakes the audio for the waiting room's crowd, unless sound is off this visit (#592)", async () => {
+  const sound = new FakeAudioContext();
+  const maker = vi.fn(() => sound as unknown as AudioContext);
+  setContextMaker(maker);
+  onTestFinished(() => setContextMaker());
+  api.postIntake.mockResolvedValue(ok);
+  ask(open(), "a grizzly bear vs 6 gray wolves");
+  const start = await screen.findByRole("button", { name: START_LABEL });
+  api.createBattle.mockRejectedValueOnce(new Error("offline")); // so it can be pressed again
+  saveOff(true);
+  fireEvent.click(start);
+  expect(maker).not.toHaveBeenCalled();
+  await waitFor(() => expect(start.hasAttribute("disabled")).toBe(false));
+  saveOff(false);
+  fireEvent.click(start);
+  expect(maker).toHaveBeenCalledTimes(1);
+  expect(sound.resume).toHaveBeenCalled();
 });
 
 test("the sky is one of the battlefields (D-70)", async () => {
