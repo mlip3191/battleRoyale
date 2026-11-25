@@ -1,14 +1,22 @@
 """#522 part 4: research prefers figures for the fighter's variant (sex and age)."""
 
 import asyncio
+import json
+import sqlite3
 from datetime import UTC, datetime
+from pathlib import Path
 
+from app.db.connection import connect
+from app.db.migrate import apply_migrations
 from app.models.stats import StatName
 from app.research import extract
 from app.research.extract import ExtractReply, build_messages
 from app.research.facts import wikidata_facts
+from app.research.ingest import restore_saved_facts
 from app.research.retrieve import Passage
-from app.research.statsheet import FighterProfile, StoredFact, stat_from_facts
+from app.research.seed_fighters import SeedFighter
+from app.research.sources import SourceDocument, save_raw
+from app.research.statsheet import FighterProfile, StoredFact, load_facts, stat_from_facts
 from app.research.variant import described, prefer_variant
 
 WHEN = datetime(2026, 11, 25, tzinfo=UTC)
@@ -55,6 +63,33 @@ def test_wikidata_qualifiers_go_into_the_quote() -> None:
         "mass: 188 kg (male organism, adult weight)",
         "mass: 126 kg (female organism, adult weight)",
     ]
+
+
+def test_saved_wikidata_gets_its_qualifiers_without_a_download(tmp_path: Path) -> None:
+    body = json.dumps(LION_ENTITY).encode("utf-8")
+    entity = SourceDocument(
+        "Lion",
+        "https://www.wikidata.org/wiki/Q140",
+        "CC0 1.0",
+        WHEN,
+        "application/json",
+        body,
+        False,
+    )
+    save_raw(tmp_path / "kb", "african-lion", "wikidata", entity)  # no saved article: still read
+    lion = SeedFighter(
+        "african-lion", "African lion", "Adult male", "mammal", "living", "land", "x"
+    )
+    connection: sqlite3.Connection = connect(tmp_path / "app.db")
+    try:
+        apply_migrations(connection)
+        for _ in range(2):  # a second run replaces the facts, never adds to them
+            assert restore_saved_facts(connection, [lion], tmp_path / "kb") == 1
+            quotes = [s.fact.quote for s in load_facts(connection, "african-lion")]
+            assert quotes == [f.quote for f in wikidata_facts(LION_ENTITY)]
+    finally:
+        connection.close()
+    assert "mass: 188 kg (male organism, adult weight)" in quotes
 
 
 def test_the_lions_mass_is_the_males_for_an_adult_male() -> None:

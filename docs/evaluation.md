@@ -16,15 +16,15 @@ Measured on the live course endpoints: extraction on Nov 25 (commit `1052bef`, #
 How to read the table:
 - Counts are of 51 values, and "within 25%" includes those within 10%.
 - "Held-out" is the 10 benchmark matchups never used to set a constant. "Tuning" is the other 20, the ones constants may be set from (D-58).
-- Rows 1 to 4 were measured on a working branch that was not pushed, each part on top of the ones before. The last row is what shipped: parts 1 and 4 only, measured on the shipped code.
+- Rows 1 to 4 were measured on a working branch that was not pushed, each part on top of the ones before. The last row is what shipped: parts 1 and 4 only. It was measured on `1052bef`; rebasing that commit onto a test added to its base made it `6204675`, with the same research code.
 
 | Step | Commit | Within 10% | Within 25% | Wrong | Estimate | Held-out | Tuning |
 |---|---|---|---|---|---|---|---|
 | Before #522 | `0c51b53` | 18 (35%) | 22 (43%) | 12 (24%) | 17 (33%) | 7/10 | 16/20 |
-| 1. Infobox rows read by code | `59b3919` | 16 (31%) | 21 (41%) | 13 (25%) | 17 (33%) | 7/10 | 17/20 |
-| 2. Middle of three answers (rejected) | `b656ecd` | 18 (35%) | 22 (43%) | 12 (24%) | 17 (33%) | 7/10 | 18/20 |
-| 3. Decision model's confidence (rejected) | `f2f1603` | 16 (31%) | 20 (39%) | 10 (20%) | 21 (41%) | 7/10 | 16/20 |
-| 4. Prefer the variant (on top of 1 to 3, with 3 reverted) | `6f86f74` | 20 (39%) | 25 (49%) | 9 (18%) | 17 (33%) | 7/10 | 19/20 |
+| 1. Infobox rows read by code | `59b3919` (not pushed) | 16 (31%) | 21 (41%) | 13 (25%) | 17 (33%) | 7/10 | 17/20 |
+| 2. Middle of three answers (rejected) | `b656ecd` (not pushed) | 18 (35%) | 22 (43%) | 12 (24%) | 17 (33%) | 7/10 | 18/20 |
+| 3. Decision model's confidence (rejected) | `f2f1603` (not pushed) | 16 (31%) | 20 (39%) | 10 (20%) | 21 (41%) | 7/10 | 16/20 |
+| 4. Prefer the variant (on top of 1 to 3, with 3 reverted) | `6f86f74` (not pushed) | 20 (39%) | 25 (49%) | 9 (18%) | 17 (33%) | 7/10 | 19/20 |
 | **Shipped: 1 and 4** | `1052bef` | **20 (39%)** | **24 (47%)** | **10 (20%)** | **17 (33%)** | **7/10** | **18/20** |
 
 - **Noise.** The chat model doesn't answer the same way every run, so a change of about ±2 values is noise, not a result. The clearest sign is part 1: it can't change any of the 51 values (below), yet its run moved two. The 15 fighters measured here are the same ones the lion and bald eagle cases came from, so part 4's gain was found and measured on the same data, not on new fighters.
