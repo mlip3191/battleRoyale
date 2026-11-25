@@ -18,6 +18,8 @@ from app.providers.base import DocParser, Embedder
 from app.providers.live.doc_parser import split_pieces, strip_markup
 from app.providers.live.http import ProviderError
 from app.research.facts import store_facts, wikidata_facts
+from app.research.infobox import SOURCE as INFOBOX
+from app.research.infobox import infobox_facts
 from app.research.kb_store import DocumentRecord, ensure_vector_table, store_document
 from app.research.seed_fighters import SeedFighter
 from app.research.sources import (
@@ -25,6 +27,7 @@ from app.research.sources import (
     SourceError,
     fetch_article,
     fetch_wikidata,
+    load_raw,
     save_raw,
 )
 from app.research.traits import TraitTables, load_trait_tables, trait_match_name
@@ -105,6 +108,30 @@ def _ingest_wikidata(
     store_facts(connection, fighter.id, "wikidata", facts, document.license, retrieved_at)
 
 
+# Store the stat rows of an article's infobox, read by code (#522).
+def ingest_infobox(
+    connection: sqlite3.Connection, fighter_id: str, article: SourceDocument
+) -> None:
+    facts = infobox_facts(article.body.decode("utf-8", errors="replace"), article.url)
+    retrieved_at = article.retrieved_at.isoformat()
+    store_facts(connection, fighter_id, INFOBOX, facts, article.license, retrieved_at)
+
+
+# Store facts again from the files earlier runs saved under kb_dir, with no download or parse
+# (after a change to how facts are read, #522). Returns how many fighters had saved files.
+def restore_saved_facts(
+    connection: sqlite3.Connection, fighters: list[SeedFighter], kb_dir: Path
+) -> int:
+    restored = 0
+    for fighter in fighters:
+        article = load_raw(kb_dir, fighter.id, "wikipedia")
+        if article is None:
+            continue
+        ingest_infobox(connection, fighter.id, article)
+        restored += 1
+    return restored
+
+
 # Store each trait dataset's rows for the fighter's scientific name, and note a fighter with none.
 def _ingest_traits(
     connection: sqlite3.Connection,
@@ -143,6 +170,7 @@ async def ingest_fighter(
         summary.documents += 1
         save_raw(kb_dir, fighter.id, "wikipedia", article)
         await _ingest_article(connection, parser, embedder, fighter, article, refresh)
+        ingest_infobox(connection, fighter.id, article)
         entity = await fetch_wikidata(client, fighter.article)
         if entity is None:
             logger.info("No Wikidata item for %s; any facts from earlier runs stay.", fighter.id)

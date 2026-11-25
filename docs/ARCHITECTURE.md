@@ -357,7 +357,7 @@ Rules:
 | `documents` | `doc_id` | source title, URL, license, retrieved_at, raw text and content hash, one per fighter and source |
 | `chunks` + `chunks_vec` (sqlite-vec) | `chunk_id` | passages + embeddings for retrieval (`chunks_vec` is created in code, since its size depends on the embedding model) |
 | `kb_meta` | `key` | small notes about the knowledge base, such as the embedding size it was built with |
-| `facts` | `fact_id` | structured facts such as a body mass from Wikidata, each with its source, reference and license |
+| `facts` | `fact_id` | structured facts such as a body mass from Wikidata or a row of the article's infobox, each with its source, reference and license, and a `quote` when the words it was read from aren't just its field, value and unit (an infobox row, #522) |
 | `stat_sheets` | `fighter_id`, `sheet_hash` | sheets built for earlier battles (including cached legends and animals researched on demand), one row per version; newest wins. The hand-verified seed sheets are files in `data/seed/fighters/`, not rows here |
 | `battles` | `battle_id` | serialized `BattleRecord`, its status, and the repeat-battle `cache_key` |
 | `intake_pending` | `pending_id` | clarifying questions waiting for the user's answer; rows expire after 30 minutes |

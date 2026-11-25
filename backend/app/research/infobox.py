@@ -11,7 +11,10 @@ from html.parser import HTMLParser
 
 from app.models.stats import StatName
 from app.research.evidence_check import NUMBER, normalize_text, number_has_unit_in_quote
+from app.research.facts import Fact
 from app.research.units import UnitError, to_stat_unit
+
+SOURCE = "infobox"
 
 # Row labels that name a stat -> the fact's field (named like facts.PROPERTIES' values).
 LABELS = {
@@ -150,3 +153,12 @@ def stat_rows(html: str) -> list[StatRow]:
             continue
         found.append(StatRow(field, measure[0], measure[1], quote, n))
     return found
+
+
+# The stat rows as facts to store, each quoting its row. The link is the article's with
+# "#infobox": the stored passages leave the infobox out, so no passage holds the row's text.
+def infobox_facts(html: str, url: str) -> list[Fact]:
+    return [
+        Fact(SOURCE, r.field, r.value, r.unit, f"{url}#infobox (row {r.row})", quote=r.quote)
+        for r in stat_rows(html)
+    ]

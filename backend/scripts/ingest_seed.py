@@ -6,11 +6,14 @@ From the backend folder:
   uv run python -m scripts.ingest_seed --only horse duck
   uv run python -m scripts.ingest_seed --refresh                   # re-parse every article
   uv run python -m scripts.ingest_seed --refresh --only grizzly-bear
+  uv run python -m scripts.ingest_seed --facts-only                # no downloads, no parsing
 
 Re-running skips articles already stored at the same revision. --refresh parses them again
 anyway, replacing their stored passages: use it after a parser fix, such as #34's check that
-puts back paragraphs the parser skipped (#380). A mock run and a live run use different vector
-sizes, so switching between them rebuilds the stored passages.
+puts back paragraphs the parser skipped (#380). --facts-only stores the facts again from the
+files an earlier run saved in data/kb, after a change to how code reads them (#522). A mock run
+and a live run use different vector sizes, so switching between them rebuilds the stored
+passages.
 """
 
 import argparse
@@ -27,7 +30,7 @@ from app.config import get_settings  # noqa: E402
 from app.db.connection import connect  # noqa: E402
 from app.db.migrate import apply_migrations  # noqa: E402
 from app.providers.registry import get_provider  # noqa: E402
-from app.research.ingest import IngestSummary, ingest_all  # noqa: E402
+from app.research.ingest import IngestSummary, ingest_all, restore_saved_facts  # noqa: E402
 from app.research.seed_fighters import load_seed_fighters  # noqa: E402
 
 DOWNLOAD_TIMEOUT_S = 60.0
@@ -52,7 +55,7 @@ def print_summary(summary: IngestSummary, seconds: float) -> None:
 
 
 # Run the ingest with the configured providers.
-async def main(live: bool, only: list[str], refresh: bool = False) -> int:
+async def main(live: bool, only: list[str], refresh: bool = False, facts_only: bool = False) -> int:
     settings = get_settings()
     if live:
         settings = settings.model_copy(update={"provider_mode": "live"})
@@ -69,6 +72,11 @@ async def main(live: bool, only: list[str], refresh: bool = False) -> int:
         fighters = [fighter for fighter in fighters if fighter.id in only]
     connection = connect(settings.data_dir / "app.db")
     apply_migrations(connection)
+    if facts_only:
+        restored = restore_saved_facts(connection, fighters, settings.data_dir / "kb")
+        connection.close()
+        print(f"Stored facts again from saved files for {restored} of {len(fighters)} fighters.")
+        return 0
     started = time.perf_counter()
     async with httpx.AsyncClient(timeout=DOWNLOAD_TIMEOUT_S) as client:
         summary = await ingest_all(
@@ -92,5 +100,8 @@ if __name__ == "__main__":
     arguments.add_argument(
         "--refresh", action="store_true", help="re-parse articles even if already stored"
     )
+    arguments.add_argument(
+        "--facts-only", action="store_true", help="store facts again from saved files only"
+    )
     options = arguments.parse_args()
-    sys.exit(asyncio.run(main(options.live, options.only, options.refresh)))
+    sys.exit(asyncio.run(main(options.live, options.only, options.refresh, options.facts_only)))

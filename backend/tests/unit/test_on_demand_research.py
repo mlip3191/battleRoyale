@@ -312,7 +312,14 @@ def stub_research(
     wikidata_fails: bool = False,
     mass: float | None = 100.0,
 ) -> dict:
-    done: dict = {"facts": [], "ingested": [], "profiles": [], "fetches": 0, "articles": []}
+    done: dict = {
+        "facts": [],
+        "ingested": [],
+        "profiles": [],
+        "fetches": 0,
+        "articles": [],
+        "infobox": [],
+    }
     monkeypatch.setattr(
         on_demand,
         "legend_client",
@@ -344,6 +351,7 @@ def stub_research(
     monkeypatch.setattr(on_demand, "fetch_wikidata", fetch_wikidata)
     monkeypatch.setattr(on_demand, "wikidata_facts", lambda entity: ["a fact"])
     monkeypatch.setattr(on_demand, "store_facts", lambda *a: done["facts"].append(a[1]))
+    monkeypatch.setattr(on_demand, "ingest_infobox", lambda *a: done["infobox"].append(a[1]))
     monkeypatch.setattr(on_demand, "ingest_on_demand", ingest)
     monkeypatch.setattr(on_demand, "build_sheet_with_evidence", build)
     monkeypatch.setattr(on_demand, "get_provider", lambda name: None)
@@ -364,7 +372,7 @@ async def test_a_bird_article_makes_a_bird_of_the_same_size_and_saves_it(monkeyp
     sheet = await on_demand._research(OSTRICH, "real_animal", "medium", "ostrich")
     assert sheet is not None and (sheet.category, sheet.weapons) == ("bird", ["beak"])
     assert done["profiles"][0].category == "bird" and done["ingested"] == ["ostrich"]
-    assert done["facts"] == ["ostrich"]
+    assert done["facts"] == ["ostrich"] and done["infobox"] == ["ostrich"]  # #522
     medium_bird = estimate_sheet("ostrich", "real_animal", category="bird", size_class="medium")
     assert sheet.stats[StatName.MASS].value == 100.0  # sourced
     others = {s: v for s, v in sheet.stats.items() if s != StatName.MASS}
