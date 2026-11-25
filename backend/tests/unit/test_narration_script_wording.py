@@ -218,6 +218,41 @@ def test_own_weapons_and_unrelated_words_pass(text: str) -> None:
     assert check_script(_script("play_by_play", text, at_event=True), facts, 20) == []
 
 
+# A second fighter with no weapons, so no weapon word is owned in a goose-vs-swan fight.
+SWAN = GOOSE.model_copy(update={"display_name": "Swan"})
+
+IDIOMS = [
+    "The goose fights tooth and nail!",
+    "She claws her way back into this one!",
+    "They lock horns at center ring!",
+    "The air horns blare!",
+    "A shiver runs down the spine, folks!",
+    "That is the stinger of defeat!",
+]
+
+
+@pytest.mark.parametrize("text", IDIOMS)
+def test_announcer_idioms_are_not_weapons(text: str) -> None:
+    facts = build_facts([GOOSE, SWAN], RESULT)
+    assert check_script(_script("play_by_play", text, at_event=True), facts, 20) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Goose, claws ready to strike!",
+        "The swan lowers its horns!",
+        "Swan, stinger out!",
+        "The goose bristles, its spines up!",
+        "Bared teeth from the swan!",
+    ],
+)
+def test_real_weapon_uses_still_fail_without_the_weapon(text: str) -> None:
+    facts = build_facts([GOOSE, SWAN], RESULT)
+    problems = check_script(_script("play_by_play", text, at_event=True), facts, 20)
+    assert any(NOT_THEIR_WEAPON in p for p in problems), problems
+
+
 def test_a_model_play_by_play_that_invents_claws_falls_back() -> None:
     facts = build_facts([GOOSE, HORSE], RESULT)
     beats = ["Goose, claws ready to strike!", "Horse charges!", "Goose flaps!", "That's it!"]

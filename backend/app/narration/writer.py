@@ -108,17 +108,21 @@ FACT_SHORTHAND = re.compile(
 SHORTHAND_REJECTED = "fact-list shorthand read out"
 # Words that name each weapon kind on air (#620); a line may name only the fighters' own kinds.
 # Generic kinds (melee, ranged, ramming, crushing) have no words: any fighter can hit or shove.
+# Words that are also idioms match only as a body part ("its claws", "claws out"), so "tooth and
+# nail", "she claws her way back", "they lock horns", "a shiver down the spine" and "the stinger
+# of defeat" stay on air.
 WEAPON_WORDS = {
-    "teeth": r"teeth|tooth|fangs?",
-    "claws": r"claws?|talons?",
-    "horns": r"horns?",
+    "teeth": r"teeth|fangs?",
+    "claws": r"(?:its|his|her|their|with|bared|sharp|razor)\s+claws?|talons?"
+    r"|claws?\s+(?:out|ready|bared|first|extended|flashing|slashing)",
+    "horns": r"(?:its|his|her|their|with|sharp|curved)\s+horns?|horns?\s+(?:down|first|lowered)",
     "hooves": r"hoof|hooves",
     "venom": r"venom|venomous",
     "constriction": r"constrict\w*",
     "tusks": r"tusks?",
     "beak": r"beaks?",
-    "sting": r"stingers?",
-    "spines": r"spines?|quills?",
+    "sting": r"(?:its|his|her|their|sharp)\s+stingers?|stingers?\s+(?:out|first|ready)",
+    "spines": r"quills?|spines\s+out|its\s+spines",
     "breath_weapon": r"fire breath|breathes fire|breathing fire",
 }
 WEAPON_PATTERNS = {
@@ -245,6 +249,8 @@ def _line_problems(line: ScriptLine, facts: NarrationFacts) -> list[str]:
 
 # A weapon word for a kind no fighter has, like "claws" for a goose whose weapons are "none".
 def _weapon_problems(text: str, facts: NarrationFacts) -> list[str]:
+    # Deliberately the union of both fighters' weapons: a line may name either fighter's kinds.
+    # Checking which fighter a weapon word belongs to could be a follow-up.
     owned = {w for f in facts.fighters for w in f.weapons}
     return [
         f"{NOT_THEIR_WEAPON}: {found.group(0)!r}; use only the weapons in the fact list"
