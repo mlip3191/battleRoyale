@@ -5,7 +5,8 @@ never from the user's raw text. Names use the stat sheet's display_name, re-chec
 allowlist (letters, digits, spaces, hyphens; ARCHITECTURE "Security").
 
 Side counts: SimulationResult has no per-side fighter count, so `counts` is an optional argument
-(from the Matchup); without it, a side's count is the largest group_size seen in the log.
+(from the Matchup); without it, a side's count is the largest group_size seen in the log, hits
+aside (a swarm HIT's group_size counts blows landed, not fighters, #617).
 """
 
 import math
@@ -13,7 +14,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from app.models.simulation import FairFight, SimulationResult
+from app.models.simulation import EventType, FairFight, SimulationResult
 from app.models.stats import SAFE_NAME, StatSheet
 from app.narration.number_guard import AllowedNumbers
 from app.simulation.decide import names_a_factor
@@ -169,11 +170,14 @@ def _odds(probs: Sequence[float]) -> set[float]:
     return out
 
 
-# Largest group of fighters that acted together for each side in the representative fight.
+# Largest group of fighters for each side in the representative fight (the walk-in names the whole
+# side). Hits are skipped: a swarm HIT's group_size is how many blows landed, so one lion can
+# land 6 bites in a step and still be one lion (#617).
 def _max_group(result: SimulationResult) -> tuple[int, int]:
     sizes = [1, 1]
     for event in result.representative_log:
-        sizes[event.side] = max(sizes[event.side], event.group_size)
+        if event.type != EventType.HIT:
+            sizes[event.side] = max(sizes[event.side], event.group_size)
     return sizes[0], sizes[1]
 
 

@@ -315,3 +315,15 @@ def test_fact_lines_fair_count_without_probability() -> None:
     assert "fair fight: Gray wolf x4" in lines
     assert "None" not in text and "None%" not in text
     assert "no count makes this one fair" not in text
+
+
+# #617: a swarm HIT's group_size counts blows landed, not fighters, so the count read back from
+# the log skips hits: one bear landing 6 blows in a step is still "x1" to the model.
+def test_side_count_fallback_ignores_swarm_hit_sizes() -> None:
+    sheets, result = _inputs()
+    wolves_in, bear_in = result.representative_log[:2]
+    swarm_hit = bear_in.model_copy(update={"type": "hit", "group_size": 6, "actor": None})
+    log = [wolves_in, bear_in, swarm_hit]
+    facts = build_facts(sheets, result.model_copy(update={"representative_log": log}))
+    assert [f.count for f in facts.fighters] == [1, 6]
+    assert fact_lines(facts)[0].startswith("Grizzly bear - adult male x1 ")

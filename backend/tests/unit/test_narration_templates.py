@@ -19,6 +19,7 @@ from app.narration.templates import (
     MAX_LINE,
     MIN_BEATS,
     _hint,
+    beat_text,
     fair_fight_line,
     fit,
     fmt,
@@ -623,3 +624,46 @@ def test_fair_fight_line_says_already_even_for_the_count_just_fought(
     text = fair_fight_line(facts, [f.display_name for f in facts.fighters]).text
     assert text == said
     assert find_unsupported_numbers(text, facts.allowed) == []
+
+
+# A swarm log like 300 wolves v 1 lion (#617): a swarm HIT has no actor, and its group_size is how
+# many blows landed that step, not how many fighters struck, so the lone lion can land 6 bites.
+def _swarm_log(crowd: int, lion_bites: int, wolf_bites: int) -> list[FightEvent]:
+    def make(kind: EventType, side: int, size: int = 1, hint: str = "bites land") -> FightEvent:
+        return FightEvent(t=1.0, type=kind, side=side, group_size=size, text_hint=hint)
+
+    return [
+        make(EventType.APPROACH, 0, crowd, "closes in"),
+        make(EventType.APPROACH, 1, 1, "closes in"),
+        make(EventType.HIT, 1, lion_bites),
+        make(EventType.HIT, 0, wolf_bites),
+        make(EventType.KO, 1, 1, "goes down"),
+        make(EventType.END, 0, 1, "the fight is over"),
+    ]
+
+
+# #617: "African lion, all 6 of them, connects" for a side of one, with the Matchup's counts and
+# with the counts read back from the log. The wolves, 300 strong, keep their crowd lines.
+@pytest.mark.parametrize("counts", [(300, 1), None])
+def test_a_lone_fighter_is_never_called_a_crowd(counts: tuple[int, int] | None) -> None:
+    result = RESULT.model_copy(update={"representative_log": _swarm_log(300, 6, 6)})
+    sheets = [_sheet("gray-wolf.json"), _sheet("african-lion.json")]
+    facts = build_facts(sheets, result, FAIR, counts)
+    pbp = play_by_play_script(facts, result)
+    texts = [ln.text for ln in pbp.lines]
+    assert [ln.at_event for ln in pbp.lines] == list(range(6)), texts
+    assert not any(t.startswith("African lion,") for t in texts), texts
+    assert texts[2] == "African lion connects: bites land! That one landed!"
+    assert texts[0] == "Gray wolf, all 300 of them, closes in. Here we go!"
+    assert texts[3] == "Gray wolf, all 6 of them, connects: bites land! That one landed!"
+    _assert_guarded(facts, pbp)
+
+
+# A crowd that lands more blows than it has fighters (10 wolves, 30 bites) is never "all 30".
+def test_a_crowd_is_never_called_bigger_than_it_is() -> None:
+    result = RESULT.model_copy(update={"representative_log": _swarm_log(10, 1, 30)})
+    sheets = [_sheet("gray-wolf.json"), _sheet("african-lion.json")]
+    facts = build_facts(sheets, result, FAIR, counts=(10, 1))
+    wolves_in, _, _, wolves_bite, _, _ = result.representative_log
+    assert beat_text(wolves_bite, facts) == "Gray wolf connects: bites land! That one landed!"
+    assert beat_text(wolves_in, facts) == "Gray wolf, all 10 of them, closes in. Here we go!"
