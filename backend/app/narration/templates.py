@@ -359,7 +359,7 @@ def fair_fight_line(facts: NarrationFacts, names: Sequence[str] = ()) -> ScriptL
         varied = counted_name(facts.fighters[facts.fair_side].display_name, count)
         verb = "makes" if count == 1 else "make"
         text = (
-            f"Want a fair fight? About {count} {varied} {verb} it a coin flip, "
+            f"Want a fair fight? About {count:,} {varied} {verb} it a coin flip, "
             f"winning {facts.fair_win_pct}% of the time."
         )
         return safe_line("color_commentator", text, safe, facts, names)

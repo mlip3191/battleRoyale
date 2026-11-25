@@ -462,6 +462,16 @@ def test_group_winner_stand_in_has_no_number_and_stays_plural() -> None:
     texts = [ln.text for ln in outro_script(facts).lines]
     assert texts[0] == "Your winner: Gorillas!"
     assert texts[1] == "Gorillas take the win."
+def test_a_big_fair_count_is_spoken_with_a_thousands_separator() -> None:
+    """#624: the card says "10,000", so the announcer must not say "10000" for the same fight."""
+    a, b = MATCHUPS["bear-vs-wolves"]
+    big = FAIR.model_copy(update={"count": 10000, "win_prob_at_count": 0.49})
+    facts = build_facts([_sheet(a), _sheet(b)], RESULT, big)
+    outro = outro_script(facts)
+    texts = [ln.text for ln in outro.lines]
+    assert any("About 10,000 " in t and "make it a coin flip" in t for t in texts)
+    assert not any("10000" in t for t in texts)
+    _assert_guarded(facts, outro)  # the number guard accepts "10,000" against the fact 10000
 
 
 def test_fair_fight_absent_says_it_did_not_run() -> None:

@@ -225,7 +225,7 @@ The app politely turns some requests away, and tells you why:
 | It won't use | Why | What you'll see |
 |---|---|---|
 | **Real people** (alive or historical) | It's not fair or kind to stage fights between real people. | "We keep real people out of the ring. Try a type of fighter instead, like a Roman legionary or a medieval knight." |
-| **Named characters**, from stories or from myth | They belong to their creators or their legends, and they have no real-world stats to look up. | "Named characters, from stories or from myth, sit this one out. Try a creature type instead, like a dragon or a giant robot." |
+| **Named characters** from books, films, and games (and named individuals from legend) | They belong to their creators or their legends, and they have no real-world stats to look up. Gods of mythology are fine (D-69). | "Named characters from books, films, and games sit this one out. Try a creature type instead, like a dragon or a giant robot." |
 | **Gods and figures of living religions** (Allah, Jesus, Shiva, the Pope) | They matter to many people. Gods of mythology (Zeus, Thor) and generic kinds (a god, an angel) can fight (D-69). | "Gods of living religions are above our pay grade. Try a god of myth, like Zeus, or a mythical creature, like a griffin." |
 | **Groups of people** (nations, teams, bands) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
 | **Abstract ideas, places, landforms, planets** | They aren't physical fighters with measurable stats. | A message explaining what kinds of fighters work. |

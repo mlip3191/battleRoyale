@@ -1,0 +1,1519 @@
+{
+  "battle_id": "b-0dc5725c",
+  "created_at": "2026-11-25T00:04:29.696607Z",
+  "matchup": {
+    "fighters": [
+      {
+        "entity": "roman legionary",
+        "count": 1,
+        "variant": null,
+        "size_reference": null,
+        "raw": "a Roman legionary"
+      },
+      {
+        "entity": "gorilla",
+        "count": 1,
+        "variant": null,
+        "size_reference": null,
+        "raw": "a gorilla"
+      }
+    ],
+    "terrain": "arena",
+    "raw_text": "a Roman legionary vs a gorilla",
+    "assumptions": []
+  },
+  "stat_sheets": [
+    {
+      "fighter_id": "roman-legionary",
+      "display_name": "Roman legionary",
+      "media_name": "roman legionary",
+      "category": "human_archetype",
+      "body": "living",
+      "habitat": "land",
+      "weapons": [
+        "weapon_melee"
+      ],
+      "lore": null,
+      "stats": {
+        "mass_kg": {
+          "value": 70.0,
+          "unit": "kg",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 35.0,
+          "high": 105.0,
+          "note": "No published body mass for Roman soldiers found for this fighter; category default (estimate 1 of 3, allowed by D-54)."
+        },
+        "size_m": {
+          "value": 1.69,
+          "unit": "m",
+          "source": {
+            "title": "Human height",
+            "url": "https://en.wikipedia.org/w/index.php?title=Human_height&oldid=1384696975",
+            "quote": "The Romans were slightly taller, with an average height of 169 cm (5 ft 7 in) for males and 158 cm (5 ft 2 in) for females.",
+            "retrieved_at": "2026-11-12T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 1.52,
+          "high": 1.86,
+          "note": "Average height of Roman men generally, not soldiers specifically. Range is the standard +/-10%."
+        },
+        "top_speed_mps": {
+          "value": 8.0,
+          "unit": "m/s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 4.0,
+          "high": 12.0,
+          "note": "No published sprint speed for an armored soldier found for this fighter; category default (estimate 2 of 3, allowed by D-54)."
+        },
+        "attack_force_n": {
+          "value": 150.0,
+          "unit": "N",
+          "source": {
+            "title": "Forces generated in stabbing attacks (Nolan, Hainsworth and Rutty 2017, Int. J. Legal Med. 132:229)",
+            "url": "https://doi.org/10.1007/s00414-017-1702-7",
+            "quote": "for an unrestrained stab by a man, using their dominant hand, the mean peak force generated was approximately 150 N for pork thigh",
+            "retrieved_at": "2026-11-12T00:00:00Z",
+            "license": "CC BY 4.0"
+          },
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 112.5,
+          "high": 187.5,
+          "note": "Stand-in for a gladius thrust: untrained volunteers stabbing with knives, not soldiers with swords. Range is +/-25%."
+        },
+        "attacks_per_s": {
+          "value": 1.0,
+          "unit": "1/s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 0.5,
+          "high": 1.5,
+          "note": "No published sword strike rate found for this fighter; category default (estimate 3 of 3, allowed by D-54)."
+        },
+        "reach_m": {
+          "value": 0.59,
+          "unit": "m",
+          "source": {
+            "title": "Gladius",
+            "url": "https://en.wikipedia.org/w/index.php?title=Gladius&oldid=1384319032",
+            "quote": "Gladii that have been found measured 425–590 mm in length, 36–90 mm in width, and weighed between 1.2 and 1.6 kg.",
+            "retrieved_at": "2026-11-12T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 0.425,
+          "high": 0.59,
+          "note": "The sword's length, counted as reach (docs/research.md: a published weapon length counts). Upper figure of the found Mainz-type gladii (late 1st century BC to late 1st century AD); the source gives no mean."
+        },
+        "armor_0_1": {
+          "value": 0.6,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.3,
+          "high": 0.9,
+          "note": "armor level 4: metal body armor and a large shield."
+        },
+        "endurance_s": {
+          "value": 900.0,
+          "unit": "s",
+          "source": {
+            "title": "Gladiator",
+            "url": "https://en.wikipedia.org/w/index.php?title=Gladiator&oldid=1382400603",
+            "quote": "most bouts would have lasted 10 to 15 minutes, or 20 minutes at most.",
+            "retrieved_at": "2026-11-12T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "low",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 600.0,
+          "high": 1200.0,
+          "note": "Stand-in: the length of a gladiator bout, a fighting duration (allowed by the PM on #29). Upper typical figure; low and high are the source's 10 and 20 minutes. Bout length for gladiators generally; heavily armed fighters tired faster, so this may overstate a legionary's stamina."
+        },
+        "aggression_0_1": {
+          "value": 0.7,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.35,
+          "high": 1.0,
+          "note": "aggression level 4: trained soldier, confident against most opponents."
+        },
+        "group_tactics_0_1": {
+          "value": 1.0,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.5,
+          "high": 1.0,
+          "note": "group tactics level 5: drilled unit acting as one (the rubric's own example)."
+        }
+      },
+      "schema_version": 1,
+      "sheet_hash": "c77f66530b04f1e6cf4ce27d8c103920962aeb0134c856a827955ef25884308b"
+    },
+    {
+      "fighter_id": "gorilla",
+      "display_name": "Gorilla",
+      "media_name": "gorilla",
+      "category": "mammal",
+      "body": "living",
+      "habitat": "land",
+      "weapons": [
+        "teeth"
+      ],
+      "lore": null,
+      "stats": {
+        "mass_kg": {
+          "value": 140.0,
+          "unit": "kg",
+          "source": {
+            "title": "Western lowland gorilla",
+            "url": "https://en.wikipedia.org/w/index.php?title=Western_lowland_gorilla&oldid=1382452187",
+            "quote": "Males have an average weight of 140 kg (310 lb), females of 70 kg (150 lb).",
+            "retrieved_at": "2026-11-11T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 126.0,
+          "high": 154.0,
+          "note": "Average adult male, from the lowland article; the Western gorilla article gives 145-191 kg for males, so this is the lower, lowland-specific figure. Range is the standard +/-10%."
+        },
+        "size_m": {
+          "value": 1.67,
+          "unit": "m",
+          "source": {
+            "title": "Western gorilla",
+            "url": "https://en.wikipedia.org/w/index.php?title=Western_gorilla&oldid=1378647418",
+            "quote": "Males average 1.67 m (5.5 ft) although reaching a height up to 1.76 m (5.8 ft)",
+            "retrieved_at": "2026-11-11T00:00:00Z",
+            "license": "CC BY-SA 4.0"
+          },
+          "confidence": "high",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 1.5,
+          "high": 1.76,
+          "note": "Average standing height of adult males. High is the stated maximum in the same sentence; low is the standard -10%."
+        },
+        "top_speed_mps": {
+          "value": 12.0,
+          "unit": "m/s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 6.0,
+          "high": 18.0,
+          "note": "No published top speed found for this animal; category default."
+        },
+        "attack_force_n": {
+          "value": 1016.0,
+          "unit": "N",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": false,
+          "method": "derived",
+          "low": 762.0,
+          "high": 1270.0,
+          "note": "force = 50.57 x mass_kg^0.6072, the average carnivore canine bite for this mass, computed in code by app.research.bite_force from the 31 living species in Wroe et al. 2005 Table 1 (https://pmc.ncbi.nlm.nih.gov/articles/PMC1564077/). A carnivore fit applied to a primate, so confidence is low; range is +/-25% (PM ruling on #260). Context, not the value: Eng, Lieberman, Zink and Peters 2013 (doi:10.1002/ajpa.22296) model a maximum molar bite of about 3,420 N, but a molar or crushing bite is not a stand-in for a fighting (canine) bite."
+        },
+        "attacks_per_s": {
+          "value": 1.5,
+          "unit": "1/s",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "category_default",
+          "low": 0.75,
+          "high": 2.25,
+          "note": "No published attack rate found for this animal; category default."
+        },
+        "reach_m": {
+          "value": 0.42,
+          "unit": "m",
+          "source": null,
+          "confidence": "medium",
+          "is_estimate": false,
+          "method": "derived",
+          "low": 0.31,
+          "high": 0.52,
+          "note": "reach = 0.25 x size_m, from size_m."
+        },
+        "armor_0_1": {
+          "value": 0.15,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.075,
+          "high": 0.225,
+          "note": "armor level 1: fur and bare skin."
+        },
+        "endurance_s": {
+          "value": 240.0,
+          "unit": "s",
+          "source": {
+            "title": "Observations of severe and lethal coalitionary attacks in wild mountain gorillas (Rosenbaum, Vecellio and Stoinski 2016, Scientific Reports 6:37018)",
+            "url": "https://par.nsf.gov/servlets/purl/10426250",
+            "quote": "Approximately 3-4 minutes after the attack began, it abruptly stopped.",
+            "retrieved_at": "2026-11-11T00:00:00Z",
+            "license": "CC BY 4.0"
+          },
+          "confidence": "low",
+          "is_estimate": false,
+          "method": "hand_verified",
+          "low": 180.0,
+          "high": 240.0,
+          "note": "Stand-in, not a measured endurance: one 2004 attack by 26 mountain gorillas on a lone male, which the attackers stopped on their own after 3-4 minutes (the same paper reports another attack of 18 minutes). Used for an adult male western lowland gorilla. Upper end of the stated range; the source gives no mean."
+        },
+        "aggression_0_1": {
+          "value": 0.5,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.25,
+          "high": 0.75,
+          "note": "aggression level 3: defends itself and its troop, avoids risky fights."
+        },
+        "group_tactics_0_1": {
+          "value": 0.5,
+          "unit": "0-1",
+          "source": null,
+          "confidence": "low",
+          "is_estimate": true,
+          "method": "assumption",
+          "low": 0.25,
+          "high": 0.75,
+          "note": "group tactics level 3: family troop that defends together."
+        }
+      },
+      "schema_version": 1,
+      "sheet_hash": "545227903589d856446a376bc00e641f304502173bc2ecb1b8ab611d752da0f4"
+    }
+  ],
+  "result": {
+    "seed": 1219252439970546698,
+    "runs": 1000,
+    "win_prob": [
+      0.0,
+      1.0
+    ],
+    "draw_prob": 0.0,
+    "win_prob_ci95": [
+      [
+        0.0,
+        0.003826898586390522
+      ],
+      [
+        0.9961731014136095,
+        1.0
+      ]
+    ],
+    "mean_survivors": [
+      0.195,
+      1.0
+    ],
+    "mean_duration_s": 24.4603,
+    "outcome": "win_1",
+    "deciding_factor": "attack_force_n",
+    "deciding_factor_explainer": "Strength decided it: Gorilla (1020 N) against Roman legionary (150 N).",
+    "representative_log": [
+      {
+        "t": 0.0,
+        "type": "approach",
+        "side": 0,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "closes in",
+        "hp_left": [
+          788.963,
+          1527.48
+        ]
+      },
+      {
+        "t": 0.0,
+        "type": "approach",
+        "side": 1,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "closes in",
+        "hp_left": [
+          788.963,
+          1527.48
+        ]
+      },
+      {
+        "t": 0.6,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands",
+        "hp_left": [
+          788.963,
+          1521.16
+        ]
+      },
+      {
+        "t": 0.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          769.988,
+          1521.16
+        ]
+      },
+      {
+        "t": 1.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          751.013,
+          1521.16
+        ]
+      },
+      {
+        "t": 1.5,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands",
+        "hp_left": [
+          751.013,
+          1514.85
+        ]
+      },
+      {
+        "t": 1.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          732.039,
+          1514.85
+        ]
+      },
+      {
+        "t": 2.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          713.064,
+          1514.85
+        ]
+      },
+      {
+        "t": 2.4,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands",
+        "hp_left": [
+          713.064,
+          1508.53
+        ]
+      },
+      {
+        "t": 2.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          694.089,
+          1508.53
+        ]
+      },
+      {
+        "t": 3.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          675.114,
+          1508.53
+        ]
+      },
+      {
+        "t": 3.4,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses",
+        "hp_left": [
+          675.114,
+          1508.53
+        ]
+      },
+      {
+        "t": 3.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          656.139,
+          1508.53
+        ]
+      },
+      {
+        "t": 4.0,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          637.164,
+          1508.53
+        ]
+      },
+      {
+        "t": 4.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses",
+        "hp_left": [
+          637.164,
+          1508.53
+        ]
+      },
+      {
+        "t": 4.5,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          618.189,
+          1508.53
+        ]
+      },
+      {
+        "t": 5.0,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          599.215,
+          1508.53
+        ]
+      },
+      {
+        "t": 5.3,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses",
+        "hp_left": [
+          599.215,
+          1508.53
+        ]
+      },
+      {
+        "t": 5.5,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          580.24,
+          1508.53
+        ]
+      },
+      {
+        "t": 5.9,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          561.265,
+          1508.53
+        ]
+      },
+      {
+        "t": 6.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands",
+        "hp_left": [
+          561.265,
+          1502.21
+        ]
+      },
+      {
+        "t": 6.4,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "bite misses",
+        "hp_left": [
+          561.265,
+          1502.21
+        ]
+      },
+      {
+        "t": 6.9,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          542.29,
+          1502.21
+        ]
+      },
+      {
+        "t": 7.2,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands",
+        "hp_left": [
+          542.29,
+          1495.89
+        ]
+      },
+      {
+        "t": 7.3,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          523.315,
+          1495.89
+        ]
+      },
+      {
+        "t": 7.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          504.34,
+          1495.89
+        ]
+      },
+      {
+        "t": 8.1,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands",
+        "hp_left": [
+          504.34,
+          1489.57
+        ]
+      },
+      {
+        "t": 8.3,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          485.366,
+          1489.57
+        ]
+      },
+      {
+        "t": 8.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          466.391,
+          1489.57
+        ]
+      },
+      {
+        "t": 9.0,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses",
+        "hp_left": [
+          466.391,
+          1489.57
+        ]
+      },
+      {
+        "t": 9.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          447.416,
+          1489.57
+        ]
+      },
+      {
+        "t": 9.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          428.441,
+          1489.57
+        ]
+      },
+      {
+        "t": 10.0,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands",
+        "hp_left": [
+          428.441,
+          1483.25
+        ]
+      },
+      {
+        "t": 10.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          409.466,
+          1483.25
+        ]
+      },
+      {
+        "t": 10.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          390.491,
+          1483.25
+        ]
+      },
+      {
+        "t": 10.9,
+        "type": "hit",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 6.3,
+        "text_hint": "blow lands",
+        "hp_left": [
+          390.491,
+          1476.94
+        ]
+      },
+      {
+        "t": 11.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          371.517,
+          1476.94
+        ]
+      },
+      {
+        "t": 11.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          352.542,
+          1476.94
+        ]
+      },
+      {
+        "t": 11.9,
+        "type": "miss",
+        "side": 0,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "blow misses",
+        "hp_left": [
+          352.542,
+          1476.94
+        ]
+      },
+      {
+        "t": 12.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          333.567,
+          1476.94
+        ]
+      },
+      {
+        "t": 12.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          314.592,
+          1476.94
+        ]
+      },
+      {
+        "t": 12.6,
+        "type": "retreat",
+        "side": 0,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "breaks and runs",
+        "hp_left": [
+          314.592,
+          1476.94
+        ]
+      },
+      {
+        "t": 13.0,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          295.617,
+          1476.94
+        ]
+      },
+      {
+        "t": 13.5,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          276.642,
+          1476.94
+        ]
+      },
+      {
+        "t": 14.0,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          257.668,
+          1476.94
+        ]
+      },
+      {
+        "t": 14.5,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          238.693,
+          1476.94
+        ]
+      },
+      {
+        "t": 14.9,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          219.718,
+          1476.94
+        ]
+      },
+      {
+        "t": 15.4,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          200.743,
+          1476.94
+        ]
+      },
+      {
+        "t": 15.9,
+        "type": "miss",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "bite misses",
+        "hp_left": [
+          200.743,
+          1476.94
+        ]
+      },
+      {
+        "t": 16.4,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          181.768,
+          1476.94
+        ]
+      },
+      {
+        "t": 16.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          162.793,
+          1476.94
+        ]
+      },
+      {
+        "t": 17.3,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          143.818,
+          1476.94
+        ]
+      },
+      {
+        "t": 17.8,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          124.844,
+          1476.94
+        ]
+      },
+      {
+        "t": 18.3,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          105.869,
+          1476.94
+        ]
+      },
+      {
+        "t": 18.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          86.894,
+          1476.94
+        ]
+      },
+      {
+        "t": 19.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          67.9191,
+          1476.94
+        ]
+      },
+      {
+        "t": 19.7,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          48.9443,
+          1476.94
+        ]
+      },
+      {
+        "t": 20.2,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          29.9694,
+          1476.94
+        ]
+      },
+      {
+        "t": 20.6,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          10.9946,
+          1476.94
+        ]
+      },
+      {
+        "t": 21.1,
+        "type": "hit",
+        "side": 1,
+        "actor": 0,
+        "target": 0,
+        "group_size": 1,
+        "damage": 19.0,
+        "text_hint": "bite lands",
+        "hp_left": [
+          0.0,
+          1476.94
+        ]
+      },
+      {
+        "t": 21.1,
+        "type": "ko",
+        "side": 0,
+        "actor": 0,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "goes down",
+        "hp_left": [
+          0.0,
+          1476.94
+        ]
+      },
+      {
+        "t": 21.1,
+        "type": "end",
+        "side": 1,
+        "actor": null,
+        "target": null,
+        "group_size": 1,
+        "damage": null,
+        "text_hint": "the fight is over",
+        "hp_left": null
+      }
+    ],
+    "start_hp": [
+      788.963,
+      1527.48
+    ]
+  },
+  "fair_fight": {
+    "varied_side": 0,
+    "count": 12,
+    "win_prob_at_count": 0.495,
+    "message": "A fair fight needs 12 Roman legionaries against 1 gorilla."
+  },
+  "challenger": {
+    "entity": "Grizzly bear",
+    "tested_win_prob": 0.78,
+    "reason": "Grizzly bear would be a clear favorite against Gorilla."
+  },
+  "scripts": [
+    {
+      "kind": "intro",
+      "lines": [
+        {
+          "speaker": "announcer",
+          "text": "Ladies and gentlemen, welcome to the arena!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "We have a clash of civilizations tonight.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "In the red corner, the Roman legionary, 1.69 meters tall!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "His mass is estimated at 70 kilograms.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "In the blue corner, Gorilla, standing 1.67 meters high!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "He weighs in at a solid 140 kilograms.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "Only one can walk away! Let us fight!",
+          "at_event": null
+        }
+      ],
+      "fallback": false
+    },
+    {
+      "kind": "play_by_play",
+      "lines": [
+        {
+          "speaker": "announcer",
+          "text": "Legionary closes the distance!",
+          "at_event": 0
+        },
+        {
+          "speaker": "announcer",
+          "text": "Gorilla sinks its teeth in hard.",
+          "at_event": 3
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "The Roman holds his ground.",
+          "at_event": 5
+        },
+        {
+          "speaker": "announcer",
+          "text": "Legionary tries to break contact.",
+          "at_event": 41
+        },
+        {
+          "speaker": "announcer",
+          "text": "Unrelenting bites, down goes the legionary.",
+          "at_event": 60
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Game over. Gorilla takes it.",
+          "at_event": 61
+        }
+      ],
+      "fallback": false
+    },
+    {
+      "kind": "outro",
+      "lines": [
+        {
+          "speaker": "announcer",
+          "text": "The verdict is in. Your winner: Gorilla!",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "They prevailed 100% of the time across 1,000 simulations.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "It came down to hitting power.",
+          "at_event": null
+        },
+        {
+          "speaker": "color_commentator",
+          "text": "Want a fair fight? About 12 Roman legionaries make it a coin flip, winning 50% of the time.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "Back to the studio!",
+          "at_event": null
+        }
+      ],
+      "fallback": false
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "sprite-roman-legionary-v1",
+      "kind": "sprite",
+      "url": "/media/sprites/roman-legionary-v1.png",
+      "prompt_hash": "bbf2c691370c3a9ebd6340630b11b8ea426ea182bc7f76ce6354f748a2917ce4",
+      "fallback": false,
+      "script_kind": null,
+      "line_times_s": null
+    },
+    {
+      "asset_id": "sprite-gorilla-v1",
+      "kind": "sprite",
+      "url": "/media/sprites/gorilla-v1.png",
+      "prompt_hash": "2b91cf2ae63c3e75099ea6b2a738795ec43e2336e149f7a8a97e051308c61d22",
+      "fallback": false,
+      "script_kind": null,
+      "line_times_s": null
+    },
+    {
+      "asset_id": "battlefield-arena-v1",
+      "kind": "battlefield",
+      "url": "/media/battlefields/arena-v1.png",
+      "prompt_hash": "76cda9177945731711fdbbfe0c3312162eaecbf2d0e9319e588fceff26ed2581",
+      "fallback": false,
+      "script_kind": null,
+      "line_times_s": null
+    },
+    {
+      "asset_id": "narration-intro-612ff12b17b0fd4a",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-intro-612ff12b17b0fd4a.wav",
+      "prompt_hash": "612ff12b17b0fd4acba5689d03c1b4ea20b771f96fe5b48325ef9b8548df5e9f",
+      "fallback": false,
+      "script_kind": "intro",
+      "line_times_s": [
+        [
+          0.0,
+          3.097
+        ],
+        [
+          3.497,
+          6.962
+        ],
+        [
+          7.362,
+          13.049
+        ],
+        [
+          13.449,
+          17.305
+        ],
+        [
+          17.705,
+          22.682
+        ],
+        [
+          23.082,
+          27.076
+        ],
+        [
+          27.476,
+          31.118
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-play_by_play-6812f92f39353041",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-play_by_play-6812f92f39353041.wav",
+      "prompt_hash": "6812f92f39353041f75e2445be6122c5fea3eec19062b81f47d0cbc7f43e2cf8",
+      "fallback": false,
+      "script_kind": "play_by_play",
+      "line_times_s": [
+        [
+          0.0,
+          3.065
+        ],
+        [
+          3.465,
+          6.205
+        ],
+        [
+          6.605,
+          8.777
+        ],
+        [
+          9.177,
+          11.84
+        ],
+        [
+          12.24,
+          15.874
+        ],
+        [
+          16.274,
+          18.265
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-outro-c7cd0b86038575a8",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-outro-c7cd0b86038575a8.wav",
+      "prompt_hash": "c7cd0b86038575a8415f75570026fb65b7080653752e27eb5f59d8a653312ca1",
+      "fallback": false,
+      "script_kind": "outro",
+      "line_times_s": [
+        [
+          0.0,
+          3.324
+        ],
+        [
+          3.724,
+          8.694
+        ],
+        [
+          9.094,
+          11.574
+        ],
+        [
+          11.974,
+          19.074
+        ],
+        [
+          19.474,
+          21.195
+        ]
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "stage": "intake",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "research",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "simulate",
+      "status": "done",
+      "detail": "cached"
+    },
+    {
+      "stage": "summary",
+      "status": "done",
+      "detail": "cached"
+    },
+    {
+      "stage": "challenger",
+      "status": "done",
+      "detail": "cached"
+    },
+    {
+      "stage": "script",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "audio",
+      "status": "done",
+      "detail": null
+    },
+    {
+      "stage": "music",
+      "status": "fallback",
+      "detail": "No music this time."
+    },
+    {
+      "stage": "images",
+      "status": "done",
+      "detail": null
+    }
+  ],
+  "status": "done"
+}

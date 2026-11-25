@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { envStep, guardStep } from "./setup-check.mjs";
+import { envStep, guardStep, trackedFilesStep } from "./setup-check.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const examplePath = join(here, "..", ".env.example");
@@ -113,4 +113,46 @@ test("guard step in a worktree (a .git file) still checks the guard", () => {
   writeFileSync(join(worktree, ".git"), "gitdir: ../elsewhere\n");
   const { git } = fakeGit({ hooksPath: ".githooks" });
   assert.match(guardStep({ dir: worktree, git }).label, /is on/);
+});
+
+// A stand-in for git that records each call and answers `ls-files` with the given output.
+function fakeLsFiles({ out = "", ok = true } = {}) {
+  const calls = [];
+  const git = (args) => {
+    calls.push(args);
+    return { ok, out };
+  };
+  return { git, calls };
+}
+
+test("tracked-files step skips a ZIP copy without failing or asking git (#609)", () => {
+  const zip = mkdtempSync(join(tmpdir(), "doctor-zip-"));
+  const { git, calls } = fakeLsFiles({ ok: false, out: "fatal: not a git repository" });
+  const r = trackedFilesStep({ dir: zip, git });
+  assert.equal(r.status, "ok");
+  assert.match(r.label, /skipped/);
+  assert.equal(r.fix, undefined);
+  assert.doesNotMatch(printed(r), /Tell Mike/);
+  assert.deepEqual(calls, []);
+});
+
+test("tracked-files step never looks at an outer checkout when a ZIP is unzipped inside it (#609)", () => {
+  const outer = mkdtempSync(join(tmpdir(), "doctor-outer-"));
+  mkdirSync(join(outer, ".git"));
+  const zip = join(outer, "battleRoyale-main");
+  mkdirSync(zip);
+  const { git, calls } = fakeLsFiles({ out: ".env" });
+  assert.equal(trackedFilesStep({ dir: zip, git }).status, "ok");
+  assert.deepEqual(calls, []);
+});
+
+test("tracked-files step in a clone still checks, and still fails with a fix when a file is tracked (#609)", () => {
+  const clone = mkdtempSync(join(tmpdir(), "doctor-clone-"));
+  mkdirSync(join(clone, ".git"));
+  const clean = fakeLsFiles();
+  assert.match(trackedFilesStep({ dir: clone, git: clean.git }).label, /No ignored files/);
+  assert.deepEqual(clean.calls, [["ls-files", "--cached", "--ignored", "--exclude-standard"]]);
+  const dirty = trackedFilesStep({ dir: clone, git: fakeLsFiles({ out: ".env" }).git });
+  assert.equal(dirty.status, "fail");
+  assert.match(dirty.fix, /Tell Mike/);
 });
