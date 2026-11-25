@@ -351,12 +351,17 @@ Rules:
 
 | Table | Key | Purpose |
 |---|---|---|
-| `fighters` | `fighter_id` | canonical names, aliases, Wikidata QID, category |
-| `documents` | `doc_id` | source title, URL, license, retrieved_at, raw text |
-| `chunks` + `chunks_vec` (sqlite-vec) | `chunk_id` | passages + embeddings for retrieval |
+| `documents` | `doc_id` | source title, URL, license, retrieved_at, raw text and content hash, one per fighter and source |
+| `chunks` + `chunks_vec` (sqlite-vec) | `chunk_id` | passages + embeddings for retrieval (`chunks_vec` is created in code, since its size depends on the embedding model) |
+| `kb_meta` | `key` | small notes about the knowledge base, such as the embedding size it was built with |
+| `facts` | `fact_id` | structured facts such as a body mass from Wikidata, each with its source, reference and license |
 | `stat_sheets` | `fighter_id`, `sheet_hash` | cached sheets; newest wins; seed sheets marked `hand_verified` |
-| `battles` | `battle_id` | serialized `BattleRecord` |
-| `assets` | `prompt_hash` | generated media paths; reused across battles |
+| `battles` | `battle_id` | serialized `BattleRecord`, its status, and the repeat-battle `cache_key` |
+| `intake_pending` | `pending_id` | clarifying questions waiting for the user's answer; rows expire after 30 minutes |
+| `wikidata_safety_cache` | `query` | cached Wikidata name checks for the safety layer, one row per lowercased name |
+
+- **Fighter names and aliases** are not a table: the hand-verified seed sheets live in `data/seed/fighters/*.json`, and name matching reads them (`backend/app/research/seed_fighters.py`).
+- **Generated media is files, not rows:** images, announcer voice and music are saved under `data/media/` (mock-mode files in a `mock/` folder), named with a short hash of the request, and reused across battles. Each battle record lists its files in `assets`.
 
 - **Seed:** `simulation_seed = hash(matchup normalized, sheet_hash_0, sheet_hash_1, ENGINE_VERSION)`. Re-running a battle reproduces it exactly.
 - **Knowledge base build:** `uv run python -m scripts.ingest_seed` downloads Wikipedia/Wikidata text for seed fighters into `data/kb/`, parses, chunks (≈800 characters, 100 overlap), embeds, and stores. Raw article text and HTML are not committed (size + license); seed stat sheets are, and so are the seed fighters' passages and vectors in `data/prebuilt-kb/` (D-66), which startup loads into an empty knowledge base in live mode when the embedding model matches, so a fresh setup can skip the ingest.
