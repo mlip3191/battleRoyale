@@ -226,9 +226,9 @@ def _allowed(
         percents |= _percents(p)
     values |= _stat_numbers(result.mean_duration_s, "s")
     values |= {float(result.runs)} | {float(c) for c in facts_counts}
-    # A one-on-one has two fighters in the ring, so it may say "two titans" (number words, #616).
-    if sum(facts_counts) == 2:
-        values.add(2.0)
+    # A one-on-one has two fighters in the ring, so it may say "two titans" (number words, #616),
+    # but only as a head count: never "two to one" or "twice as hard".
+    heads = frozenset({2.0}) if sum(facts_counts) == 2 else frozenset()
     values |= {float(e.group_size) for e in result.representative_log}
     for survivors in result.mean_survivors:
         values |= _roundings(survivors)
@@ -240,7 +240,7 @@ def _allowed(
         values |= _roundings(fair.win_prob_at_count)
         percents |= _percents(fair.win_prob_at_count)
         odds |= _odds([fair.win_prob_at_count])
-    return AllowedNumbers(frozenset(values), frozenset(percents), frozenset(odds))
+    return AllowedNumbers(frozenset(values), frozenset(percents), frozenset(odds), heads)
 
 
 # The same rule as the front end's isTooCloseToCall (frontend/src/components/Verdict.tsx): the

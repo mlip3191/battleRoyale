@@ -238,6 +238,18 @@ def test_a_one_on_one_may_count_its_two_fighters() -> None:
     assert unsupported_numbers("Seven fighters in the ring tonight!", _facts(sample))
 
 
+# Issue #616: the one-on-one "two" is a head count only; it never backs a ratio or a multiplier.
+@pytest.mark.parametrize(
+    "text", ["A two to one favorite!", "2:1 odds on the truck.", "It hits twice as hard!"]
+)
+def test_a_one_on_one_two_backs_no_ratio_or_multiplier(text: str) -> None:
+    sample = SAMPLES[TRUCK]
+    one_on_one = build_facts(sample.sheets, sample.result, sample.fair, (1, 1))
+    assert 2.0 not in one_on_one.allowed.values  # 2 is not a real fact in this battle
+    assert unsupported_numbers("Two titans enter.", one_on_one) == []
+    assert unsupported_numbers(text, one_on_one), text
+
+
 # Issue #616: a 99.8% win is filled in as "99.8%", never rounded up to "100% of the time", and
 # the template outro says the same.
 async def test_near_certain_win_is_never_said_as_always() -> None:

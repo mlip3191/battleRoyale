@@ -17,10 +17,13 @@ digit ("five zero" is 50). Only words that are not counts pass on their own: "on
 the article or pronoun: "one punch", "one of the", "no one"), a "two" that points at the pair in
 the ring ("these two", "those two", "the two of them") or is the "one-two" combo, and "first",
 "second", "1st", "2nd" ("once" and "a" are not numbers). Percentages, ratios, decimals ("one
-point five"), "twice", "a couple", and "a pair" get no such pass. 0% and 100% mean "never" and
-"always", so they must match exactly unless hedged ("nearly 100%" for 99.8%). Known limits: "a
-third" reads as the ordinal 3, and a count is checked against the whole fact list, not the
-moment it describes ("these two wolves" passes, and so does "two wolves" when 2 is a fact).
+point five"), "twice", "a couple", and "a pair" get no such pass. A head count (`count_only`,
+the two fighters of a one-on-one) passes as a plain number but never in a ratio or multiplier.
+0% and 100% need an exact allowed percent unless hedged ("nearly 100%" for 99.8%). The facts
+allow 100 only for a certain result, so "100%" fails for 99.8%; they do allow 0 for a share that
+rounds to it (code says "0%" for a 0.3% draw), so "0%" passes there. Known limits: "a third"
+reads as the ordinal 3, and a count is checked against the whole fact list, not the moment it
+describes ("these two wolves" passes, and so does "two wolves" when 2 is a fact).
 Pure standard-library code, no I/O, safe to call on every line.
 """
 
@@ -156,6 +159,8 @@ class AllowedNumbers:
     values: frozenset[float] = frozenset()
     percents: frozenset[float] = frozenset()
     odds: frozenset[float] = frozenset()
+    count_only: frozenset[float] = frozenset()
+    """Head counts ("two titans" in a one-on-one): plain numbers, never a ratio or multiplier."""
 
 
 @dataclass(frozen=True)
@@ -484,8 +489,9 @@ def _fraction_supported(top: float, bottom: float, values: frozenset[float]) -> 
     return bottom != 0 and sides and _near(top / bottom, values)
 
 
-# 0% and 100% say "never" and "always", so they need an exact match: 99.8% is not "100% of the
-# time". Hedged ("nearly 100%"), they pass when an allowed percent rounds to them (#616).
+# 0% and 100% say "never" and "always", so they need an exact allowed percent (the facts allow
+# 100 only for a certain result, and 0 also for a share that rounds to it, as code says "0%").
+# Hedged ("nearly 100%"), they pass when an allowed percent rounds to them (#616).
 def _percent_supported(number: FoundNumber, percents: frozenset[float]) -> bool:
     if number.value not in (0.0, 100.0):
         return _near(number.value, percents)
@@ -504,7 +510,15 @@ def is_supported(number: FoundNumber, allowed: AllowedNumbers) -> bool:
         return both or (b != 0 and any(abs(a / b - o) <= ODDS_REL_TOL * o for o in allowed.odds))
     if number.parts is not None:
         return _fraction_supported(*number.parts, allowed.values)
-    return number.ordinary or _near(number.value, allowed.values)
+    counted = not _is_multiplier(number.text) and _near(number.value, allowed.count_only)
+    return number.ordinary or counted or _near(number.value, allowed.values)
+
+
+# Words that multiply ("twice", "double", "twofold"): a comparison, so never a head count.
+def _is_multiplier(text: str) -> bool:
+    word = text.lower()
+    multipliers = ("twice", "double", "thrice", "triple", "quadruple")
+    return word in multipliers or _fold_value(word) is not None
 
 
 def find_unsupported_numbers(text: str, allowed: AllowedNumbers) -> list[FoundNumber]:

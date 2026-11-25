@@ -468,3 +468,16 @@ def test_exact_and_far_percents_at_the_ends() -> None:
     far = AllowedNumbers(percents=frozenset({95.0, 4.0}))
     assert find_unsupported_numbers("nearly 100% of the time", far)  # 95% is not nearly 100%
     assert find_unsupported_numbers("almost 0% of the time", far)  # 4% is not almost 0%
+
+
+# Issue #616: a head count (the two fighters of a one-on-one) passes as a plain number, but never
+# as a side of a ratio or as a multiplier; a real fact of 2 still backs all of them.
+@pytest.mark.parametrize(
+    "text", ["A two to one favorite!", "2:1 odds.", "Twice as hard!", "A twofold edge!", "2/1"]
+)
+def test_head_count_backs_no_ratio_or_multiplier(text: str) -> None:
+    heads = AllowedNumbers(values=frozenset({1.0}), count_only=frozenset({2.0}))
+    assert find_unsupported_numbers("Two titans enter. 2 titans!", heads) == []
+    assert find_unsupported_numbers(text, heads), text
+    real = AllowedNumbers(values=frozenset({1.0, 2.0}))
+    assert find_unsupported_numbers(text, real) == [], text
