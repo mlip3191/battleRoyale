@@ -11,10 +11,16 @@ all-caps Roman numerals of two or more letters ("XIV", "MMXXVI"; not "I", "MIX",
 circled digits ("①" to "⑳", "⓪", and similar enclosed digits), percentages ("40%",
 "forty per cent"), and ratios ("8:1", "eight to one", "8-to-1"). ARCHITECTURE "The number rule": a
 plain number must match an allowed value (within rounding), a percentage an allowed percentage, and
-a ratio either two allowed values or a win-odds ratio. "one", "two", "first", "second", "1st",
-"2nd" on their own are always allowed, so "one punch" or "these two" never trips it; digits ("2"),
-percentages, ratios, decimals ("one point five"), "twice", "a couple", and "a pair" get no such
-pass. Known limit: "a third" reads as the ordinal 3.
+a ratio either two allowed values or a win-odds ratio. Number words are counts like digits (#616):
+"two wolves" and "two meters" must be in the facts, and unit words in a row are read digit by
+digit ("five zero" is 50). Only words that are not counts pass on their own: "one" alone (mostly
+the article or pronoun: "one punch", "one of the", "no one"), a "two" that points at the pair in
+the ring ("these two", "those two", "the two of them") or is the "one-two" combo, and "first",
+"second", "1st", "2nd" ("once" and "a" are not numbers). Percentages, ratios, decimals ("one
+point five"), "twice", "a couple", and "a pair" get no such pass. 0% and 100% mean "never" and
+"always", so they must match exactly unless hedged ("nearly 100%" for 99.8%). Known limits: "a
+third" reads as the ordinal 3, and a count is checked against the whole fact list, not the
+moment it describes ("these two wolves" passes, and so does "two wolves" when 2 is a fact).
 Pure standard-library code, no I/O, safe to call on every line.
 """
 
@@ -162,9 +168,11 @@ class FoundNumber:
     right: float | None = None
     """Second side of a ratio."""
     ordinary: bool = False
-    """True for the always-allowed "one", "two", "first", "second" phrasing."""
+    """True for words that are not counts ("one punch", "these two", "1st"), always allowed."""
     parts: tuple[float, float] | None = None
     """Top and bottom of a digit fraction ("3/4"); value is then their quotient."""
+    hedged: bool = False
+    """True when the words before it say it is rounded ("nearly 100%")."""
 
 
 @dataclass
@@ -285,11 +293,10 @@ def _read_words(tokens: list[_Tok], i: int) -> tuple[list[_Tok], int]:
     def flush() -> None:
         nonlocal total, current, last, said
         if last is not None and last != "a":
-            ordinary = len(said) == 1 and said[0] in ("one", "two")
-            found.append(_num(total + current, start, end, ordinary))
+            found.append(_num(total + current, start, end, ordinary=said == ["one"]))
         total, current, last, said = 0.0, 0.0, None, []
 
-    j = i
+    j, joined = i, False
     while j < len(tokens) and tokens[j].kind == "word":
         tok = tokens[j]
         if tok.text == "a" and last is None:
@@ -310,6 +317,13 @@ def _read_words(tokens: list[_Tok], i: int) -> tuple[list[_Tok], int]:
         cls = _word_class(tok.text)
         if cls is None:
             break
+        if cls == "unit" and last == "unit" and not joined and all(w in _UNITS for w in said):
+            # Unit words in a row are read digit by digit: "five zero" is 50 (#616).
+            current, end = current * 10 + _UNITS[tok.text], tok.end
+            said.append(tok.text)
+            joined = _joins(tokens, j + 1)
+            j += 2 if joined else 1
+            continue
         if last not in _FOLLOWS[cls]:
             flush()
         if last is None and tok.text in _COUNTED:
@@ -324,7 +338,8 @@ def _read_words(tokens: list[_Tok], i: int) -> tuple[list[_Tok], int]:
             current += _UNITS.get(tok.text) or _TEENS.get(tok.text) or _TENS.get(tok.text) or 0
         last, end = cls, tok.end
         said.append(tok.text)
-        j += 2 if _joins(tokens, j + 1) else 1
+        joined = _joins(tokens, j + 1)
+        j += 2 if joined else 1
     flush()
     return found, j
 
@@ -405,6 +420,28 @@ def _ratio_sep(items: list[_Tok], k: int) -> int:
     return 3 if [_text_at(items, k + n) for n in range(3)] == ["-", "to", "-"] else 0
 
 
+# A lone "two" that is not a count: the pair in the ring ("these two", "those two", "the two of
+# them") or the "one-two" combo. Any other "two" is a count and must be in the facts (#616).
+def _pair_two(text: str, items: list[_Tok], k: int) -> bool:
+    item = items[k]
+    if k == 0 or text[item.start : item.end].lower() != "two":
+        return False
+    prev = items[k - 1]  # a number item has no text, so it never matches a word below
+    the_two_of = prev.text == "the" and _text_at(items, k + 1) == "of"
+    combo = prev.kind == "number" and text[prev.start : item.start].lower() == "one-"
+    return prev.text in ("these", "those") or the_two_of or combo
+
+
+# Words right before a number that say it is rounded: "nearly 100%", "close to 100%".
+_HEDGES = {("nearly",), ("almost",), ("virtually",), ("close", "to"), ("just", "under")}
+
+
+# True when the one or two words right before item k are a hedge.
+def _hedged(items: list[_Tok], k: int) -> bool:
+    before = tuple(_text_at(items, n) if n >= 0 else None for n in (k - 2, k - 1))
+    return before[1:] in _HEDGES or before in _HEDGES
+
+
 def extract_numbers(text: str) -> list[FoundNumber]:
     """Every number in the text, with percentages and ratios recognized."""
     items = _numbers_and_tokens(_tokenize(text))
@@ -425,11 +462,12 @@ def extract_numbers(text: str) -> list[FoundNumber]:
         elif nxt in ("%", "percent") or (nxt == "per" and nxt2 == "cent"):
             width = 3 if nxt == "per" else 2
             span = text[item.start : items[k + width - 1].end]
-            found.append(FoundNumber(span, item.value, "percent"))
+            found.append(FoundNumber(span, item.value, "percent", hedged=_hedged(items, k)))
             k += width
         else:
             span = text[item.start : item.end]
-            found.append(FoundNumber(span, item.value, ordinary=item.ordinary, parts=item.parts))
+            ordinary = item.ordinary or _pair_two(text, items, k)
+            found.append(FoundNumber(span, item.value, ordinary=ordinary, parts=item.parts))
             k += 1
     return found
 
@@ -446,10 +484,20 @@ def _fraction_supported(top: float, bottom: float, values: frozenset[float]) -> 
     return bottom != 0 and sides and _near(top / bottom, values)
 
 
+# 0% and 100% say "never" and "always", so they need an exact match: 99.8% is not "100% of the
+# time". Hedged ("nearly 100%"), they pass when an allowed percent rounds to them (#616).
+def _percent_supported(number: FoundNumber, percents: frozenset[float]) -> bool:
+    if number.value not in (0.0, 100.0):
+        return _near(number.value, percents)
+    if number.hedged:
+        return any(round(a) == number.value for a in percents)
+    return any(abs(number.value - a) <= ABS_TOL for a in percents)
+
+
 def is_supported(number: FoundNumber, allowed: AllowedNumbers) -> bool:
     """Whether one found number is backed by the allowed set."""
     if number.kind == "percent":
-        return _near(number.value, allowed.percents)
+        return _percent_supported(number, allowed.percents)
     if number.kind == "ratio" and number.right is not None:
         a, b = number.value, number.right
         both = _near(a, allowed.values) and _near(b, allowed.values)
