@@ -435,7 +435,7 @@ See `.env.example` for the full list with comments. Groups: app (`APP_ENV`, `POR
 | Huge counts ("1,000,000 ants") | Clamp to 10,000 with an assumption note; swarm mode | A02/F02 |
 | Count words ("a dozen", "half a horse") | Parse words to integers; fractions rejected with a joke | A02 |
 | More than two fighters | Explain MVP is two-sided; offer to group ("3 wolves" is one side) | A02 |
-| Habitat mismatch (shark vs lion) | Terrain chosen by user wins; if none, pick shoreline and note it; `no_contest` if no engagement possible | F03 |
+| Habitat mismatch (shark vs lion) | Terrain chosen by user wins; if none, the fight is in the arena and the card says so (a habitat-matched default such as shoreline is not built yet, #619); `no_contest` if no engagement possible | F03 |
 | Extreme size gap (ant vs whale) | Valid; fair-fight search reports "no fair fight within 10,000" | F05 |
 | Real person / child / group of people | Blocked with reason; never researched | A04 |
 | Prompt injection in input | Treated as text; result unchanged; golden test | A04 |
@@ -444,5 +444,5 @@ See `.env.example` for the full list with comments. Groups: app (`APP_ENV`, `POR
 | Two users at once | Each battle runs as its own background task; SQLite WAL handles writes | A05 |
 | Stat missing for one fighter | Category default, flagged estimate; counted in the "estimate" banner | G04 |
 | Source quote doesn't contain the number | Value rejected, falls back to estimate; logged | G04/G06 |
-| Draw / timeout | Verdict "draw"; next challenger still suggested | F04/A05 |
+| Draw / timeout | Verdict "draw" (or `no_contest`); no next challenger, since there is no champion to face (#550, #560); the challenger stage still finishes `done` | F04/A05 |
 | Screen reader / no sound | Captions always on; reduced-motion mode; mute | D05/D07 |
