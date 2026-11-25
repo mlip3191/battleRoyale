@@ -41,7 +41,7 @@ import wave
 from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Self
 
 from app.config import Settings, get_settings
 from app.media import files
@@ -52,13 +52,15 @@ from app.models.narration import Script
 from app.models.simulation import SimulationResult
 from app.models.stats import StatSheet
 from app.providers.base import TTS, MusicGen, ProviderName
-from app.providers.live.tts import SpokenWav, reference_fingerprint, speech_options
+from app.providers.live.tts import SpokenVoice, SpokenWav, reference_fingerprint, speech_options
 from app.providers.registry import ProviderMode, get_provider, provider_mode
 from app.safety.media_names import safe_media_name
 
 logger = logging.getLogger(__name__)
 
-AUDIO_VERSION = "a1"  # bump when the way files are made changes, so old caches are not reused
+# Bump when the way files are made changes, so old caches are not reused. a2: every narration
+# file is saved with its line times (#576), so the voice can follow the fight.
+AUDIO_VERSION = "a2"
 ITEM_TIMEOUT_S = 96.0  # per file (120 s audio budget x 0.8, D-68); the stage passes its own share
 LINE_PAUSE_S = 0.4  # silence between two spoken lines
 # At most this many TTS calls run at once, so a long script's voice takes about ceil(lines / 3)
@@ -113,14 +115,16 @@ class AudioRequest:
     def cached_path(self) -> Path:
         return files.cache_path(self.path, self.mode)
 
-    # The asset for the saved file (only ever built for a file that exists).
-    def asset(self) -> Asset:
+    # The asset for the saved file (only ever built for a file that exists), with where each
+    # line sits in it when that is known (#576).
+    def asset(self, line_times: "LineTimes | None" = None) -> Asset:
         return Asset(
             asset_id=self.asset_id,
             kind=self.kind,
             url=f"/media/{self.cached_path.as_posix()}",
             prompt_hash=self.prompt_hash,
             script_kind=self.script_kind,
+            line_times_s=line_times,
         )
 
 
@@ -280,6 +284,65 @@ async def make_music(
 # --- helpers -----------------------------------------------------------------------------------
 
 
+# Where each line of a script sits in its joined file: (start, end) in seconds, in the script's
+# line order, None for a blank line (not spoken). The page plays each line with its event (#576).
+LineTimes = list[tuple[float, float] | None]
+
+
+class TimedWav(bytes):
+    """A script's joined voice file, with each line's place in it."""
+
+    line_times: LineTimes
+
+    def __new__(cls, data: bytes, line_times: LineTimes) -> Self:
+        wav = super().__new__(cls, data)
+        wav.line_times = line_times
+        return wav
+
+
+class TimedSpokenWav(SpokenWav):
+    """The same, for a file whose provider says which voice spoke it (cloned, stock or mixed)."""
+
+    line_times: LineTimes
+
+    def __new__(cls, data: bytes, voice: SpokenVoice, line_times: LineTimes) -> Self:
+        wav = super().__new__(cls, data, voice)
+        wav.line_times = line_times
+        return wav
+
+
+# The line times of a joined file: each clip's length, with join_wavs' pause between them.
+def line_times(script: Script, clips: Sequence[bytes], pause_s: float) -> LineTimes:
+    read = [_read_wav(clip) for clip in clips]
+    lengths = [len(frames) / (ch * width) / rate for (ch, width, rate), frames in read]
+    rate = read[0][0][2] if read else 1
+    pause = int(rate * pause_s) / rate  # join_wavs pauses for a whole number of frames
+    times: LineTimes = []
+    start, spoken = 0.0, iter(lengths)
+    for line in script.lines:
+        if not line.text.strip():
+            times.append(None)
+            continue
+        length = next(spoken)
+        times.append((round(start, 3), round(start + length, 3)))
+        start += length + pause
+    return times
+
+
+# A narration file's line times are kept next to it, e.g. narration-intro-0123abcd.lines.json.
+def _times_file(file: Path) -> Path:
+    return file.with_suffix(".lines.json")
+
+
+# The line times saved next to a cached file, or None for a file made without them.
+def _saved_times(file: Path) -> LineTimes | None:
+    try:
+        raw = json.loads(_times_file(file).read_text("utf-8"))
+        return [None if t is None else (float(t[0]), float(t[1])) for t in raw]
+    except (OSError, ValueError, TypeError, IndexError):
+        return None
+
+
 # Speak the lines a few at a time (SPEAK_CONCURRENCY, #548), sharing the show's `limit` when given
 # one (#568), keep the clips in the script's line order, then join them with a short pause between
 # lines. If the provider says which voice spoke (live TTS), the joined file says it too; lines in
@@ -304,12 +367,13 @@ async def _speak(
     clips = [task.result() for task in tasks]  # in the script's line order
     voices = {getattr(clip, "voice", None) for clip in clips}
     joined = await asyncio.to_thread(join_wavs, clips, LINE_PAUSE_S)
+    times = line_times(script, clips, LINE_PAUSE_S)
     if voices == {None}:
-        return joined
+        return TimedWav(joined, times)
     if len(voices) == 1:
         [voice] = voices
-        return SpokenWav(joined, voice)
-    return SpokenWav(joined, "mixed")
+        return TimedSpokenWav(joined, voice, times)
+    return TimedSpokenWav(joined, "mixed", times)
 
 
 # The cached file if there is one (in this provider mode's folder), else make it within the time
@@ -329,7 +393,7 @@ async def _bounded[P](
         request = replace(request, mode=mode)
         root = media_dir or files.media_root()
         if files.is_cached(root / request.cached_path):
-            return request.asset()
+            return request.asset(_saved_times(root / request.cached_path))
         if provider is None:
             raise RuntimeError("no provider")
         data = await asyncio.wait_for(make(provider), timeout_s)
@@ -339,11 +403,15 @@ async def _bounded[P](
         elif voice == "mixed":
             # Serve this show, but do not reuse the file as cloned or as stock.
             request = replace(request, request={**request.request, "spoken": "mixed"})
+        times = getattr(data, "line_times", None)
+        if times is not None:  # saved first, so a cached voice file always has its line times
+            text = json.dumps(times).encode("utf-8")
+            await asyncio.to_thread(files.save, _times_file(root / request.cached_path), text)
         await asyncio.to_thread(files.save, root / request.cached_path, data)
     except Exception as error:
         logger.warning("audio %s not made (%s)", request.asset_id, type(error).__name__)
         return None
-    return request.asset()
+    return request.asset(times)
 
 
 # Read WAV bytes into (channels, sample width, frame rate) and the raw frames.

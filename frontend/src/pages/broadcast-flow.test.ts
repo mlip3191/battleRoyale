@@ -14,6 +14,7 @@ import {
   START,
   audioPlan,
   canSkip,
+  tooFastToTalk,
   captionsAt,
   lineMs,
   linesOf,
@@ -21,6 +22,7 @@ import {
   placeLines,
   sideNames,
   unavailableNote,
+  voiceCue,
   verdictReveal,
   type Show,
 } from "./broadcast-flow.ts";
@@ -42,6 +44,7 @@ const asset = (kind: Asset["kind"], url: string): Asset => ({
   prompt_hash: "h",
   fallback: false,
   script_kind: null,
+  line_times_s: null,
 });
 
 describe("show phases", () => {
@@ -127,6 +130,21 @@ describe("caption sync", () => {
     }
   });
 
+  test("the announcer's cue is the reached moment's lines, start to end (#576)", () => {
+    const placed = placeLines([line("a", 2), line("b", 2), line("c", 4)], 6);
+    const times: [number, number][] = [
+      [0, 1.2],
+      [1.6, 3],
+      [3.4, 5],
+    ];
+    expect(voiceCue(placed, 1, times)).toBeNull(); // before the first line
+    expect(voiceCue(placed, 2, times)).toEqual({ at: 2, start: 0, end: 3 });
+    expect(voiceCue(placed, 3, times)).toEqual({ at: 2, start: 0, end: 3 }); // no new lines
+    expect(voiceCue(placed, 5, times)).toEqual({ at: 4, start: 3.4, end: 5 });
+    // A moment whose only line was blank (not spoken) has nothing to say.
+    expect(voiceCue(placed, 5, [[0, 1.2], [1.6, 3], null])).toBeNull();
+  });
+
   test("lines on the same event show together, in script order", () => {
     const placed = placeLines([line("a", 2), line("b", 2), line("c", 4)], 6);
     expect(captionsAt(placed, 1)).toEqual([]);
@@ -180,6 +198,7 @@ describe("audio", () => {
       expect(audioPlan(battle.assets, phase)).toEqual({
         music: "/media/music/retro-broadcast.mp3",
         narration: "/media/audio/b-7f3k2q-narration.mp3",
+        lineTimes: null,
       });
   });
 
@@ -205,20 +224,37 @@ describe("audio", () => {
       asset("music", "/media/audio/music-44556677eeff0011.wav"),
     ];
     expect(phases.map((p) => audioPlan(made, p))).toEqual([
-      { music: "/media/audio/music-44556677eeff0011.wav", narration: null },
+      {
+        music: "/media/audio/music-44556677eeff0011.wav",
+        narration: null,
+        lineTimes: null,
+      },
       {
         music: "/media/audio/music-44556677eeff0011.wav",
         narration: "/media/audio/narration-intro-0123456789abcdef.wav",
+        lineTimes: null,
       },
       {
         music: "/media/audio/music-44556677eeff0011.wav",
         narration: "/media/audio/narration-play_by_play-fedcba9876543210.wav",
+        lineTimes: null,
       },
       {
         music: "/media/audio/music-44556677eeff0011.wav",
         narration: "/media/audio/narration-outro-00112233aabbccdd.wav",
+        lineTimes: null,
       },
     ]);
+  });
+
+  test("the voice file's line times come with it, for its own part of the show (#576)", () => {
+    const timed = perScript.map((a) =>
+      a.script_kind === "play_by_play"
+        ? { ...a, line_times_s: [[0, 1] as [number, number], null] }
+        : a,
+    );
+    expect(audioPlan(timed, "fight").lineTimes).toEqual([[0, 1], null]);
+    expect(audioPlan(timed, "intro").lineTimes).toBeNull();
   });
 
   test("the order of the files doesn't matter", () => {
@@ -232,6 +268,7 @@ describe("audio", () => {
     expect(audioPlan(noPbp, "fight")).toEqual({
       music: "/media/m.mp3",
       narration: null,
+      lineTimes: null,
     });
     expect(audioPlan(noPbp, "intro").narration).toBe("/media/intro.mp3");
     expect(audioPlan(noPbp, "verdict").narration).toBe("/media/outro.mp3");
@@ -257,6 +294,7 @@ describe("audio", () => {
     expect(audioPlan([asset("sprite", "/media/s.png")], "intro")).toEqual({
       music: null,
       narration: null,
+      lineTimes: null,
     });
   });
 
@@ -269,7 +307,11 @@ describe("audio", () => {
       ],
       "intro",
     );
-    expect(plan).toEqual({ music: "/media/m.mp3", narration: null });
+    expect(plan).toEqual({
+      music: "/media/m.mp3",
+      narration: null,
+      lineTimes: null,
+    });
   });
 
   test("only files under /media are ever played", () => {
@@ -281,7 +323,7 @@ describe("audio", () => {
       ],
       "intro",
     );
-    expect(plan).toEqual({ music: null, narration: null });
+    expect(plan).toEqual({ music: null, narration: null, lineTimes: null });
   });
 });
 
@@ -418,4 +460,8 @@ describe("notes and verdict", () => {
       verdictReveal({ ...result, outcome: "no_contest" }, names).headline,
     ).toBe("No contest!");
   });
+});
+
+test("the announcer talks at 1x and 2x and waits at 5x and 10x (#577)", () => {
+  expect([1, 2, 5, 10].map(tooFastToTalk)).toEqual([false, false, true, true]);
 });

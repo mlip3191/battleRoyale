@@ -4,6 +4,7 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 import type Phaser from "phaser";
 import type { FightEvent, SimulationResult } from "../api/client.ts";
 import fixture from "../fixtures/simulation-result.json";
+import hundred from "./fixtures/hundred-vs-five.json";
 import thousand from "./fixtures/thousand-vs-one.json";
 import {
   LOAD_TIMEOUT_MS,
@@ -12,7 +13,7 @@ import {
 } from "./BattleScene.ts";
 import { FakeScene, fakePhaser } from "./fake-phaser.ts";
 import { HEALTH_BAR, MAX_SPRITES_PER_SIDE, layoutStage } from "./layout.ts";
-import { buildTimeline, keyFrames } from "./timeline.ts";
+import { buildTimeline, keyFrames, type Speed } from "./timeline.ts";
 
 const BattleScene = createBattleScene(fakePhaser as unknown as typeof Phaser);
 type Scene = InstanceType<typeof BattleScene> & FakeScene;
@@ -124,6 +125,7 @@ const ev = (e: Partial<FightEvent> & Pick<FightEvent, "type">): FightEvent => ({
   group_size: 1,
   damage: null,
   text_hint: "",
+  hp_left: null,
   ...e,
 });
 
@@ -145,6 +147,35 @@ function freezeTweensHalfway(scene: Scene) {
     }
   }
 }
+
+describe("fast replays (#577)", () => {
+  const bite = [
+    ev({ type: "approach", side: 0 }),
+    ev({ type: "approach", side: 1, group_size: 6 }),
+    ev({ type: "hit", side: 1, actor: 0, target: 0, damage: 23.3 }),
+    ev({ type: "end", side: 1 }),
+  ];
+
+  // How long the bite's lunge and its floating damage last at a speed.
+  const biteEffects = (speed: Speed) => {
+    const { scene } = stage(withLog(bite), [1, 6], false);
+    scene.setSpeed(speed);
+    playAll(scene);
+    const lunge = scene.tweens.list.find((t) => t.yoyo)!;
+    const label = scene.texts.find((t) => t.text.startsWith("-23"))!;
+    const float = scene.tweens.list.find((t) => t.targets === label)!;
+    return [lunge.duration as number, float.duration as number];
+  };
+
+  test("at 5x and 10x a hit's effects shrink with the speed instead of holding their 1x minimum", () => {
+    const [lunge, float] = biteEffects(1);
+    for (const speed of [5, 10] as const) {
+      const [fastLunge, fastFloat] = biteEffects(speed);
+      expect(fastLunge).toBeCloseTo(lunge / speed);
+      expect(fastFloat).toBeCloseTo(float / speed);
+    }
+  });
+});
 
 describe("skip to end mid-animation", () => {
   const log = [
@@ -510,6 +541,126 @@ describe("health bars (#503)", () => {
     freezeTweensHalfway(crowd.scene);
     crowd.scene.skipToEnd();
     expect(fills(crowd.scene)[1].scaleX).toBeCloseTo(1 / 3);
+  });
+
+  // The tests above use logs without hit points (made before #575): the share-standing bar.
+  describe("with the engine's hit points (#575)", () => {
+    const withHp = (log: FightEvent[], start: [number, number]) => ({
+      ...withLog(log),
+      start_hp: start,
+    });
+    const drains = (scene: Scene, side: 0 | 1) =>
+      scene.tweens.list
+        .filter((t) => t.targets === fills(scene)[side])
+        .map((t) => t.scaleX as number);
+
+    test("a lone fighter's bar drops with each hit, long before anyone goes down", () => {
+      const bitten = [
+        ev({ type: "approach", side: 0, hp_left: [400, 1200] }),
+        ev({ type: "approach", side: 1, group_size: 6, hp_left: [400, 1200] }),
+        ev({
+          type: "hit",
+          side: 1,
+          actor: 4,
+          target: 0,
+          damage: 100,
+          hp_left: [300, 1200],
+        }),
+        ev({
+          type: "miss",
+          side: 0,
+          actor: 0,
+          target: 1,
+          hp_left: [300, 1200],
+        }),
+        ev({
+          type: "hit",
+          side: 1,
+          actor: 2,
+          target: 0,
+          damage: 100,
+          hp_left: [200, 1200],
+        }),
+        ev({ type: "end", side: 1 }),
+      ];
+      const { scene } = stage(withHp(bitten, [400, 1200]), [1, 6], false);
+      playAll(scene);
+      expect(drains(scene, 0)).toEqual([0.75, 0.5]); // one ease per hit, none for the miss
+      expect(drains(scene, 1)).toEqual([]); // the wolves were never hurt
+      expect(scene.texts.some((t) => t.text === "6 of 6 standing")).toBe(true);
+    });
+
+    test("a crowd's bar drops on every hit to any member; the count drops only on a knock-out", () => {
+      const pack = [
+        ev({ type: "approach", side: 0, hp_left: [1000, 1200] }),
+        ev({ type: "approach", side: 1, group_size: 3, hp_left: [1000, 1200] }),
+        ev({
+          type: "hit",
+          side: 0,
+          actor: 0,
+          target: 1,
+          damage: 150,
+          hp_left: [1000, 1050],
+        }),
+        ev({
+          type: "hit",
+          side: 0,
+          actor: 0,
+          target: 1,
+          damage: 250,
+          hp_left: [1000, 800],
+        }),
+        ev({ type: "ko", side: 1, actor: 1, hp_left: [1000, 800] }),
+        ev({ type: "end", side: 0 }),
+      ];
+      const { scene } = stage(withHp(pack, [1000, 1200]), [1, 3], false);
+      playAll(scene);
+      const [first, second, knockOut] = drains(scene, 1);
+      expect([first, second, knockOut]).toEqual([0.875, 2 / 3, 2 / 3]);
+      expect(scene.texts.some((t) => t.text === "2 of 3 standing")).toBe(true);
+      expect(fills(scene)[0].scaleX).toBe(1);
+    });
+
+    test("reduced motion, skipping and a real engine log end on the engine's hit points", () => {
+      const real = hundred as SimulationResult;
+      const [start0, start1] = real.start_hp!;
+      const last = real.representative_log
+        .filter((e) => e.hp_left)
+        .at(-1)!.hp_left!;
+      const expected = [last[0] / start0, last[1] / start1];
+      const still = stage(real, [100, 5], true);
+      playAll(still.scene);
+      fills(still.scene).forEach((f, i) =>
+        expect(f.scaleX).toBeCloseTo(expected[i]),
+      );
+      const skipped = stage(real, [100, 5], false);
+      skipped.scene.play();
+      skipped.scene.update(0, 2000); // part way in, mid-ease
+      freezeTweensHalfway(skipped.scene);
+      skipped.scene.skipToEnd();
+      fills(skipped.scene).forEach((f, i) =>
+        expect(f.scaleX).toBeCloseTo(expected[i]),
+      );
+    });
+
+    test("a side that flees empties its bar; the other keeps its hit-point share", () => {
+      const fled = big.representative_log.find((e) => e.type === "flee")!;
+      const other = fled.side === 0 ? 1 : 0;
+      const left = big.representative_log
+        .filter((e) => e.hp_left)
+        .at(-1)!.hp_left!;
+      const { scene } = stage(big, [1000, 1], true);
+      playAll(scene);
+      expect(fills(scene)[fled.side].scaleX).toBe(0);
+      expect(fills(scene)[other].scaleX).toBeCloseTo(
+        left[other] / big.start_hp![other],
+      );
+    });
+
+    test("a fresh replay starts both bars full", () => {
+      const { scene } = stage(hundred as SimulationResult, [100, 5], false);
+      expect(fills(scene).map((f) => f.scaleX)).toEqual([1, 1]);
+    });
   });
 
   test("a 1,000-strong crowd's bar follows the log's knock-outs", () => {
