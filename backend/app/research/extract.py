@@ -31,6 +31,7 @@ from app.research.statsheet import (
     stat_from_facts,
 )
 from app.research.units import STAT_UNITS, UnitError, to_stat_unit
+from app.research.variant import prefer_variant
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,8 @@ def build_messages(
         f"[{i}] {p.doc_title}{f' / {p.heading}' if p.heading else ''}\n{p.text}"
         for i, p in enumerate(passages, start=1)
     )
-    request = f"Fighter: {profile.display_name}\nStat: {stat.value}\n\n{numbered}"
+    variant = f"Variant: {profile.variant}\n" if profile.variant else ""
+    request = f"Fighter: {profile.display_name}\n{variant}Stat: {stat.value}\n\n{numbered}"
     return [
         {"role": "system", "content": load_prompt()},
         {"role": "user", "content": data_block(request)},
@@ -191,6 +193,13 @@ def fetch_dates(connection: sqlite3.Connection, fighter_id: str) -> dict[str, da
     return {url: datetime.fromisoformat(when) for url, when in rows}
 
 
+# False when the answer's figure can't stand for the fighter's variant: a young animal's figure
+# for an adult. Another sex's figure stays, since one answer leaves nothing to prefer over it.
+def fits_variant(profile: FighterProfile, answer: ExtractReply, passages: list[Passage]) -> bool:
+    passage = passages[(answer.passage or 1) - 1].text
+    return bool(prefer_variant(profile.variant, [answer], lambda a: (a.quote or "", passage)))
+
+
 # One stat from the evidence, or None when nothing verifiable was found.
 async def extract_stat(
     connection: sqlite3.Connection,
@@ -208,7 +217,11 @@ async def extract_stat(
         answer = await ask_model(chat, profile, stat, passages)
         if answer is None:
             return None
-        return verified_value(stat, answer, passages, fetch_dates(connection, profile.fighter_id))
+        value = verified_value(stat, answer, passages, fetch_dates(connection, profile.fighter_id))
+        if value is not None and not fits_variant(profile, answer, passages):
+            logger.warning("Rejected %s: the quote is about a young animal.", stat.value)
+            return None
+        return value
     except (*CALL_ERRORS, ValueError, sqlite3.Error) as error:
         logger.warning("Nothing extracted for %s (%s).", stat.value, type(error).__name__)
         return None
@@ -230,7 +243,9 @@ async def build_sheet_with_evidence(
     profile: FighterProfile,
 ) -> StatSheet:
     facts = load_facts(connection, profile.fighter_id)
-    filled = {stat for stat in PHYSICAL_ORDER if stat_from_facts(stat, facts) is not None}
+    filled = {
+        stat for stat in PHYSICAL_ORDER if stat_from_facts(stat, facts, profile.variant) is not None
+    }
     wanted = stats_to_extract(profile, filled)
     limit = asyncio.Semaphore(PARALLEL_STATS)
 

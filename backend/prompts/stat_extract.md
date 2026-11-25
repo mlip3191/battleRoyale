@@ -18,8 +18,11 @@ What each stat means:
 
 How to answer:
 1. Find the sentence that states this stat for this fighter, with a number written in digits.
-   Prefer the figure for a typical adult. If the sentence states an average or typical
-   figure, use that. Otherwise, if it gives only a range, use the range's upper figure.
+   Prefer the figure for a typical adult. If the request names a variant (for example
+   "Adult male"), prefer the figure for that variant: the males' figure for an adult male,
+   never a newborn's or a young animal's. Use another sex's figure only when the passages give
+   none for this variant. If the sentence states an average or typical figure, use that.
+   Otherwise, if it gives only a range, use the range's upper figure.
 2. "quote" is that sentence (or the part of it holding the number), copied character for
    character from the passage, with the number and its unit in it. Start and end on whole
    words: never cut a number or a word in half. Keep it under 300 characters.

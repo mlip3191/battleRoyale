@@ -25,6 +25,7 @@ from app.research.seed_fighters import (
 )
 from app.research.sheet_hash import compute_sheet_hash
 from app.research.units import STAT_UNITS, UnitError, to_stat_unit
+from app.research.variant import prefer_variant
 from app.safety.media_names import safe_media_name
 from app.simulation import constants as c
 
@@ -37,8 +38,8 @@ RAM_WEAPONS = frozenset({"ramming", "crushing"})
 # group with a usable fact wins, and within a group the larger field wins (size is the longest
 # dimension, so a height taller than the length is used). Wikidata fields are property IDs, as
 # facts.py stores them: P2067 mass, P2043 length, P2048 height, P2052 speed. The article's
-# infobox rows come first (#522): they are its own summary, quoted word for word, while Wikidata
-# and the trait databases drop the context (sex, age) a figure was given with.
+# infobox rows come first (#522): they are its own summary, quoted word for word, while the trait
+# databases drop the context (sex, age) a figure was given with.
 FACT_GROUPS: dict[StatName, list[tuple[str, tuple[str, ...]]]] = {
     StatName.MASS: [
         ("infobox", ("mass",)),
@@ -73,6 +74,8 @@ class FighterProfile:
     body: str
     habitat: str
     weapons: tuple[str, ...]
+    variant: str | None = None
+    """Which one, such as "Adult male": research prefers figures for it (#522)."""
 
 
 @dataclass(frozen=True)
@@ -114,6 +117,7 @@ def profile_from_seed(fighter: SeedFighter) -> FighterProfile:
         body=fighter.body,
         habitat=fighter.habitat,
         weapons=weapons,
+        variant=fighter.variant,
     )
 
 
@@ -136,11 +140,21 @@ def load_facts(connection: sqlite3.Connection, fighter_id: str) -> list[StoredFa
     ]
 
 
-# The stat's value from stored facts, or None when no fact is usable.
-def stat_from_facts(stat: StatName, facts: Sequence[StoredFact]) -> StatValue | None:
+# The stat's value from stored facts, or None when no fact is usable. Facts for another
+# variant than the fighter's give way (variant.py).
+def stat_from_facts(
+    stat: StatName, facts: Sequence[StoredFact], variant: str | None = None
+) -> StatValue | None:
     for source, fields in FACT_GROUPS.get(stat, []):
         picks = [
-            _pick(stat, [f for f in facts if (f.fact.source, f.fact.field) == (source, field)])
+            _pick(
+                stat,
+                prefer_variant(
+                    variant,
+                    [f for f in facts if (f.fact.source, f.fact.field) == (source, field)],
+                    lambda stored: (stored.fact.quote, ""),
+                ),
+            )
             for field in fields
         ]
         usable = [p for p in picks if p is not None]
@@ -167,7 +181,8 @@ def _pick(stat: StatName, facts: list[StoredFact]) -> StatValue | None:
     values = sorted(value for value, _ in converted)
     middle = statistics.median_high(values)
     value, chosen = next(pair for pair in converted if pair[0] == middle)
-    # Wikidata drops qualifiers such as sex, so one figure is only medium confidence.
+    # One stored figure may still be a single animal's or a database's mean (#522 keeps only
+    # Wikidata's sex and role qualifiers), so it is only medium confidence.
     low, high = (values[0], values[-1]) if len(values) > 1 else (None, None)
     low, high = range_for(stat, value, Confidence.MEDIUM, low, high)
     fact = chosen.fact
@@ -289,7 +304,7 @@ def build_stat_sheet(
     chosen: dict[StatName, StatValue] = {}
     for stat in PHYSICAL_ORDER:
         value = (
-            stat_from_facts(stat, facts)
+            stat_from_facts(stat, facts, profile.variant)
             or extract(profile, stat)
             or derive(stat, profile, chosen)
             or category_default(profile.category, stat)

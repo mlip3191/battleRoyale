@@ -128,6 +128,9 @@ def restore_saved_facts(
         if article is None:
             continue
         ingest_infobox(connection, fighter.id, article)
+        entity = load_raw(kb_dir, fighter.id, "wikidata")
+        if entity is not None:  # its qualifiers are read into the quote now (#522)
+            _ingest_wikidata(connection, fighter, entity)
         restored += 1
     return restored
 

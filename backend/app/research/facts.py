@@ -20,6 +20,17 @@ UNIT_ITEMS = {
     "Q180154": "km/h",
     "Q211256": "mph",
 }
+# Qualifiers that say which animal a figure is about (sex, or the role "adult weight" or "birth
+# weight"), and the items they name, with Wikidata's English labels (#522).
+QUALIFIERS = ("P21", "P518", "P3831")
+QUALIFIER_ITEMS = {
+    "Q44148": "male organism",
+    "Q43445": "female organism",
+    "Q6581097": "male",
+    "Q6581072": "female",
+    "Q78101716": "adult weight",
+    "Q4128476": "birth weight",
+}
 
 
 @dataclass(frozen=True)
@@ -32,8 +43,8 @@ class Fact:
     unit: str
     reference: str
     quote: str = ""
-    """The words the fact was read from, when they aren't just its field, value and unit (an
-    infobox row, #522)."""
+    """The words the fact was read from, when they aren't just its field, value and unit: an
+    infobox row, or a Wikidata figure with its sex and role (#522)."""
 
 
 # Read one statement into a fact; None if it has no usable number or a unit we don't know.
@@ -50,11 +61,25 @@ def _fact_from_claim(entity_id: str, prop: str, claim: dict[str, Any]) -> Fact |
     if unit is None:
         return None
     reference = f"https://www.wikidata.org/wiki/{entity_id}#{statement}"
-    return Fact(source="wikidata", field=prop, value=value, unit=unit, reference=reference)
+    context = _context(claim)
+    quote = f"{PROPERTIES[prop]}: {value:.15g} {unit} ({', '.join(context)})" if context else ""
+    return Fact("wikidata", prop, value, unit, reference, quote=quote)
 
 
-# Every mass, length, height, and speed statement on a Wikidata entity. Qualifiers such as sex,
-# date, or method are not kept, so a fact may be one sex's or a record value, not a typical adult.
+# The labels of a statement's sex and role qualifiers ("male organism", "adult weight").
+def _context(claim: dict[str, Any]) -> list[str]:
+    labels = []
+    for prop in QUALIFIERS:
+        for snak in claim.get("qualifiers", {}).get(prop, []):
+            item = (snak.get("datavalue") or {}).get("value")
+            label = QUALIFIER_ITEMS.get(item.get("id", "")) if isinstance(item, dict) else None
+            if label:
+                labels.append(label)
+    return labels
+
+
+# Every mass, length, height, and speed statement on a Wikidata entity. Its sex and role
+# qualifiers go into the fact's quote (#522); others, such as date or method, are not kept.
 def wikidata_facts(entity: dict[str, Any]) -> list[Fact]:
     entity_id = str(entity.get("id", ""))
     claims = entity.get("claims", {})
