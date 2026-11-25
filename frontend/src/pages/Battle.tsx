@@ -96,6 +96,9 @@ function Broadcast({ id }: { id: string }) {
   const [pausedIn, setPausedIn] = useState<Show | null>(null);
   const [fightSpeed, setFightSpeed] = useState<Speed>(1); // the replay's speed button (#577)
   const [fightMoving, setFightMoving] = useState(false); // the replay is playing (#576)
+  // The replay reached its last moment and the announcer is finishing what it is saying; the
+  // verdict follows when it is done, or after a short wait at most (#601).
+  const [finishing, setFinishing] = useState(false);
   const controls = useFocusRescue();
   const startButton = useRef<HTMLButtonElement>(null);
   const soundBar = useRef<AudioBarHandle>(null);
@@ -218,8 +221,14 @@ function Broadcast({ id }: { id: string }) {
           onEvent={setEventIndex}
           onSpeedChange={setFightSpeed}
           onPlayingChange={setFightMoving}
-          onFinish={() => act({ type: "fight-done" })}
+          onFinish={(skipped) => {
+            // The verdict waits for the announcer's last lines, unless there is no voice in sync with
+            // the fight to wait for, or the viewer jumped to the end (#601).
+            if (skipped || !sound?.lineTimes) act({ type: "fight-done" });
+            else setFinishing(true);
+          }}
           onReplay={() => {
+            setFinishing(false);
             setEventIndex(-1);
             act({ type: "replay" });
           }}
@@ -261,7 +270,10 @@ function Broadcast({ id }: { id: string }) {
           <button
             type="button"
             className={styles.button}
-            onClick={() => act({ type: "skip" })}
+            onClick={() => {
+              setFinishing(false);
+              act({ type: "skip" });
+            }}
           >
             Skip to verdict
           </button>
@@ -277,6 +289,11 @@ function Broadcast({ id }: { id: string }) {
           holdNote={tooFast ? undefined : "Announcer paused with the fight"}
           cue={cue}
           rate={fighting ? fightSpeed : 1}
+          finishing={fighting && finishing}
+          onSettled={() => {
+            setFinishing(false);
+            act({ type: "fight-done" });
+          }}
         />
       )}
 
