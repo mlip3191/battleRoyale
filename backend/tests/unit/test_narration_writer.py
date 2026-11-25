@@ -806,3 +806,34 @@ def test_legend_phrase_is_case_insensitive_and_only_for_mythical_fights() -> Non
         "intro", json.dumps(grizzly.replies["announcer_intro"]), _facts(grizzly), 13
     )
     assert grizzly_intro.fallback is False
+
+
+# #613: the mock intro said "According to legend" for every fight, even two real animals.
+async def test_mock_intro_says_legend_only_for_a_mythical_fight() -> None:
+    for key, mythical in ((GRIZZLY, False), (GRIFFIN, True)):
+        sample = SAMPLES[key]
+        assert any(f.is_legend for f in _facts(sample).fighters) is mythical
+        intro, _, _ = await _write(sample, MockChatLLM())
+        said = " ".join(line.text for line in intro.lines).lower()
+        assert intro.fallback is False, key  # the mock's own lines, not the template
+        assert ("according to legend" in said) is mythical, key
+        assert check_script(intro, _facts(sample), len(sample.result.representative_log)) == []
+
+
+# An all-real fight that says "according to legend" (any script, any case) is rejected; the
+# intro is retried once, then the template, which never says it for real animals (#613).
+async def test_legend_phrase_in_an_all_real_fight_is_rejected() -> None:
+    sample = SAMPLES[GRIZZLY]
+    facts, log_len = _facts(sample), len(sample.result.representative_log)
+    unearned = "ACCORDING TO LEGEND, nobody leaves this arena without a story."
+    reply = _with_line(sample, "announcer_intro", 1, unearned)
+    with pytest.raises(ScriptRejected, match="never say"):
+        read_reply("intro", json.dumps(reply), facts, log_len)
+    pbp = _with_line(sample, "play_by_play", 0, "According to legend, the bear starts it.")
+    with pytest.raises(ScriptRejected, match="never say"):
+        read_reply("play_by_play", json.dumps(pbp), facts, log_len)
+    chat = _chat_with(sample, "announcer_intro", reply)
+    intro, _, _ = await _write(sample, chat)
+    assert intro.fallback is True and chat.count("announcer_intro") == 2
+    assert intro == _templates(sample)[0]
+    assert "according to legend" not in " ".join(line.text for line in intro.lines).lower()
