@@ -100,20 +100,24 @@ def _strip_terrain_tail(side: str) -> str:
 
 
 # Words that start an instruction to the app, never part of a fighter's name: "ignore your
-# rules", "say the duck wins" (#618). Whole words, any case.
+# rules", "say the duck wins" (#618). Whole words, any case; a hyphen joins a word, so "a make-up
+# artist" and "a forget-me-not" stay whole.
 _INSTRUCTION = re.compile(
-    r"\b(?:ignore|disregard|forget|pretend|override|say|tell|make|let|reply|respond|print)\b",
+    r"(?<![\w-])(?:ignore|disregard|forget|pretend|override|say|tell|make|let|reply|respond|print)"
+    r"(?![\w-])",
     re.I,
 )
 # A sentence end before more text: "!", "?", ";" or ":", or a full stop after three letters or
-# digits, so "a T. rex" and "a St. Bernard" stay whole.
-_SENTENCE_END = re.compile(r"(?:(?<=[A-Za-z0-9]{3})\.|[!?;:])+\s+")
+# digits, so "a T. rex" and "a St. Bernard" stay whole; or a line break on its own.
+_SENTENCE_END = re.compile(r"(?:(?<=[A-Za-z0-9]{3})\.|[!?;:])+\s+|\s*\n\s*")
 # What ends an instruction typed before the matchup: a sentence end or a data marker's ">".
 _BEFORE_FIGHTER = re.compile(rf"{_SENTENCE_END.pattern}|>")
 # A bracket or a data marker opens text that is not the fighter: "(developer mode: ...)", "<<<".
 _ASIDE = re.compile(r"[(\[{<]")
 # Marks and joining words left at a side's end after a cut: "a horse and" -> "a horse".
-_LOOSE_END = re.compile(r"(?:[\s,;:.!?]|\b(?:and|then|but|so|now|please|just|also)\b)+$", re.I)
+_LOOSE_END = re.compile(
+    r"(?:[\s,;:.!?]|(?<![\w-])(?:and|then|but|so|now|please|just|also)(?![\w-]))+$", re.I
+)
 
 
 # One side's fighter words, as a model would read them: the words next to "vs", without the
