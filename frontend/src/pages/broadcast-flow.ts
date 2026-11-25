@@ -20,7 +20,9 @@ import {
 } from "../components/Verdict.tsx";
 
 // The parts of the show, in order. "waiting" covers research and simulation (the ticker).
-export type Phase = "waiting" | "intro" | "fight" | "verdict";
+// "standby" is the intro's card held after its last line while the fight's voice is still being
+// recorded (#592).
+export type Phase = "waiting" | "intro" | "standby" | "fight" | "verdict";
 
 // Where the show is, and whether the verdict has been shown once (it stays up after a replay).
 export interface Show {
@@ -30,7 +32,9 @@ export interface Show {
 
 export type ShowAction =
   | { type: "update"; battle: BattleRecord | null } // a fresh battle record arrived
-  | { type: "intro-done" } // the last intro line finished, or the viewer started the fight
+  // The last intro line finished, or the viewer started the fight; `battle` is the latest record.
+  | { type: "intro-done"; battle?: BattleRecord | null }
+  | { type: "voice-late" } // the fight waited FIGHT_VOICE_WAIT_MS for its voice (#592)
   | { type: "fight-done" } // the replay reached its last event
   | { type: "skip" } // "Skip to verdict"
   | { type: "replay" }; // the viewer replays the fight
@@ -43,19 +47,71 @@ export const linesOf = (
   kind: Script["kind"],
 ): ScriptLine[] => scripts.find((s) => s.kind === kind)?.lines ?? [];
 
-// Move the show along. The broadcast starts once the battle is done (all media in), so pictures
-// and sound never pop in halfway; with no intro lines it goes straight to the fight.
+// The longest the fight waits for its announcer after the intro; then it starts captions-only.
+export const FIGHT_VOICE_WAIT_MS = 45_000;
+
+// Whether a stage has finished, for good or with a stand-in.
+const settled = (b: BattleRecord, stage: StageStatus["stage"]) =>
+  b.stages.some(
+    (s) =>
+      s.stage === stage && (s.status === "done" || s.status === "fallback"),
+  );
+
+// Whether this part of the show's announcer file is still being recorded (#592): the battle runs,
+// the audio stage hasn't settled, the part has lines, and its file isn't on the record yet.
+const voiceComing = (b: BattleRecord, phase: "intro" | "fight") =>
+  b.status === "running" &&
+  !settled(b, "audio") &&
+  linesOf(b.scripts, SCRIPT_OF[phase]!).length > 0 &&
+  audioPlan(b.assets, phase).narration === null;
+
+// Whether the show can start. A finished battle can. While the rest of the announcer is recorded,
+// it can once the verdict, the scripts and the pictures are in (so pictures never pop in halfway)
+// and the intro's voice is in or will not come (#592). Music is cut (#538), so it is not awaited.
+const readyToStart = (b: BattleRecord) =>
+  Boolean(b.result) &&
+  (b.status === "done" ||
+    (settled(b, "images") && b.scripts.length > 0 && !voiceComing(b, "intro")));
+
+// Stages the show never waits for: the next challenger (results page only) and music (cut, #538).
+const NOT_AWAITED: readonly StageStatus["stage"][] = ["challenger", "music"];
+
+// The running stage the waiting ticker talks about: the first one the show still waits for. Once
+// the intro's voice is in, the rest of the announcer is recorded during the show, so the audio
+// stage no longer holds it up (#592).
+export const holdingUp = (b: BattleRecord) =>
+  b.stages.find(
+    (s) =>
+      s.status === "running" &&
+      !NOT_AWAITED.includes(s.stage) &&
+      (s.stage !== "audio" || audioPlan(b.assets, "intro").narration === null),
+  );
+
+// The fight starts, unless its voice is still being recorded: then the intro's card holds.
+const toFight = (show: Show, b: BattleRecord | null | undefined): Show => ({
+  ...show,
+  phase: b && voiceComing(b, "fight") ? "standby" : "fight",
+});
+
+// Move the show along. The broadcast starts once it is safe to (readyToStart); with no intro
+// lines it goes straight to the fight. A held fight starts once its voice is in, the audio stage
+// settles, or it has waited FIGHT_VOICE_WAIT_MS (#592).
 export function nextShow(show: Show, action: ShowAction): Show {
   switch (action.type) {
     case "update": {
       const b = action.battle;
-      if (show.phase !== "waiting" || b?.status !== "done" || !b.result)
-        return show;
+      if (show.phase === "standby")
+        return b && !voiceComing(b, "fight")
+          ? { ...show, phase: "fight" }
+          : show;
+      if (show.phase !== "waiting" || !b || !readyToStart(b)) return show;
       const intro = linesOf(b.scripts, "intro").length > 0;
-      return { ...show, phase: intro ? "intro" : "fight" };
+      return intro ? { ...show, phase: "intro" } : toFight(show, b);
     }
     case "intro-done":
-      return show.phase === "intro" ? { ...show, phase: "fight" } : show;
+      return show.phase === "intro" ? toFight(show, action.battle) : show;
+    case "voice-late":
+      return show.phase === "standby" ? { ...show, phase: "fight" } : show;
     case "fight-done":
       return show.phase === "fight"
         ? { phase: "verdict", revealed: true }
@@ -133,10 +189,12 @@ export interface AudioPlan {
   lineTimes: Asset["line_times_s"]; // where each line sits in the narration file, if known (#576)
 }
 
-// The script each part of the show reads aloud (nothing while the ticker runs).
+// The script each part of the show reads aloud (nothing while the ticker runs). The held intro
+// card keeps the intro's file, so the "Start the fight" click's unlock carries into the fight.
 const SCRIPT_OF: Record<Phase, Script["kind"] | null> = {
   waiting: null,
   intro: "intro",
+  standby: "intro",
   fight: "play_by_play",
   verdict: "outro",
 };

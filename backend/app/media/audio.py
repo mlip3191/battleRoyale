@@ -75,6 +75,9 @@ HASH_PREFIX = 16  # hex characters of the request hash used in file names
 ScriptKind = Literal["intro", "play_by_play", "outro"]
 AudioKind = Literal["narration_audio", "music"]
 PROVIDER_FOR: dict[AudioKind, ProviderName] = {"narration_audio": "tts", "music": "music"}
+FIRST_SCRIPT: ScriptKind = "intro"  # recorded before the others: the show starts on it (#592)
+# Told about each narration file as soon as it is made, e.g. to put it on the battle's record.
+OnReady = Callable[[Asset], Awaitable[None]]
 
 
 class AudioError(ValueError):
@@ -215,13 +218,17 @@ def music_request(prompt: str) -> AudioRequest:
 
 
 # One narration file per script, in the scripts' order; a script that fails is left out.
-# Never raises.
+# The intro is recorded first, then the play-by-play and outro together, so the show can start on
+# the intro's voice while the rest is recorded (#592). Each file is handed to `on_ready` as soon
+# as it is made (or found in the cache). Every file must be done within timeout_s of the start,
+# as when all three started at once. Never raises.
 async def make_audio(
     scripts: Sequence[Script],
     *,
     provider: TTS | None = None,
     media_dir: Path | None = None,
     timeout_s: float = ITEM_TIMEOUT_S,
+    on_ready: OnReady | None = None,
 ) -> list[Asset]:
     try:
         voice_id = announcer_voice()
@@ -236,19 +243,33 @@ async def make_audio(
         except Exception as error:  # live settings missing: cached files can still be used
             logger.warning("tts provider unavailable (%s)", type(error).__name__)
     limit = asyncio.Semaphore(SPEAK_CONCURRENCY)  # one for the whole show (#568)
-    jobs = [
-        _bounded(
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout_s
+
+    # One script's file within the time left, handed over as soon as it is there.
+    async def record(script: Script) -> Asset | None:
+        asset = await _bounded(
             narration_request(script, voice_id, options, voice_ref),
             functools.partial(_speak, script=script, voice_id=voice_id, limit=limit),
             provider,
             media_dir,
-            timeout_s,
+            max(0.0, deadline - loop.time()),
             stock=None if voice_ref is None else narration_request(script, voice_id, options),
         )
-        for script in scripts
-        if spoken_lines(script)
-    ]
-    made = await asyncio.gather(*jobs)
+        if asset is not None and on_ready is not None:
+            await _hand_over(on_ready, asset)
+        return asset
+
+    spoken = [script for script in scripts if spoken_lines(script)]
+    first = [i for i, script in enumerate(spoken) if script.kind == FIRST_SCRIPT]
+    rest = [i for i in range(len(spoken)) if i not in first]
+    made: list[Asset | None] = [None] * len(spoken)
+    for i in first:
+        made[i] = await record(spoken[i])
+    # In broadcast order the play-by-play's lines queue for the shared limit before the outro's.
+    later = await asyncio.gather(*(record(spoken[i]) for i in rest))
+    for i, asset in zip(rest, later, strict=True):
+        made[i] = asset
     return [asset for asset in made if asset is not None]
 
 
@@ -412,6 +433,14 @@ async def _bounded[P](
         logger.warning("audio %s not made (%s)", request.asset_id, type(error).__name__)
         return None
     return request.asset(times)
+
+
+# Tell on_ready about a made file; its trouble is logged, never raised: the file is still returned.
+async def _hand_over(on_ready: OnReady, asset: Asset) -> None:
+    try:
+        await on_ready(asset)
+    except Exception as error:
+        logger.warning("audio %s not handed over early (%s)", asset.asset_id, type(error).__name__)
 
 
 # Read WAV bytes into (channels, sample width, frame rate) and the raw frames.
