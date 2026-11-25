@@ -171,6 +171,69 @@ test("a side that never wins says its standing fighters include any that ran awa
   expect(verdict.textContent).not.toContain("left standing");
 });
 
+// #587: "Tiger wins 55%" beside "about 0.6 tigers still standing" read as a contradiction. When the
+// winner's average is under 1, the card says the averages cover every fight, wins and losses alike.
+test("a winner averaging under 1 standing says the averages cover every fight (#587)", () => {
+  const result = {
+    ...record.result!,
+    outcome: "win_0" as const,
+    win_prob: [0.55, 0.45] as [number, number],
+    win_prob_ci95: [
+      [0.52, 0.58],
+      [0.42, 0.48],
+    ] as [[number, number], [number, number]],
+    draw_prob: 0,
+    mean_survivors: [0.6, 67.4] as [number, number],
+  };
+  show({ ...record, result });
+  const verdict = screen.getByRole("region", { name: /^Winner:/ });
+  expect(verdict.textContent).toContain("about 0.6 still standing");
+  expect(verdict.textContent).toContain("count every simulated fight");
+  expect(verdict.textContent).toContain("won and lost alike");
+});
+
+test("a winner averaging 1 or more standing keeps the plain wording (#587)", () => {
+  show(record);
+  const verdict = screen.getByRole("region", { name: /^Winner:/ });
+  expect(verdict.textContent).not.toContain("count every simulated fight");
+  const draw = {
+    ...record.result!,
+    outcome: "draw" as const,
+    win_prob: [0.3, 0.3] as [number, number],
+    draw_prob: 0.4,
+    mean_survivors: [0.2, 0.3] as [number, number],
+  };
+  cleanup(); // one page at a time
+  show({ ...record, result: draw });
+  expect(
+    screen.getByRole("region", { name: "It's a draw" }).textContent,
+  ).not.toContain("count every simulated fight");
+});
+
+// The note follows the number the card shows: 0.96 prints "about 1", so it gets no "under 1" note.
+test("the under-1 note follows the rounded average the card shows (#587)", () => {
+  const withWinnerAverage = (value: number) => ({
+    ...record.result!,
+    outcome: "win_0" as const,
+    win_prob: [0.55, 0.45] as [number, number],
+    win_prob_ci95: [
+      [0.52, 0.58],
+      [0.42, 0.48],
+    ] as [[number, number], [number, number]],
+    draw_prob: 0,
+    mean_survivors: [value, 67.4] as [number, number],
+  });
+  show({ ...record, result: withWinnerAverage(0.96) });
+  const near = screen.getByRole("region", { name: /^Winner:/ });
+  expect(near.textContent).toContain("about 1 still standing");
+  expect(near.textContent).not.toContain("count every simulated fight");
+  cleanup(); // one page at a time
+  show({ ...record, result: withWinnerAverage(0.94) });
+  const under = screen.getByRole("region", { name: /^Winner:/ });
+  expect(under.textContent).toContain("about 0.9 still standing");
+  expect(under.textContent).toContain("count every simulated fight");
+});
+
 test("averages over many runs are rounded to one decimal, and duration sits outside the draw row", () => {
   const result = {
     ...record.result!,
@@ -433,6 +496,7 @@ test("headings are in order: page, sections, then one per fighter", () => {
     .map((h) => h.textContent);
   expect(h2).toEqual([
     "Winner: 6 gray wolves",
+    "Why 6 gray wolves won, in plain words",
     "Fair fight",
     "Next challenger: moose",
     "Tale of the tape",
@@ -489,4 +553,45 @@ test.each([
     "This fight was called off. Try another matchup.",
   );
   if (detail) expect(alert.textContent).not.toContain(detail);
+});
+
+// #581: T3 did not realize the next challenger's button was the next step. The card now says so.
+test("the next challenger card is cued as the next thing to try (#581)", () => {
+  show(record);
+  const card = screen.getByRole("region", { name: "Next challenger: moose" });
+  expect(within(card).getByText("Try this next: a closer fight")).toBeTruthy();
+  expect(
+    within(card).getByRole("button", { name: "Fight them!" }),
+  ).toBeTruthy();
+  // The cue comes before the heading and the button, so it is read first.
+  const text = card.textContent ?? "";
+  expect(text.indexOf("Try this next")).toBeLessThan(
+    text.indexOf("Fight them!"),
+  );
+});
+
+// #582: plain-language reasons for the win, built from the stat sheets, shown above the tables.
+test("the results explain the win in plain words from the stat sheets (#582)", () => {
+  show(record);
+  const card = screen.getByRole("region", {
+    name: /^Why .* won, in plain words$/,
+  });
+  expect(within(card).getAllByRole("listitem").length).toBeGreaterThan(0);
+  expect(card.textContent).toContain(
+    "These come straight from the stat sheets",
+  );
+  // Above the technical tables, not buried under them.
+  const tape = screen.getByRole("heading", { name: "Tale of the tape" });
+  expect(
+    card.compareDocumentPosition(tape) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+});
+
+test("a draw has no winner, so no reasons card (#582)", () => {
+  const draw = {
+    ...record,
+    result: { ...record.result!, outcome: "draw" as const },
+  };
+  show(draw);
+  expect(screen.queryByRole("region", { name: /in plain words/ })).toBeNull();
 });

@@ -10,11 +10,12 @@ import {
   within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import running from "../fixtures/battle-record-running.json";
 import done from "../fixtures/battle-record-done.json";
 import type { Asset, BattleRecord } from "../api/client.ts";
 import { NOT_FOUND, RETRYING } from "../api/useBattle.ts";
+import { FINISH_WAIT_MS } from "../components/AudioBar.tsx";
 import Battle from "./Battle.tsx";
 import Results from "./Results.tsx";
 import { layoutStage } from "../game/layout.ts";
@@ -781,4 +782,79 @@ test("audio: Sound on during the fight unlocks the voice inside the click, befor
   fireEvent.click(button("Sound off"));
   expect(callsOn(log, voice)).toEqual(["muted play", "pause"]); // during the click itself
   expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
+});
+
+// #601: the replay reports it is finished when it reaches the last event, in the same moment the
+// closing line's cue starts. The show used to move to the verdict then, so the closing line (and
+// the last knock-out call) never played. Now the verdict waits for the announcer, for a short while
+// at most.
+describe("the verdict waits for the announcer's last lines (#601)", () => {
+  const lastMoment = () => {
+    const placed = placeLines(
+      pbp,
+      doneRecord.result!.representative_log.length,
+    );
+    return Math.max(...placed.map((p) => p.at));
+  };
+  const reachEnd = () => {
+    act(() => stageProps().onPlayingChange!(true));
+    act(() => stageProps().onEvent!(lastMoment()));
+    act(() => stageProps().onFinish!());
+  };
+  const verdictUp = () => screen.queryByRole("heading", { level: 2 });
+
+  test("the closing lines play first, then the verdict comes", async () => {
+    const play = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue(undefined);
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    show(timedRecord());
+    startFight();
+    play.mockClear();
+    reachEnd();
+    await waitFor(() => expect(play).toHaveBeenCalled()); // the last moment's lines start
+    expect(verdictUp()).toBeNull(); // the show is still on the fight
+    const voice = soundBar().querySelector("audio")!;
+    const end = timedRecord().assets.find(
+      (a) => a.script_kind === "play_by_play",
+    )!.line_times_s!;
+    const lastEnd = Math.max(...end.map((t) => (t ? t[1] : 0)));
+    voice.currentTime = lastEnd; // the closing line is done
+    fireEvent.timeUpdate(voice);
+    expect(verdictUp()?.textContent).toBe("Winner: 6 gray wolves!");
+  });
+
+  test("a voice that never finishes holds the verdict for the maximum wait only", async () => {
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    show(timedRecord());
+    startFight();
+    reachEnd();
+    await act(async () => {
+      for (let i = 0; i < 10; i += 1) await Promise.resolve();
+    });
+    expect(verdictUp()).toBeNull();
+    act(() => vi.advanceTimersByTime(FINISH_WAIT_MS - 1));
+    expect(verdictUp()).toBeNull();
+    act(() => vi.advanceTimersByTime(1));
+    expect(verdictUp()?.textContent).toBe("Winner: 6 gray wolves!");
+  });
+
+  test("with the sound off the verdict comes at once", () => {
+    sessionStorage.setItem("battle-royale-sound-off", "1");
+    show(timedRecord());
+    startFight();
+    reachEnd();
+    expect(verdictUp()?.textContent).toBe("Winner: 6 gray wolves!");
+  });
+
+  test("Skip to end goes straight to the verdict, without waiting for the voice", () => {
+    show(timedRecord());
+    startFight();
+    act(() => stageProps().onPlayingChange!(true));
+    act(() => stageProps().onEvent!(lastMoment()));
+    act(() => stageProps().onFinish!(true));
+    expect(verdictUp()?.textContent).toBe("Winner: 6 gray wolves!");
+  });
 });

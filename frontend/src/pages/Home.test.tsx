@@ -617,3 +617,18 @@ test("the instructions sit right under the heading, above the box, and describe 
   expect(box.getAttribute("aria-describedby")).toBe("matchup-hint");
   expect(screen.getByLabelText("Who would win?")).toBe(box); // the label is unchanged
 });
+
+// #581: T3 found the confirm card a confusing extra step. It stays, but says plainly that it is
+// the last step and what to press, in the card and ahead of the button.
+test("the card says it is the last step and points at the Start button (#581)", async () => {
+  api.postIntake.mockResolvedValue(ok);
+  open();
+  fireEvent.click(screen.getByRole("button", { name: EXAMPLES[0] }));
+  fireEvent.click(screen.getByRole("button", { name: "FIGHT!" }));
+  const card = await screen.findByRole("region", { name: "Tonight's card" });
+  expect(card.textContent).toContain(
+    "Last step: check the card, then press the big button below.",
+  );
+  const text = card.textContent ?? "";
+  expect(text.indexOf("Last step")).toBeLessThan(text.indexOf(START_LABEL));
+});
