@@ -113,6 +113,17 @@ def team_name(f: FighterFacts) -> str:
     return f"{f.display_name}, {f.count:,} of them" if f.count > 1 else f.display_name
 
 
+# How the verdict names a side: the display name for one fighter, "3 gorillas" for a group (#614).
+def side_name(f: FighterFacts) -> str:
+    """ "Dragon", "3 gorillas", "1,000 gray wolves" (the results page's verdict wording)."""
+    return f"{f.count:,} {counted_name(f.display_name, f.count)}" if f.count > 1 else f.display_name
+
+
+# The side's name with no number, for a stand-in line: "Dragon" or "Gorillas".
+def _safe_side_name(f: FighterFacts) -> str:
+    return pluralize(f.display_name) if f.count > 1 else f.display_name
+
+
 # The tale-of-the-tape line: mass and top speed, flagged as legend or estimate.
 def tape_line(f: FighterFacts) -> str:
     """One line of stats for a fighter, with the honesty labels the number rule needs."""
@@ -362,37 +373,29 @@ def fair_fight_line(facts: NarrationFacts, names: Sequence[str] = ()) -> ScriptL
 # The clear-win verdict: crown the winner and say how often they won.
 def _winner_lines(facts: NarrationFacts, side: int, names: list[str]) -> list[ScriptLine]:
     winner = facts.fighters[side]
-    won = f"{winner.display_name} won {facts.win_pct[side]}% of {facts.runs:,} simulated fights."
+    who, safe_who = side_name(winner), _safe_side_name(winner)
+    takes = "take" if winner.count > 1 else "takes"
+    won = f"{who} won {facts.win_pct[side]}% of {facts.runs:,} simulated fights."
     return [
-        safe_line(
-            "announcer",
-            f"Your winner: {team_name(winner)}!",
-            f"Your winner: {winner.display_name}!",
-            facts,
-            names,
-        ),
-        safe_line("color_commentator", won, f"{winner.display_name} takes the win.", facts, names),
+        safe_line("announcer", f"Your winner: {who}!", f"Your winner: {safe_who}!", facts, names),
+        safe_line("color_commentator", won, f"{safe_who} {takes} the win.", facts, names),
     ]
 
 
 # The too-close verdict: a near coin flip with a slight edge, never "winner" or "takes the win".
 def _too_close_lines(facts: NarrationFacts, side: int, names: list[str]) -> list[ScriptLine]:
     edge = facts.fighters[side]
-    ahead = (
-        f"{edge.display_name} came out ahead in {facts.win_pct[side]}% "
-        f"of {facts.runs:,} simulated fights."
-    )
+    who, safe_who = side_name(edge), _safe_side_name(edge)
+    ahead = f"{who} came out ahead in {facts.win_pct[side]}% of {facts.runs:,} simulated fights."
     return [
         safe_line(
             "announcer",
-            f"Too close to call! A near coin flip, with a slight edge to {team_name(edge)}.",
+            f"Too close to call! A near coin flip, with a slight edge to {who}.",
             "Too close to call! A near coin flip, with a slight edge.",
             facts,
             names,
         ),
-        safe_line(
-            "color_commentator", ahead, f"{edge.display_name} had the slight edge.", facts, names
-        ),
+        safe_line("color_commentator", ahead, f"{safe_who} had the slight edge.", facts, names),
     ]
 
 
