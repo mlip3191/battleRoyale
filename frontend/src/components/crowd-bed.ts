@@ -1,11 +1,12 @@
-// The waiting room's crowd (#592): a quiet arena murmur while the announcer records. It is made
-// in the browser (Web Audio), so there is no sound file to license: pink noise through the band
-// of far-off voices, with slow random swells and short fades. Browsers only let sound start from
-// a click, so the home card's "Start the fight!" and the Sound on button wake the page's audio;
-// while the browser keeps it suspended, the crowd stays silent.
+// The waiting room's crowd (#592): a quiet arena murmur until the show starts. It is made in the
+// browser (Web Audio), so there is no sound file to license: pink noise through the band of
+// far-off voices, with slow random swells and short fades. Browsers only let sound start from a
+// click, so the clicks that start a battle ("Start the fight!", "Fight them!") and the Sound on
+// button wake the page's audio; while the browser keeps it suspended, the crowd stays silent.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export const CROWD_LEVEL = 0.15; // the loudest it gets (volume 100%): far under the announcer
+// Its one loudness knob: swells peak near -30 dBFS, some 10 dB under the announcer.
+export const CROWD_LEVEL = 0.3;
 export const FADE_S = 0.5; // fade in and fade out
 export const BAND_HZ = [300, 1500] as const; // the murmur's band
 const NOISE_S = 4; // seconds of noise, looped
@@ -82,16 +83,11 @@ function hold(param: AudioParam, now: number) {
 }
 
 export interface CrowdBed {
-  setLevel: (level: number) => void; // follow the volume slider
   stop: () => void; // fade out, then let go of the sound
 }
 
-// Start the murmur, fading in to `level` (0 to CROWD_LEVEL).
-export function startCrowd(
-  ctx: AudioContext,
-  level: number,
-  random = Math.random,
-): CrowdBed {
+// Start the murmur, fading in to CROWD_LEVEL.
+export function startCrowd(ctx: AudioContext, random = Math.random): CrowdBed {
   const source = ctx.createBufferSource();
   source.buffer = pinkNoise(ctx, random);
   source.loop = true;
@@ -103,7 +99,7 @@ export function startCrowd(
   const out = ctx.createGain();
   source.connect(band).connect(swell).connect(out).connect(ctx.destination);
   out.gain.setValueAtTime(0, ctx.currentTime);
-  out.gain.linearRampToValueAtTime(level, ctx.currentTime + FADE_S);
+  out.gain.linearRampToValueAtTime(CROWD_LEVEL, ctx.currentTime + FADE_S);
   source.start();
 
   // Every couple of seconds the crowd swells or settles a little, at random.
@@ -117,11 +113,6 @@ export function startCrowd(
 
   let stopped = false;
   return {
-    setLevel: (next) => {
-      if (stopped) return;
-      hold(out.gain, ctx.currentTime);
-      out.gain.setTargetAtTime(next, ctx.currentTime, 0.05);
-    },
     stop: () => {
       if (stopped) return;
       stopped = true;
@@ -135,19 +126,12 @@ export function startCrowd(
   };
 }
 
-// Play the crowd while `on`, at `volume` percent, once a click has woken the page's audio.
-// `playing` says whether it really plays; `wake` (inside a click) wakes the audio and tries again.
-export function useCrowdBed(on: boolean, volume: number) {
+// Play the crowd while `on`, once a click has woken the page's audio. `playing` says whether it
+// really plays; `wake` (inside a click) wakes the audio and tries again.
+export function useCrowdBed(on: boolean) {
   const [playing, setPlaying] = useState(false);
   const [tries, setTries] = useState(0);
   const bed = useRef<CrowdBed | null>(null);
-  const level = useRef(0);
-
-  // The volume slider moves the crowd too.
-  useEffect(() => {
-    level.current = CROWD_LEVEL * (volume / 100);
-    bed.current?.setLevel(level.current);
-  }, [volume]);
 
   // Start once the audio runs; fade out when turned off or when the bar goes away.
   useEffect(() => {
@@ -156,7 +140,7 @@ export function useCrowdBed(on: boolean, volume: number) {
     let gone = false;
     void running(ctx).then((ok) => {
       if (gone || !ok) return;
-      bed.current = startCrowd(ctx, level.current);
+      bed.current = startCrowd(ctx);
       setPlaying(true);
     });
     return () => {

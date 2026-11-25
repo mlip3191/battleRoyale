@@ -9,13 +9,23 @@ import {
   within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, beforeEach, expect, test, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from "vitest";
 import done from "../fixtures/battle-record-done.json";
 import dragonSheet from "../fixtures/stat-sheet-dragon.json";
 import * as client from "../api/client.ts";
 import { NOT_FOUND } from "../api/useBattle.ts";
 import type { BattleRecord, StatSheet } from "../api/client.ts";
 import Results from "./Results.tsx";
+import { saveOff } from "../components/AudioBar.tsx";
+import { setContextMaker } from "../components/crowd-bed.ts";
+import { FakeAudioContext } from "../components/fake-audio-context.ts";
 import {
   FAIR_FIGHT_UNFINISHED,
   isTooCloseToCall,
@@ -417,6 +427,21 @@ test("'Fight them!' posts a new battle with the winner vs the suggestion", async
     assumptions: [],
   });
   await waitFor(() => expect(screen.getByText("Broadcast page")).toBeTruthy());
+});
+
+test("'Fight them!' wakes the audio for the next battle's waiting room, unless sound is off this visit (#592)", async () => {
+  const maker = vi.fn(() => new FakeAudioContext() as unknown as AudioContext);
+  setContextMaker(maker);
+  onTestFinished(() => setContextMaker());
+  api.createBattle.mockRejectedValueOnce(new Error("offline")); // so it can be pressed again
+  saveOff(true);
+  show(record);
+  fireEvent.click(screen.getByRole("button", { name: "Fight them!" }));
+  expect(maker).not.toHaveBeenCalled();
+  const again = await screen.findByRole("button", { name: "Fight them!" });
+  saveOff(false);
+  fireEvent.click(again);
+  expect(maker).toHaveBeenCalledTimes(1);
 });
 
 test("booking the rematch is announced to screen readers", async () => {

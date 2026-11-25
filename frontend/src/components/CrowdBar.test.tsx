@@ -45,7 +45,7 @@ const fadedOut = () => {
 };
 
 test("the sound: looped pink noise through a 300-1500 Hz band, fading in to a low level", () => {
-  startCrowd(fake as unknown as AudioContext, CROWD_LEVEL);
+  startCrowd(fake as unknown as AudioContext);
   const [source] = fake.sources;
   const noise = source.buffer!.getChannelData(0);
   expect(source.loop && source.started).toBe(true);
@@ -58,18 +58,17 @@ test("the sound: looped pink noise through a 300-1500 Hz band, fading in to a lo
     { kind: "set", value: 0, at: fake.currentTime },
     { kind: "ramp", value: CROWD_LEVEL, at: fake.currentTime + FADE_S },
   ]);
-  expect(CROWD_LEVEL).toBeLessThanOrEqual(0.2); // far under the announcer at full volume
+  // Its swells peak near -30 dBFS: quiet, some 10 dB under the announcer.
+  expect(CROWD_LEVEL).toBeLessThanOrEqual(0.3);
 });
 
-test("the crowd swells at random, follows the volume, and stops swelling once it fades out", () => {
+test("the crowd swells at random, and stops swelling once it fades out", () => {
   vi.useFakeTimers();
-  const bed = startCrowd(fake as unknown as AudioContext, CROWD_LEVEL);
+  const bed = startCrowd(fake as unknown as AudioContext);
   vi.advanceTimersByTime(20_000);
   const swell = fake.gains.find((g) => g !== fake.output())!.gain;
   const levels = new Set(swell.calls.map((c) => c.value));
   expect(levels.size).toBeGreaterThan(3);
-  bed.setLevel(CROWD_LEVEL / 2);
-  expect(fake.output()?.gain.value).toBe(CROWD_LEVEL / 2);
   bed.stop();
   fadedOut();
   const swells = swell.calls.length;
@@ -77,14 +76,13 @@ test("the crowd swells at random, follows the volume, and stops swelling once it
   expect(swell.calls.length).toBe(swells);
 });
 
-test("once a click woke the audio, it plays at the slider's volume; Sound off fades it out for the visit", async () => {
+test("once a click woke the audio, it plays (no slider: one level); Sound off fades it out for the visit", async () => {
   wakeCrowd(); // the home card's "Start the fight!" click
   render(<CrowdBar />);
   await settle();
   expect(fake.playing()).toBe(true);
-  expect(fake.output()?.gain.calls[1].value).toBeCloseTo(CROWD_LEVEL * 0.8);
-  fireEvent.change(screen.getByRole("slider"), { target: { value: "40" } });
-  expect(fake.output()?.gain.value).toBeCloseTo(CROWD_LEVEL * 0.4);
+  expect(fake.output()?.gain.calls[1].value).toBe(CROWD_LEVEL);
+  expect(screen.queryByRole("slider")).toBeNull();
   fireEvent.click(button("Sound on"));
   fadedOut();
   expect(savedOff()).toBe(true);
@@ -130,4 +128,11 @@ test("leaving the wait (the bar goes away) fades the crowd out", async () => {
   await settle();
   unmount();
   fadedOut();
+});
+
+test("a second click wakes the same audio again instead of making more", () => {
+  wakeCrowd();
+  wakeCrowd();
+  expect(maker).toHaveBeenCalledTimes(1);
+  expect(fake.resume).toHaveBeenCalledTimes(2);
 });

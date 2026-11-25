@@ -9,7 +9,9 @@ import {
   type SimulationResult,
   type StatSheet,
 } from "../api/client.ts";
+import { savedOff } from "./AudioBar.tsx";
 import { ErrorPanel, srOnly } from "./Broadcast.tsx";
+import { wakeCrowd } from "./crowd-bed.ts";
 import styles from "./verdict.module.css";
 
 // A probability as a whole percent, e.g. 0.62 -> "62%".
@@ -220,6 +222,8 @@ export function NextChallengerCard({
   const navigate = useNavigate();
 
   const fight = (side: 0 | 1) => {
+    // Inside this click, so the crowd may play while the announcer records (#592).
+    if (!savedOff()) wakeCrowd();
     setStarting(true);
     setFailed(false);
     createBattle(rematch(matchup, side, challenger.entity))

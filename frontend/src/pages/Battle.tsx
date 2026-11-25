@@ -21,7 +21,6 @@ import {
   SPEAKERS,
   START,
   audioPlan,
-  awaitingVoice,
   canSkip,
   captionsAt,
   lineMs,
@@ -34,6 +33,7 @@ import {
   unavailableNote,
   voiceCue,
   verdictReveal,
+  waitingRoom,
   type Show,
   type ShowAction,
 } from "./broadcast-flow.ts";
@@ -281,7 +281,7 @@ function Broadcast({ id }: { id: string }) {
           </button>
         )}
       </div>
-      {awaitingVoice(show, battle) && <CrowdBar focusGroup={controls} />}
+      {waitingRoom(show, battle) && <CrowdBar focusGroup={controls} />}
       {show.phase !== "waiting" && sound && (
         <AudioBar
           ref={soundBar}

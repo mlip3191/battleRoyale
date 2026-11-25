@@ -191,6 +191,24 @@ describe("the waiting room's crowd while the announcer records (#592)", () => {
     expect(fake.sources).toHaveLength(1);
   });
 
+  test("the voice is in but the pictures aren't: it plays on until the show starts, and focus moves on with the show", async () => {
+    const { rerender } = show(recording);
+    await settle();
+    const voiceIn = { ...onlyRunning("images"), result: recording.result };
+    state.value = { battle: voiceIn, error: null };
+    rerender(page("/battle/b1"));
+    await settle();
+    expect(fake.playing()).toBe(true);
+    expect(fake.sources).toHaveLength(1); // the same crowd, not restarted
+    screen.getByRole("button", { name: "Sound on" }).focus();
+    state.value = { battle: done, error: null };
+    rerender(page("/battle/b1"));
+    expect(fake.playing()).toBe(false);
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Start the fight" }),
+    );
+  });
+
   test("Skip to verdict fades it out", async () => {
     show(recording);
     await settle();
@@ -198,12 +216,13 @@ describe("the waiting room's crowd while the announcer records (#592)", () => {
     expect(fake.sources[0].stoppedAt).not.toBeNull();
   });
 
-  test("no crowd while researching, or when no announcer is coming (captions only)", async () => {
+  test("no crowd before the voice starts recording, or when no announcer is coming (captions only)", async () => {
     const captionsOnly = onlyRunning("images");
     captionsOnly.stages = captionsOnly.stages.map((s) =>
       s.stage === "audio" ? { ...s, status: "fallback" } : s,
     );
-    for (const battle of [onlyRunning("research"), captionsOnly]) {
+    // The running fixture: the simulation runs, the voice hasn't started.
+    for (const battle of [running, captionsOnly]) {
       const view = show(battle);
       await settle();
       expect(

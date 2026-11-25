@@ -1,7 +1,8 @@
-// The waiting room's sound controls (#592): while the announcer records, a quiet crowd plays,
-// unless the viewer switched sound off this visit. Its Sound on/off is the same choice as the
-// show's (AudioBar). The page shows this bar only while it waits for the announcer, so the crowd
-// stops when the show starts, on Skip, or on leaving the page.
+// The waiting room's sound controls (#592): from the announcer's recording until the show starts,
+// a quiet crowd plays, unless the viewer switched sound off this visit. Its Sound on/off is the
+// same choice as the show's (AudioBar); there is no volume slider (one quiet level). The page
+// shows this bar only in the waiting room, so the crowd stops when the show starts, on Skip, or on
+// leaving the page.
 import { useState } from "react";
 import styles from "./audio-bar.module.css";
 import { saveOff, savedOff } from "./AudioBar.tsx";
@@ -14,8 +15,7 @@ export default function CrowdBar({
   focusGroup?: Pick<FocusRescue, "onFocus" | "onBlur">; // so focus isn't lost when the bar goes
 }) {
   const [wanted, setWanted] = useState(() => !savedOff());
-  const [volume, setVolume] = useState(80); // percent, as in the show's bar
-  const crowd = useCrowdBed(wanted, volume);
+  const crowd = useCrowdBed(wanted);
 
   // Switch the crowd off (remembered for the visit) or on; "on" is a click, so it wakes the audio.
   const toggle = () => {
@@ -36,17 +36,6 @@ export default function CrowdBar({
         <span aria-hidden="true">{crowd.playing ? "🔊 " : "🔇 "}</span>
         {crowd.playing ? "Sound on" : "Sound off"}
       </button>
-      <label className={styles.volume}>
-        Volume
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={5}
-          value={volume}
-          onChange={(e) => setVolume(Number(e.target.value))}
-        />
-      </label>
       <span className={styles.what}>Crowd while the announcer records</span>
     </div>
   );
