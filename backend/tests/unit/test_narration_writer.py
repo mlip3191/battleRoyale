@@ -33,6 +33,7 @@ SAMPLES = {s.key: s for s in samples()}
 KEYS = list(SAMPLES)
 GRIZZLY = "grizzly-vs-gorilla"
 GRIFFIN = "griffin-vs-horse"
+TRUCK = "truck-vs-wolves"
 PROMPTS = ("announcer_intro", "play_by_play", "outro")
 
 
@@ -208,6 +209,66 @@ async def test_guard_rejects_an_invented_number_in_play_by_play() -> None:
     chat = _chat_with(sample, "play_by_play", bad)
     _, pbp, _ = await _write(sample, chat)
     assert pbp.fallback is True and chat.count("play_by_play") == 2
+
+
+# Issue #616: a count in words is held to the number rule like a digit. Live, "Two wolves are
+# out cold now." was the third wolf down. This battle's facts have no 2, so the reply is
+# rejected, asked for once more, and the template is used.
+async def test_guard_rejects_a_count_in_words_in_play_by_play() -> None:
+    sample = SAMPLES[TRUCK]
+    facts = _facts(sample)
+    text = "Another bite lands! Two wolves are out cold now."
+    assert 2.0 not in facts.allowed.values
+    assert [b.text for b in unsupported_numbers(text, facts)] == ["Two"]
+    bad = _with_line(sample, "play_by_play", 3, text)
+    with pytest.raises(ScriptRejected, match="numbers not in the fact list: 'Two'"):
+        read_reply("play_by_play", json.dumps(bad), facts, len(sample.result.representative_log))
+    chat = _chat_with(sample, "play_by_play", bad)
+    _, pbp, _ = await _write(sample, chat)
+    assert pbp.fallback is True and chat.count("play_by_play") == 2
+
+
+# Issue #616: a one-on-one has two fighters in the ring, so it may say "two"; a pack may not.
+def test_a_one_on_one_may_count_its_two_fighters() -> None:
+    sample = SAMPLES[TRUCK]
+    text = "Two fighters enter. One leaves."
+    one_on_one = build_facts(sample.sheets, sample.result, sample.fair, (1, 1))
+    assert unsupported_numbers(text, one_on_one) == []
+    assert [b.text for b in unsupported_numbers(text, _facts(sample))] == ["Two"]  # 1 and 6
+    assert unsupported_numbers("Seven fighters in the ring tonight!", _facts(sample))
+
+
+# Issue #616: the one-on-one "two" is a head count only; it never backs a ratio or a multiplier.
+@pytest.mark.parametrize(
+    "text", ["A two to one favorite!", "2:1 odds on the truck.", "It hits twice as hard!"]
+)
+def test_a_one_on_one_two_backs_no_ratio_or_multiplier(text: str) -> None:
+    sample = SAMPLES[TRUCK]
+    one_on_one = build_facts(sample.sheets, sample.result, sample.fair, (1, 1))
+    assert 2.0 not in one_on_one.allowed.values  # 2 is not a real fact in this battle
+    assert unsupported_numbers("Two titans enter.", one_on_one) == []
+    assert unsupported_numbers(text, one_on_one), text
+
+
+# Issue #616: a 99.8% win is filled in as "99.8%", never rounded up to "100% of the time", and
+# the template outro says the same.
+async def test_near_certain_win_is_never_said_as_always() -> None:
+    sample = SAMPLES[GRIZZLY]
+    ci = ((0.9927, 0.9995), (0.0005, 0.0073))
+    update = {"win_prob": (0.998, 0.002), "draw_prob": 0.0, "win_prob_ci95": ci}
+    result = sample.result.model_copy(update=update | {"outcome": "win_0"})
+    facts = _facts(sample, result)
+    assert outro_placeholders(facts)["win_pct"] == "99.8%"
+    chat = sample_chat(sample)
+    _, _, outro = await _write(sample, chat, result)
+    assert outro.fallback is False and "99.8%" in " ".join(line.text for line in outro.lines)
+    template = _templates(sample, result)[2]
+    assert "won 99.8% of" in " ".join(line.text for line in template.lines)
+    assert check_script(template, facts, len(result.representative_log)) == []
+    bad = _with_line(sample, "outro", 1, "The {winner} won 100% of the time.")
+    chat = _chat_with(sample, "outro", bad)
+    _, _, outro = await _write(sample, chat, result)
+    assert outro.fallback is True and chat.count("outro") == 2
 
 
 async def test_guard_rejects_a_number_the_outro_writes_itself() -> None:
