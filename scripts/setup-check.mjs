@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkEnv } from "./check-env.mjs";
+import { isCheckout } from "./git-hooks.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const isWindows = process.platform === "win32";
@@ -90,14 +91,7 @@ const checks = [
           fix: 'Run: git config --global user.name "Your Name"  and  git config --global user.email "you@example.com"  (use your GitHub email)',
         };
   },
-  () => {
-    if (sh("git", ["config", "core.hooksPath"]).out === ".githooks") {
-      return { status: "ok", label: "Secret guard (commit hook) is on" };
-    }
-    return sh("git", ["config", "core.hooksPath", ".githooks"]).ok
-      ? { status: "ok", label: "Secret guard (commit hook) was off, so I turned it on" }
-      : { status: "fail", label: "Couldn't turn on the secret guard", fix: "Run: npm run setup  (it turns the guard on)" };
-  },
+  () => guardStep(),
   () => envStep(),
   () => {
     const r = sh("git", ["ls-files", "--cached", "--ignored", "--exclude-standard"]);
@@ -110,6 +104,21 @@ const checks = [
         };
   },
 ];
+
+// The commit guard, by the same rule as setup's last step (#597, #598): only a folder with its own
+// .git (a clone, or a worktree's .git file) gets the guard. A ZIP copy is skipped, not failed, and
+// git is never asked there, because asking would find an outer checkout and change its settings.
+export function guardStep({ dir = root, git = (args) => sh("git", args) } = {}) {
+  if (!isCheckout(dir)) {
+    return { status: "ok", label: "Secret guard (commit hook) skipped: this isn't a git checkout (a ZIP copy?), and it only matters for changing the code" };
+  }
+  if (git(["config", "core.hooksPath"]).out === ".githooks") {
+    return { status: "ok", label: "Secret guard (commit hook) is on" };
+  }
+  return git(["config", "core.hooksPath", ".githooks"]).ok
+    ? { status: "ok", label: "Secret guard (commit hook) was off, so I turned it on" }
+    : { status: "fail", label: "Couldn't turn on the secret guard", fix: "Run: npm run setup  (it turns the guard on)" };
+}
 
 // The .env part of the doctor: reuses check-env, keeps only its status lines, and never prints values.
 export function envStep({ envPath, examplePath } = {}) {

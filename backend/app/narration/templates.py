@@ -265,15 +265,23 @@ def _hint(event: FightEvent, default: str, use_hint: bool) -> str:
     return cleaned if cleaned and use_hint else default
 
 
+# Who a beat is about: the side's name, with "all N of them" only if the side has N or more.
+def _who(event: FightEvent, f: FighterFacts) -> str:
+    """ "Gray wolf, all 6 of them," or just "African lion" (#617).
+
+    A swarm HIT's group_size counts the blows landed in one step, not fighters (the engine's
+    `_run_swarm`), so one lion can land 6 bites: a side of 1 is never called a group, and a crowd
+    is never called bigger than it is.
+    """
+    if 1 < event.group_size <= f.count:
+        return f"{f.display_name}, all {event.group_size:,} of them,"
+    return f.display_name
+
+
 # One play-by-play line for an event.
 def beat_text(event: FightEvent, facts: NarrationFacts, use_hint: bool = True) -> str:
     """What the announcer says about one event (PG: knockouts and retreats, no gore)."""
-    f = facts.fighters[event.side]
-    who = (
-        f"{f.display_name}, all {event.group_size:,} of them,"
-        if event.group_size > 1
-        else f.display_name
-    )
+    who = _who(event, facts.fighters[event.side])
     match event.type:
         case EventType.APPROACH:
             return f"{who} closes in. Here we go!"

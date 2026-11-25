@@ -24,6 +24,7 @@ SPECIFIC = {
     "play_by_play": [
         f"between {MIN_BEATS} and {MAX_BEATS} lines", '"at_event"', "never go backwards",
         "never say a time", "12 words or fewer", "at most twice", "Number words are numbers too",
+        "not how many fighters", "a side of x1 a group",  # #617
     ],
     "outro": ["{win_pct}", "{fair_fight}", "write NO numbers", "between 4 and 6 lines"],
 }  # fmt: skip

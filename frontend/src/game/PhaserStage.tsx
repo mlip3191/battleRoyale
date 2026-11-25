@@ -16,7 +16,7 @@ export interface PhaserStageProps {
   matchup: Pick<Matchup, "fighters">;
   assets?: Asset[];
   onEvent?: (index: number) => void; // each replay event index, once, in order (D07 captions)
-  onFinish?: () => void; // the replay reached its last event (D07 verdict)
+  onFinish?: (skipped?: boolean) => void; // the replay reached its last event (D07 verdict); skipped when the viewer jumped to the end
   onReplay?: () => void; // the viewer pressed Replay; events start again from 0
   onSpeedChange?: (speed: Speed) => void; // the replay speed, whenever it changes (#577)
   onPlayingChange?: (playing: boolean) => void; // the replay started or stopped moving (#576)
@@ -131,10 +131,10 @@ export default function PhaserStage({
         tooClose: isTooCloseToCall(result),
         reducedMotion: motionless,
         onEvent: (index) => onEventRef.current?.(index),
-        onFinish: () => {
+        onFinish: (skipped) => {
           setPlaying(false);
           setDone(true);
-          onFinishRef.current?.();
+          onFinishRef.current?.(skipped);
         },
       });
       game = new P.Game({

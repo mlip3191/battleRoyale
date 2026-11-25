@@ -34,7 +34,7 @@ export interface BattleSceneOptions {
   tooClose?: boolean; // a winner too close to call (#476): the end banner must not crown anyone
   reducedMotion: boolean;
   onEvent: (index: number) => void; // every event index, once, in order
-  onFinish: () => void; // the last event was reached
+  onFinish: (skipped?: boolean) => void; // the last event was reached (skipped: the viewer jumped to the end)
 }
 
 // What React can call on the scene (the controls) and what tests drive.
@@ -174,7 +174,7 @@ export function createBattleScene(P: typeof Phaser) {
         this.apply(this.clock.beats[index], true);
       }
       this.skipping = false;
-      this.opts.onFinish();
+      this.opts.onFinish(true);
     }
 
     // Phaser calls this every frame: move the clock and play whatever beats it reached.
