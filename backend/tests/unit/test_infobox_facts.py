@@ -5,15 +5,18 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 
+import httpx
 import pytest
 
 from app.config import get_settings
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
 from app.models.stats import StatName
+from app.providers.mock.text import MockDocParser, MockEmbedder
 from app.research.facts import Fact
 from app.research.infobox import infobox_facts
-from app.research.ingest import restore_saved_facts
+from app.research.ingest import IngestSummary, ingest_fighter, restore_saved_facts
+from app.research.kb_store import ensure_vector_table
 from app.research.seed_fighters import SeedFighter
 from app.research.sources import SourceDocument, save_raw
 from app.research.statsheet import StoredFact, load_facts, stat_from_facts
@@ -98,4 +101,28 @@ async def test_the_facts_only_run_reads_saved_files_and_nothing_else(
         "Height: Males 56–61 cm (22–24 in)",
         "Height: Females 51–56 cm (20–22 in)",
         "Weight: 25–34 kg (55–75 lb)",
+    ]
+
+
+async def test_the_seed_ingest_stores_the_articles_infobox_rows(
+    database: sqlite3.Connection, tmp_path: Path
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "page/html" in request.url.path:
+            html = f"<p>The Golden Retriever is a dog.</p>{DOG}".encode()
+            return httpx.Response(200, headers={"ETag": '"77/abc"'}, content=html)
+        return httpx.Response(200, json={"entities": {"-1": {"missing": ""}}})  # no Wikidata
+
+    embedder, summary = MockEmbedder(), IngestSummary()
+    await ensure_vector_table(database, embedder)
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await ingest_fighter(
+            database, client, MockDocParser(), embedder, DOG_FIGHTER, tmp_path, summary
+        )
+    assert summary.failures == []
+    stored = load_facts(database, "golden-retriever")
+    assert [(s.fact.source, s.fact.field, s.fact.value) for s in stored] == [
+        ("infobox", "height", 61.0),
+        ("infobox", "height", 56.0),
+        ("infobox", "mass", 34.0),
     ]
