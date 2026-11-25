@@ -9,7 +9,12 @@ import {
 } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import AudioBar, { type AudioBarHandle, type VoiceCue } from "./AudioBar.tsx";
+import AudioBar, {
+  FINISH_WAIT_MS,
+  type AudioBarHandle,
+  type AudioBarProps,
+  type VoiceCue,
+} from "./AudioBar.tsx";
 
 // jsdom has no media playback; record what the bar asks for instead.
 const play = vi.fn(() => Promise.resolve());
@@ -271,15 +276,17 @@ test("switching the sound on while held waits for the fight to slow; switched of
   const view = render(<AudioBar narration="/media/a.mp3" music={null} hold />);
   fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
   expect(await screen.findByRole("button", { name: "Sound on" })).toBeTruthy();
-  expect(play).not.toHaveBeenCalled(); // nothing talks over a 10x fight
+  // Nothing talks over a 10x fight: the only play is the muted unlock, paused at once (#601).
+  expect(play).toHaveBeenCalledTimes(1);
+  expect(voiceTrack().muted).toBe(false);
   view.rerender(<AudioBar narration="/media/a.mp3" music={null} />);
-  await waitFor(() => expect(play).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(play).toHaveBeenCalledTimes(2));
 
   view.rerender(<AudioBar narration="/media/a.mp3" music={null} hold />);
   fireEvent.click(screen.getByRole("button", { name: "Sound on" })); // off, while held
   view.rerender(<AudioBar narration="/media/a.mp3" music={null} />);
   await new Promise((r) => setTimeout(r, 0));
-  expect(play).toHaveBeenCalledTimes(1); // off stays off
+  expect(play).toHaveBeenCalledTimes(2); // off stays off
 });
 
 test("picking 5x or 10x while the voice is still loading doesn't switch the sound off (#577)", async () => {
@@ -633,7 +640,10 @@ test("in sync, Sound on while the fight is paused waits for it, then finishes th
   told.length = 0;
   fireEvent.click(screen.getByRole("button", { name: "Sound off" }));
   await settle();
-  expect(told).toEqual([]); // nothing plays while held, not even muted
+  // Nothing is heard while held: the click only unlocks the voice, a muted play and pause, so
+  // Safari needs no second click when the fight moves on (#601).
+  expect(told).toEqual(["muted play", "pause"]);
+  told.length = 0;
   view.rerender(
     <AudioBar narration="/media/pbp.wav" music={null} cue={cueOf(4, 1.5, 3)} />,
   );
@@ -812,6 +822,158 @@ test("in sync, a new announcer file mid-line clears the old stop timer (#584)", 
     voice.currentTime = 2;
     act(() => vi.advanceTimersByTime(5000));
     expect(pause).toHaveBeenCalledTimes(stops);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+// A bar in sync with the fight, showing the given moment.
+const syncedAt = (cue: VoiceCue | null, extra: Partial<AudioBarProps> = {}) => (
+  <AudioBar
+    narration="/media/pbp.wav"
+    music={null}
+    startSound
+    cue={cue}
+    {...extra}
+  />
+);
+
+test("in sync, a moment that arrives while lines are talking waits its turn, then plays whole (#601)", async () => {
+  fakeClock();
+  try {
+    const view = render(syncedAt(cueOf(0, 0, 3)));
+    const voice = playingNow(voiceTrack());
+    await settle();
+    expect(play).toHaveBeenCalledTimes(1);
+    view.rerender(syncedAt(cueOf(1, 5, 7))); // arrives while the first lines still talk
+    await settle();
+    expect(voice.currentTime).toBe(0); // not cut off, not jumped
+    expect(play).toHaveBeenCalledTimes(1);
+    voice.currentTime = 3; // the first lines are said
+    act(() => vi.advanceTimersByTime(3000));
+    await settle();
+    expect(voice.currentTime).toBe(5); // the waiting moment starts from its own first line
+    expect(play).toHaveBeenCalledTimes(2);
+    voice.currentTime = 7;
+    act(() => vi.advanceTimersByTime(2000));
+    expect(pause).toHaveBeenCalledTimes(2); // each stretch stopped where it ends
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("in sync, several moments that arrive while lines talk play one after another in order (#601)", async () => {
+  fakeClock();
+  try {
+    const view = render(syncedAt(cueOf(0, 0, 2)));
+    const voice = playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(cueOf(1, 4, 6)));
+    await settle();
+    view.rerender(syncedAt(cueOf(2, 8, 10)));
+    await settle();
+    expect(voice.currentTime).toBe(0);
+    voice.currentTime = 2;
+    act(() => vi.advanceTimersByTime(2000));
+    await settle();
+    expect(voice.currentTime).toBe(4);
+    voice.currentTime = 6;
+    act(() => vi.advanceTimersByTime(2000));
+    await settle();
+    expect(voice.currentTime).toBe(8);
+    expect(play).toHaveBeenCalledTimes(3);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("in sync, a moment that arrives while the voice is silent replaces the one before it, as it always did (#601)", async () => {
+  const view = render(syncedAt(cueOf(0, 0, 2), { hold: true }));
+  await settle();
+  view.rerender(syncedAt(cueOf(1, 4, 6), { hold: true }));
+  await settle();
+  expect(voiceTrack().currentTime).toBe(4); // nothing was talking, so nothing waits
+});
+
+test("finishing: the bar says the last lines first, then settles (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    const view = render(syncedAt(cueOf(0, 0, 3), { onSettled }));
+    const voice = playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(cueOf(0, 0, 3), { onSettled, finishing: true }));
+    expect(onSettled).not.toHaveBeenCalled(); // still talking
+    voice.currentTime = 3;
+    act(() => vi.advanceTimersByTime(3000));
+    expect(onSettled).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("finishing: a voice that stalls only holds the show for the maximum wait (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    const view = render(syncedAt(cueOf(0, 0, 3), { onSettled }));
+    playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(cueOf(0, 0, 3), { onSettled, finishing: true }));
+    act(() => vi.advanceTimersByTime(FINISH_WAIT_MS - 1));
+    expect(onSettled).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(onSettled).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("finishing with nothing being said settles at once: sound off, held, or no lines (#601)", async () => {
+  const off = vi.fn();
+  sessionStorage.setItem("battle-royale-sound-off", "1");
+  const first = render(
+    syncedAt(cueOf(0, 0, 3), { onSettled: off, finishing: true }),
+  );
+  await settle();
+  expect(off).toHaveBeenCalledTimes(1);
+  first.unmount();
+  sessionStorage.clear();
+
+  const held = vi.fn();
+  render(
+    syncedAt(cueOf(0, 0, 3), { onSettled: held, finishing: true, hold: true }),
+  );
+  await settle();
+  expect(held).toHaveBeenCalledTimes(1);
+});
+
+test("finishing: the viewer switching the sound off settles it too (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    const view = render(syncedAt(cueOf(0, 0, 3), { onSettled }));
+    playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(cueOf(0, 0, 3), { onSettled, finishing: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Sound on" }));
+    expect(onSettled).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("a replay (no moment) cancels the stop timer and stops the old lines (#601)", async () => {
+  fakeClock();
+  try {
+    const view = render(syncedAt(cueOf(5, 2, 4)));
+    const voice = playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(null)); // Replay: the fight starts over
+    expect(pause).toHaveBeenCalledTimes(1); // the old lines end with it
+    voice.currentTime = 4;
+    act(() => vi.advanceTimersByTime(10_000));
+    expect(pause).toHaveBeenCalledTimes(1); // the old timer did nothing later
   } finally {
     vi.useRealTimers();
   }

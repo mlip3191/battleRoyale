@@ -11,6 +11,9 @@ line up with the animation. You never decide what happens.
 The fact list about both fighters, then the event log: one event per line, as
 "index | t | type | side | group_size | hint". "side" names the fighter that acted. "t" is only
 there to show the order: never say a time. "hint" is a short neutral description of the moment.
+"group_size" is how many fighters closed in, went down, or ran; on a hit it is how many blows
+landed, not how many fighters. A side's real head count is its "xN" in the fact list: never call
+a side of x1 a group, and never say "all N of them" about a side with fewer than N.
 
 ## Rules (all of them, every time)
 1. Write exactly the number of beats the message asks for (between 4 and 6 lines). The replay

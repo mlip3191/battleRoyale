@@ -201,6 +201,13 @@ export default function Home() {
         <h1 className={styles.prompt}>
           <label htmlFor="matchup">Who would win?</label>
         </h1>
+        {/* The instructions come first, right under the heading, so a visitor knows what to type
+            before they look for the examples (#586). The box still points at them. */}
+        <span id="matchup-hint" className={styles.muted}>
+          Pick your dream showdown! Name your two sides, with counts and a place
+          if you like (for example, a grizzly bear vs. 6 gray wolves in a
+          forest), then press Enter or FIGHT!
+        </span>
         <textarea
           id="matchup"
           ref={box}
@@ -215,10 +222,6 @@ export default function Home() {
               submit(e);
           }}
         />
-        <span id="matchup-hint" className={styles.muted}>
-          Name two sides, with counts and a place if you like. Press Enter to
-          fight.
-        </span>
         <button
           className={styles.fight}
           type="submit"
@@ -231,7 +234,9 @@ export default function Home() {
         </p>
         {/* A heading so the chips read as clickable examples, not decoration (#511). */}
         <section className={styles.examples} aria-labelledby="examples-title">
-          <h2 id="examples-title">Try one of these</h2>
+          <h2 id="examples-title">
+            Stumped? Try one of the sample battles below
+          </h2>
           <p className={styles.muted}>
             Click one to fill in the box, then press FIGHT!
           </p>
@@ -389,6 +394,10 @@ function Confirm({
       aria-labelledby="confirm-title"
     >
       <h2 id="confirm-title">Tonight's card</h2>
+      {/* The one next step; T3 found this card confusing and wanted to go straight to the battle (#581). */}
+      <p className={styles.cue}>
+        Last step: check the card, then press the big button below.
+      </p>
       {message && <p>{message}</p>}
       <ul className={styles.sides}>
         {matchup.fighters.map((f, i) => (

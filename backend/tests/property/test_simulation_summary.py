@@ -269,12 +269,23 @@ def test_a_favorite_that_wins_against_the_ground_is_not_said_to_be_helped_by_it(
 # --- #458: a side with a count above 1 reads as a plural in every deciding-factor sentence ------
 
 
-def test_a_crowd_reads_as_a_plural_in_the_numbers_sentence_and_a_single_one_is_unchanged():
+def test_a_crowd_reads_as_a_plural_in_the_numbers_sentence_and_a_single_one_stays_singular():
     wolf, bear = make_sheet("Gray wolf"), make_sheet("Grizzly bear")
     text = _explained("numbers", True, matchup_of(6, 1), [wolf, bear])
-    assert "6 gray wolves against 1 Grizzly bear" in text
+    assert "6 gray wolves against 1 grizzly bear" in text  # #615: lower case mid-sentence
     alone = _explained("numbers", True, matchup_of(1, 1), [wolf, bear])
-    assert "1 Gray wolf against 1 Grizzly bear" in alone  # a count of 1 is unchanged
+    assert "1 gray wolf against 1 grizzly bear" in alone  # singular, not pluralized (#458)
+
+
+def test_a_single_fighter_is_lower_case_mid_sentence_but_a_proper_name_keeps_its_capital():
+    """#615: "3 gorillas against 1 Grizzly bear" capitalized the single fighter mid-sentence."""
+    gorilla, bear = make_sheet("Gorilla"), make_sheet("Grizzly bear")
+    text = _explained("numbers", True, matchup_of(3, 1), [gorilla, bear])
+    assert "Numbers decided it: 3 gorillas against 1 grizzly bear." in text
+    # A proper first word such as "African" stays capitalized, and a sentence still starts upper.
+    elephant = make_sheet("African elephant")
+    text = _explained("numbers", True, matchup_of(3, 1), [gorilla, elephant])
+    assert "3 gorillas against 1 African elephant" in text
 
 
 def test_a_crowd_reads_as_a_plural_in_the_scaling_sentence() -> None:
@@ -297,7 +308,7 @@ def test_size_that_helps_a_smaller_crowd_says_the_smaller_side_and_how():
     text = _explained(StatName.SIZE, True, matchup, [wolf, bear])
     assert text.startswith("Size decided it, in the smaller side's favor:")
     # #458: a crowd is plural. make_sheet marks every stat an estimate, so both carry the label.
-    assert "6 gray wolves (1.6 m, estimate) against 1 Grizzly bear (2.4 m, estimate)" in text
+    assert "6 gray wolves (1.6 m, estimate) against 1 grizzly bear (2.4 m, estimate)" in text
     assert "easier target" in text and "fit around it" in text
     assert sorted(numbers_in(text, [wolf, bear])) == [1.0, 1.6, 2.4, 6.0]
 
@@ -333,7 +344,7 @@ def test_a_crowd_against_a_slightly_bigger_foe_does_not_claim_more_attackers_fit
     text = _explained(StatName.SIZE, True, matchup_of(6, 1), [small, big])
     assert text == (
         "Size decided it, in the smaller side's favor: "
-        "6 smalls (1.6 m, estimate) against 1 Big (2 m, estimate). "
+        "6 smalls (1.6 m, estimate) against 1 big (2 m, estimate). "
         "A bigger body is an easier target."
     )
 

@@ -590,8 +590,10 @@ def test_a_slow_model_hits_the_deadline_on_both_routes(
 
 # --- #547: one slow step is retried inside the deadline, and the log names it ---------------
 
-# Short enough to keep the tests quick, long enough for the mock safety check and Wikidata.
-SHORT_DEADLINE = 1.0
+# Short enough to keep the tests quick, long enough that the retry (which gets the 40% left after
+# a hung first attempt) still finishes on a slow runner: Windows CI's timer ticks every 15.6 ms and
+# the machine is slow, so 1 s left the retry about 0.4 s and it failed at random (#596).
+SHORT_DEADLINE = 3.0
 GRIZZLY_VS_WOLF = "a grizzly bear vs a gray wolf"
 
 
@@ -638,7 +640,8 @@ def test_two_timeouts_in_a_row_are_a_503_inside_the_deadline(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    deadline = 0.5
+    # Roomy enough that a coarse timer and a slow runner can't break the bound below (#596).
+    deadline = 2.0
     monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", deadline)
     chat.hangs = 2
     caplog.set_level(logging.WARNING, logger=intake_api.logger.name)
@@ -646,7 +649,8 @@ def test_two_timeouts_in_a_row_are_a_503_inside_the_deadline(
     response = client.post("/api/intake", json={"text": GRIZZLY_VS_WOLF})
     elapsed = time.monotonic() - started
     assert response.status_code == 503 and response.json()["detail"] == UNAVAILABLE_MESSAGE
-    assert elapsed < deadline + 0.3  # the retry fits in the same deadline, not twice it
+    # The retry fits in the same deadline, not twice it: two full deadlines would be 4 s.
+    assert elapsed < deadline + 0.9
     assert chat.hangs == 0  # both attempts reached the model
     lines = [r.getMessage() for r in intake_log(caplog)]
     assert lines == [
@@ -655,10 +659,27 @@ def test_two_timeouts_in_a_row_are_a_503_inside_the_deadline(
     ]
 
 
+class SlowToStopChat(ScriptedChat):
+    """A hung call that needs ~0.1 s to stop once cancelled, so the first attempt always ends well
+    past the deadline, however coarse the timer's tick (#596)."""
+
+    async def complete(self, messages: list[ChatMessage], **kwargs: Any) -> str:
+        if self.hangs:
+            self.hangs -= 1
+            try:
+                await asyncio.sleep(HANG_SECONDS)
+            except asyncio.CancelledError:
+                await asyncio.sleep(0.1)  # about six 15.6 ms ticks
+                raise
+        return await super().complete(messages, **kwargs)
+
+
 def test_no_retry_starts_when_the_first_attempt_used_the_whole_deadline(
-    client: TestClient, chat: ScriptedChat, monkeypatch: pytest.MonkeyPatch
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", 0.2)
+    chat = SlowToStopChat()
+    client.app.dependency_overrides[get_chat] = lambda: chat  # type: ignore[attr-defined]
+    monkeypatch.setattr(intake_api, "INTAKE_DEADLINE_SECONDS", 1.0)
     monkeypatch.setattr(intake_api, "ATTEMPT_SHARE", 1.0)
     chat.hangs = 2
     response = client.post("/api/intake", json={"text": GRIZZLY_VS_WOLF})

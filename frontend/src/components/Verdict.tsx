@@ -132,6 +132,15 @@ export function VerdictBanner({
           </div>
         </dl>
       )}
+      {/* Checked on the rounded value the card shows, so 0.96 ("about 1") gets no "under 1" note. */}
+      {winner !== null &&
+        Math.round(result.mean_survivors[winner] * 10) / 10 < 1 && (
+          <p className={styles.muted}>
+            Those averages count every simulated fight, the ones each side won
+            and lost alike, so even the winner can average under 1 still
+            standing.
+          </p>
+        )}
       {result.outcome !== "no_contest" && (
         <p className={styles.muted}>
           Fights last about {average(result.mean_duration_s)} s on average.
@@ -222,7 +231,12 @@ export function NextChallengerCard({
   };
 
   return (
-    <section className={styles.card} aria-labelledby="next-title">
+    <section
+      className={`${styles.card} ${styles.next}`}
+      aria-labelledby="next-title"
+    >
+      {/* The one next step on the page; T3 missed it when it looked like every other card (#581). */}
+      <p className={styles.cue}>Try this next: a closer fight</p>
       <h2 id="next-title">Next challenger: {challenger.entity}</h2>
       <p>{challenger.reason}</p>
       <p className={styles.muted}>
