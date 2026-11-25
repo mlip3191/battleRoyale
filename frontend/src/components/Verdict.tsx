@@ -231,7 +231,12 @@ export function NextChallengerCard({
   };
 
   return (
-    <section className={styles.card} aria-labelledby="next-title">
+    <section
+      className={`${styles.card} ${styles.next}`}
+      aria-labelledby="next-title"
+    >
+      {/* The one next step on the page; T3 missed it when it looked like every other card (#581). */}
+      <p className={styles.cue}>Try this next: a closer fight</p>
       <h2 id="next-title">Next challenger: {challenger.entity}</h2>
       <p>{challenger.reason}</p>
       <p className={styles.muted}>

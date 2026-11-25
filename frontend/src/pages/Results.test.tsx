@@ -555,6 +555,21 @@ test.each([
   if (detail) expect(alert.textContent).not.toContain(detail);
 });
 
+// #581: T3 did not realize the next challenger's button was the next step. The card now says so.
+test("the next challenger card is cued as the next thing to try (#581)", () => {
+  show(record);
+  const card = screen.getByRole("region", { name: "Next challenger: moose" });
+  expect(within(card).getByText("Try this next: a closer fight")).toBeTruthy();
+  expect(
+    within(card).getByRole("button", { name: "Fight them!" }),
+  ).toBeTruthy();
+  // The cue comes before the heading and the button, so it is read first.
+  const text = card.textContent ?? "";
+  expect(text.indexOf("Try this next")).toBeLessThan(
+    text.indexOf("Fight them!"),
+  );
+});
+
 // #582: plain-language reasons for the win, built from the stat sheets, shown above the tables.
 test("the results explain the win in plain words from the stat sheets (#582)", () => {
   show(record);

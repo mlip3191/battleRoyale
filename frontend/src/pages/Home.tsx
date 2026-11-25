@@ -389,6 +389,10 @@ function Confirm({
       aria-labelledby="confirm-title"
     >
       <h2 id="confirm-title">Tonight's card</h2>
+      {/* The one next step; T3 found this card confusing and wanted to go straight to the battle (#581). */}
+      <p className={styles.cue}>
+        Last step: check the card, then press the big button below.
+      </p>
       {message && <p>{message}</p>}
       <ul className={styles.sides}>
         {matchup.fighters.map((f, i) => (
