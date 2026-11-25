@@ -496,6 +496,7 @@ test("headings are in order: page, sections, then one per fighter", () => {
     .map((h) => h.textContent);
   expect(h2).toEqual([
     "Winner: 6 gray wolves",
+    "Why 6 gray wolves won, in plain words",
     "Fair fight",
     "Next challenger: moose",
     "Tale of the tape",
@@ -552,4 +553,30 @@ test.each([
     "This fight was called off. Try another matchup.",
   );
   if (detail) expect(alert.textContent).not.toContain(detail);
+});
+
+// #582: plain-language reasons for the win, built from the stat sheets, shown above the tables.
+test("the results explain the win in plain words from the stat sheets (#582)", () => {
+  show(record);
+  const card = screen.getByRole("region", {
+    name: /^Why .* won, in plain words$/,
+  });
+  expect(within(card).getAllByRole("listitem").length).toBeGreaterThan(0);
+  expect(card.textContent).toContain(
+    "These come straight from the stat sheets",
+  );
+  // Above the technical tables, not buried under them.
+  const tape = screen.getByRole("heading", { name: "Tale of the tape" });
+  expect(
+    card.compareDocumentPosition(tape) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+});
+
+test("a draw has no winner, so no reasons card (#582)", () => {
+  const draw = {
+    ...record,
+    result: { ...record.result!, outcome: "draw" as const },
+  };
+  show(draw);
+  expect(screen.queryByRole("region", { name: /in plain words/ })).toBeNull();
 });

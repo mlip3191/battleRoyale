@@ -10,6 +10,7 @@ import {
 } from "../components/Broadcast.tsx";
 import { usePageTitle } from "../components/page-title.ts";
 import { SourceList, StatSheetCard } from "../components/StatSheet.tsx";
+import WhyItWon from "../components/WhyItWon.tsx";
 import {
   FairFightCard,
   NextChallengerCard,
@@ -57,6 +58,17 @@ export default function Results() {
           message="The fight finished, but its result is missing. Try running the matchup again."
         />
       )}
+      {/* The plain-language reasons come first, so a viewer need not decode the stat tables (#582). */}
+      {result &&
+        winner !== null &&
+        battle &&
+        battle.stat_sheets.length === 2 && (
+          <WhyItWon
+            winnerName={names[winner]}
+            winner={battle.stat_sheets[winner]}
+            loser={battle.stat_sheets[1 - winner]}
+          />
+        )}
       {/* Right after the verdict, so "Fight them!" isn't buried under the stat sheets (#504). */}
       {/* A no-contest has no fair count to find (the sides can't engage). */}
       {battle?.fair_fight && result?.outcome !== "no_contest" && (
