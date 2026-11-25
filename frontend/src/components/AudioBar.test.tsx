@@ -1009,3 +1009,48 @@ test("finishing: a backlog of lines is said in full, however long, because the w
     vi.useRealTimers();
   }
 });
+
+test("finishing: a slow voice that keeps moving gets the slack again each time it moves on (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    const view = render(syncedAt(cueOf(0, 0, 4), { onSettled }));
+    const voice = playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(cueOf(1, 5, 9), { onSettled }));
+    await settle();
+    // 8 s of speech are lined up, so the first wait is 8 s + the 8 s of slack = 16 s.
+    view.rerender(syncedAt(cueOf(1, 5, 9), { onSettled, finishing: true }));
+    act(() => vi.advanceTimersByTime(10_000)); // the voice is slow: the first lines are not done yet
+    voice.currentTime = 4;
+    act(() => vi.advanceTimersByTime(2000)); // t = 12 s: they end, and the second moment starts
+    await settle();
+    expect(voice.currentTime).toBe(5);
+    voice.currentTime = 6;
+    act(() => vi.advanceTimersByTime(5000)); // t = 17 s: past the first 16 s, but the voice moved on
+    expect(onSettled).not.toHaveBeenCalled();
+    voice.currentTime = 9;
+    act(() => vi.advanceTimersByTime(3000)); // the closing lines are said: now it settles
+    expect(onSettled).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("finishing: holding the fight (5x or 10x) during the wait settles at once, not after the full wait (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    const view = render(syncedAt(cueOf(0, 0, 4), { onSettled }));
+    playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(cueOf(0, 0, 4), { onSettled, finishing: true }));
+    expect(onSettled).not.toHaveBeenCalled(); // still talking
+    view.rerender(
+      syncedAt(cueOf(0, 0, 4), { onSettled, finishing: true, hold: true }),
+    );
+    expect(onSettled).toHaveBeenCalledTimes(1); // the viewer sped it up: nothing left to wait for
+  } finally {
+    vi.useRealTimers();
+  }
+});

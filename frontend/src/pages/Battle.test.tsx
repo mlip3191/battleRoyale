@@ -786,8 +786,8 @@ test("audio: Sound on during the fight unlocks the voice inside the click, befor
 
 // #601: the replay reports it is finished when it reaches the last event, in the same moment the
 // closing line's cue starts. The show used to move to the verdict then, so the closing line (and
-// the last knock-out call) never played. Now the verdict waits for the announcer, for a short while
-// at most.
+// the last knock-out call) never played. Now the verdict waits for the announcer: for the speech
+// still to come plus a few seconds of slack for a stalled voice, and no longer.
 describe("the verdict waits for the announcer's last lines (#601)", () => {
   const lastMoment = () => {
     const placed = placeLines(

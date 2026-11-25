@@ -27,9 +27,7 @@
     },
     "/api/intake": {
       "post": {
-        "tags": [
-          "intake"
-        ],
+        "tags": ["intake"],
         "summary": "Start Intake",
         "operationId": "start_intake_api_intake_post",
         "requestBody": {
@@ -68,9 +66,7 @@
     },
     "/api/intake/{pending_id}/answer": {
       "post": {
-        "tags": [
-          "intake"
-        ],
+        "tags": ["intake"],
         "summary": "Answer Intake",
         "operationId": "answer_intake_api_intake__pending_id__answer_post",
         "parameters": [
@@ -120,9 +116,7 @@
     },
     "/api/battles": {
       "post": {
-        "tags": [
-          "battles"
-        ],
+        "tags": ["battles"],
         "summary": "Create Battle",
         "operationId": "create_battle_api_battles_post",
         "requestBody": {
@@ -172,9 +166,7 @@
         }
       },
       "get": {
-        "tags": [
-          "battles"
-        ],
+        "tags": ["battles"],
         "summary": "List Battles",
         "operationId": "list_battles_api_battles_get",
         "parameters": [
@@ -219,9 +211,7 @@
     },
     "/api/battles/{battle_id}": {
       "get": {
-        "tags": [
-          "battles"
-        ],
+        "tags": ["battles"],
         "summary": "Read Battle",
         "operationId": "read_battle_api_battles__battle_id__get",
         "parameters": [
@@ -261,9 +251,7 @@
     },
     "/api/battles/{battle_id}/events": {
       "get": {
-        "tags": [
-          "battles"
-        ],
+        "tags": ["battles"],
         "summary": "Battle Events",
         "operationId": "battle_events_api_battles__battle_id__events_get",
         "parameters": [
@@ -301,9 +289,7 @@
     },
     "/api/fighters": {
       "get": {
-        "tags": [
-          "fighters"
-        ],
+        "tags": ["fighters"],
         "summary": "Find Fighters",
         "operationId": "find_fighters_api_fighters_get",
         "parameters": [
@@ -349,9 +335,7 @@
     },
     "/api/fighters/{fighter_id}": {
       "get": {
-        "tags": [
-          "fighters"
-        ],
+        "tags": ["fighters"],
         "summary": "Read Fighter",
         "operationId": "read_fighter_api_fighters__fighter_id__get",
         "parameters": [
@@ -394,12 +378,7 @@
     "schemas": {
       "Ability": {
         "description": "Special powers of mythical creatures; each has one documented engine effect.",
-        "enum": [
-          "flight",
-          "breath_weapon",
-          "regeneration",
-          "extra_heads"
-        ],
+        "enum": ["flight", "breath_weapon", "regeneration", "extra_heads"],
         "title": "Ability",
         "type": "string"
       },
@@ -414,12 +393,7 @@
           },
           "kind": {
             "description": "What the file is.",
-            "enum": [
-              "sprite",
-              "battlefield",
-              "narration_audio",
-              "music"
-            ],
+            "enum": ["sprite", "battlefield", "narration_audio", "music"],
             "title": "Kind",
             "type": "string"
           },
@@ -442,11 +416,7 @@
           "script_kind": {
             "anyOf": [
               {
-                "enum": [
-                  "intro",
-                  "play_by_play",
-                  "outro"
-                ],
+                "enum": ["intro", "play_by_play", "outro"],
                 "type": "string"
               },
               {
@@ -491,12 +461,7 @@
             "title": "Line Times S"
           }
         },
-        "required": [
-          "asset_id",
-          "kind",
-          "url",
-          "prompt_hash"
-        ],
+        "required": ["asset_id", "kind", "url", "prompt_hash"],
         "title": "Asset",
         "type": "object"
       },
@@ -510,9 +475,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "battle_id"
-        ],
+        "required": ["battle_id"],
         "title": "BattleCreated",
         "type": "object"
       },
@@ -608,32 +571,18 @@
           },
           "status": {
             "description": "Overall state of the battle.",
-            "enum": [
-              "running",
-              "done",
-              "failed"
-            ],
+            "enum": ["running", "done", "failed"],
             "title": "Status",
             "type": "string"
           }
         },
-        "required": [
-          "battle_id",
-          "created_at",
-          "matchup",
-          "stages",
-          "status"
-        ],
+        "required": ["battle_id", "created_at", "matchup", "stages", "status"],
         "title": "BattleRecord",
         "type": "object"
       },
       "Body": {
         "description": "How it fights, not its biology.",
-        "enum": [
-          "living",
-          "machine",
-          "inert"
-        ],
+        "enum": ["living", "machine", "inert"],
         "title": "Body",
         "type": "string"
       },
@@ -657,21 +606,13 @@
             "type": "string"
           }
         },
-        "required": [
-          "entity",
-          "tested_win_prob",
-          "reason"
-        ],
+        "required": ["entity", "tested_win_prob", "reason"],
         "title": "ChallengerSuggestion",
         "type": "object"
       },
       "Confidence": {
         "description": "How much we trust a value.",
-        "enum": [
-          "high",
-          "medium",
-          "low"
-        ],
+        "enum": ["high", "medium", "low"],
         "title": "Confidence",
         "type": "string"
       },
@@ -697,10 +638,7 @@
         "properties": {
           "varied_side": {
             "description": "The side whose count was changed.",
-            "enum": [
-              0,
-              1
-            ],
+            "enum": [0, 1],
             "title": "Varied Side",
             "type": "integer"
           },
@@ -734,12 +672,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "varied_side",
-          "count",
-          "win_prob_at_count",
-          "message"
-        ],
+        "required": ["varied_side", "count", "win_prob_at_count", "message"],
         "title": "FairFight",
         "type": "object"
       },
@@ -758,10 +691,7 @@
           },
           "side": {
             "description": "Which side acted (0 = first fighter, 1 = second).",
-            "enum": [
-              0,
-              1
-            ],
+            "enum": [0, 1],
             "title": "Side",
             "type": "integer"
           },
@@ -839,12 +769,7 @@
             "title": "Hp Left"
           }
         },
-        "required": [
-          "t",
-          "type",
-          "side",
-          "text_hint"
-        ],
+        "required": ["t", "type", "side", "text_hint"],
         "title": "FightEvent",
         "type": "object"
       },
@@ -868,11 +793,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "fighter_id",
-          "display_name",
-          "cached"
-        ],
+        "required": ["fighter_id", "display_name", "cached"],
         "title": "FighterMatch",
         "type": "object"
       },
@@ -925,10 +846,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "entity",
-          "raw"
-        ],
+        "required": ["entity", "raw"],
         "title": "FighterRequest",
         "type": "object"
       },
@@ -947,12 +865,7 @@
       },
       "Habitat": {
         "description": "Where the fighter can move.",
-        "enum": [
-          "land",
-          "water",
-          "air",
-          "amphibious"
-        ],
+        "enum": ["land", "water", "air", "amphibious"],
         "title": "Habitat",
         "type": "string"
       },
@@ -966,9 +879,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "answer"
-        ],
+        "required": ["answer"],
         "title": "IntakeAnswer",
         "description": "Body of POST /api/intake/{pending_id}/answer."
       },
@@ -981,9 +892,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "text"
-        ],
+        "required": ["text"],
         "title": "IntakeRequest",
         "description": "Body of POST /api/intake."
       },
@@ -993,11 +902,7 @@
         "properties": {
           "status": {
             "description": "ok = ready to research; clarify = ask the user first; blocked = refused.",
-            "enum": [
-              "ok",
-              "clarify",
-              "blocked"
-            ],
+            "enum": ["ok", "clarify", "blocked"],
             "title": "Status",
             "type": "string"
           },
@@ -1088,9 +993,7 @@
             "title": "Message"
           }
         },
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "IntakeResult",
         "type": "object"
       },
@@ -1145,10 +1048,7 @@
             "description": "The sentence in the myth's article that justifies the analogs and abilities."
           }
         },
-        "required": [
-          "body_analog",
-          "source"
-        ],
+        "required": ["body_analog", "source"],
         "title": "LoreProfile",
         "type": "object"
       },
@@ -1186,10 +1086,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "fighters",
-          "raw_text"
-        ],
+        "required": ["fighters", "raw_text"],
         "title": "Matchup",
         "type": "object"
       },
@@ -1199,11 +1096,7 @@
         "properties": {
           "kind": {
             "description": "Which part of the broadcast it is.",
-            "enum": [
-              "intro",
-              "play_by_play",
-              "outro"
-            ],
+            "enum": ["intro", "play_by_play", "outro"],
             "title": "Kind",
             "type": "string"
           },
@@ -1222,10 +1115,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "kind",
-          "lines"
-        ],
+        "required": ["kind", "lines"],
         "title": "Script",
         "type": "object"
       },
@@ -1235,10 +1125,7 @@
         "properties": {
           "speaker": {
             "description": "Who says it.",
-            "enum": [
-              "announcer",
-              "color_commentator"
-            ],
+            "enum": ["announcer", "color_commentator"],
             "title": "Speaker",
             "type": "string"
           },
@@ -1261,10 +1148,7 @@
             "title": "At Event"
           }
         },
-        "required": [
-          "speaker",
-          "text"
-        ],
+        "required": ["speaker", "text"],
         "title": "ScriptLine",
         "type": "object"
       },
@@ -1283,10 +1167,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "battle_id",
-          "title"
-        ],
+        "required": ["battle_id", "title"],
         "title": "ShowcaseBattle",
         "type": "object"
       },
@@ -1381,12 +1262,7 @@
           },
           "outcome": {
             "description": "Most likely result; no_contest means the two sides cannot engage.",
-            "enum": [
-              "win_0",
-              "win_1",
-              "draw",
-              "no_contest"
-            ],
+            "enum": ["win_0", "win_1", "draw", "no_contest"],
             "title": "Outcome",
             "type": "string"
           },
@@ -1396,12 +1272,7 @@
                 "$ref": "#/components/schemas/StatName"
               },
               {
-                "enum": [
-                  "numbers",
-                  "terrain",
-                  "habitat",
-                  "abilities"
-                ],
+                "enum": ["numbers", "terrain", "habitat", "abilities"],
                 "type": "string"
               }
             ],
@@ -1497,12 +1368,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "title",
-          "url",
-          "quote",
-          "retrieved_at"
-        ],
+        "required": ["title", "url", "quote", "retrieved_at"],
         "title": "Source",
         "type": "object"
       },
@@ -1528,13 +1394,7 @@
           },
           "status": {
             "description": "Where it is; fallback means a stand-in was used and the battle continues.",
-            "enum": [
-              "pending",
-              "running",
-              "done",
-              "failed",
-              "fallback"
-            ],
+            "enum": ["pending", "running", "done", "failed", "fallback"],
             "title": "Status",
             "type": "string"
           },
@@ -1552,10 +1412,7 @@
             "title": "Detail"
           }
         },
-        "required": [
-          "stage",
-          "status"
-        ],
+        "required": ["stage", "status"],
         "title": "StageStatus",
         "type": "object"
       },
@@ -1788,13 +1645,7 @@
             "title": "Note"
           }
         },
-        "required": [
-          "value",
-          "unit",
-          "confidence",
-          "is_estimate",
-          "method"
-        ],
+        "required": ["value", "unit", "confidence", "is_estimate", "method"],
         "title": "StatValue",
         "type": "object"
       },
@@ -1846,11 +1697,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
+        "required": ["loc", "msg", "type"],
         "title": "ValidationError"
       }
     }

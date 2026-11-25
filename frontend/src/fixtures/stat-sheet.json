@@ -5,10 +5,7 @@
   "category": "mammal",
   "body": "living",
   "habitat": "land",
-  "weapons": [
-    "teeth",
-    "claws"
-  ],
+  "weapons": ["teeth", "claws"],
   "lore": null,
   "stats": {
     "mass_kg": {

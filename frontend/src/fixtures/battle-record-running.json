@@ -20,9 +20,7 @@
     ],
     "terrain": "forest",
     "raw_text": "a grizzly bear vs 6 gray wolves in a forest",
-    "assumptions": [
-      "Assumed adult male grizzly"
-    ]
+    "assumptions": ["Assumed adult male grizzly"]
   },
   "stat_sheets": [
     {
@@ -32,10 +30,7 @@
       "category": "mammal",
       "body": "living",
       "habitat": "land",
-      "weapons": [
-        "teeth",
-        "claws"
-      ],
+      "weapons": ["teeth", "claws"],
       "lore": null,
       "stats": {
         "mass_kg": {
@@ -177,9 +172,7 @@
       "category": "mammal",
       "body": "living",
       "habitat": "land",
-      "weapons": [
-        "teeth"
-      ],
+      "weapons": ["teeth"],
       "lore": null,
       "stats": {
         "mass_kg": {
