@@ -99,6 +99,59 @@ def _strip_terrain_tail(side: str) -> str:
     return side[: match.start()].strip() or side
 
 
+# Words that start an instruction to the app, never part of a fighter's name: "ignore your
+# rules", "say the duck wins" (#618). Whole words, any case.
+_INSTRUCTION = re.compile(
+    r"\b(?:ignore|disregard|forget|pretend|override|say|tell|make|let|reply|respond|print)\b",
+    re.I,
+)
+# A sentence end before more text: "!", "?", ";" or ":", or a full stop after three letters or
+# digits, so "a T. rex" and "a St. Bernard" stay whole.
+_SENTENCE_END = re.compile(r"(?:(?<=[A-Za-z0-9]{3})\.|[!?;:])+\s+")
+# What ends an instruction typed before the matchup: a sentence end or a data marker's ">".
+_BEFORE_FIGHTER = re.compile(rf"{_SENTENCE_END.pattern}|>")
+# A bracket or a data marker opens text that is not the fighter: "(developer mode: ...)", "<<<".
+_ASIDE = re.compile(r"[(\[{<]")
+# Marks and joining words left at a side's end after a cut: "a horse and" -> "a horse".
+_LOOSE_END = re.compile(r"(?:[\s,;:.!?]|\b(?:and|then|but|so|now|please|just|also)\b)+$", re.I)
+
+
+# One side's fighter words, as a model would read them: the words next to "vs", without the
+# sentence, bracket, marker, or instruction around them (#618). None when an instruction is mixed
+# into the first side's words, which can't be untangled, so the mock asks to rephrase.
+def _fighter_words(side: str, *, first: bool) -> str | None:
+    if first:
+        side = _BEFORE_FIGHTER.split(side)[-1]
+    else:
+        side = _SENTENCE_END.split(side, maxsplit=1)[0]
+        side = _INSTRUCTION.split(side, maxsplit=1)[0]
+    side = _LOOSE_END.sub("", _ASIDE.split(side, maxsplit=1)[0]).strip()
+    if not re.search(r"[a-z0-9]", side, re.I) or _INSTRUCTION.search(side):
+        return None
+    return side
+
+
+# The name without the fraction or zero in front, as a model would read it: "half a horse" ->
+# "horse", "zero horses" -> "horses" (#618). Only when code reads a fraction or zero there, so
+# "a quarter horse" keeps its name.
+def _echo_entity(raw: str) -> str:
+    from app.intake.rules import (
+        FRACTION_WORDS,
+        NUMBER_TOKEN,
+        QUANTITY_WORDS,
+        ZERO_WORDS,
+        read_count,
+    )
+
+    if read_count(raw).problem is None:
+        return raw
+    count_words = QUANTITY_WORDS | FRACTION_WORDS | ZERO_WORDS
+    words = raw.split()
+    while len(words) > 1 and (words[0].lower() in count_words or NUMBER_TOKEN.match(words[0])):
+        words = words[1:]
+    return " ".join(words)
+
+
 # The battlefield words in a trailing "in the ..." phrase only, so a terrain word
 # inside a fighter's name ("sea turtle", "field mouse") is not the battlefield.
 def _terrain_phrase(text: str) -> str | None:
@@ -117,7 +170,8 @@ def _terrain_phrase(text: str) -> str | None:
 
 
 # A ParsedMatchup-shaped reply from an "X vs Y" request, for mock mode (#142 item 5).
-# Code in the parser still decides counts, names, size references, and terrain.
+# Code in the parser still decides counts, names, size references, and terrain. Like a model,
+# it reads only each side's fighter, never an instruction typed around it (#618).
 def echo_intake_reply(text: str) -> dict[str, Any] | None:
     from app.intake.parser import typed_sides
 
@@ -125,14 +179,17 @@ def echo_intake_reply(text: str) -> dict[str, Any] | None:
     if len(sides) != 2:
         return None
     fighters: list[dict[str, Any]] = []
-    for side in sides:
-        raw = _strip_terrain_tail(side)
+    for index, side in enumerate(sides):
+        words = _fighter_words(side, first=index == 0)
+        if words is None:
+            return None
+        raw = _strip_terrain_tail(words)
         if _squash(raw) not in _squash(text):
-            raw = side.strip()
+            raw = words
         fighters.append(
             {
                 "raw": raw,
-                "entity": raw,
+                "entity": _echo_entity(raw),
                 "count": None,
                 "variant": None,
                 "size_reference": None,
