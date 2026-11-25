@@ -132,6 +132,15 @@ export function VerdictBanner({
           </div>
         </dl>
       )}
+      {/* Checked on the rounded value the card shows, so 0.96 ("about 1") gets no "under 1" note. */}
+      {winner !== null &&
+        Math.round(result.mean_survivors[winner] * 10) / 10 < 1 && (
+          <p className={styles.muted}>
+            Those averages count every simulated fight, the ones each side won
+            and lost alike, so even the winner can average under 1 still
+            standing.
+          </p>
+        )}
       {result.outcome !== "no_contest" && (
         <p className={styles.muted}>
           Fights last about {average(result.mean_duration_s)} s on average.

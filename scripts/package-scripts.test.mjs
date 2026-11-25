@@ -9,6 +9,11 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const scripts = JSON.parse(readFileSync(join(here, "..", "package.json"), "utf8")).scripts;
 
+test("setup turns the commit guard on through a step that skips it in a ZIP copy (#597)", () => {
+  assert.match(scripts.setup, /&& node scripts\/git-hooks\.mjs$/);
+  assert.doesNotMatch(scripts.setup, /git config/);
+});
+
 for (const name of ["start", "dev:backend"]) {
   test(`${name} starts uvicorn with python -m (#366)`, () => {
     assert.match(scripts[name], /uv run --directory backend python -m uvicorn app\.main:app /);
