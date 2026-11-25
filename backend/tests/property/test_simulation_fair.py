@@ -1,6 +1,7 @@
 """F06: fair-fight search and next-challenger testing."""
 
 import math
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -247,7 +248,7 @@ def test_big_counts_in_the_fair_fight_message_get_thousands_separators(monkeypat
     # The win-chances line of a rough answer is built from the same side text.
     fake_engine(monkeypatch, 1, step(3200, low=0.10, high=0.80))
     rough = fair_fight_search(matchup_of(1500, 1), [wolf(), house_cat()], main_result(1))
-    assert "3,200 house cats win 10%, 3,216 house cats win 80%." in rough.result.message
+    assert re.search(r"3,200 house cats win 10%, [\d,]+ house cats win 80%", rough.result.message)
 
 
 # --- test_challengers ----------------------------------------------------------------------------

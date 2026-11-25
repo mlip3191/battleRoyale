@@ -23,7 +23,7 @@ class FairFightSearch:
 
 
 def _side_text(count: int, sheet: StatSheet, request: FighterRequest) -> str:
-    """ "480 duck-sized horses": the count, the size reference if the side has one, and the name."""
+    """ "1,480 duck-sized horses": the count, the size reference (if any) and the name."""
     sized = f"{request.size_reference}-sized " if request.size_reference else ""
     return f"{count:,} {sized}{counted_name(sheet.display_name, count)}"  # "10,000", as elsewhere
 
