@@ -390,3 +390,94 @@ def test_words_that_look_like_new_forms_are_not_numbers(text: str) -> None:
 def test_roman_numeral_reads_original_casing() -> None:
     assert extract_numbers("I MIX DID CIVIL") == []
     assert [n.value for n in extract_numbers("XIV and xiv")] == [14.0]
+
+
+# Issue #616: number words are counts like digits. "Two wolves are out cold" was the third wolf
+# down, and it passed because a lone "two" was always allowed.
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("Another bite lands! Two wolves are out cold now.", 2.0),  # the live miscount
+        ("The two wolves are down.", 2.0),  # "the two" is a count unless "of" follows
+        ("Standing tall at two meters.", 2.0),  # a measure: 2.08 m is not "two"
+        ("Three wolves left standing!", 3.0),  # any other count word, as before
+        ("Five zero kilograms of pure muscle.", 50.0),  # read digit by digit
+        ("One five zero kilograms of bear.", 150.0),  # digit by digit, three digits
+    ],
+)
+def test_count_and_measure_words_are_checked_like_digits(text: str, value: float) -> None:
+    measured = AllowedNumbers(values=frozenset({2.08, 2.1, 1.0, 5.0, 0.0}))
+    [found] = extract_numbers(text)
+    assert found.value == pytest.approx(value)
+    assert not found.ordinary
+    assert find_unsupported_numbers(text, measured), text
+    assert find_unsupported_numbers(text, AllowedNumbers(values=frozenset({value}))) == [], text
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "One of the wolves backs off.",  # "one" the pronoun
+        "No one saw that coming.",  # "no one"
+        "Once again, the bear swings!",  # "once" is not a count
+        "A bite lands! A big one!",  # "a" and "one" the pronoun
+        "For the first time tonight, the second wolf steps up.",  # first and second
+        "These two do not like each other.",  # the pair in the ring
+        "Look at those two go!",  # the pair in the ring
+        "A one-two combo from the bear!",  # a boxing combo, not a count
+        "The two of them circle each other.",  # the pair in the ring
+    ],
+)
+def test_words_that_are_not_counts_still_pass(text: str) -> None:
+    assert find_unsupported_numbers(text, AllowedNumbers()) == [], text
+
+
+def test_digit_by_digit_needs_plain_spaces() -> None:
+    # "and" or a hyphen between unit words keeps them separate numbers.
+    assert [n.value for n in extract_numbers("five and zero")] == [5.0, 0.0]
+    assert [n.value for n in extract_numbers("five zero")] == [50.0]
+    assert [n.value for n in extract_numbers("nine nine point eight percent")] == [99.8]
+
+
+# Issue #616: "occurred 100% of the time" for 99.8%. 0% and 100% say "never" and "always", so
+# they need an exact match; a hedge ("nearly 100%") may round to a whole percent.
+@pytest.mark.parametrize(
+    ("text", "ok"),
+    [
+        ("It occurred 100% of the time.", False),
+        ("It occurred 100 percent of the time.", False),
+        ("It occurred one hundred percent of the time.", False),
+        ("It occurred nearly 100% of the time.", True),
+        ("It occurred almost 100% of the time.", True),
+        ("It occurred close to 100% of the time.", True),
+        ("It occurred just under 100% of the time.", True),
+        ("It occurred 99.8% of the time.", True),
+        ("Nearly 100%, and 0.2% the other way.", True),
+        ("It happened 0% of the time.", False),
+        ("It happened almost 0% of the time.", True),
+    ],
+)
+def test_never_and_always_need_an_exact_percent(text: str, ok: bool) -> None:
+    allowed = AllowedNumbers(percents=frozenset({99.8, 0.2}))
+    assert (find_unsupported_numbers(text, allowed) == []) is ok, text
+
+
+def test_exact_and_far_percents_at_the_ends() -> None:
+    certain = AllowedNumbers(percents=frozenset({100.0, 0.0}))
+    assert find_unsupported_numbers("100% of the time, 0% draws.", certain) == []
+    far = AllowedNumbers(percents=frozenset({95.0, 4.0}))
+    assert find_unsupported_numbers("nearly 100% of the time", far)  # 95% is not nearly 100%
+    assert find_unsupported_numbers("almost 0% of the time", far)  # 4% is not almost 0%
+
+
+# Issue #616: a head count (the two fighters of a one-on-one) passes as a plain number, but never
+# as a side of a ratio or as a multiplier; a real fact of 2 still backs all of them.
+@pytest.mark.parametrize(
+    "text", ["A two to one favorite!", "2:1 odds.", "Twice as hard!", "A twofold edge!", "2/1"]
+)
+def test_head_count_backs_no_ratio_or_multiplier(text: str) -> None:
+    heads = AllowedNumbers(values=frozenset({1.0}), count_only=frozenset({2.0}))
+    assert find_unsupported_numbers("Two titans enter. 2 titans!", heads) == []
+    assert find_unsupported_numbers(text, heads), text
+    real = AllowedNumbers(values=frozenset({1.0, 2.0}))
+    assert find_unsupported_numbers(text, real) == [], text

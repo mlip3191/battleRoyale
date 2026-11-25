@@ -5,7 +5,8 @@ never from the user's raw text. Names use the stat sheet's display_name, re-chec
 allowlist (letters, digits, spaces, hyphens; ARCHITECTURE "Security").
 
 Side counts: SimulationResult has no per-side fighter count, so `counts` is an optional argument
-(from the Matchup); without it, a side's count is the largest group_size seen in the log.
+(from the Matchup); without it, a side's count is the largest group_size seen in the log, hits
+aside (a swarm HIT's group_size counts blows landed, not fighters, #617).
 """
 
 import math
@@ -13,7 +14,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from app.models.simulation import FairFight, SimulationResult
+from app.models.simulation import EventType, FairFight, SimulationResult
 from app.models.stats import SAFE_NAME, StatSheet
 from app.narration.number_guard import AllowedNumbers
 from app.simulation.decide import names_a_factor
@@ -107,8 +108,8 @@ class NarrationFacts:
 
     fighters: tuple[FighterFacts, ...]
     runs: int
-    win_pct: tuple[int, int]
-    draw_pct: int
+    win_pct: tuple[float, float]  # whole numbers, but 99.8 for a near-certain win (pct, #616)
+    draw_pct: float
     outcome: str
     deciding_factor: str
     factor_decided: bool  # False: the explainer says no single factor decided it (#351)
@@ -116,7 +117,7 @@ class NarrationFacts:
     mean_survivors: tuple[float, float]
     fair_ran: bool
     fair_count: int | None
-    fair_win_pct: int | None
+    fair_win_pct: float | None
     fair_side: int | None
     allowed: AllowedNumbers
     too_close: bool = False  # the winner's 95% range reaches 50%: a near coin flip (#482)
@@ -155,10 +156,18 @@ def _stat_numbers(value: float, unit: str) -> set[float]:
     return out
 
 
-# A probability as a whole-number percentage.
-def pct(p: float) -> int:
-    """0.38 -> 38."""
-    return round(p * 100)
+# A probability as a whole-number percentage, except that a share below 1 is never rounded up
+# to 100: it keeps one decimal instead, so 99.8% is never said as "100% of the time" (#616).
+def pct(p: float) -> float:
+    """0.38 -> 38; 0.998 -> 99.8; 1.0 -> 100."""
+    whole = round(p * 100)
+    return whole if whole < 100 or p >= 1 else min(round(p * 100, 1), 99.9)
+
+
+# Every way a probability may be said as a percentage; 100 only for a share of exactly 1 (#616).
+def _percents(p: float) -> set[float]:
+    out = _roundings(p * 100) | {float(pct(p))}
+    return out if p >= 1 else {v for v in out if v < 100}
 
 
 # Odds ratios a script may quote ("about three to two") from a pair of win probabilities.
@@ -169,11 +178,14 @@ def _odds(probs: Sequence[float]) -> set[float]:
     return out
 
 
-# Largest group of fighters that acted together for each side in the representative fight.
+# Largest group of fighters for each side in the representative fight (the walk-in names the whole
+# side). Hits are skipped: a swarm HIT's group_size is how many blows landed, so one lion can
+# land 6 bites in a step and still be one lion (#617).
 def _max_group(result: SimulationResult) -> tuple[int, int]:
     sizes = [1, 1]
     for event in result.representative_log:
-        sizes[event.side] = max(sizes[event.side], event.group_size)
+        if event.type != EventType.HIT:
+            sizes[event.side] = max(sizes[event.side], event.group_size)
     return sizes[0], sizes[1]
 
 
@@ -215,9 +227,12 @@ def _allowed(
     probs = [*result.win_prob, result.draw_prob, *(b for ci in result.win_prob_ci95 for b in ci)]
     for p in probs:
         values |= _roundings(p)
-        percents |= _roundings(p * 100) | {float(pct(p))}
+        percents |= _percents(p)
     values |= _stat_numbers(result.mean_duration_s, "s")
     values |= {float(result.runs)} | {float(c) for c in facts_counts}
+    # A one-on-one has two fighters in the ring, so it may say "two titans" (number words, #616),
+    # but only as a head count: never "two to one" or "twice as hard".
+    heads = frozenset({2.0}) if sum(facts_counts) == 2 else frozenset()
     values |= {float(e.group_size) for e in result.representative_log}
     for survivors in result.mean_survivors:
         values |= _roundings(survivors)
@@ -227,9 +242,9 @@ def _allowed(
         values.add(float(fair.count))
     if fair is not None and fair.count is not None and fair.win_prob_at_count is not None:
         values |= _roundings(fair.win_prob_at_count)
-        percents |= _roundings(fair.win_prob_at_count * 100) | {float(pct(fair.win_prob_at_count))}
+        percents |= _percents(fair.win_prob_at_count)
         odds |= _odds([fair.win_prob_at_count])
-    return AllowedNumbers(frozenset(values), frozenset(percents), frozenset(odds))
+    return AllowedNumbers(frozenset(values), frozenset(percents), frozenset(odds), heads)
 
 
 # The same rule as the front end's isTooCloseToCall (frontend/src/components/Verdict.tsx): the

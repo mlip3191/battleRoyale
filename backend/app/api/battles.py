@@ -63,7 +63,9 @@ async def create_battle(
     matchup: Matchup, store: Store, chat: SafetyChat, lookup: Lookup
 ) -> BattleCreated | JSONResponse:
     try:
-        verdict = await within_deadline(check_matchup(matchup, chat=chat, wikidata_lookup=lookup))
+        verdict = await within_deadline(
+            lambda: check_matchup(matchup, chat=chat, wikidata_lookup=lookup)
+        )
     except SafetyUnavailable as error:
         raise HTTPException(status_code=503, detail=UNAVAILABLE_MESSAGE) from error
     if not verdict.allowed:

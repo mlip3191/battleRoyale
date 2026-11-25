@@ -16,7 +16,13 @@ from app.config import Settings
 from app.db import battles as saved
 from app.db.connection import connect
 from app.db.migrate import apply_migrations
-from app.db.showcase import export_showcase, import_showcase, load_manifest, showcase_rows
+from app.db.showcase import (
+    MAX_SHOWCASE_BYTES,
+    export_showcase,
+    import_showcase,
+    load_manifest,
+    showcase_rows,
+)
 from app.main import PLACEHOLDER_VOICE, _startup, create_app
 from app.models.battle import BattleRecord
 
@@ -297,3 +303,20 @@ def test_the_showcase_dragon_battle_plays_by_the_legend_rules() -> None:
         if e.side == 1 and e.type in ("hit", "miss")
     }
     assert tank_moves and all(m.split()[:1] in (["ram"], ["crush"]) for m in tank_moves)
+
+
+# #546: every committed showcase battle keeps its announcer voice and the folder stays under
+# the cap, which is 30 MB because the narration is uncompressed WAV.
+def test_the_committed_showcase_has_the_announcer_voice_and_fits_the_cap() -> None:
+    showcase = Path(__file__).parents[3] / "data" / "showcase"
+    for row in load_manifest(showcase):
+        battle = BattleRecord.model_validate_json(
+            (showcase / "battles" / f"{row.battle_id}.json").read_text("utf-8")
+        )
+        stages = {s.stage: s.status for s in battle.stages}
+        assert stages["script"] == "done" and stages["audio"] == "done", row.title
+        clips = [a for a in battle.assets if a.kind == "narration_audio"]
+        assert clips, row.title
+        assert all(clip.line_times_s for clip in clips), row.title  # the announcer stays in sync
+    size = sum(p.stat().st_size for p in showcase.rglob("*") if p.is_file())
+    assert size <= MAX_SHOWCASE_BYTES

@@ -278,6 +278,56 @@ async def test_a_battle_saves_the_challenger_and_marks_done() -> None:
     assert (stage.status, stage.detail) == ("done", None)
 
 
+# --- A draw or a no contest has no champion, so there is no next challenger (#550) ------------
+
+
+# Make suggest fail the test if anything calls it.
+def forbid_suggest(monkeypatch: pytest.MonkeyPatch) -> list[object]:
+    calls: list[object] = []
+
+    async def spy(*args: Any, **kwargs: Any) -> Any:
+        calls.append(args)
+        raise AssertionError("suggest should not run without a winner")
+
+    monkeypatch.setattr(challenger, "suggest", spy)
+    return calls
+
+
+@pytest.mark.parametrize("outcome", ["draw", "no_contest"])
+async def test_no_winner_means_no_challenger_and_no_fallback(
+    monkeypatch: pytest.MonkeyPatch, outcome: str
+) -> None:
+    found = await stages.research(fight())
+    result = await stages.simulate(fight(), found)
+    calls = forbid_suggest(monkeypatch)
+    no_winner = result.model_copy(update={"outcome": outcome})
+    out = await stages.challenger(fight(), found, no_winner)
+    assert (out.value, out.fallback, out.stub) == (None, False, False)
+    assert calls == []
+
+
+@pytest.mark.parametrize("outcome", ["draw", "no_contest"])
+async def test_a_battle_with_no_winner_ends_the_stage_done_with_no_challenger(
+    monkeypatch: pytest.MonkeyPatch, outcome: str
+) -> None:
+    real = stages.simulate
+
+    async def no_winner(*args: Any, **kwargs: Any) -> SimulationResult:
+        return (await real(*args, **kwargs)).model_copy(update={"outcome": outcome})
+
+    monkeypatch.setattr(stages, "simulate", no_winner)
+    calls = forbid_suggest(monkeypatch)
+    store = BattleStore()
+    record = await store.create(fight())
+    await asyncio.wait_for(run_battle(record.battle_id, store), 30)
+    final = await store.get(record.battle_id)
+    assert final is not None and final.status == "done" and final.challenger is None
+    assert final.result is not None and final.result.outcome == outcome
+    stage = next(s for s in final.stages if s.stage == "challenger")
+    assert (stage.status, stage.detail) == ("done", None)
+    assert calls == []
+
+
 @pytest.mark.parametrize("found_one", [True, False])
 async def test_a_battle_whose_model_fails_ends_the_stage_fallback(
     monkeypatch: pytest.MonkeyPatch, found_one: bool

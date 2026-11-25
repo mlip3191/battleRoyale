@@ -184,12 +184,11 @@ def decide(
     return Decision(shown, _explain(key, matchup, sheets, fav, signed >= 0))
 
 
-# A count and a name for a deciding-factor sentence: "6 gray wolves", and "1 Grizzly bear" as the
-# sheet writes it (a count of 1 is unchanged, #458).
+# A count and a name for a deciding-factor sentence: "6 gray wolves" and "1 grizzly bear". The name
+# is mid-sentence, so an ordinary name is lower case at any count (#615); a proper first word such
+# as "African" keeps its capital, and a count of 1 stays singular (#458).
 def _counted(count: int, display_name: str) -> str:
-    if count > 1:
-        return f"{count} {counted_name(display_name, count)}"
-    return f"{count} {display_name}"
+    return f"{count} {counted_name(display_name, count)}"
 
 
 def _explain_scaling(matchup: Matchup, sheets: list[StatSheet], fav: int, helped: bool) -> str:
@@ -197,13 +196,15 @@ def _explain_scaling(matchup: Matchup, sheets: list[StatSheet], fav: int, helped
 
     def side(i: int) -> str:
         fighter, sheet = matchup.fighters[i], sheets[i]
-        mass = fmt(sheet.stats[StatName.MASS].value)
+        mass = _valued(sheet, StatName.MASS, " kg")
         name = (
             _counted(fighter.count, sheet.display_name) if fighter.count > 1 else sheet.display_name
         )
         if fighter.size_reference:
-            return f"{name} ({mass} kg normally, scaled to {fighter.size_reference} size)"
-        return f"{name} ({mass} kg)"
+            plain, comma, label = mass.partition(",")  # "500 kg" and ", estimate" (#552)
+            scaled = f"scaled to {fighter.size_reference} size"
+            return f"{name} ({plain} normally, {scaled}{comma}{label})"
+        return f"{name} ({mass})"
 
     pair = f"{side(fav)} against {side(1 - fav)}"
     if helped:
@@ -325,9 +326,9 @@ def _explain(
         return f"The ground decided it: the {terrain} suits the {fav_name} ({mover} mover) better."
 
     label, lower, unit = _STAT_TEXT[key]
-    vf = fmt(sheets[fav].stats[key].value)
-    vo = fmt(sheets[foe].stats[key].value)
-    pair = f"{fav_name} ({vf}{unit}) against {foe_name} ({vo}{unit})"
+    vf = _valued(sheets[fav], key, unit)
+    vo = _valued(sheets[foe], key, unit)
+    pair = f"{fav_name} ({vf}) against {foe_name} ({vo})"
     if helped and key in (StatName.SIZE, StatName.MASS):
         smaller = sheets[fav].stats[key].value < sheets[foe].stats[key].value
         # A size reference rescales a fighter, so its sheet size may not be the size it fought at.
@@ -343,6 +344,12 @@ def _explain(
     return text
 
 
+def _valued(sheet: StatSheet, key: StatName, unit: str) -> str:
+    """A stat as "7000 N", plus ", estimate" when code set it rather than a source (#552)."""
+    stat = sheet.stats[key]
+    return f"{fmt(stat.value)}{unit}{', estimate' if stat.is_estimate else ''}"
+
+
 def _explain_smaller_side(
     key: StatName, matchup: Matchup, sheets: list[StatSheet], fav: int
 ) -> str:
@@ -354,8 +361,8 @@ def _explain_smaller_side(
     crowd = max(counts) > 1  # head counts show why a crowd of small fighters benefits
     sides = [
         f"{_counted(n, sheets[i].display_name) if crowd else sheets[i].display_name} "
-        f"({fmt(v)}{unit})"
-        for i, n, v in ((fav, counts[0], values[0]), (foe, counts[1], values[1]))
+        f"({_valued(sheets[i], key, unit)})"
+        for i, n in ((fav, counts[0]), (foe, counts[1]))
     ]
     pair = f"{sides[0]} against {sides[1]}"
     if key == StatName.MASS:  # weight is mostly health in the model: no honest one-line "how"

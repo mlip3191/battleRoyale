@@ -2,13 +2,16 @@
 import { describe, expect, test } from "vitest";
 import type { FightEvent, SimulationResult } from "../api/client.ts";
 import fixture from "../fixtures/simulation-result.json";
+import hundredVsFive from "./fixtures/hundred-vs-five.json";
 import thousand from "./fixtures/thousand-vs-one.json";
 import twoHundredVsFive from "./fixtures/two-hundred-vs-five.json";
 import {
+  BEAT_MS,
   MAX_REPLAY_MS,
   MISS_LABEL,
   MIN_BEAT_MS,
   ReplayClock,
+  SPEEDS,
   beatTimes,
   buildTimeline,
   keyFrames,
@@ -45,15 +48,49 @@ const ev = (e: Partial<FightEvent> & Pick<FightEvent, "type">): FightEvent => ({
   group_size: 1,
   damage: null,
   text_hint: "",
+  hp_left: null,
   ...e,
 });
 
+describe("hit points (#575)", () => {
+  test("each beat carries the log's hit points and the timeline the starting totals", () => {
+    const log = [
+      ev({ type: "approach", hp_left: [400, 1200] }),
+      ev({
+        type: "hit",
+        side: 1,
+        actor: 0,
+        target: 0,
+        damage: 23.3,
+        hp_left: [376.7, 1200],
+      }),
+      ev({ type: "end", side: 1 }), // a closing event has none
+    ];
+    const timeline = buildTimeline(
+      { representative_log: log, outcome: "win_1", start_hp: [400, 1200] },
+      [1, 6],
+    );
+    expect(timeline.startHp).toEqual([400, 1200]);
+    expect(timeline.beats.map((b) => b.hpLeft)).toEqual([
+      [400, 1200],
+      [376.7, 1200],
+      null,
+    ]);
+  });
+
+  test("a result made before #575 has no hit points", () => {
+    const timeline = buildTimeline(result, WOLF_COUNTS);
+    expect(timeline.startHp).toBeNull();
+    expect(timeline.beats.every((b) => b.hpLeft === null)).toBe(true);
+  });
+});
+
 describe("every event is visited exactly once, in order", () => {
-  test.each([1, 2] as const)("fixture log at %ix", (speed) => {
+  test.each(SPEEDS)("fixture log at %ix", (speed) => {
     expect(playThrough(result, speed).seen).toEqual(allIndexes(result));
   });
 
-  test.each([1, 2] as const)("1,000-v-1 engine log at %ix", (speed) => {
+  test.each(SPEEDS)("1,000-v-1 engine log at %ix", (speed) => {
     const { seen } = playThrough(bigResult, speed, [1000, 1]);
     expect(seen).toEqual(allIndexes(bigResult));
   });
@@ -63,6 +100,14 @@ describe("every event is visited exactly once, in order", () => {
     const fast = playThrough(result, 2).frames;
     expect(fast).toBeLessThan(slow);
     expect(Math.abs(fast * 2 - slow)).toBeLessThanOrEqual(2);
+  });
+
+  test("5x and 10x take about a fifth and a tenth of the 1x time (#577)", () => {
+    const slow = playThrough(result, 1).frames;
+    for (const speed of [5, 10] as const) {
+      const fast = playThrough(result, speed).frames;
+      expect(Math.abs(fast * speed - slow)).toBeLessThanOrEqual(speed);
+    }
   });
 
   test("switching speed mid-replay still visits each event once", () => {
@@ -129,6 +174,13 @@ describe("timing", () => {
     );
   });
 
+  test("a short log that already fits plays at full length, not squeezed", () => {
+    const { beats, totalMs } = buildTimeline(result, WOLF_COUNTS);
+    beats.forEach((b) => expect(b.duration).toBe(BEAT_MS[b.kind]));
+    expect(totalMs).toBe(beats.reduce((sum, b) => sum + BEAT_MS[b.kind], 0));
+    expect(totalMs).toBeLessThan(MAX_REPLAY_MS);
+  });
+
   test("an empty log gives an empty timeline that is already done", () => {
     const timeline = buildTimeline(
       { representative_log: [], outcome: "no_contest" },
@@ -137,6 +189,90 @@ describe("timing", () => {
     expect(timeline.beats).toEqual([]);
     expect(keyFrames(timeline.beats)).toEqual([]);
     expect(new ReplayClock(timeline).done).toBe(true);
+  });
+});
+
+// The approved length of a replay at 1x (#580: T3 said a fight should last about 15 s; the PM
+// chose about 20 s). Pinned here as a number, so the cap can't drift back up unnoticed.
+const TARGET_MS = 20_000;
+
+// A log of `n` events with the engine's usual shape: both sides close in, then mostly hits with
+// some misses, the given knock-outs and retreat near the end, and END last.
+function engineLikeLog(n: number, kos: number, misses: number): FightEvent[] {
+  const log: FightEvent[] = [
+    ev({ type: "approach", side: 0 }),
+    ev({ type: "approach", side: 1, group_size: 6 }),
+  ];
+  const fighting = n - log.length - kos - 2; // minus the KOs, the retreat and END
+  for (let i = 0; i < fighting; i += 1) {
+    // Exactly `misses` misses, spread evenly through the fighting.
+    const miss =
+      Math.floor(((i + 1) * misses) / fighting) >
+      Math.floor((i * misses) / fighting);
+    const type = miss ? "miss" : "hit";
+    log.push(ev({ type, t: i, side: 1, actor: i % 6, target: 0, damage: 4 }));
+  }
+  for (let k = 0; k < kos; k += 1)
+    log.push(ev({ type: "ko", side: k % 2 === 0 ? 1 : 0, actor: 0 }));
+  log.splice(log.length - 1, 0, ev({ type: "retreat", side: 0 }));
+  log.push(ev({ type: "end", side: 1 }));
+  return log;
+}
+
+describe("replay length (#580)", () => {
+  const play = (log: FightEvent[], counts: readonly [number, number]) =>
+    playThrough({ ...result, representative_log: log }, 1, counts);
+
+  test("the cap is about 20 s and even the engine's longest log fits it", () => {
+    expect(MAX_REPLAY_MS).toBeLessThanOrEqual(TARGET_MS);
+    // The engine keeps at most 300 events (MAX_LOG_EVENTS), so 300 floor-length beats must fit.
+    expect(300 * MIN_BEAT_MS).toBeLessThanOrEqual(MAX_REPLAY_MS);
+  });
+
+  test("a 151-event grizzly-vs-6-wolves-like log plays in about 20 s at 1x", () => {
+    // Same mix as the engine's "a grizzly bear vs 6 gray wolves in a forest": 151 events
+    // (123 hits, 22 misses, 2 KOs, a retreat), which took about 82 s before #580.
+    const log = engineLikeLog(151, 2, 22);
+    expect(log).toHaveLength(151);
+    const count = (type: string) => log.filter((e) => e.type === type).length;
+    expect([count("hit"), count("miss"), count("ko")]).toEqual([123, 22, 2]);
+    const { beats, totalMs } = buildTimeline(
+      { representative_log: log, outcome: "win_1" },
+      WOLF_COUNTS,
+    );
+    expect(totalMs).toBeLessThanOrEqual(TARGET_MS);
+    expect(totalMs).toBeGreaterThan(15_000); // squeezed to the cap, not cut short
+    expect(Math.min(...beats.map((b) => b.duration))).toBeGreaterThanOrEqual(
+      MIN_BEAT_MS,
+    );
+    const { seen, frames } = play(log, WOLF_COUNTS);
+    expect(seen).toEqual(log.map((_, i) => i));
+    expect(frames * 16).toBeLessThanOrEqual(TARGET_MS + 16);
+  });
+
+  test("a 300-event log (the engine's limit) still fits in about 20 s at 1x", () => {
+    const log = engineLikeLog(300, 2, 40);
+    expect(log).toHaveLength(300);
+    const { beats, totalMs } = buildTimeline(
+      { representative_log: log, outcome: "win_1" },
+      WOLF_COUNTS,
+    );
+    expect(totalMs).toBeLessThanOrEqual(TARGET_MS);
+    expect(totalMs).toBeGreaterThan(15_000);
+    expect(Math.min(...beats.map((b) => b.duration))).toBeGreaterThanOrEqual(
+      MIN_BEAT_MS,
+    );
+    expect(play(log, WOLF_COUNTS).seen).toEqual(log.map((_, i) => i));
+  });
+
+  test("a big crowd (100 ducks falling one by one) plays in about 20 s at 1x", () => {
+    const crowd = hundredVsFive as SimulationResult;
+    const { totalMs } = buildTimeline(crowd, [100, 5]);
+    expect(crowd.representative_log.length).toBeGreaterThan(200);
+    expect(totalMs).toBeLessThanOrEqual(TARGET_MS);
+    expect(totalMs).toBeGreaterThan(15_000);
+    const { seen } = playThrough(crowd, 1, [100, 5]);
+    expect(seen).toEqual(allIndexes(crowd));
   });
 });
 

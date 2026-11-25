@@ -7,7 +7,7 @@ import { useFocusRescue } from "../components/focus-rescue.ts";
 import { howMany, isTooCloseToCall } from "../components/Verdict.tsx";
 import type { BattleStage } from "./BattleScene.ts";
 import { STAGE, battlefieldUrl, layoutStage, spriteUrls } from "./layout.ts";
-import { buildTimeline, type Speed } from "./timeline.ts";
+import { SPEEDS, buildTimeline, type Speed } from "./timeline.ts";
 import styles from "./stage.module.css";
 
 export interface PhaserStageProps {
@@ -16,8 +16,10 @@ export interface PhaserStageProps {
   matchup: Pick<Matchup, "fighters">;
   assets?: Asset[];
   onEvent?: (index: number) => void; // each replay event index, once, in order (D07 captions)
-  onFinish?: () => void; // the replay reached its last event (D07 verdict)
+  onFinish?: (skipped?: boolean) => void; // the replay reached its last event (D07 verdict); skipped when the viewer jumped to the end
   onReplay?: () => void; // the viewer pressed Replay; events start again from 0
+  onSpeedChange?: (speed: Speed) => void; // the replay speed, whenever it changes (#577)
+  onPlayingChange?: (playing: boolean) => void; // the replay started or stopped moving (#576)
   autoPlay?: boolean; // start playing as soon as the stage is ready
   claimFocus?: () => boolean; // asked once ready: true moves keyboard focus to Play/Pause
   reducedMotion?: boolean; // defaults to the browser's prefers-reduced-motion setting
@@ -63,6 +65,8 @@ export default function PhaserStage({
   onEvent,
   onFinish,
   onReplay,
+  onSpeedChange,
+  onPlayingChange,
   autoPlay = false,
   reducedMotion,
   claimFocus,
@@ -72,6 +76,8 @@ export default function PhaserStage({
   const onEventRef = useRef(onEvent);
   const onFinishRef = useRef(onFinish);
   const claimFocusRef = useRef(claimFocus);
+  const onSpeedRef = useRef(onSpeedChange);
+  const onPlayingRef = useRef(onPlayingChange);
   const playButton = useRef<HTMLButtonElement>(null);
   const replayButton = useRef<HTMLButtonElement>(null);
   const controls = useFocusRescue();
@@ -93,6 +99,8 @@ export default function PhaserStage({
     onEventRef.current = onEvent;
     onFinishRef.current = onFinish;
     claimFocusRef.current = claimFocus;
+    onSpeedRef.current = onSpeedChange;
+    onPlayingRef.current = onPlayingChange;
     latest.current = { result, fighters, assets, motionless, autoPlay };
   });
 
@@ -123,10 +131,10 @@ export default function PhaserStage({
         tooClose: isTooCloseToCall(result),
         reducedMotion: motionless,
         onEvent: (index) => onEventRef.current?.(index),
-        onFinish: () => {
+        onFinish: (skipped) => {
           setPlaying(false);
           setDone(true);
-          onFinishRef.current?.();
+          onFinishRef.current?.(skipped);
         },
       });
       game = new P.Game({
@@ -152,6 +160,7 @@ export default function PhaserStage({
       setPlaying(start && !empty);
       setDone(empty);
       setSpeedState(1);
+      onSpeedRef.current?.(1); // a new game starts at 1x
       setReady(true);
     })().catch(() => {
       if (!cancelled) setFailed(true);
@@ -163,6 +172,11 @@ export default function PhaserStage({
       game = null;
     };
   }, [key, round]);
+
+  // Tell the page when the replay starts or stops moving, so the announcer can follow it (#576).
+  useEffect(() => {
+    onPlayingRef.current?.(playing);
+  }, [playing]);
 
   // Skip to end and the fight's end disable the button in use, and Replay removes itself. When the
   // viewer was on one of them, focus goes to Replay at the end, or to Play/Pause once a game is
@@ -183,6 +197,7 @@ export default function PhaserStage({
   const changeSpeed = (next: Speed) => {
     stage.current?.setSpeed(next);
     setSpeedState(next);
+    onSpeedRef.current?.(next);
   };
   const skip = () => stage.current?.skipToEnd();
   const replay = () => {
@@ -237,7 +252,7 @@ export default function PhaserStage({
         >
           {playing ? "Pause" : "Play"}
         </button>
-        {([1, 2] as const).map((s) => (
+        {SPEEDS.map((s) => (
           <button
             key={s}
             type="button"

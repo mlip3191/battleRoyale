@@ -88,7 +88,8 @@ ANIMAL_CATEGORIES = frozenset(
     {"mammal", "bird", "reptile", "amphibian", "fish", "insect", "arachnid", "mollusk"}
 )
 SIZE_CLASSES = frozenset({"tiny", "small", "medium", "large", "huge"})
-SIZED_REASONS = frozenset({"real_animal", "generic_kind", "myth_deity"})  # soldiers stay human
+# Soldiers stay human-sized. An object or machine is sized too (#562), so a school bus isn't 1 kg.
+SIZED_REASONS = frozenset({"real_animal", "generic_kind", "myth_deity", "object_or_machine"})
 # Generic supernatural kinds D-65 allows. Their Wikipedia article ("God") is about one named
 # figure, so the lookup would answer "deity"; code calls them generic_kind without asking (#444).
 # Intake lowercases the name, so a capitalized "God" (a named deity, D-65) is stopped there.

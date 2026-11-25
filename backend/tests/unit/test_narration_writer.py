@@ -33,6 +33,7 @@ SAMPLES = {s.key: s for s in samples()}
 KEYS = list(SAMPLES)
 GRIZZLY = "grizzly-vs-gorilla"
 GRIFFIN = "griffin-vs-horse"
+TRUCK = "truck-vs-wolves"
 PROMPTS = ("announcer_intro", "play_by_play", "outro")
 
 
@@ -138,8 +139,12 @@ async def test_short_log_may_repeat_events_like_the_template() -> None:
     short = sample.result.model_copy(
         update={"representative_log": sample.result.representative_log[:3]}
     )
-    beats = [0, 0, 1, 1, 1, 2, 2, 2]
-    lines = [{"speaker": "announcer", "text": "Here we go!", "at_event": e} for e in beats]
+    beats = [0, 1, 1, 2]  # MIN_BEATS beats for 3 events, each line different (#580)
+    texts = ["Here we go!", "What a swing!", "Look at that!", "And that is that!"]
+    lines = [
+        {"speaker": "announcer", "text": t, "at_event": e}
+        for t, e in zip(texts, beats, strict=True)
+    ]
     chat = _chat_with(sample, "play_by_play", {"lines": lines})
     _, pbp, _ = await _write(sample, chat, short)
     assert pbp.fallback is False and [line.at_event for line in pbp.lines] == beats
@@ -204,6 +209,66 @@ async def test_guard_rejects_an_invented_number_in_play_by_play() -> None:
     chat = _chat_with(sample, "play_by_play", bad)
     _, pbp, _ = await _write(sample, chat)
     assert pbp.fallback is True and chat.count("play_by_play") == 2
+
+
+# Issue #616: a count in words is held to the number rule like a digit. Live, "Two wolves are
+# out cold now." was the third wolf down. This battle's facts have no 2, so the reply is
+# rejected, asked for once more, and the template is used.
+async def test_guard_rejects_a_count_in_words_in_play_by_play() -> None:
+    sample = SAMPLES[TRUCK]
+    facts = _facts(sample)
+    text = "Another bite lands! Two wolves are out cold now."
+    assert 2.0 not in facts.allowed.values
+    assert [b.text for b in unsupported_numbers(text, facts)] == ["Two"]
+    bad = _with_line(sample, "play_by_play", 3, text)
+    with pytest.raises(ScriptRejected, match="numbers not in the fact list: 'Two'"):
+        read_reply("play_by_play", json.dumps(bad), facts, len(sample.result.representative_log))
+    chat = _chat_with(sample, "play_by_play", bad)
+    _, pbp, _ = await _write(sample, chat)
+    assert pbp.fallback is True and chat.count("play_by_play") == 2
+
+
+# Issue #616: a one-on-one has two fighters in the ring, so it may say "two"; a pack may not.
+def test_a_one_on_one_may_count_its_two_fighters() -> None:
+    sample = SAMPLES[TRUCK]
+    text = "Two fighters enter. One leaves."
+    one_on_one = build_facts(sample.sheets, sample.result, sample.fair, (1, 1))
+    assert unsupported_numbers(text, one_on_one) == []
+    assert [b.text for b in unsupported_numbers(text, _facts(sample))] == ["Two"]  # 1 and 6
+    assert unsupported_numbers("Seven fighters in the ring tonight!", _facts(sample))
+
+
+# Issue #616: the one-on-one "two" is a head count only; it never backs a ratio or a multiplier.
+@pytest.mark.parametrize(
+    "text", ["A two to one favorite!", "2:1 odds on the truck.", "It hits twice as hard!"]
+)
+def test_a_one_on_one_two_backs_no_ratio_or_multiplier(text: str) -> None:
+    sample = SAMPLES[TRUCK]
+    one_on_one = build_facts(sample.sheets, sample.result, sample.fair, (1, 1))
+    assert 2.0 not in one_on_one.allowed.values  # 2 is not a real fact in this battle
+    assert unsupported_numbers("Two titans enter.", one_on_one) == []
+    assert unsupported_numbers(text, one_on_one), text
+
+
+# Issue #616: a 99.8% win is filled in as "99.8%", never rounded up to "100% of the time", and
+# the template outro says the same.
+async def test_near_certain_win_is_never_said_as_always() -> None:
+    sample = SAMPLES[GRIZZLY]
+    ci = ((0.9927, 0.9995), (0.0005, 0.0073))
+    update = {"win_prob": (0.998, 0.002), "draw_prob": 0.0, "win_prob_ci95": ci}
+    result = sample.result.model_copy(update=update | {"outcome": "win_0"})
+    facts = _facts(sample, result)
+    assert outro_placeholders(facts)["win_pct"] == "99.8%"
+    chat = sample_chat(sample)
+    _, _, outro = await _write(sample, chat, result)
+    assert outro.fallback is False and "99.8%" in " ".join(line.text for line in outro.lines)
+    template = _templates(sample, result)[2]
+    assert "won 99.8% of" in " ".join(line.text for line in template.lines)
+    assert check_script(template, facts, len(result.representative_log)) == []
+    bad = _with_line(sample, "outro", 1, "The {winner} won 100% of the time.")
+    chat = _chat_with(sample, "outro", bad)
+    _, _, outro = await _write(sample, chat, result)
+    assert outro.fallback is True and chat.count("outro") == 2
 
 
 async def test_guard_rejects_a_number_the_outro_writes_itself() -> None:
@@ -384,19 +449,56 @@ async def test_too_many_lines_is_rejected() -> None:
 
 async def test_too_many_beats_is_rejected() -> None:
     sample = SAMPLES[GRIZZLY]
-    line = {"speaker": "announcer", "text": "Here we go!", "at_event": 0}
-    chat = _chat_with(sample, "play_by_play", {"lines": [line] * (MAX_BEATS + 1)})
+    # The sample's beats plus one more, all different, so only the count is wrong (#580).
+    extra = {"speaker": "color_commentator", "text": "One more for the road.", "at_event": 12}
+    lines = [*sample.replies["play_by_play"]["lines"], extra]
+    assert len(lines) == MAX_BEATS + 1
+    chat = _chat_with(sample, "play_by_play", {"lines": lines})
     _, pbp, _ = await _write(sample, chat)
     assert pbp.fallback is True
 
 
-# A long fight asks the model for 12 beats, not one per event, so a retry fits the deadline (#363).
-def test_a_long_log_asks_for_twelve_beats() -> None:
+# A long fight asks the model for MAX_BEATS beats (12 before #580), not one per event, so a retry
+# fits the deadline (#363) and the lines fit a replay of about 20 s (#580).
+def test_a_long_log_asks_for_the_most_beats() -> None:
     sample = SAMPLES[GRIZZLY]
     log = (sample.result.representative_log * 109)[:109]
     messages = writer.build_messages("play_by_play", _facts(sample), log)
-    assert "TASK: write exactly 12 beats" in messages[1]["content"]
+    assert f"TASK: write exactly {MAX_BEATS} beats" in messages[1]["content"]
     assert "from 0 to 108" in messages[1]["content"]
+
+
+# T3 (#580): "Guinea pig goes down! That is a knockout!" again and again. A play-by-play that
+# says one line three times is rejected (case and punctuation aside), retried once, then the
+# template is used.
+@pytest.mark.parametrize(
+    "said",
+    [
+        ["The Gorilla goes down!"] * 3,
+        ["The Gorilla goes down!", "the gorilla goes down.", "THE GORILLA GOES DOWN!!"],
+    ],
+)
+async def test_a_line_said_three_times_is_rejected_then_falls_back(said: list[str]) -> None:
+    sample = SAMPLES[GRIZZLY]
+    lines = [dict(line) for line in sample.replies["play_by_play"]["lines"]]
+    for n, text in zip((1, 2, 4), said, strict=True):
+        lines[n]["text"] = text
+    with pytest.raises(ScriptRejected, match="3 times"):
+        read_reply("play_by_play", json.dumps({"lines": lines}), _facts(sample), 13)
+    chat = _chat_with(sample, "play_by_play", {"lines": lines})
+    _, pbp, _ = await _write(sample, chat)
+    assert pbp.fallback is True and pbp == _templates(sample)[1]
+    assert chat.count("play_by_play") == 2
+    retry = [m for name, m, _ in chat.calls if name == "play_by_play"][1][-1]["content"]
+    assert "The Gorilla goes down!" in retry and "at most twice" in retry
+
+
+async def test_a_line_said_twice_is_fine() -> None:
+    sample = SAMPLES[GRIZZLY]
+    lines = [dict(line) for line in sample.replies["play_by_play"]["lines"]]
+    lines[1]["text"] = lines[4]["text"]
+    script = read_reply("play_by_play", json.dumps({"lines": lines}), _facts(sample), 13)
+    assert script.fallback is False and len(script.lines) == len(lines)
 
 
 async def test_a_line_over_the_limit_is_rejected() -> None:
@@ -665,3 +767,73 @@ async def test_mythical_intro_without_legend_is_rejected() -> None:
     intro, _, _ = await _write(sample, chat)
     assert intro.fallback is True and chat.count("announcer_intro") == 2
     assert "legend" in " ".join(line.text for line in intro.lines).lower()
+
+
+# "A legendary showdown" says the word but frames no stat as legend (#572): the intro must say
+# "according to legend", or it is rejected, retried once, and replaced by the template.
+async def test_mythical_intro_that_only_says_legendary_is_rejected() -> None:
+    sample = SAMPLES[GRIFFIN]
+    lines = [dict(line) for line in sample.replies["announcer_intro"]["lines"]]
+    lines[0]["text"] = (
+        "Good evening, fight fans! Tonight, a legendary showdown in a very real arena."
+    )
+    lines[1]["text"] = "In the red corner: part lion, part eagle, all business. The Griffin!"
+    lines[2]["text"] = "Our best guess puts it at 300 kilograms. A legendary appetite, too."
+    said = " ".join(line["text"] for line in lines).lower()
+    assert "legend" in said and "according to legend" not in said
+    chat = _chat_with(sample, "announcer_intro", {"lines": lines})
+    intro, pbp, outro = await _write(sample, chat)
+    assert intro.fallback is True and chat.count("announcer_intro") == 2
+    assert intro == _templates(sample)[0]
+    assert "according to legend" in " ".join(line.text for line in intro.lines).lower()
+    first, second = [m for name, m, _ in chat.calls if name == "announcer_intro"]
+    assert 'exact phrase "according to legend"' in first[0]["content"]  # the system prompt
+    assert '"according to legend"' in second[-1]["content"]  # the retry names it too
+    assert pbp.fallback is False and outro.fallback is False  # the others are unaffected
+
+
+# The phrase is matched in any case, and only a fight with a mythical fighter needs it.
+def test_legend_phrase_is_case_insensitive_and_only_for_mythical_fights() -> None:
+    griffin, grizzly = SAMPLES[GRIFFIN], SAMPLES[GRIZZLY]
+    lines = [dict(line) for line in griffin.replies["announcer_intro"]["lines"]]
+    lines[1]["text"] = "ACCORDING TO LEGEND: part lion, part eagle, all business. The Griffin!"
+    assert not any("according to legend" in line["text"] for line in lines)  # only upper case
+    intro = read_reply("intro", json.dumps({"lines": lines}), _facts(griffin), 10)
+    assert intro.fallback is False
+    plain = " ".join(line["text"] for line in grizzly.replies["announcer_intro"]["lines"])
+    assert "legend" not in plain.lower()
+    grizzly_intro = read_reply(
+        "intro", json.dumps(grizzly.replies["announcer_intro"]), _facts(grizzly), 13
+    )
+    assert grizzly_intro.fallback is False
+
+
+# #613: the mock intro said "According to legend" for every fight, even two real animals.
+async def test_mock_intro_says_legend_only_for_a_mythical_fight() -> None:
+    for key, mythical in ((GRIZZLY, False), (GRIFFIN, True)):
+        sample = SAMPLES[key]
+        assert any(f.is_legend for f in _facts(sample).fighters) is mythical
+        intro, _, _ = await _write(sample, MockChatLLM())
+        said = " ".join(line.text for line in intro.lines).lower()
+        assert intro.fallback is False, key  # the mock's own lines, not the template
+        assert ("according to legend" in said) is mythical, key
+        assert check_script(intro, _facts(sample), len(sample.result.representative_log)) == []
+
+
+# An all-real fight that says "according to legend" (any script, any case) is rejected; the
+# intro is retried once, then the template, which never says it for real animals (#613).
+async def test_legend_phrase_in_an_all_real_fight_is_rejected() -> None:
+    sample = SAMPLES[GRIZZLY]
+    facts, log_len = _facts(sample), len(sample.result.representative_log)
+    unearned = "ACCORDING TO LEGEND, nobody leaves this arena without a story."
+    reply = _with_line(sample, "announcer_intro", 1, unearned)
+    with pytest.raises(ScriptRejected, match="never say"):
+        read_reply("intro", json.dumps(reply), facts, log_len)
+    pbp = _with_line(sample, "play_by_play", 0, "According to legend, the bear starts it.")
+    with pytest.raises(ScriptRejected, match="never say"):
+        read_reply("play_by_play", json.dumps(pbp), facts, log_len)
+    chat = _chat_with(sample, "announcer_intro", reply)
+    intro, _, _ = await _write(sample, chat)
+    assert intro.fallback is True and chat.count("announcer_intro") == 2
+    assert intro == _templates(sample)[0]
+    assert "according to legend" not in " ".join(line.text for line in intro.lines).lower()

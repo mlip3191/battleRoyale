@@ -219,10 +219,63 @@ test("the controls are labeled buttons in a named group", async () => {
   render(stageEl());
   await sceneOf();
   const group = screen.getByRole("group", { name: "Replay controls" });
-  expect(group.querySelectorAll("button")).toHaveLength(4);
+  const names = Array.from(group.querySelectorAll("button")).map(
+    (b) => b.getAttribute("aria-label") ?? b.textContent,
+  );
+  expect(names).toEqual([
+    "Play",
+    "1× speed",
+    "2× speed",
+    "5× speed",
+    "10× speed",
+    "Skip to end",
+  ]);
   expect(screen.getByRole("img").getAttribute("aria-label")).toBe(
     "Animated fight replay: 1 grizzly bear versus 6 gray wolves. The captions describe each moment.",
   );
+});
+
+test("5x and 10x reach the scene and are reported to the page (#577)", async () => {
+  const onSpeedChange = vi.fn();
+  render(
+    <PhaserStage
+      result={result}
+      matchup={battle.matchup}
+      onSpeedChange={onSpeedChange}
+    />,
+  );
+  const scene = await sceneOf();
+  expect(onSpeedChange).toHaveBeenLastCalledWith(1); // a new game starts at 1x
+  for (const speed of [5, 10, 1] as const) {
+    fireEvent.click(screen.getByRole("button", { name: `${speed}× speed` }));
+    expect(scene.clock.speed).toBe(speed);
+    expect(onSpeedChange).toHaveBeenLastCalledWith(speed);
+    expect(
+      screen
+        .getByRole("button", { name: `${speed}× speed` })
+        .getAttribute("aria-pressed"),
+    ).toBe("true");
+  }
+});
+
+test("the page hears when the replay starts and stops moving (#576)", async () => {
+  const onPlayingChange = vi.fn();
+  render(
+    <PhaserStage
+      result={result}
+      matchup={battle.matchup}
+      onPlayingChange={onPlayingChange}
+      autoPlay
+    />,
+  );
+  // The report comes from an effect after each render, so wait for it (a slow runner can be a beat
+  // behind the button it follows).
+  const pause = await screen.findByRole("button", { name: "Pause" });
+  await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(true));
+  fireEvent.click(pause);
+  await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(false));
+  fireEvent.click(screen.getByRole("button", { name: "Play" }));
+  await waitFor(() => expect(onPlayingChange).toHaveBeenLastCalledWith(true));
 });
 
 test("autoPlay starts the replay as soon as it is ready", async () => {

@@ -55,3 +55,28 @@
   cursor: progress;
   opacity: 0.7;
 }
+
+/* The next-challenger card is the one next step after a fight: bolder than the other cards, with
+   a cue and a bigger button, so a first-time viewer sees what to click next (#581). */
+.next {
+  border-left-width: 10px;
+  border-left-color: var(--banner);
+}
+
+.cue {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.15rem 0.6rem;
+  font-family: var(--font-score);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--banner-text);
+  background: var(--banner);
+}
+
+.next .fight {
+  padding: 0.7rem 2.4rem;
+  font-size: 1.6rem;
+}

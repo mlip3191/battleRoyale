@@ -22,7 +22,10 @@ from app.models.battle import BattleRecord
 logger = logging.getLogger(__name__)
 
 SHOWCASE_DIR = REPO_ROOT / "data" / "showcase"
-MAX_SHOWCASE_BYTES = 20 * 1024 * 1024  # the committed folder stays small (G08)
+# The committed folder stays small (G08). 30 MB, not 20, so the five battles keep their
+# announcer voice with room to spare: their narration is uncompressed WAV, 15 to 22 MB for
+# the five depending on how long the scripts run (#546).
+MAX_SHOWCASE_BYTES = 30 * 1024 * 1024
 # Media dropped first when the export is too big: music, then narration audio. Sprites and
 # battlefields always stay, because the battle can't be shown without them.
 DROP_ORDER = ("music", "narration_audio")

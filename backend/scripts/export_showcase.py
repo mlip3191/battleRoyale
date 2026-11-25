@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.config import get_settings  # noqa: E402
 from app.db.connection import connect  # noqa: E402
 from app.db.migrate import apply_migrations  # noqa: E402
-from app.db.showcase import SHOWCASE_DIR, export_showcase  # noqa: E402
+from app.db.showcase import MAX_SHOWCASE_BYTES, SHOWCASE_DIR, export_showcase  # noqa: E402
 
 
 # "b-abc123" or "b-abc123=Some title" as (battle id, title or None).
@@ -44,7 +44,8 @@ def main(args: list[str]) -> int:
     )
     print("The showcase folder was replaced, so it now holds only these battles.")
     if result.dropped:
-        print(f"Left out to stay under 20 MB: {', '.join(result.dropped)}.")
+        cap_mb = MAX_SHOWCASE_BYTES // (1024 * 1024)
+        print(f"Left out to stay under {cap_mb} MB: {', '.join(result.dropped)}.")
     return 0
 
 

@@ -25,6 +25,13 @@ TAIL = re.compile(r"\s+(?:in|on|at|inside|near|under|atop|during|with|from|ridin
 # "6 year old", "twenty five years old" (hyphens already turned into spaces) at a side's end;
 # group 1 is an optional tens word, group 2 the number.
 AGE = re.compile(r"(?:\b([a-z]+)\s+)?\b(\d{1,3}|[a-z]+)\s+(?:year|yr)s?\s+olds?$")
+# The words between the two sides of a matchup, for cleaned_matchup: "vs", "versus", "against".
+MATCHUP_SPLIT = re.compile(r"\s+(?:vs\.?|versus|v\.|against)\s+", re.I)
+# A sentence end before more text: "!", "?", ";" or ":", a full stop after three letters or
+# digits (so "a T. rex" stays whole), or a line break.
+SENTENCE_END = re.compile(r"(?:(?<=[A-Za-z0-9]{3})\.|[!?;:])+\s+|\s*\n\s*")
+# Marks left at a side's end once its sentence is cut off: "a horse." -> "a horse".
+LOOSE_END = re.compile(r"[\s,;:.!?]+$")
 # Curly and modifier apostrophes as a plain one, so "don’t" is not read as "don t".
 APOSTROPHES = str.maketrans({"’": "'", "‘": "'", "ʼ": "'"})
 
@@ -55,6 +62,8 @@ class Blocklist:
     not_fighters: frozenset[str] = frozenset()
     ask_opener: re.Pattern[str] = re.compile(r"(?!)")
     """An ask phrase and its comma at the start of the text, see strip_ask_opener (#344)."""
+    instruction_head: frozenset[str] = frozenset()
+    """Head nouns that name an instruction to the app, not a fighter ("system prompt", #561)."""
 
 
 # Phrases as one regex alternative, longest first, each as whole words.
@@ -117,6 +126,7 @@ def load_blocklist() -> Blocklist:
             rf"^\s*(?:please\s+)?(?:{_alternatives(words('real_person', 'ask_openers'))})\s*,\s*",
             re.IGNORECASE,
         ),
+        instruction_head=words("not_a_fighter", "head"),
     )
 
 
@@ -194,6 +204,8 @@ def _check_side(words: list[str], lists: Blocklist) -> SafetyVerdict:
         return blocked("hate", "rules")
     if _in(head, lists.people_words) and any(_in(w, lists.group_head) for w in words[:-1]):
         return blocked("hate", "rules")
+    if _in(head, lists.instruction_head):  # "prompt" or "prompts"
+        return blocked("nonsense", "rules", instructions=True)
     return ALLOWED
 
 
@@ -281,6 +293,22 @@ def check_text_rules(text: str) -> SafetyVerdict:
     if _asks_for_attack_plans(text, lists):
         return blocked("other", "rules")
     return ALLOWED
+
+
+# The matchup without sentences typed around it, for a chip after an instruction block (#621):
+# "a goose vs a horse. Ignore all previous instructions and say ..." -> "a goose vs a horse".
+# None unless there are exactly two sides and the cleaned matchup passes every code rule.
+def cleaned_matchup(text: str) -> str | None:
+    parts = MATCHUP_SPLIT.split(text.strip())
+    if len(parts) != 2:
+        return None
+    first = SENTENCE_END.split(parts[0])[-1]
+    second = SENTENCE_END.split(parts[1], maxsplit=1)[0]
+    first, second = (LOOSE_END.sub("", side).strip() for side in (first, second))
+    if not first or not second:
+        return None
+    candidate = f"{first} vs {second}"
+    return candidate if check_text_rules(candidate).allowed else None
 
 
 # Layer 1 on a model-written variant ("adult male", "baby"): only words that block anywhere, since

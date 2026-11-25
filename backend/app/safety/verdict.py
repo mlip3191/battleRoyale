@@ -43,7 +43,7 @@ MESSAGES: dict[str, str] = {
         "someone you trust or a local crisis line. We'll be right here when you want a goose fight."
     ),
     "copyrighted_character": (
-        "Named characters, from stories or from myth, sit this one out. Try a creature type "
+        "Named characters from books, films, and games sit this one out. Try a creature type "
         'instead, like "a dragon" or "a giant robot".'
     ),
     "deity": (
@@ -65,6 +65,12 @@ MESSAGES: dict[str, str] = {
     ),
     "other": "We can't run that matchup. Try two animals, objects, or machines instead.",
 }
+# A "nonsense" block from an instruction to the app ("ignore all previous instructions", #621):
+# same reason, but the message says what to change instead of "we couldn't find a fighter".
+INSTRUCTIONS_MESSAGE = (
+    "That reads like instructions for the show, and we only take fighters. Leave out the "
+    "instructions and just name the two fighters."
+)
 
 
 @dataclass(frozen=True)
@@ -76,10 +82,14 @@ class SafetyVerdict:
     """One of the contract's blocked_reason values when blocked."""
     layer: Layer | None = None
     """Which layer blocked it (for tests and logs; never shown to the user)."""
+    instructions: bool = False
+    """True when a code rule blocked an instruction to the app, not a fighter (#621)."""
 
     @property
     def message(self) -> str | None:
         """The friendly text for the user, or None when allowed."""
+        if self.instructions:
+            return INSTRUCTIONS_MESSAGE
         return MESSAGES[self.reason] if self.reason else None
 
 
@@ -87,8 +97,8 @@ ALLOWED = SafetyVerdict(allowed=True)
 
 
 # A blocked verdict from one layer.
-def blocked(reason: BlockedReason, layer: Layer) -> SafetyVerdict:
-    return SafetyVerdict(allowed=False, reason=reason, layer=layer)
+def blocked(reason: BlockedReason, layer: Layer, *, instructions: bool = False) -> SafetyVerdict:
+    return SafetyVerdict(allowed=False, reason=reason, layer=layer, instructions=instructions)
 
 
 # A blocked verdict as the IntakeResult the front end shows (status "blocked").

@@ -23,7 +23,10 @@ def input_hash(value: object) -> str:
 
 
 # Load {"default": ..., "<input hash>": ...} for a prompt and pick the reply for this input.
-def canned_reply(kind: str, prompt_name: str, value: object, fixture_dir: Path) -> Any:
+# `fallback` names a reply to try before "default" when no input hash matches.
+def canned_reply(
+    kind: str, prompt_name: str, value: object, fixture_dir: Path, fallback: str | None = None
+) -> Any:
     path = fixture_dir / kind / f"{prompt_name}.json"
     if not path.is_file():
         raise LookupError(f"No mock {kind} fixture for prompt '{prompt_name}' (expected {path}).")
@@ -31,6 +34,8 @@ def canned_reply(kind: str, prompt_name: str, value: object, fixture_dir: Path) 
     key = input_hash(value)
     if key in replies:
         return replies[key]
+    if fallback is not None and fallback in replies:
+        return replies[fallback]
     if "default" in replies:
         return replies["default"]
     raise LookupError(f"Mock {kind} fixture '{prompt_name}' has no reply for input {key}.")
@@ -99,6 +104,63 @@ def _strip_terrain_tail(side: str) -> str:
     return side[: match.start()].strip() or side
 
 
+# Words that start an instruction to the app, never part of a fighter's name: "ignore your
+# rules", "say the duck wins" (#618). Whole words, any case; a hyphen joins a word, so "a make-up
+# artist" and "a forget-me-not" stay whole.
+_INSTRUCTION = re.compile(
+    r"(?<![\w-])(?:ignore|disregard|forget|pretend|override|say|tell|make|let|reply|respond|print)"
+    r"(?![\w-])",
+    re.I,
+)
+# A sentence end before more text: "!", "?", ";" or ":", or a full stop after three letters or
+# digits, so "a T. rex" and "a St. Bernard" stay whole; or a line break on its own.
+_SENTENCE_END = re.compile(r"(?:(?<=[A-Za-z0-9]{3})\.|[!?;:])+\s+|\s*\n\s*")
+# What ends an instruction typed before the matchup: a sentence end or a data marker's ">".
+_BEFORE_FIGHTER = re.compile(rf"{_SENTENCE_END.pattern}|>")
+# A bracket or a data marker opens text that is not the fighter: "(developer mode: ...)", "<<<".
+_ASIDE = re.compile(r"[(\[{<]")
+# Marks and joining words left at a side's end after a cut: "a horse and" -> "a horse".
+_LOOSE_END = re.compile(
+    r"(?:[\s,;:.!?]|(?<![\w-])(?:and|then|but|so|now|please|just|also)(?![\w-]))+$", re.I
+)
+
+
+# One side's fighter words, as a model would read them: the words next to "vs", without the
+# sentence, bracket, marker, or instruction around them (#618). None when an instruction is mixed
+# into the first side's words, which can't be untangled, so the mock asks to rephrase.
+def _fighter_words(side: str, *, first: bool) -> str | None:
+    if first:
+        side = _BEFORE_FIGHTER.split(side)[-1]
+    else:
+        side = _SENTENCE_END.split(side, maxsplit=1)[0]
+        side = _INSTRUCTION.split(side, maxsplit=1)[0]
+    side = _LOOSE_END.sub("", _ASIDE.split(side, maxsplit=1)[0]).strip()
+    if not re.search(r"[a-z0-9]", side, re.I) or _INSTRUCTION.search(side):
+        return None
+    return side
+
+
+# The name without the fraction or zero in front, as a model would read it: "half a horse" ->
+# "horse", "zero horses" -> "horses" (#618). Only when code reads a fraction or zero there, so
+# "a quarter horse" keeps its name.
+def _echo_entity(raw: str) -> str:
+    from app.intake.rules import (
+        FRACTION_WORDS,
+        NUMBER_TOKEN,
+        QUANTITY_WORDS,
+        ZERO_WORDS,
+        read_count,
+    )
+
+    if read_count(raw).problem is None:
+        return raw
+    count_words = QUANTITY_WORDS | FRACTION_WORDS | ZERO_WORDS
+    words = raw.split()
+    while len(words) > 1 and (words[0].lower() in count_words or NUMBER_TOKEN.match(words[0])):
+        words = words[1:]
+    return " ".join(words)
+
+
 # The battlefield words in a trailing "in the ..." phrase only, so a terrain word
 # inside a fighter's name ("sea turtle", "field mouse") is not the battlefield.
 def _terrain_phrase(text: str) -> str | None:
@@ -117,7 +179,8 @@ def _terrain_phrase(text: str) -> str | None:
 
 
 # A ParsedMatchup-shaped reply from an "X vs Y" request, for mock mode (#142 item 5).
-# Code in the parser still decides counts, names, size references, and terrain.
+# Code in the parser still decides counts, names, size references, and terrain. Like a model,
+# it reads only each side's fighter, never an instruction typed around it (#618).
 def echo_intake_reply(text: str) -> dict[str, Any] | None:
     from app.intake.parser import typed_sides
 
@@ -125,14 +188,17 @@ def echo_intake_reply(text: str) -> dict[str, Any] | None:
     if len(sides) != 2:
         return None
     fighters: list[dict[str, Any]] = []
-    for side in sides:
-        raw = _strip_terrain_tail(side)
+    for index, side in enumerate(sides):
+        words = _fighter_words(side, first=index == 0)
+        if words is None:
+            return None
+        raw = _strip_terrain_tail(words)
         if _squash(raw) not in _squash(text):
-            raw = side.strip()
+            raw = words
         fighters.append(
             {
                 "raw": raw,
-                "entity": raw,
+                "entity": _echo_entity(raw),
                 "count": None,
                 "variant": None,
                 "size_reference": None,
@@ -144,6 +210,14 @@ def echo_intake_reply(text: str) -> dict[str, Any] | None:
         "needs_clarification": None,
         "assumptions": [],
     }
+
+
+# True when the script writer's fact list (its first user message) marks a mythical fighter.
+def _has_legend(messages: list[ChatMessage]) -> bool:
+    from app.narration.writer import LEGEND_PHRASE
+
+    first = next((m.get("content", "") for m in messages if m.get("role") == "user"), "")
+    return isinstance(first, str) and LEGEND_PHRASE in first.lower()
 
 
 # True when a canned classifier reply is the plain "allowed" label.
@@ -170,7 +244,10 @@ class MockChatLLM:
         prompt_name: str,
         json_schema: dict[str, Any] | None = None,
     ) -> str:
-        reply = canned_reply("chat", prompt_name, messages, self.fixture_dir)
+        # #613: "according to legend" is only for mythical fighters, so the intro has a "legend"
+        # reply for a fight whose fact list marks one, and a plain default for every other.
+        fallback = "legend" if prompt_name == "announcer_intro" and _has_legend(messages) else None
+        reply = canned_reply("chat", prompt_name, messages, self.fixture_dir, fallback)
         # #142 item 5: the intake_parse default is the grizzly-vs-wolves reply, which the
         # parser rejects for any other input. Echo the user's two sides instead, so the
         # front end can demo any matchup offline.

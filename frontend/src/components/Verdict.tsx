@@ -132,6 +132,15 @@ export function VerdictBanner({
           </div>
         </dl>
       )}
+      {/* Checked on the rounded value the card shows, so 0.96 ("about 1") gets no "under 1" note. */}
+      {winner !== null &&
+        Math.round(result.mean_survivors[winner] * 10) / 10 < 1 && (
+          <p className={styles.muted}>
+            Those averages count every simulated fight, the ones each side won
+            and lost alike, so even the winner can average under 1 still
+            standing.
+          </p>
+        )}
       {result.outcome !== "no_contest" && (
         <p className={styles.muted}>
           Fights last about {average(result.mean_duration_s)} s on average.
@@ -149,6 +158,11 @@ export function VerdictBanner({
   );
 }
 
+// The start of the message the backend saves when the fair-fight search ran out of time (#509);
+// keep it in step with FAIR_FIGHT_UNFINISHED in backend/app/pipeline/orchestrator.py (both sides pin
+// the same sentence in a test, so rewording one fails its test).
+export const FAIR_FIGHT_UNFINISHED = "We couldn't work out a fair fight";
+
 // How many it takes to make it a coin flip, or why no count can.
 export function FairFightCard({
   fairFight,
@@ -159,9 +173,12 @@ export function FairFightCard({
 }) {
   const { count, win_prob_at_count: chance } = fairFight;
   const fighter = matchup.fighters[fairFight.varied_side];
+  // A search cut off for time (#509) did not find "no fair fight"; the heading must not say it did.
+  const noneFound =
+    count === null && !fairFight.message.startsWith(FAIR_FIGHT_UNFINISHED);
   return (
     <section className={styles.card} aria-labelledby="fair-title">
-      <h2 id="fair-title">{count === null ? "No fair fight" : "Fair fight"}</h2>
+      <h2 id="fair-title">{noneFound ? "No fair fight" : "Fair fight"}</h2>
       <p>{fairFight.message}</p>
       {count !== null && fighter && (
         <p className={styles.muted}>
@@ -214,7 +231,12 @@ export function NextChallengerCard({
   };
 
   return (
-    <section className={styles.card} aria-labelledby="next-title">
+    <section
+      className={`${styles.card} ${styles.next}`}
+      aria-labelledby="next-title"
+    >
+      {/* The one next step on the page; T3 missed it when it looked like every other card (#581). */}
+      <p className={styles.cue}>Try this next: a closer fight</p>
       <h2 id="next-title">Next challenger: {challenger.entity}</h2>
       <p>{challenger.reason}</p>
       <p className={styles.muted}>
