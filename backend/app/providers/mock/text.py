@@ -23,7 +23,10 @@ def input_hash(value: object) -> str:
 
 
 # Load {"default": ..., "<input hash>": ...} for a prompt and pick the reply for this input.
-def canned_reply(kind: str, prompt_name: str, value: object, fixture_dir: Path) -> Any:
+# `fallback` names a reply to try before "default" when no input hash matches.
+def canned_reply(
+    kind: str, prompt_name: str, value: object, fixture_dir: Path, fallback: str | None = None
+) -> Any:
     path = fixture_dir / kind / f"{prompt_name}.json"
     if not path.is_file():
         raise LookupError(f"No mock {kind} fixture for prompt '{prompt_name}' (expected {path}).")
@@ -31,6 +34,8 @@ def canned_reply(kind: str, prompt_name: str, value: object, fixture_dir: Path) 
     key = input_hash(value)
     if key in replies:
         return replies[key]
+    if fallback is not None and fallback in replies:
+        return replies[fallback]
     if "default" in replies:
         return replies["default"]
     raise LookupError(f"Mock {kind} fixture '{prompt_name}' has no reply for input {key}.")
@@ -207,6 +212,14 @@ def echo_intake_reply(text: str) -> dict[str, Any] | None:
     }
 
 
+# True when the script writer's fact list (its first user message) marks a mythical fighter.
+def _has_legend(messages: list[ChatMessage]) -> bool:
+    from app.narration.writer import LEGEND_PHRASE
+
+    first = next((m.get("content", "") for m in messages if m.get("role") == "user"), "")
+    return isinstance(first, str) and LEGEND_PHRASE in first.lower()
+
+
 # True when a canned classifier reply is the plain "allowed" label.
 def _says_allowed(reply: Any) -> bool:
     if isinstance(reply, str):
@@ -231,7 +244,10 @@ class MockChatLLM:
         prompt_name: str,
         json_schema: dict[str, Any] | None = None,
     ) -> str:
-        reply = canned_reply("chat", prompt_name, messages, self.fixture_dir)
+        # #613: "according to legend" is only for mythical fighters, so the intro has a "legend"
+        # reply for a fight whose fact list marks one, and a plain default for every other.
+        fallback = "legend" if prompt_name == "announcer_intro" and _has_legend(messages) else None
+        reply = canned_reply("chat", prompt_name, messages, self.fixture_dir, fallback)
         # #142 item 5: the intake_parse default is the grizzly-vs-wolves reply, which the
         # parser rejects for any other input. Echo the user's two sides instead, so the
         # front end can demo any matchup offline.
