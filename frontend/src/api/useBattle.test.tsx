@@ -176,6 +176,35 @@ test("falls back to polling every second when the live connection fails", async 
   expect(fetchMock).toHaveBeenCalledTimes(3); // stops once the battle is done
 });
 
+test("once the verdict is in, it also checks every second while the stream stays open, for voice files that land between stage changes (#592)", async () => {
+  const recording = { ...done, status: "running" }; // the verdict is in, the voice isn't yet
+  const fetchMock = vi.fn(() => reply(recording));
+  vi.stubGlobal("fetch", fetchMock);
+  const { result } = renderHook(() => useBattle("b-7f3k2q"));
+  await flush();
+  const source = FakeEventSource.last!;
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+
+  await flush(POLL_MS); // no stage event, still checked
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  expect(source.closed).toBe(false);
+
+  fetchMock.mockImplementation(() => reply(done));
+  await flush(POLL_MS);
+  expect(result.current.battle?.status).toBe("done");
+  const calls = fetchMock.mock.calls.length;
+  await flush(POLL_MS * 3);
+  expect(fetchMock).toHaveBeenCalledTimes(calls); // stops once the battle is done
+});
+
+test("before the verdict, the open stream alone keeps it up to date", async () => {
+  const fetchMock = vi.fn(() => reply(running)); // no result yet
+  vi.stubGlobal("fetch", fetchMock);
+  renderHook(() => useBattle("b-7f3k2q"));
+  await flush(POLL_MS * 3);
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
 test("a failed fetch while streaming says Retrying and really retries by polling", async () => {
   const fetchMock = vi
     .fn()

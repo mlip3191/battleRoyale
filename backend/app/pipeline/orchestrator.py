@@ -5,7 +5,8 @@ then in parallel: summary + fair fight, challenger, images, and the broadcast (s
 summary ends, then audio and music in parallel). Scripts wait for the summary because the fair
 fight is an input to write_scripts (the outro's fair-fight line); they get None if the summary
 fell back. Images and challenger start right after simulate (ARCHITECTURE §4), not after the
-scripts. The verdict is saved before any of those start, so it never
+scripts. Each announcer file goes on the record as soon as it is made, the intro's first, while
+the battle is still running (#592). The verdict is saved before any of those start, so it never
 waits for media. Every stage has a time limit (`stages.STAGE_BUDGETS_S`). Research or
 simulate failing fails the battle; any later stage failing ends "fallback" and the battle
 goes on. The battle is "done" if and only if simulate succeeded, and it never stays "running".
@@ -23,10 +24,12 @@ build failed still fails research.
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
+from dataclasses import replace
 from typing import Any
 
 from app.models.battle import BattleRecord
 from app.models.matchup import FighterRequest, Matchup
+from app.models.media import Asset
 from app.models.simulation import ChallengerSuggestion, FairFight, SimulationResult
 from app.pipeline import stages
 from app.pipeline.stages import Research, StageFailed, Stubbed
@@ -212,10 +215,23 @@ async def _broadcast(
         "scripts",
     )
     lines = written.value if written is not None else []
+    shown: set[str] = set()  # ids of the voice files already on the record
+
+    # Each voice file goes on the record as soon as it is made, the intro's first, so the show
+    # can start while the rest is recorded (#592).
+    async def publish(asset: Asset) -> None:
+        await store.add_assets(battle_id, [asset])
+        shown.add(asset.asset_id)
+
+    # The audio stage; when it ends, only the files not already on the record are added.
+    async def voice() -> Stubbed[list[Asset] | None]:
+        out = await stages.audio(lines, on_ready=publish)
+        if out.value is None:
+            return out
+        return replace(out, value=[a for a in out.value if a.asset_id not in shown])
+
     async with asyncio.TaskGroup() as group:
-        group.create_task(
-            _optional(battle_id, store, "audio", lambda: stages.audio(lines), "assets")
-        )
+        group.create_task(_optional(battle_id, store, "audio", voice, "assets"))
         group.create_task(
             _optional(
                 battle_id, store, "music", lambda: stages.music(matchup, found, result), "assets"

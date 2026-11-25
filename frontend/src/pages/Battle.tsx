@@ -17,6 +17,7 @@ import { usePageTitle } from "../components/page-title.ts";
 import PhaserStage from "../game/PhaserStage.tsx";
 import type { Speed } from "../game/timeline.ts";
 import {
+  FIGHT_VOICE_WAIT_MS,
   SPEAKERS,
   START,
   audioPlan,
@@ -32,6 +33,7 @@ import {
   unavailableNote,
   voiceCue,
   verdictReveal,
+  type AudioPlan,
   type Show,
   type ShowAction,
 } from "./broadcast-flow.ts";
@@ -50,10 +52,13 @@ const BackHome = ({ linkRef }: { linkRef: Ref<HTMLAnchorElement> }) => (
 
 // What the ticker says while a stage is running and has no detail of its own (#493): the audio
 // stage can take about a minute with the cloned voice, so it must not read "Researching…". The
-// show waits for the voice, so a first-time viewer is told how long, and what comes next (#579).
-// Kept short: a longer message crawls faster across the ticker.
+// show waits only for the intro's voice (#592), so a first-time viewer is told what comes next
+// (#579). Kept short: a longer message crawls faster across the ticker.
 const RECORDING_ANNOUNCER =
-  "Recording the announcer… can take about a minute, then the show starts.";
+  "Recording the announcer… the show starts as soon as the intro is ready.";
+// What the ticker says while the intro's card holds for the fight's voice (#592).
+const RECORDING_FIGHT =
+  "Recording the play-by-play… the fight starts in a moment.";
 function stageTicker(stage: string | undefined, first: string): string {
   return stage === "audio" ? RECORDING_ANNOUNCER : `Researching the ${first}…`;
 }
@@ -110,6 +115,27 @@ function Broadcast({ id }: { id: string }) {
   if (show !== stored) setShow(show);
   const act = (action: ShowAction) => setShow((s) => nextShow(s, action));
   const captionsPaused = pausedIn === show;
+  // The latest record, for the intro's line timer: a fresh record must not restart that timer.
+  const latest = useRef(battle);
+  useEffect(() => {
+    latest.current = battle;
+  });
+  // Each part of the show keeps the sound it started with: a voice file that lands later, while
+  // the rest of the announcer is recorded, waits for the next part or a replay (#592, D07).
+  const [heard, setHeard] = useState<{ show: Show; plan: AudioPlan | null }>({
+    show: START,
+    plan: null,
+  });
+  if (battle && heard.show !== show)
+    setHeard({ show, plan: audioPlan(battle.assets, show.phase) });
+
+  // The fight waits for its voice only so long, then starts with captions (#592).
+  useEffect(() => {
+    if (show.phase !== "standby") return;
+    const late = () => setShow((s) => nextShow(s, { type: "voice-late" }));
+    const timer = setTimeout(late, FIGHT_VOICE_WAIT_MS);
+    return () => clearTimeout(timer);
+  }, [show.phase]);
 
   // The show's buttons (and the ticker's Pause button) go away as it moves on. If the viewer was
   // on one, focus goes to the new part of the show: the verdict's heading, or Start the fight. In
@@ -139,7 +165,10 @@ function Broadcast({ id }: { id: string }) {
       return;
     const timer = setTimeout(() => {
       if (!isLast) setLine({ phase: show.phase, index: lineIndex + 1 });
-      else setShow((s) => nextShow(s, { type: "intro-done" }));
+      else
+        setShow((s) =>
+          nextShow(s, { type: "intro-done", battle: latest.current }),
+        );
     }, lineMs(current.text));
     return () => clearTimeout(timer);
   }, [current, captionsPaused, isLast, lineIndex, show.phase]);
@@ -151,9 +180,11 @@ function Broadcast({ id }: { id: string }) {
     ? error
       ? ""
       : "Warming up the studio lights…"
-    : battle.status === "running" && show.phase === "waiting"
-      ? (running?.detail ?? stageTicker(running?.stage, first))
-      : "";
+    : show.phase === "standby"
+      ? RECORDING_FIGHT
+      : battle.status === "running" && show.phase === "waiting"
+        ? (running?.detail ?? stageTicker(running?.stage, first))
+        : "";
 
   const result = battle?.result ?? null;
   const names = battle ? sideNames(battle.matchup, battle.stat_sheets) : [];
@@ -169,7 +200,7 @@ function Broadcast({ id }: { id: string }) {
       : current
         ? [current]
         : [];
-  const sound = battle ? audioPlan(battle.assets, show.phase) : null;
+  const sound = heard.show === show ? heard.plan : null;
   // During the fight the announcer follows the replay (#576): each moment's lines play when the
   // replay reaches them, and it waits while the replay is paused or too fast to talk over (#577).
   const fighting = show.phase === "fight";
@@ -200,7 +231,7 @@ function Broadcast({ id }: { id: string }) {
       {(failed || (!battle && error)) && <BackHome linkRef={backHome} />}
       {note && <p className={styles.note}>{note}</p>}
 
-      {show.phase === "intro" && (
+      {(show.phase === "intro" || show.phase === "standby") && (
         <section className={styles.titleCard} aria-label="Tonight's matchup">
           <p className={styles.fighter}>{names[0]}</p>
           <p className={styles.vs}>
@@ -260,7 +291,7 @@ function Broadcast({ id }: { id: string }) {
               // Inside this click, so browsers that only allow sound a click started (Safari)
               // let the announcer speak when the fight reaches its first line (#579, #584).
               soundBar.current?.unlock();
-              act({ type: "intro-done" });
+              act({ type: "intro-done", battle });
             }}
           >
             Start the fight

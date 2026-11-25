@@ -164,7 +164,7 @@ The page scrolls down to the card, which shows how the app read your matchup: ea
 
 ### Watch the broadcast
 
-While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute. Recording the announcer's voice can take about another minute; the ticker says so while it runs, and the show starts as soon as the voice is ready.
+While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute. The announcer's voice is recorded next: the show starts as soon as the intro's voice and the pictures are ready, and the rest of the voice is recorded while the intro plays. If the intro ends before the play-by-play's voice is in, the ticker says **Recording the play-by-play…** and the fight starts once it is, or with captions only after 45 seconds at most.
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 
