@@ -48,6 +48,7 @@ from app.safety import (
     check_parsed_sides,
     check_text_rules,
     classify_text,
+    cleaned_matchup,
 )
 from app.text import pluralize
 
@@ -392,7 +393,10 @@ async def parse_matchup(
     text, number_notes = tidy_numbers(text)  # "1e3" and "-3" become counts we can read (#561)
     rules = check_text_rules(text)
     if not rules.allowed:
-        return blocked_result(rules)
+        refused = blocked_result(rules)
+        cleaned = cleaned_matchup(text) if rules.instructions else None
+        # The matchup without its instructions, as a chip the user can pick (#621).
+        return refused.model_copy(update={"options": [cleaned]}) if cleaned else refused
     safety_chat = safety_chat or get_intake_chat()
     try:
         parsed, verdict = await parse_and_classify(text, chat or get_intake_chat(), safety_chat)
@@ -411,14 +415,29 @@ async def parse_matchup(
 # One note per bare kind that research will replace with its default fighter (#168), e.g.
 # "Not sure which bear, so we used the grizzly bear."
 def default_kind_notes(fighters: list[FighterRequest]) -> list[str]:
-    notes = []
+    return [
+        DEFAULT_KIND_NOTE.format(kind=kind, pick=pick) for kind, pick in _default_picks(fighters)
+    ]
+
+
+# Each bare kind and the default fighter it becomes, as spoken: ("bear", "grizzly bear").
+def _default_picks(fighters: list[FighterRequest]) -> list[tuple[str, str]]:
+    picks = []
     for fighter in fighters:
         pick = picked_default(fighter.entity, fighter.variant, fighter.raw)
         if pick is not None:
             # The table's own word, so "bears" reads "Not sure which bear".
             kind = next(word for word, slug in DEFAULT_KINDS.items() if slug == pick.id)
-            notes.append(DEFAULT_KIND_NOTE.format(kind=kind, pick=spoken_name(pick.display_name)))
-    return notes
+            picks.append((kind, spoken_name(pick.display_name)))
+    return picks
+
+
+# True when a model note says what a default-kind note already says (#621): "Assumed gray
+# wolves." next to "Not sure which wolf, so we used the gray wolf." It must name every word of
+# the pick, so a note about something else ("Assumed it is night.") stays.
+def _repeats_pick(note: str, pick: str) -> bool:
+    words = {singular_word(w) for w in re.findall(r"[a-z]+", note.lower())}
+    return set(_name_words(pick)) <= words
 
 
 # A name's words, singular, no hyphens or articles: "Main-battle tanks" -> main, battle, tank.
@@ -499,10 +518,15 @@ def read_matchup(
         typed, typed_note = map_terrain(typed_place)
         if typed != Terrain.ARENA:
             terrain, terrain_note = typed, typed_note
-    notes = list(notes) + _model_notes(parsed) + [n for _, side_notes in built for n in side_notes]
+    fighters = [request for request, _ in built]
+    spoken_picks = [pick for _, pick in _default_picks(fighters)]
+    # One note per fighter: a model note that repeats a default-kind pick gives way to it (#621).
+    model_notes = [
+        n for n in _model_notes(parsed) if not any(_repeats_pick(n, p) for p in spoken_picks)
+    ]
+    notes = list(notes) + model_notes + [n for _, side_notes in built for n in side_notes]
     if terrain_note:
         notes.append(terrain_note)
-    fighters = [request for request, _ in built]
     picks = default_kind_notes(fighters)
     notes += picks + misread_notes(fighters)
     if parsed.needs_clarification and not picks:

@@ -194,6 +194,12 @@ export default function Home() {
     box.current?.focus();
   };
 
+  // A chip under a refusal, like the matchup without its instructions (#621): fight it now.
+  const retry = (matchup: string) => {
+    setText(matchup);
+    if (step.kind !== "busy") handle(postIntake(matchup));
+  };
+
   const result = step.kind === "result" ? step.result : null;
   return (
     <main id={MAIN_ID} tabIndex={-1}>
@@ -258,13 +264,29 @@ export default function Home() {
 
       {step.kind === "error" && <ErrorPanel message={step.message} />}
       {result?.status === "blocked" && (
-        <ErrorPanel
-          title="We can't book that fight"
-          message={
-            result.message ??
-            "That matchup isn't allowed on our show. Try different fighters."
-          }
-        />
+        <>
+          <ErrorPanel
+            title="We can't book that fight"
+            message={
+              result.message ??
+              "That matchup isn't allowed on our show. Try different fighters."
+            }
+          />
+          {result.options.length > 0 && (
+            <div className={styles.row}>
+              {result.options.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={styles.option}
+                  onClick={() => retry(option)}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
       {result?.status === "clarify" && (
         <Clarify
