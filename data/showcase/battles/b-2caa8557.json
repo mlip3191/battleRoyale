@@ -1,6 +1,6 @@
 {
-  "battle_id": "b-c4844705",
-  "created_at": "2026-11-23T20:59:48.196920Z",
+  "battle_id": "b-2caa8557",
+  "created_at": "2026-11-25T00:04:56.480197Z",
   "matchup": {
     "fighters": [
       {
@@ -345,7 +345,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "closes in"
+        "text_hint": "closes in",
+        "hp_left": [
+          69400.7,
+          660293.0
+        ]
       },
       {
         "t": 0.0,
@@ -355,7 +359,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "closes in"
+        "text_hint": "closes in",
+        "hp_left": [
+          69400.7,
+          660293.0
+        ]
       },
       {
         "t": 0.5,
@@ -365,7 +373,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          69400.7,
+          658321.7
+        ]
       },
       {
         "t": 1.2,
@@ -375,7 +387,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          69400.7,
+          656350.3
+        ]
       },
       {
         "t": 1.7,
@@ -385,7 +401,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          65958.7,
+          656350.3
+        ]
       },
       {
         "t": 1.8,
@@ -395,7 +415,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          65958.7,
+          654379.0
+        ]
       },
       {
         "t": 2.5,
@@ -405,7 +429,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          65958.7,
+          652407.6
+        ]
       },
       {
         "t": 3.2,
@@ -415,7 +443,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          65958.7,
+          652407.6
+        ]
       },
       {
         "t": 3.8,
@@ -425,7 +457,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          65958.7,
+          650436.3
+        ]
       },
       {
         "t": 4.2,
@@ -435,7 +471,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          62516.7,
+          650436.3
+        ]
       },
       {
         "t": 4.5,
@@ -445,7 +485,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          62516.7,
+          650436.3
+        ]
       },
       {
         "t": 5.2,
@@ -455,7 +499,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          62516.7,
+          650436.3
+        ]
       },
       {
         "t": 5.8,
@@ -465,7 +513,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          62516.7,
+          648464.9
+        ]
       },
       {
         "t": 6.5,
@@ -475,7 +527,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          62516.7,
+          646493.6
+        ]
       },
       {
         "t": 6.7,
@@ -485,7 +541,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          59074.6,
+          646493.6
+        ]
       },
       {
         "t": 7.2,
@@ -495,7 +555,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          59074.6,
+          646493.6
+        ]
       },
       {
         "t": 7.8,
@@ -505,7 +569,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          59074.6,
+          644522.2
+        ]
       },
       {
         "t": 8.5,
@@ -515,7 +583,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          59074.6,
+          642550.9
+        ]
       },
       {
         "t": 9.2,
@@ -525,7 +597,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          55632.6,
+          642550.9
+        ]
       },
       {
         "t": 9.2,
@@ -535,7 +611,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          55632.6,
+          640579.5
+        ]
       },
       {
         "t": 9.8,
@@ -545,7 +625,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          55632.6,
+          640579.5
+        ]
       },
       {
         "t": 10.5,
@@ -555,7 +639,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          55632.6,
+          638608.2
+        ]
       },
       {
         "t": 11.2,
@@ -565,7 +653,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          55632.6,
+          636636.8
+        ]
       },
       {
         "t": 11.7,
@@ -575,7 +667,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          52190.6,
+          636636.8
+        ]
       },
       {
         "t": 11.8,
@@ -585,7 +681,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          52190.6,
+          634665.5
+        ]
       },
       {
         "t": 12.5,
@@ -595,7 +695,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          52190.6,
+          632694.1
+        ]
       },
       {
         "t": 13.2,
@@ -605,7 +709,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          52190.6,
+          630722.8
+        ]
       },
       {
         "t": 13.8,
@@ -615,7 +723,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          52190.6,
+          628751.4
+        ]
       },
       {
         "t": 14.2,
@@ -625,7 +737,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "ram misses"
+        "text_hint": "ram misses",
+        "hp_left": [
+          52190.6,
+          628751.4
+        ]
       },
       {
         "t": 14.5,
@@ -635,7 +751,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          52190.6,
+          626780.1
+        ]
       },
       {
         "t": 15.2,
@@ -645,7 +765,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          52190.6,
+          624808.7
+        ]
       },
       {
         "t": 15.8,
@@ -655,7 +779,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          52190.6,
+          622837.4
+        ]
       },
       {
         "t": 16.5,
@@ -665,7 +793,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          52190.6,
+          620866.0
+        ]
       },
       {
         "t": 16.7,
@@ -675,7 +807,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          48748.6,
+          620866.0
+        ]
       },
       {
         "t": 17.2,
@@ -685,7 +821,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          48748.6,
+          620866.0
+        ]
       },
       {
         "t": 17.8,
@@ -695,7 +835,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          48748.6,
+          620866.0
+        ]
       },
       {
         "t": 18.5,
@@ -705,7 +849,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          48748.6,
+          618894.7
+        ]
       },
       {
         "t": 19.2,
@@ -715,7 +863,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          48748.6,
+          616923.3
+        ]
       },
       {
         "t": 19.2,
@@ -725,7 +877,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          45306.5,
+          616923.3
+        ]
       },
       {
         "t": 19.8,
@@ -735,7 +891,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          45306.5,
+          614951.9
+        ]
       },
       {
         "t": 20.5,
@@ -745,7 +905,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          45306.5,
+          612980.6
+        ]
       },
       {
         "t": 21.2,
@@ -755,7 +919,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          45306.5,
+          611009.2
+        ]
       },
       {
         "t": 21.7,
@@ -765,7 +933,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          41864.5,
+          611009.2
+        ]
       },
       {
         "t": 21.8,
@@ -775,7 +947,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          41864.5,
+          609037.9
+        ]
       },
       {
         "t": 22.5,
@@ -785,7 +961,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          41864.5,
+          607066.5
+        ]
       },
       {
         "t": 23.2,
@@ -795,7 +975,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          41864.5,
+          605095.2
+        ]
       },
       {
         "t": 23.8,
@@ -805,7 +989,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          41864.5,
+          603123.8
+        ]
       },
       {
         "t": 24.2,
@@ -815,7 +1003,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          38422.5,
+          603123.8
+        ]
       },
       {
         "t": 24.5,
@@ -825,7 +1017,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          38422.5,
+          603123.8
+        ]
       },
       {
         "t": 25.2,
@@ -835,7 +1031,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          38422.5,
+          601152.5
+        ]
       },
       {
         "t": 25.8,
@@ -845,7 +1045,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          38422.5,
+          601152.5
+        ]
       },
       {
         "t": 26.5,
@@ -855,7 +1059,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          38422.5,
+          599181.1
+        ]
       },
       {
         "t": 26.7,
@@ -865,7 +1073,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          34980.5,
+          599181.1
+        ]
       },
       {
         "t": 27.2,
@@ -875,7 +1087,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          34980.5,
+          599181.1
+        ]
       },
       {
         "t": 27.8,
@@ -885,7 +1101,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          34980.5,
+          599181.1
+        ]
       },
       {
         "t": 28.5,
@@ -895,7 +1115,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          34980.5,
+          599181.1
+        ]
       },
       {
         "t": 29.2,
@@ -905,7 +1129,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          31538.4,
+          599181.1
+        ]
       },
       {
         "t": 29.2,
@@ -915,7 +1143,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          31538.4,
+          597209.8
+        ]
       },
       {
         "t": 29.8,
@@ -925,7 +1157,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          31538.4,
+          597209.8
+        ]
       },
       {
         "t": 30.5,
@@ -935,7 +1171,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          31538.4,
+          595238.4
+        ]
       },
       {
         "t": 31.2,
@@ -945,7 +1185,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          31538.4,
+          593267.1
+        ]
       },
       {
         "t": 31.7,
@@ -955,7 +1199,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          28096.4,
+          593267.1
+        ]
       },
       {
         "t": 31.8,
@@ -965,7 +1213,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          28096.4,
+          593267.1
+        ]
       },
       {
         "t": 32.5,
@@ -975,7 +1227,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          28096.4,
+          591295.7
+        ]
       },
       {
         "t": 33.2,
@@ -985,7 +1241,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          28096.4,
+          591295.7
+        ]
       },
       {
         "t": 33.9,
@@ -995,7 +1255,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          28096.4,
+          591295.7
+        ]
       },
       {
         "t": 34.2,
@@ -1005,7 +1269,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          24654.4,
+          591295.7
+        ]
       },
       {
         "t": 34.5,
@@ -1015,7 +1283,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          24654.4,
+          589324.4
+        ]
       },
       {
         "t": 35.2,
@@ -1025,7 +1297,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          24654.4,
+          587353.0
+        ]
       },
       {
         "t": 35.9,
@@ -1035,7 +1311,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          24654.4,
+          585381.7
+        ]
       },
       {
         "t": 36.5,
@@ -1045,7 +1325,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          24654.4,
+          585381.7
+        ]
       },
       {
         "t": 36.7,
@@ -1055,7 +1339,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          21212.4,
+          585381.7
+        ]
       },
       {
         "t": 37.2,
@@ -1065,7 +1353,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          21212.4,
+          583410.3
+        ]
       },
       {
         "t": 37.9,
@@ -1075,7 +1367,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          21212.4,
+          581439.0
+        ]
       },
       {
         "t": 38.5,
@@ -1085,7 +1381,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          21212.4,
+          579467.6
+        ]
       },
       {
         "t": 39.2,
@@ -1095,7 +1395,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          21212.4,
+          577496.3
+        ]
       },
       {
         "t": 39.2,
@@ -1105,7 +1409,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          17770.3,
+          577496.3
+        ]
       },
       {
         "t": 39.9,
@@ -1115,7 +1423,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          17770.3,
+          575524.9
+        ]
       },
       {
         "t": 40.5,
@@ -1125,7 +1437,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          17770.3,
+          575524.9
+        ]
       },
       {
         "t": 41.2,
@@ -1135,7 +1451,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          17770.3,
+          575524.9
+        ]
       },
       {
         "t": 41.7,
@@ -1145,7 +1465,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "ram misses"
+        "text_hint": "ram misses",
+        "hp_left": [
+          17770.3,
+          575524.9
+        ]
       },
       {
         "t": 41.9,
@@ -1155,7 +1479,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          17770.3,
+          573553.6
+        ]
       },
       {
         "t": 42.5,
@@ -1165,7 +1493,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          17770.3,
+          573553.6
+        ]
       },
       {
         "t": 43.2,
@@ -1175,7 +1507,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          17770.3,
+          573553.6
+        ]
       },
       {
         "t": 43.9,
@@ -1185,7 +1521,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          17770.3,
+          571582.2
+        ]
       },
       {
         "t": 44.2,
@@ -1195,7 +1535,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          14328.3,
+          571582.2
+        ]
       },
       {
         "t": 44.5,
@@ -1205,7 +1549,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          14328.3,
+          571582.2
+        ]
       },
       {
         "t": 45.2,
@@ -1215,7 +1563,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          14328.3,
+          569610.9
+        ]
       },
       {
         "t": 45.9,
@@ -1225,7 +1577,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          14328.3,
+          569610.9
+        ]
       },
       {
         "t": 46.5,
@@ -1235,7 +1591,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 1971.4,
-        "text_hint": "blast lands"
+        "text_hint": "blast lands",
+        "hp_left": [
+          14328.3,
+          567639.5
+        ]
       },
       {
         "t": 46.7,
@@ -1245,7 +1605,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          10886.3,
+          567639.5
+        ]
       },
       {
         "t": 47.2,
@@ -1255,7 +1619,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          10886.3,
+          567639.5
+        ]
       },
       {
         "t": 47.9,
@@ -1265,7 +1633,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          10886.3,
+          567639.5
+        ]
       },
       {
         "t": 48.5,
@@ -1275,7 +1647,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blast misses"
+        "text_hint": "blast misses",
+        "hp_left": [
+          10886.3,
+          567639.5
+        ]
       },
       {
         "t": 49.2,
@@ -1285,7 +1661,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          7444.27,
+          567639.5
+        ]
       },
       {
         "t": 49.2,
@@ -1295,7 +1675,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "breaks and runs"
+        "text_hint": "breaks and runs",
+        "hp_left": [
+          7444.27,
+          567639.5
+        ]
       },
       {
         "t": 51.7,
@@ -1305,7 +1689,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          4002.25,
+          567639.5
+        ]
       },
       {
         "t": 54.2,
@@ -1315,7 +1703,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          560.221,
+          567639.5
+        ]
       },
       {
         "t": 56.7,
@@ -1325,7 +1717,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 3442.0,
-        "text_hint": "ram lands"
+        "text_hint": "ram lands",
+        "hp_left": [
+          0.0,
+          567639.5
+        ]
       },
       {
         "t": 56.7,
@@ -1335,7 +1731,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "goes down"
+        "text_hint": "goes down",
+        "hp_left": [
+          0.0,
+          567639.5
+        ]
       },
       {
         "t": 56.7,
@@ -1345,8 +1745,13 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "the fight is over"
+        "text_hint": "the fight is over",
+        "hp_left": null
       }
+    ],
+    "start_hp": [
+      69400.7,
+      660293.0
     ]
   },
   "fair_fight": {
@@ -1366,37 +1771,27 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Ladies and gentlemen! Welcome to Battle Royale!",
+          "text": "Welcome to Battle Royale! Two forces collide!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "A simulation has already determined the outcome.",
+          "text": "According to legend, the Dragon enters. Mass six thousand kilograms.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "In the red corner, the Dragon! Weight six thousand kilograms.",
+          "text": "From the blue corner, a Main battle tank! Mass seventy thousand kilograms!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "According to legend. Its size is estimated at 8.92139 meters.",
+          "text": "A vehicle meets a beast. The simulation has decided the outcome.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "And in the blue corner, the Main battle tank! Mass seventy tons!",
-          "at_event": null
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "It possesses more aggression than fire breath combined.",
-          "at_event": null
-        },
-        {
-          "speaker": "announcer",
-          "text": "Sheer mass decides it! Let us go to the fight!",
+          "text": "Can the beast breathe fire on the steel? Let's see what happens!",
           "at_event": null
         }
       ],
@@ -1407,63 +1802,33 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "The Dragon closes in, scales gleaming under the lights!",
+          "text": "Dragon and tank close in for the clash!",
           "at_event": 0
         },
         {
           "speaker": "color_commentator",
-          "text": "The Main battle tank returns the gesture. Massive steel meets mythical scale.",
-          "at_event": 1
-        },
-        {
-          "speaker": "announcer",
-          "text": "Dragon fires! A blast strikes true against the armor!",
+          "text": "The Dragon fires first, landing a solid hit.",
           "at_event": 2
         },
         {
           "speaker": "announcer",
-          "text": "Another hit lands! The beast is applying pressure immediately!",
-          "at_event": 3
-        },
-        {
-          "speaker": "announcer",
-          "text": "Main battle tank responds with a devastating ram!",
+          "text": "Tank charges forward with a heavy ramming blow.",
           "at_event": 4
         },
         {
           "speaker": "color_commentator",
-          "text": "Heavy machinery has heavy reach. That impact was solid.",
-          "at_event": 9
+          "text": "Relentless blast fire keeps the pressure on.",
+          "at_event": 37
         },
         {
           "speaker": "announcer",
-          "text": "Dragon blasts again! Precision fire on the chassis!",
-          "at_event": 12
-        },
-        {
-          "speaker": "announcer",
-          "text": "The tank rams back! No quarter given for dragons or tanks alike.",
-          "at_event": 14
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Durability testing at its finest. Both combatants are holding firm.",
-          "at_event": 33
-        },
-        {
-          "speaker": "announcer",
-          "text": "The Dragon breaks contact! It is retreating from the arena!",
+          "text": "Dragon breaks contact, attempting a tactical retreat.",
           "at_event": 95
         },
         {
           "speaker": "announcer",
-          "text": "Dragon goes down! The knockout signal is flashed!",
+          "text": "The Dragon goes down! The Tank wins it!",
           "at_event": 99
-        },
-        {
-          "speaker": "announcer",
-          "text": "It is over! The Main battle tank wins by sheer mass!",
-          "at_event": 100
         }
       ],
       "fallback": false
@@ -1478,7 +1843,7 @@
         },
         {
           "speaker": "color_commentator",
-          "text": "Victory achieved 100% of the time.",
+          "text": "100% of the time, it was a one-sided show.",
           "at_event": null
         },
         {
@@ -1489,6 +1854,11 @@
         {
           "speaker": "color_commentator",
           "text": "Want a fair fight? About 4 dragons make it a coin flip, winning 46% of the time.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "That’s the verdict, folks. Stay safe out there.",
           "at_event": null
         }
       ],
@@ -1502,7 +1872,8 @@
       "url": "/media/sprites/dragon-v1.png",
       "prompt_hash": "85e67cd587929c4293830bffbcf315d4c18025f7c1a51a59ec44b230077f2dd9",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
     },
     {
       "asset_id": "sprite-main-battle-tank-v1",
@@ -1510,7 +1881,8 @@
       "url": "/media/sprites/main-battle-tank-v1.png",
       "prompt_hash": "d3c1f75f4a23a993d580a474eec44994f5dad37103dc5d957c103b6651ffb66d",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
     },
     {
       "asset_id": "battlefield-open_field-v1",
@@ -1518,7 +1890,102 @@
       "url": "/media/battlefields/open_field-v1.png",
       "prompt_hash": "063606576aa5441f58e2c8783f63b087c162d48b971ec4b77d94a0cec9140022",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
+    },
+    {
+      "asset_id": "narration-intro-1ecc81d7efc3e37e",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-intro-1ecc81d7efc3e37e.wav",
+      "prompt_hash": "1ecc81d7efc3e37e05e6e00ef52cfc9e409abd1ab9104fe27f4c6b7aa679d7e7",
+      "fallback": false,
+      "script_kind": "intro",
+      "line_times_s": [
+        [
+          0.0,
+          3.588
+        ],
+        [
+          3.988,
+          8.6
+        ],
+        [
+          9.0,
+          13.752
+        ],
+        [
+          14.152,
+          17.926
+        ],
+        [
+          18.326,
+          22.013
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-play_by_play-3bbee6b784cd2e94",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-play_by_play-3bbee6b784cd2e94.wav",
+      "prompt_hash": "3bbee6b784cd2e94c2739d53f9a99282d412db6733c2b2eb6b5337d059fcced5",
+      "fallback": false,
+      "script_kind": "play_by_play",
+      "line_times_s": [
+        [
+          0.0,
+          2.309
+        ],
+        [
+          2.709,
+          6.038
+        ],
+        [
+          6.438,
+          9.187
+        ],
+        [
+          9.587,
+          12.513
+        ],
+        [
+          12.913,
+          16.202
+        ],
+        [
+          16.602,
+          19.439
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-outro-9db5a1cd1f54538b",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-outro-9db5a1cd1f54538b.wav",
+      "prompt_hash": "9db5a1cd1f54538bfb438617aec6cd45d50281dd08f877cf14873b132970d3c6",
+      "fallback": false,
+      "script_kind": "outro",
+      "line_times_s": [
+        [
+          0.0,
+          2.121
+        ],
+        [
+          2.521,
+          5.497
+        ],
+        [
+          5.897,
+          7.756
+        ],
+        [
+          8.156,
+          13.711
+        ],
+        [
+          14.111,
+          16.767
+        ]
+      ]
     }
   ],
   "stages": [
@@ -1535,17 +2002,17 @@
     {
       "stage": "simulate",
       "status": "done",
-      "detail": "cached"
+      "detail": null
     },
     {
       "stage": "summary",
       "status": "done",
-      "detail": "cached"
+      "detail": null
     },
     {
       "stage": "challenger",
       "status": "done",
-      "detail": "cached"
+      "detail": null
     },
     {
       "stage": "script",

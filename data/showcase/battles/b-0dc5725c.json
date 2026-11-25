@@ -1,6 +1,6 @@
 {
-  "battle_id": "b-9f8b6bbb",
-  "created_at": "2026-11-23T03:21:03.500696Z",
+  "battle_id": "b-0dc5725c",
+  "created_at": "2026-11-25T00:04:29.696607Z",
   "matchup": {
     "fighters": [
       {
@@ -353,7 +353,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "closes in"
+        "text_hint": "closes in",
+        "hp_left": [
+          788.963,
+          1527.48
+        ]
       },
       {
         "t": 0.0,
@@ -363,7 +367,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "closes in"
+        "text_hint": "closes in",
+        "hp_left": [
+          788.963,
+          1527.48
+        ]
       },
       {
         "t": 0.6,
@@ -373,7 +381,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 6.3,
-        "text_hint": "blow lands"
+        "text_hint": "blow lands",
+        "hp_left": [
+          788.963,
+          1521.16
+        ]
       },
       {
         "t": 0.7,
@@ -383,7 +395,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          769.988,
+          1521.16
+        ]
       },
       {
         "t": 1.2,
@@ -393,7 +409,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          751.013,
+          1521.16
+        ]
       },
       {
         "t": 1.5,
@@ -403,7 +423,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 6.3,
-        "text_hint": "blow lands"
+        "text_hint": "blow lands",
+        "hp_left": [
+          751.013,
+          1514.85
+        ]
       },
       {
         "t": 1.7,
@@ -413,7 +437,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          732.039,
+          1514.85
+        ]
       },
       {
         "t": 2.1,
@@ -423,7 +451,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          713.064,
+          1514.85
+        ]
       },
       {
         "t": 2.4,
@@ -433,7 +465,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 6.3,
-        "text_hint": "blow lands"
+        "text_hint": "blow lands",
+        "hp_left": [
+          713.064,
+          1508.53
+        ]
       },
       {
         "t": 2.6,
@@ -443,7 +479,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          694.089,
+          1508.53
+        ]
       },
       {
         "t": 3.1,
@@ -453,7 +493,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          675.114,
+          1508.53
+        ]
       },
       {
         "t": 3.4,
@@ -463,7 +507,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blow misses"
+        "text_hint": "blow misses",
+        "hp_left": [
+          675.114,
+          1508.53
+        ]
       },
       {
         "t": 3.6,
@@ -473,7 +521,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          656.139,
+          1508.53
+        ]
       },
       {
         "t": 4.0,
@@ -483,7 +535,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          637.164,
+          1508.53
+        ]
       },
       {
         "t": 4.3,
@@ -493,7 +549,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blow misses"
+        "text_hint": "blow misses",
+        "hp_left": [
+          637.164,
+          1508.53
+        ]
       },
       {
         "t": 4.5,
@@ -503,7 +563,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          618.189,
+          1508.53
+        ]
       },
       {
         "t": 5.0,
@@ -513,7 +577,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          599.215,
+          1508.53
+        ]
       },
       {
         "t": 5.3,
@@ -523,7 +591,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blow misses"
+        "text_hint": "blow misses",
+        "hp_left": [
+          599.215,
+          1508.53
+        ]
       },
       {
         "t": 5.5,
@@ -533,7 +605,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          580.24,
+          1508.53
+        ]
       },
       {
         "t": 5.9,
@@ -543,7 +619,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          561.265,
+          1508.53
+        ]
       },
       {
         "t": 6.2,
@@ -553,7 +633,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 6.3,
-        "text_hint": "blow lands"
+        "text_hint": "blow lands",
+        "hp_left": [
+          561.265,
+          1502.21
+        ]
       },
       {
         "t": 6.4,
@@ -563,7 +647,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          561.265,
+          1502.21
+        ]
       },
       {
         "t": 6.9,
@@ -573,7 +661,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          542.29,
+          1502.21
+        ]
       },
       {
         "t": 7.2,
@@ -583,7 +675,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 6.3,
-        "text_hint": "blow lands"
+        "text_hint": "blow lands",
+        "hp_left": [
+          542.29,
+          1495.89
+        ]
       },
       {
         "t": 7.3,
@@ -593,7 +689,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          523.315,
+          1495.89
+        ]
       },
       {
         "t": 7.8,
@@ -603,7 +703,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          504.34,
+          1495.89
+        ]
       },
       {
         "t": 8.1,
@@ -613,7 +717,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 6.3,
-        "text_hint": "blow lands"
+        "text_hint": "blow lands",
+        "hp_left": [
+          504.34,
+          1489.57
+        ]
       },
       {
         "t": 8.3,
@@ -623,7 +731,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          485.366,
+          1489.57
+        ]
       },
       {
         "t": 8.8,
@@ -633,7 +745,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          466.391,
+          1489.57
+        ]
       },
       {
         "t": 9.0,
@@ -643,7 +759,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blow misses"
+        "text_hint": "blow misses",
+        "hp_left": [
+          466.391,
+          1489.57
+        ]
       },
       {
         "t": 9.2,
@@ -653,7 +773,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          447.416,
+          1489.57
+        ]
       },
       {
         "t": 9.7,
@@ -663,7 +787,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          428.441,
+          1489.57
+        ]
       },
       {
         "t": 10.0,
@@ -673,7 +801,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 6.3,
-        "text_hint": "blow lands"
+        "text_hint": "blow lands",
+        "hp_left": [
+          428.441,
+          1483.25
+        ]
       },
       {
         "t": 10.2,
@@ -683,7 +815,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          409.466,
+          1483.25
+        ]
       },
       {
         "t": 10.7,
@@ -693,7 +829,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          390.491,
+          1483.25
+        ]
       },
       {
         "t": 10.9,
@@ -703,7 +843,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 6.3,
-        "text_hint": "blow lands"
+        "text_hint": "blow lands",
+        "hp_left": [
+          390.491,
+          1476.94
+        ]
       },
       {
         "t": 11.1,
@@ -713,7 +857,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          371.517,
+          1476.94
+        ]
       },
       {
         "t": 11.6,
@@ -723,7 +871,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          352.542,
+          1476.94
+        ]
       },
       {
         "t": 11.9,
@@ -733,7 +885,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "blow misses"
+        "text_hint": "blow misses",
+        "hp_left": [
+          352.542,
+          1476.94
+        ]
       },
       {
         "t": 12.1,
@@ -743,7 +899,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          333.567,
+          1476.94
+        ]
       },
       {
         "t": 12.6,
@@ -753,7 +913,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          314.592,
+          1476.94
+        ]
       },
       {
         "t": 12.6,
@@ -763,7 +927,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "breaks and runs"
+        "text_hint": "breaks and runs",
+        "hp_left": [
+          314.592,
+          1476.94
+        ]
       },
       {
         "t": 13.0,
@@ -773,7 +941,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          295.617,
+          1476.94
+        ]
       },
       {
         "t": 13.5,
@@ -783,7 +955,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          276.642,
+          1476.94
+        ]
       },
       {
         "t": 14.0,
@@ -793,7 +969,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          257.668,
+          1476.94
+        ]
       },
       {
         "t": 14.5,
@@ -803,7 +983,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          238.693,
+          1476.94
+        ]
       },
       {
         "t": 14.9,
@@ -813,7 +997,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          219.718,
+          1476.94
+        ]
       },
       {
         "t": 15.4,
@@ -823,7 +1011,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          200.743,
+          1476.94
+        ]
       },
       {
         "t": 15.9,
@@ -833,7 +1025,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          200.743,
+          1476.94
+        ]
       },
       {
         "t": 16.4,
@@ -843,7 +1039,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          181.768,
+          1476.94
+        ]
       },
       {
         "t": 16.8,
@@ -853,7 +1053,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          162.793,
+          1476.94
+        ]
       },
       {
         "t": 17.3,
@@ -863,7 +1067,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          143.818,
+          1476.94
+        ]
       },
       {
         "t": 17.8,
@@ -873,7 +1081,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          124.844,
+          1476.94
+        ]
       },
       {
         "t": 18.3,
@@ -883,7 +1095,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          105.869,
+          1476.94
+        ]
       },
       {
         "t": 18.7,
@@ -893,7 +1109,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          86.894,
+          1476.94
+        ]
       },
       {
         "t": 19.2,
@@ -903,7 +1123,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          67.9191,
+          1476.94
+        ]
       },
       {
         "t": 19.7,
@@ -913,7 +1137,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          48.9443,
+          1476.94
+        ]
       },
       {
         "t": 20.2,
@@ -923,7 +1151,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          29.9694,
+          1476.94
+        ]
       },
       {
         "t": 20.6,
@@ -933,7 +1165,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          10.9946,
+          1476.94
+        ]
       },
       {
         "t": 21.1,
@@ -943,7 +1179,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 19.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          0.0,
+          1476.94
+        ]
       },
       {
         "t": 21.1,
@@ -953,7 +1193,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "goes down"
+        "text_hint": "goes down",
+        "hp_left": [
+          0.0,
+          1476.94
+        ]
       },
       {
         "t": 21.1,
@@ -963,8 +1207,13 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "the fight is over"
+        "text_hint": "the fight is over",
+        "hp_left": null
       }
+    ],
+    "start_hp": [
+      788.963,
+      1527.48
     ]
   },
   "fair_fight": {
@@ -984,37 +1233,37 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Welcome to Battle Royale! Tonight, steel meets muscle in a clash of epochs!",
+          "text": "Ladies and gentlemen, welcome to the arena!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "A singular Roman legionary faces off against one solitary Gorilla.",
+          "text": "We have a clash of civilizations tonight.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "In the red corner, standing at 1.69 meters, the disciplined Legionary!",
+          "text": "In the red corner, the Roman legionary, 1.69 meters tall!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Estimated mass is seventy kilograms. He brings discipline and formation.",
+          "text": "His mass is estimated at 70 kilograms.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "And in the blue corner, towering at 1.67 meters, the mighty Gorilla!",
+          "text": "In the blue corner, Gorilla, standing 1.67 meters high!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "One hundred and forty kilograms of raw, natural power. The odds are clear.",
+          "text": "He weighs in at a solid 140 kilograms.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "Only one can stand when the simulation ends! Fight!",
+          "text": "Only one can walk away! Let us fight!",
           "at_event": null
         }
       ],
@@ -1025,62 +1274,32 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "The Roman legionary closes in, shield raised high against the jungle beast.",
+          "text": "Legionary closes the distance!",
           "at_event": 0
         },
         {
-          "speaker": "color_commentator",
-          "text": "The Gorilla meets him with equal determination. Both warriors are ready.",
-          "at_event": 1
-        },
-        {
           "speaker": "announcer",
-          "text": "A solid blow from the legionary connects! The armor holds firm.",
-          "at_event": 2
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "But the Gorilla strikes back immediately. That bite is powerful stuff.",
+          "text": "Gorilla sinks its teeth in hard.",
           "at_event": 3
         },
         {
-          "speaker": "announcer",
-          "text": "Another snap from the primate! The legionary is on the defensive now.",
-          "at_event": 4
-        },
-        {
           "speaker": "color_commentator",
-          "text": "It looks like the human is struggling to find an opening.",
-          "at_event": 7
+          "text": "The Roman holds his ground.",
+          "at_event": 5
         },
         {
           "speaker": "announcer",
-          "text": "The Gorilla rains down bites! The Roman tries to hold the line.",
-          "at_event": 10
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Those hits are relentless. The legionary’s endurance is being tested.",
-          "at_event": 18
-        },
-        {
-          "speaker": "announcer",
-          "text": "The Roman attempts a counter-blow but it finds no purchase.",
-          "at_event": 29
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "He’s backing away. He knows he cannot withstand this onslaught.",
+          "text": "Legionary tries to break contact.",
           "at_event": 41
         },
         {
           "speaker": "announcer",
-          "text": "The legions fall! The Gorilla delivers the final, decisive strike!",
+          "text": "Unrelenting bites, down goes the legionary.",
           "at_event": 60
         },
         {
           "speaker": "color_commentator",
-          "text": "And that is the end. The Jungle King stands victorious once more.",
+          "text": "Game over. Gorilla takes it.",
           "at_event": 61
         }
       ],
@@ -1091,12 +1310,12 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Your winner: Gorilla!",
+          "text": "The verdict is in. Your winner: Gorilla!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "The simulation was decisive, hitting the mark 100% of the time.",
+          "text": "They prevailed 100% of the time across 1,000 simulations.",
           "at_event": null
         },
         {
@@ -1111,7 +1330,7 @@
         },
         {
           "speaker": "announcer",
-          "text": "Stay tuned for more carnage!",
+          "text": "Back to the studio!",
           "at_event": null
         }
       ],
@@ -1125,7 +1344,8 @@
       "url": "/media/sprites/roman-legionary-v1.png",
       "prompt_hash": "bbf2c691370c3a9ebd6340630b11b8ea426ea182bc7f76ce6354f748a2917ce4",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
     },
     {
       "asset_id": "sprite-gorilla-v1",
@@ -1133,7 +1353,8 @@
       "url": "/media/sprites/gorilla-v1.png",
       "prompt_hash": "2b91cf2ae63c3e75099ea6b2a738795ec43e2336e149f7a8a97e051308c61d22",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
     },
     {
       "asset_id": "battlefield-arena-v1",
@@ -1141,7 +1362,110 @@
       "url": "/media/battlefields/arena-v1.png",
       "prompt_hash": "76cda9177945731711fdbbfe0c3312162eaecbf2d0e9319e588fceff26ed2581",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
+    },
+    {
+      "asset_id": "narration-intro-175bd144e7bce451",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-intro-175bd144e7bce451.wav",
+      "prompt_hash": "175bd144e7bce451d0a0ba6fba470a642721fbd230123b58c1c86eaeb7ae9677",
+      "fallback": false,
+      "script_kind": "intro",
+      "line_times_s": [
+        [
+          0.0,
+          2.655
+        ],
+        [
+          3.055,
+          6.075
+        ],
+        [
+          6.475,
+          11.312
+        ],
+        [
+          11.712,
+          14.596
+        ],
+        [
+          14.996,
+          19.039
+        ],
+        [
+          19.439,
+          22.54
+        ],
+        [
+          22.94,
+          25.868
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-play_by_play-ab1c84f945c917f1",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-play_by_play-ab1c84f945c917f1.wav",
+      "prompt_hash": "ab1c84f945c917f16af16d7da646a53fac41b3cebc370242e5cd7423a1ed41ef",
+      "fallback": false,
+      "script_kind": "play_by_play",
+      "line_times_s": [
+        [
+          0.0,
+          2.348
+        ],
+        [
+          2.748,
+          4.772
+        ],
+        [
+          5.172,
+          6.77
+        ],
+        [
+          7.17,
+          9.392
+        ],
+        [
+          9.792,
+          12.54
+        ],
+        [
+          12.94,
+          15.162
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-outro-b6d4c219758711b4",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-outro-b6d4c219758711b4.wav",
+      "prompt_hash": "b6d4c219758711b4d371ae2c0c15f513561a26c17cad5d3618686ebf6b2b460a",
+      "fallback": false,
+      "script_kind": "outro",
+      "line_times_s": [
+        [
+          0.0,
+          3.15
+        ],
+        [
+          3.55,
+          7.103
+        ],
+        [
+          7.503,
+          9.412
+        ],
+        [
+          9.812,
+          14.956
+        ],
+        [
+          15.356,
+          16.688
+        ]
+      ]
     }
   ],
   "stages": [
@@ -1158,17 +1482,17 @@
     {
       "stage": "simulate",
       "status": "done",
-      "detail": null
+      "detail": "cached"
     },
     {
       "stage": "summary",
       "status": "done",
-      "detail": null
+      "detail": "cached"
     },
     {
       "stage": "challenger",
       "status": "done",
-      "detail": null
+      "detail": "cached"
     },
     {
       "stage": "script",

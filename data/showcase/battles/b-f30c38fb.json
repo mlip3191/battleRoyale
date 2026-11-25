@@ -1,6 +1,6 @@
 {
-  "battle_id": "b-9cd73137",
-  "created_at": "2026-11-23T03:25:20.727980Z",
+  "battle_id": "b-f30c38fb",
+  "created_at": "2026-11-25T00:02:41.813115Z",
   "matchup": {
     "fighters": [
       {
@@ -337,7 +337,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "closes in"
+        "text_hint": "closes in",
+        "hp_left": [
+          113.138,
+          89.2412
+        ]
       },
       {
         "t": 0.0,
@@ -347,7 +351,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "closes in"
+        "text_hint": "closes in",
+        "hp_left": [
+          113.138,
+          89.2412
+        ]
       },
       {
         "t": 0.8,
@@ -357,7 +365,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 11.3,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          113.138,
+          77.9368
+        ]
       },
       {
         "t": 1.3,
@@ -367,7 +379,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          113.138,
+          77.9368
+        ]
       },
       {
         "t": 1.8,
@@ -377,7 +393,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 11.3,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          113.138,
+          66.6324
+        ]
       },
       {
         "t": 2.1,
@@ -387,7 +407,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 10.6,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          102.499,
+          66.6324
+        ]
       },
       {
         "t": 2.9,
@@ -397,7 +421,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 11.3,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          102.499,
+          55.3279
+        ]
       },
       {
         "t": 3.0,
@@ -407,7 +435,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          102.499,
+          55.3279
+        ]
       },
       {
         "t": 3.8,
@@ -417,7 +449,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 10.6,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          91.8591,
+          55.3279
+        ]
       },
       {
         "t": 4.0,
@@ -427,7 +463,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 11.3,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          91.8591,
+          44.0235
+        ]
       },
       {
         "t": 4.6,
@@ -437,7 +477,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          91.8591,
+          44.0235
+        ]
       },
       {
         "t": 5.0,
@@ -447,7 +491,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 11.3,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          91.8591,
+          32.7191
+        ]
       },
       {
         "t": 5.0,
@@ -457,7 +505,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "breaks and runs"
+        "text_hint": "breaks and runs",
+        "hp_left": [
+          91.8591,
+          32.7191
+        ]
       },
       {
         "t": 6.1,
@@ -467,7 +519,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 11.3,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          91.8591,
+          21.4146
+        ]
       },
       {
         "t": 7.2,
@@ -477,7 +533,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 11.3,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          91.8591,
+          10.1102
+        ]
       },
       {
         "t": 8.2,
@@ -487,7 +547,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 11.3,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          91.8591,
+          0.0
+        ]
       },
       {
         "t": 8.2,
@@ -497,7 +561,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "goes down"
+        "text_hint": "goes down",
+        "hp_left": [
+          91.8591,
+          0.0
+        ]
       },
       {
         "t": 8.2,
@@ -507,8 +575,13 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "the fight is over"
+        "text_hint": "the fight is over",
+        "hp_left": null
       }
+    ],
+    "start_hp": [
+      113.138,
+      89.2412
     ]
   },
   "fair_fight": {
@@ -528,37 +601,27 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Ladies and gentlemen, welcome to the simulation arena!",
+          "text": "Welcome to Battle Royale! In the red corner, the Honey badger, 9 kg of pure fury!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "We have a mammal against a reptile tonight.",
+          "text": "Its estimated top speed is 12 meters per second. A very quick rodent.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "In the red corner, weighing in at nine kilograms, the Honey badger!",
+          "text": "In the blue corner, the King cobra! 4 meters of scaled menace and 10 kilograms!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "He stands less than eight-tenths of a meter tall.",
+          "text": "It has a reach of 1 meter and an attack force of 300 Newtons. Literally.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "And in the blue corner, ten kilograms of pure scale, the King cobra!",
-          "at_event": null
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "A four-meter extension of cold-hearted intent.",
-          "at_event": null
-        },
-        {
-          "speaker": "announcer",
-          "text": "Let’s see if hitting power decides this! Fight!",
+          "text": "One hits fast. The other strikes hard. Let us see who survives!",
           "at_event": null
         }
       ],
@@ -569,63 +632,33 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "The Honey badger closes in! A low, dangerous stance.",
+          "text": "The Honey badger closes in! Aggression is high!",
           "at_event": 0
         },
         {
           "speaker": "color_commentator",
-          "text": "And the King cobra mirrors him. Tense atmosphere here.",
+          "text": "King cobra waits for the opening.",
           "at_event": 1
         },
         {
           "speaker": "announcer",
-          "text": "Badger snaps first! A sharp bite finds its mark!",
+          "text": "Badger bite lands! Heavy force on the reptile.",
           "at_event": 2
         },
         {
           "speaker": "announcer",
-          "text": "Cobra tries to counter but misses completely!",
-          "at_event": 3
-        },
-        {
-          "speaker": "announcer",
-          "text": "Another snap from the badger! Precision striking.",
-          "at_event": 4
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "Finally the cobra connects. A solid hit.",
+          "text": "Cobra strikes back, but the badger holds firm.",
           "at_event": 5
         },
         {
           "speaker": "announcer",
-          "text": "Badger lands again! He is relentless!",
-          "at_event": 6
-        },
-        {
-          "speaker": "announcer",
-          "text": "Cobra swings wide and misses!",
-          "at_event": 7
-        },
-        {
-          "speaker": "announcer",
-          "text": "Cobra strikes back! It lands with force!",
-          "at_event": 8
+          "text": "KO! The King cobra goes down under pressure!",
+          "at_event": 16
         },
         {
           "speaker": "color_commentator",
-          "text": "The badger absorbs it and fires back immediately.",
-          "at_event": 9
-        },
-        {
-          "speaker": "announcer",
-          "text": "Badger lands a heavy blow! The cobra breaks!",
-          "at_event": 12
-        },
-        {
-          "speaker": "announcer",
-          "text": "The King cobra goes down! It is over!",
-          "at_event": 16
+          "text": "It is over. The Honey badger wins.",
+          "at_event": 17
         }
       ],
       "fallback": false
@@ -640,7 +673,7 @@
         },
         {
           "speaker": "color_commentator",
-          "text": "They secured the victory in 95% of the time.",
+          "text": "It happened 95% of the time.",
           "at_event": null
         },
         {
@@ -655,7 +688,7 @@
         },
         {
           "speaker": "announcer",
-          "text": "We'll see you for the next bout. Goodnight!",
+          "text": "Battle Royale, out!",
           "at_event": null
         }
       ],
@@ -669,7 +702,8 @@
       "url": "/media/sprites/honey-badger-v1.png",
       "prompt_hash": "f9f7abae0304fbb2dfe6bf80582d88d8445701cf5e00527e71036a5cb44f02f8",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
     },
     {
       "asset_id": "sprite-king-cobra-v1",
@@ -677,7 +711,8 @@
       "url": "/media/sprites/king-cobra-v1.png",
       "prompt_hash": "6437174b10c976d2280f1d7e54538faa4f71c1b07ef8a34385510c69a5abbdbf",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
     },
     {
       "asset_id": "battlefield-arena-v1",
@@ -685,7 +720,102 @@
       "url": "/media/battlefields/arena-v1.png",
       "prompt_hash": "76cda9177945731711fdbbfe0c3312162eaecbf2d0e9319e588fceff26ed2581",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
+    },
+    {
+      "asset_id": "narration-intro-939d78fba74ef9d3",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-intro-939d78fba74ef9d3.wav",
+      "prompt_hash": "939d78fba74ef9d3c01d1d04d1909083b231e3ef3ce37447425b99d8b6b0497b",
+      "fallback": false,
+      "script_kind": "intro",
+      "line_times_s": [
+        [
+          0.0,
+          5.765
+        ],
+        [
+          6.165,
+          10.777
+        ],
+        [
+          11.177,
+          16.776
+        ],
+        [
+          17.176,
+          22.196
+        ],
+        [
+          22.596,
+          26.594
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-play_by_play-dbe339e386e961ba",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-play_by_play-dbe339e386e961ba.wav",
+      "prompt_hash": "dbe339e386e961bae4c04b020f625e1f6b4f2309b45340ab957db56680421d04",
+      "fallback": false,
+      "script_kind": "play_by_play",
+      "line_times_s": [
+        [
+          0.0,
+          3.504
+        ],
+        [
+          3.904,
+          5.63
+        ],
+        [
+          6.03,
+          9.131
+        ],
+        [
+          9.531,
+          12.415
+        ],
+        [
+          12.815,
+          15.785
+        ],
+        [
+          16.185,
+          18.803
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-outro-9c0c37512ee92dcc",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-outro-9c0c37512ee92dcc.wav",
+      "prompt_hash": "9c0c37512ee92dcc776d9f2ae476f9869ea6b212185cfc957d42fdae7b3ef7a9",
+      "fallback": false,
+      "script_kind": "outro",
+      "line_times_s": [
+        [
+          0.0,
+          1.641
+        ],
+        [
+          2.041,
+          4.214
+        ],
+        [
+          4.614,
+          6.479
+        ],
+        [
+          6.879,
+          12.029
+        ],
+        [
+          12.429,
+          14.328
+        ]
+      ]
     }
   ],
   "stages": [
@@ -702,17 +832,17 @@
     {
       "stage": "simulate",
       "status": "done",
-      "detail": "cached"
+      "detail": null
     },
     {
       "stage": "summary",
       "status": "done",
-      "detail": "cached"
+      "detail": null
     },
     {
       "stage": "challenger",
       "status": "done",
-      "detail": "cached"
+      "detail": null
     },
     {
       "stage": "script",

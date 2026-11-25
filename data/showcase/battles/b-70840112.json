@@ -1,6 +1,6 @@
 {
-  "battle_id": "b-05c1eb79",
-  "created_at": "2026-11-23T03:19:04.825861Z",
+  "battle_id": "b-70840112",
+  "created_at": "2026-11-25T00:02:04.854379Z",
   "matchup": {
     "fighters": [
       {
@@ -360,7 +360,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "closes in"
+        "text_hint": "closes in",
+        "hp_left": [
+          2685.38,
+          1789.16
+        ]
       },
       {
         "t": 0.0,
@@ -370,7 +374,11 @@
         "target": null,
         "group_size": 4,
         "damage": null,
-        "text_hint": "closes in"
+        "text_hint": "closes in",
+        "hp_left": [
+          2685.38,
+          1789.16
+        ]
       },
       {
         "t": 0.4,
@@ -380,7 +388,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2685.38,
+          1763.1
+        ]
       },
       {
         "t": 0.4,
@@ -390,7 +402,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2660.43,
+          1763.1
+        ]
       },
       {
         "t": 0.5,
@@ -400,7 +416,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2635.48,
+          1763.1
+        ]
       },
       {
         "t": 0.9,
@@ -410,7 +430,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          2635.48,
+          1763.1
+        ]
       },
       {
         "t": 1.0,
@@ -420,7 +444,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2610.53,
+          1763.1
+        ]
       },
       {
         "t": 1.2,
@@ -430,7 +458,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          2610.53,
+          1763.1
+        ]
       },
       {
         "t": 1.4,
@@ -440,7 +472,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2585.58,
+          1763.1
+        ]
       },
       {
         "t": 1.5,
@@ -450,7 +486,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2560.63,
+          1763.1
+        ]
       },
       {
         "t": 1.9,
@@ -460,7 +500,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2535.67,
+          1763.1
+        ]
       },
       {
         "t": 1.9,
@@ -470,7 +514,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2535.67,
+          1737.04
+        ]
       },
       {
         "t": 2.0,
@@ -480,7 +528,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2510.72,
+          1737.04
+        ]
       },
       {
         "t": 2.3,
@@ -490,7 +542,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2485.77,
+          1737.04
+        ]
       },
       {
         "t": 2.5,
@@ -500,7 +556,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2460.82,
+          1737.04
+        ]
       },
       {
         "t": 2.6,
@@ -510,7 +570,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          2460.82,
+          1737.04
+        ]
       },
       {
         "t": 2.8,
@@ -520,7 +584,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2435.87,
+          1737.04
+        ]
       },
       {
         "t": 3.0,
@@ -530,7 +598,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2410.92,
+          1737.04
+        ]
       },
       {
         "t": 3.3,
@@ -540,7 +612,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2410.92,
+          1710.97
+        ]
       },
       {
         "t": 3.3,
@@ -550,7 +626,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2385.97,
+          1710.97
+        ]
       },
       {
         "t": 3.4,
@@ -560,7 +640,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2361.02,
+          1710.97
+        ]
       },
       {
         "t": 3.8,
@@ -570,7 +654,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2336.07,
+          1710.97
+        ]
       },
       {
         "t": 3.9,
@@ -580,7 +668,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2311.12,
+          1710.97
+        ]
       },
       {
         "t": 4.1,
@@ -590,7 +682,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2311.12,
+          1684.91
+        ]
       },
       {
         "t": 4.3,
@@ -600,7 +696,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2286.17,
+          1684.91
+        ]
       },
       {
         "t": 4.4,
@@ -610,7 +710,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2261.22,
+          1684.91
+        ]
       },
       {
         "t": 4.7,
@@ -620,7 +724,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2236.27,
+          1684.91
+        ]
       },
       {
         "t": 4.8,
@@ -630,7 +738,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2236.27,
+          1658.85
+        ]
       },
       {
         "t": 4.9,
@@ -640,7 +752,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2211.32,
+          1658.85
+        ]
       },
       {
         "t": 5.2,
@@ -650,7 +766,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2186.37,
+          1658.85
+        ]
       },
       {
         "t": 5.4,
@@ -660,7 +780,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2161.42,
+          1658.85
+        ]
       },
       {
         "t": 5.5,
@@ -670,7 +794,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2161.42,
+          1632.79
+        ]
       },
       {
         "t": 5.7,
@@ -680,7 +808,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2136.46,
+          1632.79
+        ]
       },
       {
         "t": 5.8,
@@ -690,7 +822,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2111.51,
+          1632.79
+        ]
       },
       {
         "t": 6.2,
@@ -700,7 +836,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2086.56,
+          1632.79
+        ]
       },
       {
         "t": 6.2,
@@ -710,7 +850,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2086.56,
+          1606.73
+        ]
       },
       {
         "t": 6.3,
@@ -720,7 +864,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2061.61,
+          1606.73
+        ]
       },
       {
         "t": 6.7,
@@ -730,7 +878,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2036.66,
+          1606.73
+        ]
       },
       {
         "t": 6.8,
@@ -740,7 +892,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2011.71,
+          1606.73
+        ]
       },
       {
         "t": 7.0,
@@ -750,7 +906,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          2011.71,
+          1580.67
+        ]
       },
       {
         "t": 7.1,
@@ -760,7 +920,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1986.76,
+          1580.67
+        ]
       },
       {
         "t": 7.3,
@@ -770,7 +934,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1961.81,
+          1580.67
+        ]
       },
       {
         "t": 7.6,
@@ -780,7 +948,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1961.81,
+          1580.67
+        ]
       },
       {
         "t": 7.7,
@@ -790,7 +962,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1961.81,
+          1580.67
+        ]
       },
       {
         "t": 7.8,
@@ -800,7 +976,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1961.81,
+          1580.67
+        ]
       },
       {
         "t": 8.1,
@@ -810,7 +990,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1961.81,
+          1580.67
+        ]
       },
       {
         "t": 8.2,
@@ -820,7 +1004,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1961.81,
+          1580.67
+        ]
       },
       {
         "t": 8.4,
@@ -830,7 +1018,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1961.81,
+          1580.67
+        ]
       },
       {
         "t": 8.6,
@@ -840,7 +1032,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1936.86,
+          1580.67
+        ]
       },
       {
         "t": 8.7,
@@ -850,7 +1046,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1911.91,
+          1580.67
+        ]
       },
       {
         "t": 9.1,
@@ -860,7 +1060,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1886.96,
+          1580.67
+        ]
       },
       {
         "t": 9.1,
@@ -870,7 +1074,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1886.96,
+          1580.67
+        ]
       },
       {
         "t": 9.2,
@@ -880,7 +1088,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1862.01,
+          1580.67
+        ]
       },
       {
         "t": 9.6,
@@ -890,7 +1102,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1837.06,
+          1580.67
+        ]
       },
       {
         "t": 9.7,
@@ -900,7 +1116,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1812.11,
+          1580.67
+        ]
       },
       {
         "t": 9.9,
@@ -910,7 +1130,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1812.11,
+          1554.61
+        ]
       },
       {
         "t": 10.0,
@@ -920,7 +1144,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1787.16,
+          1554.61
+        ]
       },
       {
         "t": 10.2,
@@ -930,7 +1158,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1762.21,
+          1554.61
+        ]
       },
       {
         "t": 10.5,
@@ -940,7 +1172,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1737.25,
+          1554.61
+        ]
       },
       {
         "t": 10.6,
@@ -950,7 +1186,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1712.3,
+          1554.61
+        ]
       },
       {
         "t": 10.6,
@@ -960,7 +1200,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1712.3,
+          1528.55
+        ]
       },
       {
         "t": 11.0,
@@ -970,7 +1214,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1687.35,
+          1528.55
+        ]
       },
       {
         "t": 11.1,
@@ -980,7 +1228,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1662.4,
+          1528.55
+        ]
       },
       {
         "t": 11.3,
@@ -990,7 +1242,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1662.4,
+          1502.49
+        ]
       },
       {
         "t": 11.5,
@@ -1000,7 +1256,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1637.45,
+          1502.49
+        ]
       },
       {
         "t": 11.6,
@@ -1010,7 +1270,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1612.5,
+          1502.49
+        ]
       },
       {
         "t": 12.0,
@@ -1020,7 +1284,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1587.55,
+          1502.49
+        ]
       },
       {
         "t": 12.1,
@@ -1030,7 +1298,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1587.55,
+          1476.43
+        ]
       },
       {
         "t": 12.1,
@@ -1040,7 +1312,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1587.55,
+          1476.43
+        ]
       },
       {
         "t": 12.4,
@@ -1050,7 +1326,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1562.6,
+          1476.43
+        ]
       },
       {
         "t": 12.6,
@@ -1060,7 +1340,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1537.65,
+          1476.43
+        ]
       },
       {
         "t": 12.8,
@@ -1070,7 +1354,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1537.65,
+          1476.43
+        ]
       },
       {
         "t": 12.9,
@@ -1080,7 +1368,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1512.7,
+          1476.43
+        ]
       },
       {
         "t": 13.1,
@@ -1090,7 +1382,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1487.75,
+          1476.43
+        ]
       },
       {
         "t": 13.4,
@@ -1100,7 +1396,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1462.8,
+          1476.43
+        ]
       },
       {
         "t": 13.5,
@@ -1110,7 +1410,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1462.8,
+          1450.37
+        ]
       },
       {
         "t": 13.5,
@@ -1120,7 +1424,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1437.85,
+          1450.37
+        ]
       },
       {
         "t": 13.9,
@@ -1130,7 +1438,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1412.9,
+          1450.37
+        ]
       },
       {
         "t": 14.0,
@@ -1140,7 +1452,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1387.95,
+          1450.37
+        ]
       },
       {
         "t": 14.2,
@@ -1150,7 +1466,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1387.95,
+          1424.31
+        ]
       },
       {
         "t": 14.4,
@@ -1160,7 +1480,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1362.99,
+          1424.31
+        ]
       },
       {
         "t": 14.5,
@@ -1170,7 +1494,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1338.04,
+          1424.31
+        ]
       },
       {
         "t": 14.8,
@@ -1180,7 +1508,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1313.09,
+          1424.31
+        ]
       },
       {
         "t": 15.0,
@@ -1190,7 +1522,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1288.14,
+          1424.31
+        ]
       },
       {
         "t": 15.0,
@@ -1200,7 +1536,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1288.14,
+          1398.25
+        ]
       },
       {
         "t": 15.3,
@@ -1210,7 +1550,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1263.19,
+          1398.25
+        ]
       },
       {
         "t": 15.5,
@@ -1220,7 +1564,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1238.24,
+          1398.25
+        ]
       },
       {
         "t": 15.7,
@@ -1230,7 +1578,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1238.24,
+          1372.19
+        ]
       },
       {
         "t": 15.8,
@@ -1240,7 +1592,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1213.29,
+          1372.19
+        ]
       },
       {
         "t": 15.9,
@@ -1250,7 +1606,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1188.34,
+          1372.19
+        ]
       },
       {
         "t": 16.3,
@@ -1260,7 +1620,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1163.39,
+          1372.19
+        ]
       },
       {
         "t": 16.4,
@@ -1270,7 +1634,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1163.39,
+          1372.19
+        ]
       },
       {
         "t": 16.4,
@@ -1280,7 +1648,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1163.39,
+          1372.19
+        ]
       },
       {
         "t": 16.8,
@@ -1290,7 +1662,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1138.44,
+          1372.19
+        ]
       },
       {
         "t": 16.9,
@@ -1300,7 +1676,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1113.49,
+          1372.19
+        ]
       },
       {
         "t": 17.1,
@@ -1310,7 +1690,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1113.49,
+          1346.13
+        ]
       },
       {
         "t": 17.2,
@@ -1320,7 +1704,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1088.54,
+          1346.13
+        ]
       },
       {
         "t": 17.4,
@@ -1330,7 +1718,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1063.59,
+          1346.13
+        ]
       },
       {
         "t": 17.7,
@@ -1340,7 +1732,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1038.64,
+          1346.13
+        ]
       },
       {
         "t": 17.9,
@@ -1350,7 +1746,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 26.1,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1038.64,
+          1341.87
+        ]
       },
       {
         "t": 17.9,
@@ -1360,7 +1760,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "goes down"
+        "text_hint": "goes down",
+        "hp_left": [
+          1038.64,
+          1341.87
+        ]
       },
       {
         "t": 17.9,
@@ -1370,7 +1774,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          1038.64,
+          1341.87
+        ]
       },
       {
         "t": 18.2,
@@ -1380,7 +1788,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          1013.69,
+          1341.87
+        ]
       },
       {
         "t": 18.3,
@@ -1390,7 +1802,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          988.735,
+          1341.87
+        ]
       },
       {
         "t": 18.6,
@@ -1400,7 +1816,11 @@
         "target": 1,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          988.735,
+          1341.87
+        ]
       },
       {
         "t": 18.7,
@@ -1410,7 +1830,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          963.785,
+          1341.87
+        ]
       },
       {
         "t": 18.8,
@@ -1420,7 +1844,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          938.834,
+          1341.87
+        ]
       },
       {
         "t": 19.2,
@@ -1430,7 +1858,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          913.884,
+          1341.87
+        ]
       },
       {
         "t": 19.2,
@@ -1440,7 +1872,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "breaks and runs"
+        "text_hint": "breaks and runs",
+        "hp_left": [
+          913.884,
+          1341.87
+        ]
       },
       {
         "t": 19.3,
@@ -1450,7 +1886,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          888.933,
+          1341.87
+        ]
       },
       {
         "t": 19.7,
@@ -1460,7 +1900,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          863.982,
+          1341.87
+        ]
       },
       {
         "t": 19.8,
@@ -1470,7 +1914,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          839.032,
+          1341.87
+        ]
       },
       {
         "t": 20.1,
@@ -1480,7 +1928,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          814.081,
+          1341.87
+        ]
       },
       {
         "t": 20.3,
@@ -1490,7 +1942,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          789.13,
+          1341.87
+        ]
       },
       {
         "t": 20.6,
@@ -1500,7 +1956,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          764.18,
+          1341.87
+        ]
       },
       {
         "t": 20.7,
@@ -1510,7 +1970,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          739.229,
+          1341.87
+        ]
       },
       {
         "t": 21.1,
@@ -1520,7 +1984,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          714.279,
+          1341.87
+        ]
       },
       {
         "t": 21.2,
@@ -1530,7 +1998,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          689.328,
+          1341.87
+        ]
       },
       {
         "t": 21.6,
@@ -1540,7 +2012,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          664.377,
+          1341.87
+        ]
       },
       {
         "t": 21.7,
@@ -1550,7 +2026,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          639.427,
+          1341.87
+        ]
       },
       {
         "t": 22.1,
@@ -1560,7 +2040,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          614.476,
+          1341.87
+        ]
       },
       {
         "t": 22.2,
@@ -1570,7 +2054,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          589.525,
+          1341.87
+        ]
       },
       {
         "t": 22.5,
@@ -1580,7 +2068,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          564.575,
+          1341.87
+        ]
       },
       {
         "t": 22.7,
@@ -1590,7 +2082,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          539.624,
+          1341.87
+        ]
       },
       {
         "t": 23.0,
@@ -1600,7 +2096,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          514.673,
+          1341.87
+        ]
       },
       {
         "t": 23.2,
@@ -1610,7 +2110,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          489.723,
+          1341.87
+        ]
       },
       {
         "t": 23.5,
@@ -1620,7 +2124,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          464.772,
+          1341.87
+        ]
       },
       {
         "t": 23.6,
@@ -1630,7 +2138,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          439.822,
+          1341.87
+        ]
       },
       {
         "t": 24.0,
@@ -1640,7 +2152,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          414.871,
+          1341.87
+        ]
       },
       {
         "t": 24.1,
@@ -1650,7 +2166,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          389.92,
+          1341.87
+        ]
       },
       {
         "t": 24.5,
@@ -1660,7 +2180,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          364.97,
+          1341.87
+        ]
       },
       {
         "t": 24.6,
@@ -1670,7 +2194,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          364.97,
+          1341.87
+        ]
       },
       {
         "t": 24.9,
@@ -1680,7 +2208,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          340.019,
+          1341.87
+        ]
       },
       {
         "t": 25.1,
@@ -1690,7 +2222,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          315.068,
+          1341.87
+        ]
       },
       {
         "t": 25.4,
@@ -1700,7 +2236,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          290.118,
+          1341.87
+        ]
       },
       {
         "t": 25.6,
@@ -1710,7 +2250,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          265.167,
+          1341.87
+        ]
       },
       {
         "t": 25.9,
@@ -1720,7 +2264,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          240.217,
+          1341.87
+        ]
       },
       {
         "t": 26.0,
@@ -1730,7 +2278,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          215.266,
+          1341.87
+        ]
       },
       {
         "t": 26.4,
@@ -1740,7 +2292,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          190.315,
+          1341.87
+        ]
       },
       {
         "t": 26.5,
@@ -1750,7 +2306,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          165.365,
+          1341.87
+        ]
       },
       {
         "t": 26.9,
@@ -1760,7 +2320,11 @@
         "target": 0,
         "group_size": 1,
         "damage": null,
-        "text_hint": "bite misses"
+        "text_hint": "bite misses",
+        "hp_left": [
+          165.365,
+          1341.87
+        ]
       },
       {
         "t": 27.0,
@@ -1770,7 +2334,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          140.414,
+          1341.87
+        ]
       },
       {
         "t": 27.3,
@@ -1780,7 +2348,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          115.463,
+          1341.87
+        ]
       },
       {
         "t": 27.5,
@@ -1790,7 +2362,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          90.5128,
+          1341.87
+        ]
       },
       {
         "t": 27.8,
@@ -1800,7 +2376,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          65.5621,
+          1341.87
+        ]
       },
       {
         "t": 28.0,
@@ -1810,7 +2390,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          40.6115,
+          1341.87
+        ]
       },
       {
         "t": 28.3,
@@ -1820,7 +2404,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          15.6609,
+          1341.87
+        ]
       },
       {
         "t": 28.4,
@@ -1830,7 +2418,11 @@
         "target": 0,
         "group_size": 1,
         "damage": 25.0,
-        "text_hint": "bite lands"
+        "text_hint": "bite lands",
+        "hp_left": [
+          0.0,
+          1341.87
+        ]
       },
       {
         "t": 28.4,
@@ -1840,7 +2432,11 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "goes down"
+        "text_hint": "goes down",
+        "hp_left": [
+          0.0,
+          1341.87
+        ]
       },
       {
         "t": 28.4,
@@ -1850,8 +2446,13 @@
         "target": null,
         "group_size": 1,
         "damage": null,
-        "text_hint": "the fight is over"
+        "text_hint": "the fight is over",
+        "hp_left": null
       }
+    ],
+    "start_hp": [
+      2685.38,
+      1789.16
     ]
   },
   "fair_fight": {
@@ -1871,37 +2472,37 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "Ladies and gentlemen, welcome to the simulation! Tonight, we settle the debate of mass versus pack.",
+          "text": "LADIES AND GENTLEMEN! WELCOME TO THE ARENA!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Indeed. The algorithm has run 1000 iterations. The data is statistically significant.",
+          "text": "Tonight’s matchup features a solitary Grizzly bear against four Gray wolves.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "In the red corner, standing 2.4 meters tall, comes the Grizzly Bear! Weight: 389 kg!",
+          "text": "IN THE RED CORNER, THE MAMMOTH OF MASS: A 389 KILO GRIZZLY BEAR!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "A solitary force. Legend says its aggression is high, but its teamwork score is low.",
+          "text": "The simulation indicates its sheer mass is the deciding factor in this encounter.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "In the blue corner, four Gray Wolves stand ready! Speed: 17.78 m/s each!",
+          "text": "IN THE BLUE CORNER, THE PACK PRECISION: FOUR SWIFT 40 KILO WOLVES!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "They operate as a unit with a teamwork rating of 0.8. It is a classic numbers game.",
+          "text": "They boast superior teamwork and speed to challenge the heavyweight champion.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "The computer has spoken! Who will dominate the ring? Find out right now! Fight!",
+          "text": "THE COMPUTER HAS SPOKEN. LET THE BRAWL BEGIN!",
           "at_event": null
         }
       ],
@@ -1912,63 +2513,33 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "They circle each other, tension thick in the air.",
+          "text": "The Grizzly bear and the pack close in for battle.",
           "at_event": 0
         },
         {
           "speaker": "color_commentator",
-          "text": "The size difference is immediate and intimidating.",
-          "at_event": 1
+          "text": "Teeth clash immediately as both sides engage contact.",
+          "at_event": 2
         },
         {
           "speaker": "announcer",
-          "text": "First clash! Teeth meet fur in a spark of impact.",
-          "at_event": 3
-        },
-        {
-          "speaker": "announcer",
-          "text": "The pack swarms with precision, finding open gaps.",
-          "at_event": 8
+          "text": "Four wolves overwhelm the bear with relentless strikes.",
+          "at_event": 31
         },
         {
           "speaker": "color_commentator",
-          "text": "It’s like watching a well-oiled machine at work.",
-          "at_event": 12
-        },
-        {
-          "speaker": "announcer",
-          "text": "Grizzly swings wildly, trying to keep them off!",
-          "at_event": 15
-        },
-        {
-          "speaker": "announcer",
-          "text": "One wolf goes down but the others take its place instantly.",
+          "text": "One wolf goes down, but the pack holds strong.",
           "at_event": 100
         },
         {
-          "speaker": "color_commentator",
-          "text": "That was just a temporary setback for the team.",
-          "at_event": 101
-        },
-        {
           "speaker": "announcer",
-          "text": "The bear breaks contact, sensing the overwhelming tide.",
+          "text": "The bear breaks off, retreating from the swarm.",
           "at_event": 108
         },
         {
           "speaker": "announcer",
-          "text": "He tries to stand his ground but the pressure mounts.",
-          "at_event": 147
-        },
-        {
-          "speaker": "announcer",
-          "text": "Down he goes! The final strike seals his fate!",
+          "text": "The Grizzly bear is knocked down. The fight ends.",
           "at_event": 148
-        },
-        {
-          "speaker": "color_commentator",
-          "text": "And that is how you coordinate a victory.",
-          "at_event": 149
         }
       ],
       "fallback": false
@@ -1978,27 +2549,27 @@
       "lines": [
         {
           "speaker": "announcer",
-          "text": "The simulation speaks, and here is the verdict.",
+          "text": "The decision is in. Your winner: Gray wolf!",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Gray wolf wins 55% of the time.",
+          "text": "They took it 55% of the time across all simulations.",
           "at_event": null
         },
         {
           "speaker": "announcer",
-          "text": "It came down to sheer mass.",
+          "text": "It came down to sheer mass. Total dominance.",
           "at_event": null
         },
         {
           "speaker": "color_commentator",
-          "text": "Your winner: Gray wolf!",
-          "at_event": null
-        },
-        {
-          "speaker": "announcer",
           "text": "Want a fair fight? It's already about even, winning 49% of the time.",
+          "at_event": null
+        },
+        {
+          "speaker": "announcer",
+          "text": "That's the call. Goodnight, everyone.",
           "at_event": null
         }
       ],
@@ -2012,7 +2583,8 @@
       "url": "/media/sprites/grizzly-bear-v1.png",
       "prompt_hash": "961c47dcd6736cb2fe9fda7b33e050274e7c37a3d3fe378e244d57bc0f8006c6",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
     },
     {
       "asset_id": "sprite-gray-wolf-v1",
@@ -2020,7 +2592,8 @@
       "url": "/media/sprites/gray-wolf-v1.png",
       "prompt_hash": "e35d943b3547a224d88504f42b465622677590c224234a20efe00d0c4259961c",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
     },
     {
       "asset_id": "battlefield-forest-v1",
@@ -2028,7 +2601,110 @@
       "url": "/media/battlefields/forest-v1.png",
       "prompt_hash": "70e3ecad4787209ab0b049f1e267736283cc0b036fa441fee48c3c0d72ab51c6",
       "fallback": false,
-      "script_kind": null
+      "script_kind": null,
+      "line_times_s": null
+    },
+    {
+      "asset_id": "narration-intro-5da2a199fd4d3cd4",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-intro-5da2a199fd4d3cd4.wav",
+      "prompt_hash": "5da2a199fd4d3cd45601c73414c04b2332b9ee00e616aaa406682f122e83a30a",
+      "fallback": false,
+      "script_kind": "intro",
+      "line_times_s": [
+        [
+          0.0,
+          2.663
+        ],
+        [
+          3.063,
+          7.639
+        ],
+        [
+          8.039,
+          13.325
+        ],
+        [
+          13.725,
+          18.746
+        ],
+        [
+          19.146,
+          23.454
+        ],
+        [
+          23.854,
+          27.985
+        ],
+        [
+          28.385,
+          31.311
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-play_by_play-7470408207094ec5",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-play_by_play-7470408207094ec5.wav",
+      "prompt_hash": "7470408207094ec5cd4c46c234846098da38e60a66a10d5238d39eb8a251c243",
+      "fallback": false,
+      "script_kind": "play_by_play",
+      "line_times_s": [
+        [
+          0.0,
+          2.754
+        ],
+        [
+          3.154,
+          6.351
+        ],
+        [
+          6.752,
+          10.161
+        ],
+        [
+          10.561,
+          13.62
+        ],
+        [
+          14.02,
+          16.725
+        ],
+        [
+          17.125,
+          19.962
+        ]
+      ]
+    },
+    {
+      "asset_id": "narration-outro-8c15726f0e7643c9",
+      "kind": "narration_audio",
+      "url": "/media/audio/narration-outro-8c15726f0e7643c9.wav",
+      "prompt_hash": "8c15726f0e7643c9b60e92f16175e01b2fa0f4754111f89eafeb25c875379594",
+      "fallback": false,
+      "script_kind": "outro",
+      "line_times_s": [
+        [
+          0.0,
+          3.239
+        ],
+        [
+          3.639,
+          7.28
+        ],
+        [
+          7.68,
+          10.824
+        ],
+        [
+          11.224,
+          15.528
+        ],
+        [
+          15.928,
+          18.009
+        ]
+      ]
     }
   ],
   "stages": [
