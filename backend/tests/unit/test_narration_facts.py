@@ -305,6 +305,27 @@ def test_lopsided_does_not_loosen_the_guard(
     assert find_unsupported_numbers("The bear wins 42% of the time.", facts.allowed)
 
 
+# Issue #616: rounding stays within the facts' own precision. A 99.8% win is "99.8%" or
+# "nearly 100%", never "100%"; a win in every run is still 100%.
+def test_near_certain_win_is_not_rounded_to_always() -> None:
+    sheets, result = _inputs()
+    ci = ((0.9927, 0.9995), (0.0005, 0.0073))
+    facts = build_facts(sheets, lopsided(result, (0.998, 0.002), 0.0, ci))
+    assert facts.win_pct[0] == 99.8
+    assert "wins 99.8%" in "\n".join(fact_lines(facts))
+    assert find_unsupported_numbers("It won 100% of the time.", facts.allowed)
+    for text in ("It won 99.8% of the time.", "It won nearly 100% of the time."):
+        assert find_unsupported_numbers(text, facts.allowed) == [], text
+
+
+def test_certain_win_is_still_100_percent() -> None:
+    sheets, result = _inputs()
+    ci = ((0.9962, 1.0), (0.0, 0.0038))
+    facts = build_facts(sheets, lopsided(result, (1.0, 0.0), 0.0, ci))
+    assert facts.win_pct == (100, 0)
+    assert find_unsupported_numbers("It won 100% of the time.", facts.allowed) == []
+
+
 def test_fact_lines_fair_count_without_probability() -> None:
     sheets, result = _inputs()
     fair = FairFight(varied_side=1, count=4, win_prob_at_count=None, message="Fair at 4.")

@@ -125,6 +125,8 @@ WEAPON_PATTERNS = {
     kind: re.compile(rf"\b(?:{words})\b", re.I) for kind, words in WEAPON_WORDS.items()
 }
 NOT_THEIR_WEAPON = "names a weapon neither fighter has"
+# The phrase is reserved for mythical fighters: an all-real fight may not use it (#613).
+LEGEND_UNEARNED = f'no fighter in this fight is mythical: never say "{LEGEND_PHRASE}"'
 
 
 class ScriptRejected(ValueError):
@@ -216,6 +218,8 @@ def check_script(script: Script, facts: NarrationFacts, log_len: int) -> list[st
     framed = any(LEGEND_PHRASE in ln.text.lower() for ln in script.lines)
     if kind == "intro" and legend and not framed:
         problems.append(LEGEND_MISSING)
+    if framed and not legend:
+        problems.append(LEGEND_UNEARNED)
     return problems
 
 

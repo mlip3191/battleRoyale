@@ -26,7 +26,7 @@ SPECIFIC = {
     ],
     "play_by_play": [
         f"between {MIN_BEATS} and {MAX_BEATS} lines", '"at_event"', "never go backwards",
-        "never say a time", "12 words or fewer", "at most twice",
+        "never say a time", "12 words or fewer", "at most twice", "Number words are numbers too",
         "not how many fighters", "a side of 1 fighter a group",  # #617
         "Never write \"x1\"", "weapons the fact list gives it",  # #620
     ],
