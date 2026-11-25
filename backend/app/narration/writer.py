@@ -72,8 +72,14 @@ PLACEHOLDERS_MISSING = "the outro must use these placeholders"
 
 # What each outro placeholder means, as told to the model (values are filled in by code).
 PLACEHOLDER_HELP = {
-    "winner": "the winning fighter's name",
-    "loser": "the losing fighter's name",
+    "winner": (
+        "the winning side as the results page names it: a fighter's name, or a count "
+        "and plural; may be plural, so pick verbs that work either way"
+    ),
+    "loser": (
+        "the losing side as the results page names it: a fighter's name, or a count "
+        "and plural; may be plural, so pick verbs that work either way"
+    ),
     "win_pct": "how often the winner won, with the percent sign",
     "red_win_pct": "how often the red-corner fighter won, with the percent sign",
     "blue_win_pct": "how often the blue-corner fighter won, with the percent sign",

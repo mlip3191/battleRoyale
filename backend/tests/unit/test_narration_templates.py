@@ -462,6 +462,20 @@ def test_group_winner_stand_in_has_no_number_and_stays_plural() -> None:
     texts = [ln.text for ln in outro_script(facts).lines]
     assert texts[0] == "Your winner: Gorillas!"
     assert texts[1] == "Gorillas take the win."
+
+
+def test_group_winner_stand_in_uses_the_irregular_plural() -> None:
+    """#614 review: "Wolf" x3 is "Wolves", not "Wolfs", and keeps its capital letter."""
+    wolf = _sheet("gorilla.json").model_copy(update={"display_name": "Wolf"})
+    sheets = [wolf, _sheet("grizzly-bear.json")]
+    facts = build_facts(sheets, _won_by(0), FAIR, counts=(3, 1))
+    values = facts.allowed.values - {3.0}
+    facts = dataclasses.replace(facts, allowed=dataclasses.replace(facts.allowed, values=values))
+    texts = [ln.text for ln in outro_script(facts).lines]
+    assert texts[0] == "Your winner: Wolves!"
+    assert texts[1] == "Wolves take the win."
+
+
 def test_a_big_fair_count_is_spoken_with_a_thousands_separator() -> None:
     """#624: the card says "10,000", so the announcer must not say "10000" for the same fight."""
     a, b = MATCHUPS["bear-vs-wolves"]

@@ -119,9 +119,12 @@ def side_name(f: FighterFacts) -> str:
     return f"{f.count:,} {counted_name(f.display_name, f.count)}" if f.count > 1 else f.display_name
 
 
-# The side's name with no number, for a stand-in line: "Dragon" or "Gorillas".
+# The side's name with no number, for a stand-in line: "Dragon" or "Gorillas" (or "Wolves").
 def _safe_side_name(f: FighterFacts) -> str:
-    return pluralize(f.display_name) if f.count > 1 else f.display_name
+    if f.count == 1:
+        return f.display_name
+    plural = counted_name(f.display_name, f.count)
+    return f.display_name[:1] + plural[1:]
 
 
 # The tale-of-the-tape line: mass and top speed, flagged as legend or estimate.
