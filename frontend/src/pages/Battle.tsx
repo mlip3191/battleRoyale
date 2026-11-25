@@ -23,6 +23,7 @@ import {
   audioPlan,
   canSkip,
   captionsAt,
+  holdingUp,
   lineMs,
   linesOf,
   nextShow,
@@ -59,8 +60,12 @@ const RECORDING_ANNOUNCER =
 // What the ticker says while the intro's card holds for the fight's voice (#592).
 const RECORDING_FIGHT =
   "Recording the play-by-play… the fight starts in a moment.";
+// What it says while only the pictures hold up the show (#592).
+const DRAWING_PICTURES =
+  "Drawing the fighters… the show starts as soon as the pictures are ready.";
 function stageTicker(stage: string | undefined, first: string): string {
-  return stage === "audio" ? RECORDING_ANNOUNCER : `Researching the ${first}…`;
+  if (stage === "audio") return RECORDING_ANNOUNCER;
+  return stage === "images" ? DRAWING_PICTURES : `Researching the ${first}…`;
 }
 
 // The captions box: one live region, always mounted, so screen readers hear each new line.
@@ -160,20 +165,23 @@ function Broadcast({ id }: { id: string }) {
   const lineIndex = line.phase === show.phase ? line.index : 0;
   const current = timed[lineIndex];
   const isLast = lineIndex >= timed.length - 1;
+  // The line's text, not the line: each refresh of the record brings new line objects, and the
+  // timer must not start over on every one (#592).
+  const text = current?.text;
   useEffect(() => {
-    if (!current || captionsPaused || (isLast && show.phase !== "intro"))
-      return;
+    if (text === undefined || captionsPaused) return;
+    if (isLast && show.phase !== "intro") return;
     const timer = setTimeout(() => {
       if (!isLast) setLine({ phase: show.phase, index: lineIndex + 1 });
       else
         setShow((s) =>
           nextShow(s, { type: "intro-done", battle: latest.current }),
         );
-    }, lineMs(current.text));
+    }, lineMs(text));
     return () => clearTimeout(timer);
-  }, [current, captionsPaused, isLast, lineIndex, show.phase]);
+  }, [text, captionsPaused, isLast, lineIndex, show.phase]);
 
-  const running = battle?.stages.find((s) => s.status === "running");
+  const running = battle ? holdingUp(battle) : undefined;
   const first = battle?.matchup.fighters[0]?.entity ?? "the fighters";
   // One ticker for every state, so its status region stays mounted and only its text changes.
   const tickerMessage = !battle

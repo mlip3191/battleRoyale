@@ -73,6 +73,20 @@ const readyToStart = (b: BattleRecord) =>
   (b.status === "done" ||
     (settled(b, "images") && b.scripts.length > 0 && !voiceComing(b, "intro")));
 
+// Stages the show never waits for: the next challenger (results page only) and music (cut, #538).
+const NOT_AWAITED: readonly StageStatus["stage"][] = ["challenger", "music"];
+
+// The running stage the waiting ticker talks about: the first one the show still waits for. Once
+// the intro's voice is in, the rest of the announcer is recorded during the show, so the audio
+// stage no longer holds it up (#592).
+export const holdingUp = (b: BattleRecord) =>
+  b.stages.find(
+    (s) =>
+      s.status === "running" &&
+      !NOT_AWAITED.includes(s.stage) &&
+      (s.stage !== "audio" || audioPlan(b.assets, "intro").narration === null),
+  );
+
 // The fight starts, unless its voice is still being recorded: then the intro's card holds.
 const toFight = (show: Show, b: BattleRecord | null | undefined): Show => ({
   ...show,

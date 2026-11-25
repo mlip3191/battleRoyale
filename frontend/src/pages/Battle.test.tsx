@@ -594,6 +594,50 @@ describe("the show starts on the intro's voice (#592)", () => {
     );
     expect(screen.getByRole("status").textContent).toBe("");
   });
+
+  // The page refetches every second while the battle runs; each reply is new objects (fresh JSON).
+  const polled = (
+    view: ReturnType<typeof render>,
+    ms: number,
+    record: unknown,
+  ) => {
+    for (let left = ms; left > 0; left -= 1000) {
+      act(() => vi.advanceTimersByTime(Math.min(1000, left)));
+      refresh(view, structuredClone(record));
+    }
+  };
+
+  test("the intro and outro lines keep their pace while fresh records arrive every second", () => {
+    vi.useFakeTimers();
+    const view = show(recording("intro"));
+    polled(view, lineMs(intro[0].text), recording("intro"));
+    expect(captions().textContent).toContain(intro[1].text);
+    polled(view, lineMs(intro[1].text), recording("intro"));
+    expect(screen.getByRole("status").textContent).toContain(
+      "Recording the play-by-play",
+    );
+    fireEvent.click(button("Skip to verdict"));
+    polled(view, lineMs(outro[0].text), recording("intro"));
+    expect(captions().textContent).toContain(outro[1].text);
+  });
+
+  test("the ticker names what the show still waits for: the announcer, then the pictures", () => {
+    const drawing = (record: ReturnType<typeof recording>) => ({
+      ...record,
+      stages: record.stages.map((s) =>
+        s.stage === "images" ? { ...s, status: "running" } : s,
+      ),
+    });
+    show(drawing(recording()));
+    expect(screen.getByRole("status").textContent).toContain(
+      "Recording the announcer",
+    );
+    cleanup();
+    show(drawing(recording("intro"))); // the intro's voice is in; the pictures aren't
+    const text = screen.getByRole("status").textContent ?? "";
+    expect(text).toContain("Drawing the fighters");
+    expect(text).not.toContain("Recording the announcer");
+  });
 });
 
 test("audio: an older record's single announcer file plays in every part", () => {
@@ -816,6 +860,21 @@ test("audio: Start the fight unlocks the announcer's voice inside the click (#57
   expect(callsOn(log, voice).slice(0, 2)).toEqual(["muted play", "pause"]);
   expect(callsOn(log, voice)).not.toContain("play"); // nothing is said before the first line
   expect(voice.muted).toBe(false);
+});
+
+test("audio: the click's unlock carries through the hold to the play-by-play's voice (#594, #592)", async () => {
+  const log = mediaLog();
+  const view = show(recording("intro"));
+  const voice = soundBar().querySelector("audio")!;
+  expect(voice.getAttribute("src")).toBe("/media/audio/b1-intro.mp3");
+  startFight(); // the fight holds: its voice is still being recorded
+  expect(callsOn(log, voice).slice(0, 2)).toEqual(["muted play", "pause"]);
+  refresh(view, recording("intro", "play_by_play"));
+  act(() => stageProps().onPlayingChange!(true));
+  // The same, unlocked element now reads the play-by-play, and plays it.
+  expect(soundBar().querySelector("audio")).toBe(voice);
+  expect(voice.getAttribute("src")).toBe("/media/audio/b1-play_by_play.mp3");
+  await waitFor(() => expect(callsOn(log, voice)).toContain("play"));
 });
 
 test("audio: sound switched off in one fight stays off for the next; Start the fight doesn't override it (#579)", async () => {
