@@ -184,12 +184,11 @@ def decide(
     return Decision(shown, _explain(key, matchup, sheets, fav, signed >= 0))
 
 
-# A count and a name for a deciding-factor sentence: "6 gray wolves", and "1 Grizzly bear" as the
-# sheet writes it (a count of 1 is unchanged, #458).
+# A count and a name for a deciding-factor sentence: "6 gray wolves" and "1 grizzly bear". The name
+# is mid-sentence, so an ordinary name is lower case at any count (#615); a proper first word such
+# as "African" keeps its capital, and a count of 1 stays singular (#458).
 def _counted(count: int, display_name: str) -> str:
-    if count > 1:
-        return f"{count} {counted_name(display_name, count)}"
-    return f"{count} {display_name}"
+    return f"{count} {counted_name(display_name, count)}"
 
 
 def _explain_scaling(matchup: Matchup, sheets: list[StatSheet], fav: int, helped: bool) -> str:
