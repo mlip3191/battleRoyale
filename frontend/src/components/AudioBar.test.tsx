@@ -912,7 +912,7 @@ test("finishing: the bar says the last lines first, then settles (#601)", async 
   }
 });
 
-test("finishing: a voice that stalls only holds the show for the maximum wait (#601)", async () => {
+test("finishing: a voice that stalls holds the show for the speech left plus the slack, no longer (#601)", async () => {
   fakeClock();
   try {
     const onSettled = vi.fn();
@@ -920,7 +920,8 @@ test("finishing: a voice that stalls only holds the show for the maximum wait (#
     playingNow(voiceTrack());
     await settle();
     view.rerender(syncedAt(cueOf(0, 0, 3), { onSettled, finishing: true }));
-    act(() => vi.advanceTimersByTime(FINISH_WAIT_MS - 1));
+    const speechLeftMs = 3000; // the lines are 3 s long and the voice never moves
+    act(() => vi.advanceTimersByTime(speechLeftMs + FINISH_WAIT_MS - 1));
     expect(onSettled).not.toHaveBeenCalled();
     act(() => vi.advanceTimersByTime(1));
     expect(onSettled).toHaveBeenCalledTimes(1);
@@ -974,6 +975,132 @@ test("a replay (no moment) cancels the stop timer and stops the old lines (#601)
     voice.currentTime = 4;
     act(() => vi.advanceTimersByTime(10_000));
     expect(pause).toHaveBeenCalledTimes(1); // the old timer did nothing later
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("finishing: a backlog of lines is said in full, because the wait covers all the speech lined up (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    // Three 4 s moments pile up (12 s of speech, more than the 8 s of slack), as after a fast replay.
+    const view = render(syncedAt(cueOf(0, 0, 4), { onSettled }));
+    const voice = playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(cueOf(1, 5, 9), { onSettled }));
+    await settle();
+    view.rerender(syncedAt(cueOf(2, 10, 14), { onSettled }));
+    await settle();
+    view.rerender(syncedAt(cueOf(2, 10, 14), { onSettled, finishing: true }));
+    expect(onSettled).not.toHaveBeenCalled();
+    voice.currentTime = 4;
+    act(() => vi.advanceTimersByTime(4000)); // the first moment ends; the second starts
+    await settle();
+    expect(onSettled).not.toHaveBeenCalled();
+    voice.currentTime = 9;
+    act(() => vi.advanceTimersByTime(4000)); // the second ends; the third starts: 8 s in, still going
+    await settle();
+    expect(onSettled).not.toHaveBeenCalled();
+    voice.currentTime = 14;
+    act(() => vi.advanceTimersByTime(4000)); // the closing lines are said: now it settles
+    expect(onSettled).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("finishing: a slow voice that keeps moving gets the slack again each time it moves on (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    const view = render(syncedAt(cueOf(0, 0, 4), { onSettled }));
+    const voice = playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(cueOf(1, 5, 9), { onSettled }));
+    await settle();
+    // 8 s of speech are lined up, so the first wait is 8 s + the 8 s of slack = 16 s.
+    view.rerender(syncedAt(cueOf(1, 5, 9), { onSettled, finishing: true }));
+    act(() => vi.advanceTimersByTime(10_000)); // the voice is slow: the first lines are not done yet
+    voice.currentTime = 4;
+    act(() => vi.advanceTimersByTime(2000)); // t = 12 s: they end, and the second moment starts
+    await settle();
+    expect(voice.currentTime).toBe(5);
+    voice.currentTime = 6;
+    act(() => vi.advanceTimersByTime(5000)); // t = 17 s: past the first 16 s, but the voice moved on
+    expect(onSettled).not.toHaveBeenCalled();
+    voice.currentTime = 9;
+    act(() => vi.advanceTimersByTime(3000)); // the closing lines are said: now it settles
+    expect(onSettled).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("finishing: holding the fight (5x or 10x) during the wait settles at once, not after the full wait (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    const view = render(syncedAt(cueOf(0, 0, 4), { onSettled }));
+    playingNow(voiceTrack());
+    await settle();
+    view.rerender(syncedAt(cueOf(0, 0, 4), { onSettled, finishing: true }));
+    expect(onSettled).not.toHaveBeenCalled(); // still talking
+    view.rerender(
+      syncedAt(cueOf(0, 0, 4), { onSettled, finishing: true, hold: true }),
+    );
+    expect(onSettled).toHaveBeenCalledTimes(1); // the viewer sped it up: nothing left to wait for
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("a replay forgets the old lines, so releasing the hold afterwards does not resume them (#601)", async () => {
+  fakeClock();
+  try {
+    let paused = false;
+    pause.mockImplementation(() => {
+      paused = true;
+    });
+    const view = render(syncedAt(cueOf(5, 2, 4)));
+    const voice = voiceTrack();
+    Object.defineProperty(voice, "paused", {
+      configurable: true,
+      get: () => paused,
+    });
+    await settle(); // the lines start
+    play.mockClear();
+    view.rerender(syncedAt(null)); // Replay: the fight starts over, the old lines stop
+    view.rerender(syncedAt(null, { hold: true })); // the stage reloads and is not moving yet
+    view.rerender(syncedAt(null, { hold: false })); // the new game starts playing
+    await settle();
+    expect(play).not.toHaveBeenCalled(); // the old closing line does not come back
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("finishing: changing the speed during the wait works the wait out again (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    const view = render(syncedAt(cueOf(0, 0, 4), { onSettled, rate: 2 }));
+    playingNow(voiceTrack());
+    await settle();
+    view.rerender(
+      syncedAt(cueOf(0, 0, 4), { onSettled, rate: 2, finishing: true }),
+    );
+    // At 2x the 4 s of speech take 2 s, so the wait is 2 s + the 8 s of slack.
+    act(() => vi.advanceTimersByTime(5000));
+    expect(onSettled).not.toHaveBeenCalled();
+    view.rerender(
+      syncedAt(cueOf(0, 0, 4), { onSettled, rate: 1, finishing: true }),
+    );
+    // At 1x the speech takes 4 s: the wait starts over at 4 s + 8 s = 12 s, so it is not over at 10 s.
+    act(() => vi.advanceTimersByTime(11_900));
+    expect(onSettled).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(200));
+    expect(onSettled).toHaveBeenCalledTimes(1);
   } finally {
     vi.useRealTimers();
   }
