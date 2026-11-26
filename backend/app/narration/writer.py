@@ -38,6 +38,7 @@ from app.narration.templates import (
     outro_script,
     play_by_play_script,
     same_line_key,
+    side_name,
 )
 from app.providers.base import ChatLLM, ChatMessage
 from app.providers.registry import get_script_chat
@@ -71,8 +72,14 @@ PLACEHOLDERS_MISSING = "the outro must use these placeholders"
 
 # What each outro placeholder means, as told to the model (values are filled in by code).
 PLACEHOLDER_HELP = {
-    "winner": "the winning fighter's name",
-    "loser": "the losing fighter's name",
+    "winner": (
+        "the winning side as the results page names it: a fighter's name, or a count "
+        "and plural; may be plural, so pick verbs that work either way"
+    ),
+    "loser": (
+        "the losing side as the results page names it: a fighter's name, or a count "
+        "and plural; may be plural, so pick verbs that work either way"
+    ),
     "win_pct": "how often the winner won, with the percent sign",
     "red_win_pct": "how often the red-corner fighter won, with the percent sign",
     "blue_win_pct": "how often the blue-corner fighter won, with the percent sign",
@@ -131,8 +138,9 @@ def outro_placeholders(facts: NarrationFacts) -> dict[str, str]:
         )
     if facts.outcome in ("win_0", "win_1"):
         side = int(facts.outcome[-1])
-        values["winner"] = names[side]
-        values["loser"] = names[1 - side]
+        # Named like the results page's verdict: "3 gorillas", not "Gorilla" (#614).
+        values["winner"] = side_name(facts.fighters[side])
+        values["loser"] = side_name(facts.fighters[1 - side])
         values["win_pct"] = f"{facts.win_pct[side]}%"
     if facts.fair_count is not None and facts.fair_side is not None:
         values["fair_side"] = names[facts.fair_side]

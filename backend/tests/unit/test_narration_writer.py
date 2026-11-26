@@ -734,6 +734,27 @@ async def test_lopsided_outro_keeps_small_percents(
     assert outro.lines[2].text == f"The Gorilla won {small[0]}. Draws: {small[1]}."
 
 
+# #614: in mock mode "3 gorillas vs a grizzly bear" said "Your winner: Gorilla!" while the
+# results page said "Winner: 3 gorillas!". {winner} now names a group the way the verdict does.
+async def test_mock_outro_names_a_group_winner_like_the_verdict() -> None:
+    sample = SAMPLES[GRIZZLY]
+    update = {
+        "outcome": "win_1",
+        "win_prob": (0.18, 0.8),
+        "win_prob_ci95": ((0.15, 0.21), (0.77, 0.83)),
+    }
+    result = sample.result.model_copy(update=update)
+    facts = build_facts(sample.sheets, result, sample.fair, (1, 3))
+    assert outro_placeholders(facts)["winner"] == "3 gorillas"
+    assert outro_placeholders(facts)["loser"] == "Grizzly bear"
+    _, _, outro = await write_scripts(sample.sheets, result, sample.fair, counts=(1, 3))
+    assert outro.fallback is False
+    assert outro.lines[0].text == "It's all over! Your winner: 3 gorillas!"
+    assert outro.lines[1].text.startswith(f"3 gorillas won {facts.win_pct[1]}% of 1,000")
+    assert "Gorilla!" not in outro.lines[0].text
+    assert check_script(outro, facts, len(result.representative_log)) == []
+
+
 def test_fill_placeholders_keeps_one_percent_sign() -> None:
     values = {"win_pct": "71%", "winner": "Grizzly bear"}
     assert fill_placeholders("{winner}: {win_pct}%!", values) == "Grizzly bear: 71%!"

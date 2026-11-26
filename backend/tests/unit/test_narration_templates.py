@@ -244,7 +244,7 @@ def test_non_mythical_fighters_get_no_legend_line() -> None:
 def test_outro_fills_numbers_from_the_result() -> None:
     _, _, outro = template_scripts(_facts("bear-vs-wolves"), RESULT)
     text = " ".join(line.text for line in outro.lines)
-    assert "Gray wolf, 6 of them" in text
+    assert "Your winner: 6 gray wolves!" in text  # named like the verdict (#614)
     assert "55% of 1,000 simulated fights" in text
     assert "About 4 gray wolves make it a coin flip" in text and "49%" in text
     assert "numbers" in text
@@ -402,6 +402,78 @@ def test_side_zero_win_names_the_bear() -> None:
     assert outro.lines[0].text.startswith("Your winner: Grizzly bear")
     assert f"won {facts.win_pct[0]}%" in outro.lines[1].text
     _assert_guarded(facts, outro)
+
+
+# A result where `side` wins clearly (its 95% range well above 50%) or only just (too close).
+def _won_by(side: int, too_close: bool = False) -> SimulationResult:
+    edge = (0.45, 0.58) if too_close else (0.75, 0.85)
+    other = (1 - edge[1], 1 - edge[0])
+    ci = (edge, other) if side == 0 else (other, edge)
+    win = (sum(ci[0]) / 2, sum(ci[1]) / 2)
+    update = {"outcome": f"win_{side}", "win_prob": win, "win_prob_ci95": ci}
+    return RESULT.model_copy(update=update)
+
+
+# #614: a 3-gorilla win said "Your winner: Gorilla!" while the verdict said "Winner: 3 gorillas!".
+def test_group_winner_is_named_like_the_verdict() -> None:
+    result = _won_by(0)
+    sheets = [_sheet("gorilla.json"), _sheet("grizzly-bear.json")]
+    facts = build_facts(sheets, result, FAIR, counts=(3, 1))
+    outro = outro_script(facts)
+    assert outro.lines[0].text == "Your winner: 3 gorillas!"
+    assert outro.lines[1].text == f"3 gorillas won {facts.win_pct[0]}% of 1,000 simulated fights."
+    _assert_guarded(facts, outro)
+
+
+def test_group_winner_uses_a_thousands_separator() -> None:
+    a, b = MATCHUPS["bear-vs-wolves"]
+    facts = build_facts([_sheet(a), _sheet(b)], _won_by(1), FAIR, counts=(1, 1000))
+    outro = outro_script(facts)
+    assert outro.lines[0].text == "Your winner: 1,000 gray wolves!"
+    assert outro.lines[1].text.startswith("1,000 gray wolves won")
+    _assert_guarded(facts, outro)
+
+
+def test_single_winner_is_still_its_display_name() -> None:
+    sheets = [_sheet("gorilla.json"), _sheet("grizzly-bear.json")]
+    facts = build_facts(sheets, _won_by(1), FAIR, counts=(3, 1))
+    outro = outro_script(facts)
+    assert outro.lines[0].text == "Your winner: Grizzly bear!"
+    assert outro.lines[1].text.startswith(f"Grizzly bear won {facts.win_pct[1]}% of 1,000")
+    _assert_guarded(facts, outro)
+
+
+def test_group_slight_edge_is_named_like_the_verdict() -> None:
+    sheets = [_sheet("gorilla.json"), _sheet("grizzly-bear.json")]
+    facts = build_facts(sheets, _won_by(0, too_close=True), FAIR, counts=(3, 1))
+    assert facts.too_close
+    texts = [ln.text for ln in outro_script(facts).lines]
+    assert texts[0] == "Too close to call! A near coin flip, with a slight edge to 3 gorillas."
+    assert texts[1].startswith(f"3 gorillas came out ahead in {facts.win_pct[0]}%")
+    _assert_guarded(facts, outro_script(facts))
+
+
+# A group winner whose number the guard rejects falls back to a number-free plural, not "Gorilla".
+def test_group_winner_stand_in_has_no_number_and_stays_plural() -> None:
+    sheets = [_sheet("gorilla.json"), _sheet("grizzly-bear.json")]
+    facts = build_facts(sheets, _won_by(0), FAIR, counts=(3, 1))
+    values = facts.allowed.values - {3.0}
+    facts = dataclasses.replace(facts, allowed=dataclasses.replace(facts.allowed, values=values))
+    texts = [ln.text for ln in outro_script(facts).lines]
+    assert texts[0] == "Your winner: Gorillas!"
+    assert texts[1] == "Gorillas take the win."
+
+
+def test_group_winner_stand_in_uses_the_irregular_plural() -> None:
+    """#614 review: "Wolf" x3 is "Wolves", not "Wolfs", and keeps its capital letter."""
+    wolf = _sheet("gorilla.json").model_copy(update={"display_name": "Wolf"})
+    sheets = [wolf, _sheet("grizzly-bear.json")]
+    facts = build_facts(sheets, _won_by(0), FAIR, counts=(3, 1))
+    values = facts.allowed.values - {3.0}
+    facts = dataclasses.replace(facts, allowed=dataclasses.replace(facts.allowed, values=values))
+    texts = [ln.text for ln in outro_script(facts).lines]
+    assert texts[0] == "Your winner: Wolves!"
+    assert texts[1] == "Wolves take the win."
 
 
 def test_a_big_fair_count_is_spoken_with_a_thousands_separator() -> None:
