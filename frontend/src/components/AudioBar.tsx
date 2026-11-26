@@ -249,6 +249,7 @@ export default function AudioBar({
     track.playbackRate = rate;
     if (stopTimer.current !== null)
       stopAtEnd(track, stopAt, stopTimer, cueDone);
+    rearm.current?.(); // a show waiting at its end: the speech left takes a different time now
   }, [rate, cueDone]);
 
   // While the fight is paused or too fast, the announcer waits; then it picks up where it stopped,
@@ -329,6 +330,7 @@ export default function AudioBar({
       waiting.current = [];
       if (speaking.current) track?.pause();
       speaking.current = false;
+      stopAt.current = null; // the old lines are over: a later release of the hold must not resume them
       return;
     }
     if (!track) return;

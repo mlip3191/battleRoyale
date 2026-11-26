@@ -1054,3 +1054,54 @@ test("finishing: holding the fight (5x or 10x) during the wait settles at once, 
     vi.useRealTimers();
   }
 });
+
+test("a replay forgets the old lines, so releasing the hold afterwards does not resume them (#601)", async () => {
+  fakeClock();
+  try {
+    let paused = false;
+    pause.mockImplementation(() => {
+      paused = true;
+    });
+    const view = render(syncedAt(cueOf(5, 2, 4)));
+    const voice = voiceTrack();
+    Object.defineProperty(voice, "paused", {
+      configurable: true,
+      get: () => paused,
+    });
+    await settle(); // the lines start
+    play.mockClear();
+    view.rerender(syncedAt(null)); // Replay: the fight starts over, the old lines stop
+    view.rerender(syncedAt(null, { hold: true })); // the stage reloads and is not moving yet
+    view.rerender(syncedAt(null, { hold: false })); // the new game starts playing
+    await settle();
+    expect(play).not.toHaveBeenCalled(); // the old closing line does not come back
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("finishing: changing the speed during the wait works the wait out again (#601)", async () => {
+  fakeClock();
+  try {
+    const onSettled = vi.fn();
+    const view = render(syncedAt(cueOf(0, 0, 4), { onSettled, rate: 2 }));
+    playingNow(voiceTrack());
+    await settle();
+    view.rerender(
+      syncedAt(cueOf(0, 0, 4), { onSettled, rate: 2, finishing: true }),
+    );
+    // At 2x the 4 s of speech take 2 s, so the wait is 2 s + the 8 s of slack.
+    act(() => vi.advanceTimersByTime(5000));
+    expect(onSettled).not.toHaveBeenCalled();
+    view.rerender(
+      syncedAt(cueOf(0, 0, 4), { onSettled, rate: 1, finishing: true }),
+    );
+    // At 1x the speech takes 4 s: the wait starts over at 4 s + 8 s = 12 s, so it is not over at 10 s.
+    act(() => vi.advanceTimersByTime(11_900));
+    expect(onSettled).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(200));
+    expect(onSettled).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
