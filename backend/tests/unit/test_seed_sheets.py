@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from app.models.stats import ASSUMABLE_STATS, StatName, StatSheet, StatValue
 from app.research.bite_force import average_carnivore_bite_n
+from app.research.seed_fighters import load_seed_fighters
 from app.research.sheet_hash import compute_sheet_hash
 
 FIGHTERS_DIR = Path(__file__).parents[3] / "data" / "seed" / "fighters"
@@ -56,6 +57,24 @@ def quote_has_number(stat: StatValue) -> bool:
 
 def test_sheets_exist() -> None:
     assert SHEET_PATHS, f"no seed sheets found in {FIGHTERS_DIR}"
+
+
+# #623: every seed-list fighter needs a hand-verified sheet, or mock mode fights it on category
+# defaults (a 10 kg great white shark). These 14 are still to build; take one off the list when
+# its sheet lands. Adding a name here needs a reason in the PR.
+STILL_TO_BUILD = {
+    *("army-ant", "chimpanzee", "golden-retriever", "goose", "hippopotamus", "honey-bee"),
+    *("house-mouse", "medieval-knight", "pickup-truck", "saguaro-cactus", "samurai"),
+    *("toaster", "triceratops", "tyrannosaurus-rex"),
+}
+
+
+def test_every_seed_fighter_has_a_sheet_or_is_still_to_build() -> None:
+    have = {path.stem for path in SHEET_PATHS}
+    missing = [f.id for f in load_seed_fighters() if f.id not in have | STILL_TO_BUILD]
+    assert missing == [], f"seed fighters with no hand-verified sheet: {missing}"
+    built = sorted(STILL_TO_BUILD & have)
+    assert built == [], f"take these off STILL_TO_BUILD, their sheets exist: {built}"
 
 
 @pytest.mark.parametrize("path", SHEET_PATHS, ids=lambda p: p.stem)
