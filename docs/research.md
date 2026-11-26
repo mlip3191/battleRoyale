@@ -115,6 +115,12 @@ Every value gets a `low` and `high`: the source's range if it gives one, otherwi
 
 **Infobox rows (#522).** Code reads the article's infobox rows whose label names a stat (mass or weight, length, height, speed) and stores each as a fact with the row's text as its quote ("Weight: 25–34 kg (55–75 lb)", the upper figure of a range); no model reads them. They come before Wikidata and the trait tables, since they are the article's own summary, quoted word for word. Animal taxoboxes have no such rows, so they help mostly dog breeds, machines and objects with an infobox. The seed ingest and on-demand research store them; after a change to how facts are read, `uv run --directory backend python -m scripts.ingest_seed --facts-only` stores the facts again from the files earlier runs saved in `data/kb/`, with no download or parse.
 
+**Variants (#522).** Research prefers figures for the fighter's variant. The seed list's variant ("Adult male") is named in the extraction prompt. Wikidata facts keep their sex and role qualifiers in the quote ("mass: 188 kg (male organism, adult weight)"). Code reads the sex and age words around each figure (`variant.py`): the quote's own words, or the nearest such word before it in its sentence. A young animal's figure never stands in for an adult. Among stored facts, another sex's figure is used only when none is left for the fighter's own sex, since it is still closer than a category default. Species names that hold a sex word (bull shark, wild boar, sea cow) don't count. Two other ideas were measured and rejected; see `docs/evaluation.md`:
+- asking the model three times and keeping the middle answer: no gain, and builds went over the 30 s extraction budget;
+- dropping values the decision model doubted: it dropped as many right values as wrong ones.
+
+After this change, run `ingest_seed --facts-only` so stored Wikidata facts get their qualifiers.
+
 **Labeling rules (D-47).**
 - `derived` means code computes the value from other values. A hand-worked formula doesn't count: the honey badger's bite from Wroe's 31-species regression counts as `derived` only once the fit runs in code, and the horse's gallop distance ÷ top speed is not `derived`, so its endurance stays a category default.
 - A number taken from another page as a stand-in, such as the elephant's trunk lift used as blow force, is `hand_verified`, with its quote in `source`.

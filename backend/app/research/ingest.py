@@ -125,10 +125,12 @@ def restore_saved_facts(
     restored = 0
     for fighter in fighters:
         article = load_raw(kb_dir, fighter.id, "wikipedia")
-        if article is None:
-            continue
-        ingest_infobox(connection, fighter.id, article)
-        restored += 1
+        entity = load_raw(kb_dir, fighter.id, "wikidata")
+        if article is not None:
+            ingest_infobox(connection, fighter.id, article)
+        if entity is not None:  # its sex and role qualifiers go into the quote (#522)
+            _ingest_wikidata(connection, fighter, entity)
+        restored += article is not None or entity is not None
     return restored
 
 
