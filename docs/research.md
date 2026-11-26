@@ -10,6 +10,8 @@ Mythical creatures are not seed fighters; G09 handles them in `data/seed/mythica
 
 30 fighters: 25 animals and human archetypes, and 5 objects and machines. "Article" is the English Wikipedia title that resolves directly, with no redirect or disambiguation page (checked 2026-11-09).
 
+**Which ones have a hand-verified sheet (#623).** 16 of the 30: the 15 built for G05, plus the great white shark. A seed fighter with no sheet fights in mock mode on its category defaults (before its sheet, the shark weighed 10 kg). The other 14 are listed in `STILL_TO_BUILD` in `backend/tests/unit/test_seed_sheets.py`. That test fails if a seed fighter has neither a sheet nor a place on the list, and if a listed fighter's sheet lands without it being taken off the list.
+
 | # | Slug | Display name | Default variant | Category | Body | Habitat | Article |
 |---|---|---|---|---|---|---|---|
 | 1 | `grizzly-bear` | Grizzly bear | Adult male | mammal | living | land | Grizzly bear |

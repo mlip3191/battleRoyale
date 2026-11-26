@@ -67,7 +67,7 @@ The chat LLM (port 9001) parses free text into a structured matchup: entity, cou
 Reference text from Wikipedia, Wikidata, and Hugging Face datasets is parsed (port 9005), embedded (port 9002), and stored in a local vector index. At fight time, the app retrieves and reranks the best passages for each fighter. The chat model fills a fixed stat schema using only that evidence, recording a source and confidence for each value. A seed set of popular fighters is verified by hand.
 - **[added] The number rule:** the model may only *copy* a number together with the exact quote it came from; code checks the number is in the quote and the quote is in the source. Estimates are made by code from category defaults, never by the model. (ARCHITECTURE §5.)
 - **[added]** Fixed stat schema: seven physical stats (mass, size, top speed, attack force, attack rate, reach, endurance) that are sourced or labeled estimates, and three behavioral stats (aggression, group tactics, armor) that no source measures, so they're labeled **assumptions** set from a written rubric. Every stat carries a plausible range.
-- **[added]** 30 seed fighters (25 animals and archetypes, 5 objects and machines); 15 hand-verified sheets; 12 mythical creatures in a lore table with quoted sources.
+- **[added]** 30 seed fighters (25 animals and archetypes, 5 objects and machines); 16 hand-verified sheets (the 15 from G05 plus the great white shark, #623); 12 mythical creatures in a lore table with quoted sources.
 - **Done when:** every displayed stat has a source link or an estimate tag (traceability 100%).
 
 ### Step 3 — Simulation (Felipe: F02–F04)

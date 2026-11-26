@@ -1,0 +1,150 @@
+{
+  "fighter_id": "great-white-shark",
+  "display_name": "Great white shark",
+  "media_name": "great white shark",
+  "category": "fish",
+  "body": "living",
+  "habitat": "water",
+  "weapons": [
+    "teeth"
+  ],
+  "lore": null,
+  "stats": {
+    "mass_kg": {
+      "value": 1900.0,
+      "unit": "kg",
+      "source": {
+        "title": "Great white shark",
+        "url": "https://en.wikipedia.org/w/index.php?title=Great_white_shark&oldid=1387922325",
+        "quote": "Females weigh 1,000–1,900 kg (2,200–4,200 lb) while males weigh 680–1,000 kg (1,500–2,200 lb).",
+        "retrieved_at": "2026-11-25T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 1000.0,
+      "high": 1900.0,
+      "note": "Adult females. Upper end of the stated range; the source gives no mean."
+    },
+    "size_m": {
+      "value": 4.9,
+      "unit": "m",
+      "source": {
+        "title": "Great white shark",
+        "url": "https://en.wikipedia.org/w/index.php?title=Great_white_shark&oldid=1387922325",
+        "quote": "Female white sharks are mature at 4.6–4.9 m (15–16 ft) while males are mature at 3.4–4.0 m (11–13 ft).",
+        "retrieved_at": "2026-11-25T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "high",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 4.6,
+      "high": 4.9,
+      "note": "Length of a mature female. Upper end of the stated range; the source gives no mean."
+    },
+    "top_speed_mps": {
+      "value": 6.7,
+      "unit": "m/s",
+      "source": {
+        "title": "Great white shark",
+        "url": "https://en.wikipedia.org/w/index.php?title=Great_white_shark&oldid=1387922325",
+        "quote": "White sharks are estimated to swim 2.88–4.86 km/h (1.79–3.02 mph) but can sprint up to 24.12 km/h (14.99 mph).",
+        "retrieved_at": "2026-11-25T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 6.03,
+      "high": 7.37,
+      "note": "Converted from the 24.12 km/h sprint; range is the standard +/-10%."
+    },
+    "attack_force_n": {
+      "value": 9320.0,
+      "unit": "N",
+      "source": {
+        "title": "Great white shark",
+        "url": "https://en.wikipedia.org/w/index.php?title=Great_white_shark&oldid=1387922325",
+        "quote": "From this, the researchers calculated that a specimen 6.4 m (21 ft) long and weighing 3,324 kg (7,328 lb) could exert a bite force of 9,320 newtons (2,100 lbf) in the front and 18,216 newtons (4,095 lbf) in the back.",
+        "retrieved_at": "2026-11-25T00:00:00Z",
+        "license": "CC BY-SA 4.0"
+      },
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "hand_verified",
+      "low": 8388.0,
+      "high": 10252.0,
+      "note": "Front bite the 2008 CT-scan study calculated for a 6.4 m, 3,324 kg shark, heavier than the adult female here, so it is on the high side; range is the standard +/-10%."
+    },
+    "attacks_per_s": {
+      "value": 1.0,
+      "unit": "1/s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 0.5,
+      "high": 1.5,
+      "note": "No published attack rate found for this animal; category default."
+    },
+    "reach_m": {
+      "value": 1.23,
+      "unit": "m",
+      "source": null,
+      "confidence": "medium",
+      "is_estimate": false,
+      "method": "derived",
+      "low": 0.92,
+      "high": 1.53,
+      "note": "reach = 0.25 x size_m (lunging bite), from size_m."
+    },
+    "armor_0_1": {
+      "value": 0.3,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.15,
+      "high": 0.45,
+      "note": "armor level 2: thick, tough skin covered in denticles."
+    },
+    "endurance_s": {
+      "value": 300.0,
+      "unit": "s",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "category_default",
+      "low": 150.0,
+      "high": 450.0,
+      "note": "No source gives how long it can keep fighting; category default."
+    },
+    "aggression_0_1": {
+      "value": 0.7,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.35,
+      "high": 1.0,
+      "note": "aggression level 4: apex predator, confident against most animals."
+    },
+    "group_tactics_0_1": {
+      "value": 0.1,
+      "unit": "0-1",
+      "source": null,
+      "confidence": "low",
+      "is_estimate": true,
+      "method": "assumption",
+      "low": 0.05,
+      "high": 0.15,
+      "note": "group tactics level 1: solitary, fights alone."
+    }
+  },
+  "schema_version": 1,
+  "sheet_hash": "06b1690d1a4a3295ef05d0747ea6db4a3c0fb75d2434a8f81fe70cb3818cd6b0"
+}
