@@ -985,6 +985,38 @@ describe("the verdict waits for the announcer's last lines (#601)", () => {
     expect(verdictUp()?.textContent).toBe("Winner: 6 gray wolves!");
   });
 
+  // #644 (Mike's follow-up on #634): the stage offers Replay as soon as the replay is done, which is
+  // while the show still waits for the announcer. Replay must clear that wait, so the verdict does
+  // not turn up on the old timer in the middle of the new fight.
+  test("Replay during the finish wait clears the wait, so no verdict appears on the old timer", async () => {
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    show(timedRecord());
+    startFight();
+    reachEnd();
+    await act(async () => {
+      for (let i = 0; i < 10; i += 1) await Promise.resolve();
+    });
+    expect(verdictUp()).toBeNull(); // waiting for the announcer
+    act(() => vi.advanceTimersByTime(3000)); // part way through the wait
+    act(() => stageProps().onReplay!()); // the viewer presses Replay
+    act(() => stageProps().onPlayingChange!(true)); // the new fight is moving
+    // The old wait would have ended here; the new fight has not reached its end.
+    act(() => vi.advanceTimersByTime(FINISH_WAIT_MS + 5000));
+    expect(verdictUp()).toBeNull();
+    // The new fight runs to its end and gets a wait of its own, not what was left of the old one.
+    act(() => stageProps().onEvent!(lastMoment()));
+    act(() => stageProps().onFinish!());
+    act(() => stageProps().onPlayingChange!(false));
+    await act(async () => {
+      for (let i = 0; i < 10; i += 1) await Promise.resolve();
+    });
+    expect(verdictUp()).toBeNull();
+    act(() => vi.advanceTimersByTime(1000 + FINISH_WAIT_MS));
+    expect(verdictUp()?.textContent).toBe("Winner: 6 gray wolves!");
+  });
+
   test("Skip to end goes straight to the verdict, without waiting for the voice", () => {
     show(timedRecord());
     startFight();
