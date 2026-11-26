@@ -21,6 +21,7 @@ import {
 import { ErrorPanel, MAIN_ID } from "../components/Broadcast.tsx";
 import { usePageTitle } from "../components/page-title.ts";
 import styles from "./home.module.css";
+import { cardLine, matchupWords } from "./terrain-words.ts";
 
 type Terrain = Matchup["terrain"];
 
@@ -400,7 +401,13 @@ function Confirm({
   const fight = () => {
     setStarting(true);
     setFailed(false);
-    createBattle({ ...matchup, terrain })
+    // The words go with the battlefield the viewer picked, so the page title and the results
+    // heading never name a place the fight did not use (#612).
+    createBattle({
+      ...matchup,
+      terrain,
+      raw_text: matchupWords(matchup, terrain),
+    })
       .then(({ battle_id }) => navigate(`/battle/${battle_id}`))
       .catch(() => {
         setStarting(false);
@@ -420,7 +427,7 @@ function Confirm({
       <p className={styles.cue}>
         Last step: check the card, then press the big button below.
       </p>
-      {message && <p>{message}</p>}
+      {message && <p>{cardLine(message, matchup.terrain, terrain)}</p>}
       <ul className={styles.sides}>
         {matchup.fighters.map((f, i) => (
           <li key={i} className={styles.side}>

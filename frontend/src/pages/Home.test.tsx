@@ -114,6 +114,7 @@ test("the sky is one of the battlefields (D-70)", async () => {
   expect(api.createBattle).toHaveBeenCalledWith({
     ...ok.matchup,
     terrain: "sky",
+    raw_text: "a grizzly bear vs 6 gray wolves in the sky", // the words follow the battlefield (#612)
   });
 });
 
@@ -135,6 +136,7 @@ test("changing the terrain changes the matchup sent to POST /api/battles", async
   expect(api.createBattle).toHaveBeenCalledWith({
     ...ok.matchup,
     terrain: "water",
+    raw_text: "a grizzly bear vs 6 gray wolves in the water", // the words follow the battlefield (#612)
   });
 });
 
@@ -657,4 +659,65 @@ test("the card says it is the last step and points at the Start button (#581)", 
   );
   const text = card.textContent ?? "";
   expect(text.indexOf("Last step")).toBeLessThan(text.indexOf(START_LABEL));
+});
+
+// #612: the card line, the page title and the results heading must name the battlefield the fight
+// actually used, not the place that was typed.
+test("changing the battlefield on the card changes the card line straight away (#612)", async () => {
+  api.postIntake.mockResolvedValue(ok);
+  ask(open(), "a grizzly bear vs 6 gray wolves in a forest");
+  const card = await screen.findByRole("region", { name: "Tonight's card" });
+  expect(
+    within(card).getByText(
+      "Grizzly bear vs 6 gray wolves in the forest. Let's get ready to rumble!",
+    ),
+  ).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Battlefield"), {
+    target: { value: "open_field" },
+  });
+  expect(
+    within(card).getByText(
+      "Grizzly bear vs 6 gray wolves on an open field. Let's get ready to rumble!",
+    ),
+  ).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Battlefield"), {
+    target: { value: "arena" },
+  });
+  expect(
+    within(card).getByText(
+      "Grizzly bear vs 6 gray wolves. Let's get ready to rumble!",
+    ),
+  ).toBeTruthy(); // the arena is the default: no place
+  fireEvent.change(screen.getByLabelText("Battlefield"), {
+    target: { value: "forest" },
+  });
+  expect(
+    within(card).getByText(
+      "Grizzly bear vs 6 gray wolves in the forest. Let's get ready to rumble!",
+    ),
+  ).toBeTruthy(); // back to what intake read: exactly as before
+});
+
+test("a battle whose battlefield was changed is sent with words that name it, not the typed place (#612)", async () => {
+  api.postIntake.mockResolvedValue(ok);
+  ask(open(), "a grizzly bear vs 6 gray wolves in a forest");
+  const card = await screen.findByRole("region", { name: "Tonight's card" });
+  fireEvent.change(screen.getByLabelText("Battlefield"), {
+    target: { value: "open_field" },
+  });
+  fireEvent.click(within(card).getByRole("button", { name: START_LABEL }));
+  const sent = api.createBattle.mock.calls.at(-1)![0];
+  expect(sent.terrain).toBe("open_field");
+  expect(sent.raw_text).toBe(
+    "a grizzly bear vs 6 gray wolves on an open field",
+  );
+  expect(sent.raw_text).not.toContain("forest"); // the typed place is gone
+});
+
+test("a battlefield left as read keeps the typed words exactly as they were (#612)", async () => {
+  api.postIntake.mockResolvedValue(ok);
+  ask(open(), "a grizzly bear vs 6 gray wolves in a forest");
+  const card = await screen.findByRole("region", { name: "Tonight's card" });
+  fireEvent.click(within(card).getByRole("button", { name: START_LABEL }));
+  expect(api.createBattle).toHaveBeenCalledWith(ok.matchup); // unchanged
 });
