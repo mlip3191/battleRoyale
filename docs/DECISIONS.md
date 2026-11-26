@@ -110,7 +110,7 @@ Each one is deliberate and recorded here, so it reads as a decision, not a broke
 | Voice cloning for the announcer | A stock gruff, deep voice first; cloning only with written consent | Consent and time (D-09) (synthetic reference voice: D-67) |
 | Every stat from sources | Seven physical stats from sources or labeled estimates; three behavioral stats labeled assumptions from a rubric | No source measures aggression or armor; honesty over false precision (D-32) |
 | Benchmark against expert answers | Benchmark plus held-out set plus a live evaluation of the AI parts | Measure the GenAI, not just the simulator (D-37) |
-| Any media cut under the cut order | (fill in at code complete) | LANES.md cut order |
+| Any media cut under the cut order | The soundtrack (music generation) is cut. No live music adapter was built: battles play with the announcer's voice and captions, and no music. The music stage and its mock (#276) stay; the stage falls back quietly, and the battle page no longer lists music as unavailable (#538, built in #539). Nothing else on the cut order was cut. | Cut-order item 1 in LANES.md, decided on Nov 19 in #45 so the announcer voice landed by MS-3. With no music service configured, every battle showed "music: fallback" and "Some effects unavailable: … music", which read like an outage to bug-bash testers (#538) |
 
 ## Recommended datasets (D-20)
 

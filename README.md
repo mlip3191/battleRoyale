@@ -1,6 +1,6 @@
 # Battle Royale: The Science-Backed Fight Simulator
 
-**Corny voice, serious brain.** Name two combatants in plain language — *"100 duck-sized horses vs 1 horse-sized duck"* — and the app researches each one from vetted sources into a cited stat sheet, a simulation written in code decides the outcome, and the result plays as a cheesy late-night sports broadcast with an announcer, a soundtrack, and a crude animated battle. Every stat links to its source; gaps are labeled as estimates. No language model sets a number.
+**Corny voice, serious brain.** Name two combatants in plain language — *"100 duck-sized horses vs 1 horse-sized duck"* — and the app researches each one from vetted sources into a cited stat sheet, a simulation written in code decides the outcome, and the result plays as a cheesy late-night sports broadcast with an announcer and a crude animated battle. Every stat links to its source; gaps are labeled as estimates. No language model sets a number.
 
 MBAX 6418 AI Business Solutions — final project, **Group A**: Mike Lippert (PM), Adam Fondale, Gunnar O'Connor, Felipe Cervino, Dillon Smart.
 
