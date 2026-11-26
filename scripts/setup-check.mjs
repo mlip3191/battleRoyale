@@ -93,17 +93,25 @@ const checks = [
   },
   () => guardStep(),
   () => envStep(),
-  () => {
-    const r = sh("git", ["ls-files", "--cached", "--ignored", "--exclude-standard"]);
-    return r.ok && r.out === ""
-      ? { status: "ok", label: "No ignored files are committed" }
-      : {
-          status: "fail",
-          label: "Some files that should never be committed are tracked by Git",
-          fix: "Tell Mike before doing anything else. Run: git ls-files --cached --ignored --exclude-standard  to see which ones.",
-        };
-  },
+  () => trackedFilesStep(),
 ];
+
+// "No ignored files are committed": only a folder with its own .git has commits to look at (#609).
+// A ZIP copy has none, so the check is skipped there, not failed with "Tell Mike", and git is never
+// asked, because asking would find an outer checkout and inspect that one.
+export function trackedFilesStep({ dir = root, git = (args) => sh("git", args) } = {}) {
+  if (!isCheckout(dir)) {
+    return { status: "ok", label: "No ignored files are committed: skipped, because this isn't a git checkout (a ZIP copy?) and so has no commits to check" };
+  }
+  const r = git(["ls-files", "--cached", "--ignored", "--exclude-standard"]);
+  return r.ok && r.out === ""
+    ? { status: "ok", label: "No ignored files are committed" }
+    : {
+        status: "fail",
+        label: "Some files that should never be committed are tracked by Git",
+        fix: "Tell Mike before doing anything else. Run: git ls-files --cached --ignored --exclude-standard  to see which ones.",
+      };
+}
 
 // The commit guard, by the same rule as setup's last step (#597, #598): only a folder with its own
 // .git (a clone, or a worktree's .git file) gets the guard. A ZIP copy is skipped, not failed, and

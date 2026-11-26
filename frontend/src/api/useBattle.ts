@@ -41,6 +41,9 @@ export function useBattle(id: string) {
           shown = mine;
           running = record.status === "running";
           setView({ id, battle: record, error: null });
+          // Voice files land on the record between stage changes (#592), which the stream
+          // doesn't announce: once the verdict is in, also check every second until the end.
+          if (running && record.result) startPolling(false);
         }
         return running ? "running" : "stop";
       } catch (e) {

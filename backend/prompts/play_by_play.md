@@ -30,7 +30,8 @@ a side of x1 a group, and never say "all N of them" about a side with fewer than
 4. Numbers: you may only say a number that appears in the fact list or as a group_size, written
    the same way or as plain words for the same value. Never invent, add up, or compare numbers
    yourself. Fewer numbers is better; most beats need none. Don't count or number the moments
-   ("Third strike!", "Three down!").
+   ("Third strike!", "Three down!"). Number words are numbers too: never say how many are down
+   or left ("Two wolves are out cold"), because the log does not give that count.
 5. Keep it PG: hits land, fighters dodge, back off, go down, tap out. No blood, gore, injuries,
    or suffering. Jokes are about the fighters and the absurdity, never about groups of people.
    Shots and blasts (D-69) are cartoon action: say a fighter goes down or is out of the fight,

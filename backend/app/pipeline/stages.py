@@ -335,12 +335,15 @@ async def scripts(
 # Step 5: the announcer's voice, one file per script (media/audio.py, A07). The provider gets
 # a share of the stage budget, so a slow one is cut off here and the stage still ends in time.
 # Fewer than three files is a fallback: with none the battle is captions only (value None);
-# with some, the saved files are kept and the missing parts are silent.
-async def audio(written: list[Script]) -> Stubbed[list[Asset] | None]:
+# with some, the saved files are kept and the missing parts are silent. `on_ready` hears about
+# each file as soon as it is made, the intro's first (#592).
+async def audio(
+    written: list[Script], on_ready: media_audio.OnReady | None = None
+) -> Stubbed[list[Asset] | None]:
     if not written:
         return Stubbed(None, fallback=True)
     deadline = STAGE_BUDGETS_S["audio"] * MEDIA_PROVIDER_SHARE
-    assets = await media_audio.make_audio(written, timeout_s=deadline)
+    assets = await media_audio.make_audio(written, timeout_s=deadline, on_ready=on_ready)
     if not assets:
         return Stubbed(None, fallback=True)
     missing = len(assets) < len(NARRATED_SCRIPTS) or len(assets) < len(written)

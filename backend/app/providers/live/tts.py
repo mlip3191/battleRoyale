@@ -15,8 +15,9 @@ show still gets the stock voice. A 429 is retried and does not disable the clip 
 lines. A response that rejects the clip (such as HTTP 422) disables it at once, and so do two
 lines in a row that time out or get a 5xx (#570); after the first such line the next clip try
 gets no retries, so a hung service leaves time for the stock voice. Any clip success resets the
-count. Reference requests on one adapter are spoken one at a time, because make_audio starts
-all three scripts together and a burst of clip requests fills the speech queue.
+count. Reference requests on one adapter are spoken one at a time, because make_audio speaks a
+few lines at once (the play-by-play and outro together) and a burst of clip requests fills the
+speech queue.
 
 speak() returns a SpokenWav: plain WAV bytes plus `.voice`, "cloned" when the reference clip
 spoke the line and "stock" otherwise. app/media/audio.py reads it per line, so a stock-voiced file
@@ -44,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 RESPONSE_FORMAT = "wav"
 REF_RETRIES = 2  # retry 429/5xx/timeout on the clip request; a queue-full is transient
-REF_CONCURRENCY = 1  # one in-flight clip request; make_audio starts all three scripts together
+REF_CONCURRENCY = 1  # one in-flight clip request; make_audio speaks several lines at once
 # Statuses that mean the clip itself was rejected, so later lines should not resend it. 400 is
 # left out: nothing shows the service uses it for a bad clip, and a bad line of text would
 # otherwise switch the whole show to the stock voice (#570).

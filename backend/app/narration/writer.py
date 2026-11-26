@@ -97,6 +97,8 @@ TOO_CLOSE_REJECTED = "the verdict is too close to call: call it a near coin flip
 # D-38); the word "legend" alone, as in "a legendary showdown", frames no stat (#572).
 LEGEND_PHRASE = "according to legend"
 LEGEND_MISSING = f'a mythical fighter is in this fight: introduce its stats with "{LEGEND_PHRASE}"'
+# The phrase is reserved for mythical fighters: an all-real fight may not use it (#613).
+LEGEND_UNEARNED = f'no fighter in this fight is mythical: never say "{LEGEND_PHRASE}"'
 
 
 class ScriptRejected(ValueError):
@@ -188,6 +190,8 @@ def check_script(script: Script, facts: NarrationFacts, log_len: int) -> list[st
     framed = any(LEGEND_PHRASE in ln.text.lower() for ln in script.lines)
     if kind == "intro" and legend and not framed:
         problems.append(LEGEND_MISSING)
+    if framed and not legend:
+        problems.append(LEGEND_UNEARNED)
     return problems
 
 

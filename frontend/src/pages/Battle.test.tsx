@@ -20,7 +20,12 @@ import Battle from "./Battle.tsx";
 import Results from "./Results.tsx";
 import { layoutStage } from "../game/layout.ts";
 import type { PhaserStageProps } from "../game/PhaserStage.tsx";
-import { linesOf, lineMs, placeLines } from "./broadcast-flow.ts";
+import {
+  FIGHT_VOICE_WAIT_MS,
+  linesOf,
+  lineMs,
+  placeLines,
+} from "./broadcast-flow.ts";
 
 const state = vi.hoisted(() => ({
   value: { battle: null as unknown, error: null as string | null },
@@ -157,11 +162,11 @@ test("audio running with a detail: the stage's own detail still wins", () => {
   );
 });
 
-test("audio running: the ticker tells a first-time viewer how long the announcer takes, and what comes next (#579)", () => {
+test("audio running: the ticker tells a first-time viewer what the wait is for, and what comes next (#579, #592)", () => {
   show(onlyRunning("audio"));
-  // Short, so the crawl moves at a readable pace.
+  // Short, so the crawl moves at a readable pace. The show starts on the intro's voice (#592).
   expect(screen.getByRole("status").textContent).toBe(
-    "Recording the announcer… can take about a minute, then the show starts.",
+    "Recording the announcer… the show starts as soon as the intro is ready.",
   );
 });
 
@@ -529,6 +534,112 @@ test("audio: a part with no announcer file is silent; the rest of the show goes 
   expect(captions().textContent).toContain(outro[0].text);
 });
 
+// #592: the battle while the announcer is still being recorded. The verdict, scripts and pictures
+// are in, the audio stage runs, and only the named voice files are made so far.
+const recording = (...made: Asset["script_kind"][]) => {
+  const all = ["intro", "play_by_play", "outro"] as const;
+  const record = perScript(...all.filter((k) => !made.includes(k)));
+  const stages = record.stages.map((s) =>
+    s.stage === "audio" ? { ...s, status: "running" } : s,
+  );
+  return { ...record, status: "running", stages };
+};
+// Show the page again with a newer record, as the next poll would.
+const refresh = (view: ReturnType<typeof render>, battle: unknown) => {
+  state.value = { battle, error: null };
+  view.rerender(page("/battle/b1"));
+};
+const titleCard = () =>
+  screen.queryByRole("region", { name: "Tonight's matchup" });
+
+describe("the show starts on the intro's voice (#592)", () => {
+  test("the intro plays while the rest is recorded; the fight waits for its own voice", () => {
+    const view = show(recording("intro"));
+    expect(titleCard()).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("");
+    expect(trackSources()).toEqual(["/media/audio/b1-intro.mp3", MUSIC]);
+    startFight();
+    expect(screen.getByRole("status").textContent).toContain(
+      "Recording the play-by-play",
+    );
+    expect(screen.queryByTestId("phaser-stage")).toBeNull();
+    expect(titleCard()).toBeTruthy();
+    refresh(view, recording("intro", "play_by_play"));
+    expect(screen.getByTestId("phaser-stage")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("");
+    expect(trackSources()).toEqual(["/media/audio/b1-play_by_play.mp3", MUSIC]);
+  });
+
+  test("a voice that takes too long: the fight starts captions-only, and the late file never pops in", () => {
+    vi.useFakeTimers();
+    const view = show(recording("intro"));
+    startFight();
+    act(() => vi.advanceTimersByTime(FIGHT_VOICE_WAIT_MS - 1));
+    expect(screen.queryByTestId("phaser-stage")).toBeNull();
+    act(() => vi.advanceTimersByTime(1));
+    expect(screen.getByTestId("phaser-stage")).toBeTruthy();
+    expect(trackSources()).toEqual([MUSIC]);
+    refresh(view, perScript()); // the play-by-play and outro land mid-fight
+    expect(trackSources()).toEqual([MUSIC]);
+    act(() => stageProps().onFinish!());
+    expect(trackSources()).toEqual(["/media/audio/b1-outro.mp3", MUSIC]);
+  });
+
+  test("Skip to verdict works while the fight waits for its voice", () => {
+    show(recording("intro"));
+    startFight();
+    fireEvent.click(button("Skip to verdict"));
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
+      "Winner: 6 gray wolves!",
+    );
+    expect(screen.getByRole("status").textContent).toBe("");
+  });
+
+  // The page refetches every second while the battle runs; each reply is new objects (fresh JSON).
+  const polled = (
+    view: ReturnType<typeof render>,
+    ms: number,
+    record: unknown,
+  ) => {
+    for (let left = ms; left > 0; left -= 1000) {
+      act(() => vi.advanceTimersByTime(Math.min(1000, left)));
+      refresh(view, structuredClone(record));
+    }
+  };
+
+  test("the intro and outro lines keep their pace while fresh records arrive every second", () => {
+    vi.useFakeTimers();
+    const view = show(recording("intro"));
+    polled(view, lineMs(intro[0].text), recording("intro"));
+    expect(captions().textContent).toContain(intro[1].text);
+    polled(view, lineMs(intro[1].text), recording("intro"));
+    expect(screen.getByRole("status").textContent).toContain(
+      "Recording the play-by-play",
+    );
+    fireEvent.click(button("Skip to verdict"));
+    polled(view, lineMs(outro[0].text), recording("intro"));
+    expect(captions().textContent).toContain(outro[1].text);
+  });
+
+  test("the ticker names what the show still waits for: the announcer, then the pictures", () => {
+    const drawing = (record: ReturnType<typeof recording>) => ({
+      ...record,
+      stages: record.stages.map((s) =>
+        s.stage === "images" ? { ...s, status: "running" } : s,
+      ),
+    });
+    show(drawing(recording()));
+    expect(screen.getByRole("status").textContent).toContain(
+      "Recording the announcer",
+    );
+    cleanup();
+    show(drawing(recording("intro"))); // the intro's voice is in; the pictures aren't
+    const text = screen.getByRole("status").textContent ?? "";
+    expect(text).toContain("Drawing the fighters");
+    expect(text).not.toContain("Recording the announcer");
+  });
+});
+
 test("audio: an older record's single announcer file plays in every part", () => {
   const old = "/media/audio/b-7f3k2q-narration.mp3";
   show(done);
@@ -749,6 +860,21 @@ test("audio: Start the fight unlocks the announcer's voice inside the click (#57
   expect(callsOn(log, voice).slice(0, 2)).toEqual(["muted play", "pause"]);
   expect(callsOn(log, voice)).not.toContain("play"); // nothing is said before the first line
   expect(voice.muted).toBe(false);
+});
+
+test("audio: the click's unlock carries through the hold to the play-by-play's voice (#594, #592)", async () => {
+  const log = mediaLog();
+  const view = show(recording("intro"));
+  const voice = soundBar().querySelector("audio")!;
+  expect(voice.getAttribute("src")).toBe("/media/audio/b1-intro.mp3");
+  startFight(); // the fight holds: its voice is still being recorded
+  expect(callsOn(log, voice).slice(0, 2)).toEqual(["muted play", "pause"]);
+  refresh(view, recording("intro", "play_by_play"));
+  act(() => stageProps().onPlayingChange!(true));
+  // The same, unlocked element now reads the play-by-play, and plays it.
+  expect(soundBar().querySelector("audio")).toBe(voice);
+  expect(voice.getAttribute("src")).toBe("/media/audio/b1-play_by_play.mp3");
+  await waitFor(() => expect(callsOn(log, voice)).toContain("play"));
 });
 
 test("audio: sound switched off in one fight stays off for the next; Start the fight doesn't override it (#579)", async () => {

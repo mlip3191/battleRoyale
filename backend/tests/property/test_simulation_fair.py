@@ -1,6 +1,7 @@
 """F06: fair-fight search and next-challenger testing."""
 
 import math
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -237,6 +238,17 @@ def test_the_fair_fight_message_keeps_each_sides_size_reference(monkeypatch):
     assert search.result.message == (
         "A fair fight needs 37 duck-sized house cats against 1 horse-sized gray wolf."
     )
+
+
+def test_big_counts_in_the_fair_fight_message_get_thousands_separators(monkeypatch):
+    """#624: "needs 10000 great white sharks" printed no comma, unlike every other count."""
+    fake_engine(monkeypatch, 1, lambda n: 0.5 if n == 3200 else (0.1 if n < 3200 else 0.9))
+    search = fair_fight_search(matchup_of(1500, 1), [wolf(), house_cat()], main_result(1))
+    assert search.result.message == "A fair fight needs 3,200 house cats against 1,500 gray wolves."
+    # The win-chances line of a rough answer is built from the same side text.
+    fake_engine(monkeypatch, 1, step(3200, low=0.10, high=0.80))
+    rough = fair_fight_search(matchup_of(1500, 1), [wolf(), house_cat()], main_result(1))
+    assert re.search(r"3,200 house cats win 10%, [\d,]+ house cats win 80%", rough.result.message)
 
 
 # --- test_challengers ----------------------------------------------------------------------------

@@ -164,7 +164,7 @@ The page scrolls down to the card, which shows how the app read your matchup: ea
 
 ### Watch the broadcast
 
-While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute. Recording the announcer's voice can take about another minute; the ticker says so while it runs, and the show starts as soon as the voice is ready.
+While the app researches and simulates, a ticker shows what it's doing and a list shows each step's progress. This usually takes under a minute. The announcer's voice is recorded next: the show starts as soon as the intro's voice and the pictures are ready, and the rest of the voice is recorded while the intro plays. If the intro ends before the play-by-play's voice is in, the ticker says **Recording the play-by-play…** and the fight starts once it is, or with captions only after 45 seconds at most.
 
 ![The broadcast page while it works: "Researching the bear…" with each step listed as done, running or pending](images/user-guide/09-loading.png)
 
@@ -225,7 +225,7 @@ The app politely turns some requests away, and tells you why:
 | It won't use | Why | What you'll see |
 |---|---|---|
 | **Real people** (alive or historical) | It's not fair or kind to stage fights between real people. | "We keep real people out of the ring. Try a type of fighter instead, like a Roman legionary or a medieval knight." |
-| **Named characters**, from stories or from myth | They belong to their creators or their legends, and they have no real-world stats to look up. | "Named characters, from stories or from myth, sit this one out. Try a creature type instead, like a dragon or a giant robot." |
+| **Named characters** from books, films, and games (and named individuals from legend) | They belong to their creators or their legends, and they have no real-world stats to look up. Gods of mythology are fine (D-69). | "Named characters from books, films, and games sit this one out. Try a creature type instead, like a dragon or a giant robot." |
 | **Gods and figures of living religions** (Allah, Jesus, Shiva, the Pope) | They matter to many people. Gods of mythology (Zeus, Thor) and generic kinds (a god, an angel) can fight (D-69). | "Gods of living religions are above our pay grade. Try a god of myth, like Zeus, or a mythical creature, like a griffin." |
 | **Groups of people** (nations, teams, bands) | Jokes are about the fighters, never about groups of people. | "We don't pit groups of people against each other. Pick an animal, a machine, or one fighter type like a Viking." |
 | **Abstract ideas, places, landforms, planets** | They aren't physical fighters with measurable stats. | A message explaining what kinds of fighters work. |

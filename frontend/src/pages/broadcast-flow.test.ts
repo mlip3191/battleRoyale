@@ -5,11 +5,13 @@ import type {
   BattleRecord,
   ScriptLine,
   SimulationResult,
+  StageStatus,
   StatSheet,
 } from "../api/client.ts";
 import done from "../fixtures/battle-record-done.json";
 import running from "../fixtures/battle-record-running.json";
 import {
+  FIGHT_VOICE_WAIT_MS,
   LINE_MS,
   START,
   audioPlan,
@@ -110,6 +112,83 @@ describe("show phases", () => {
     expect(canSkip(START, simulated)).toBe(true);
     expect(canSkip({ phase: "fight", revealed: false }, battle)).toBe(true);
     expect(canSkip({ phase: "verdict", revealed: true }, battle)).toBe(false);
+  });
+});
+
+// #592: the show starts once the intro's voice is in, while the rest of the announcer is recorded.
+describe("starting on the intro's voice", () => {
+  const intro: Show = { phase: "intro", revealed: false };
+  const standby: Show = { phase: "standby", revealed: false };
+  const fight: Show = { phase: "fight", revealed: false };
+  // The battle while its announcer is recorded: verdict, scripts and pictures in, audio running
+  // (unless `status` says otherwise), and only the named voice files made so far.
+  const recording = (
+    made: Asset["script_kind"][],
+    status: Partial<Record<StageStatus["stage"], StageStatus["status"]>> = {},
+  ): BattleRecord => ({
+    ...battle,
+    status: "running",
+    stages: battle.stages.map((s) => ({
+      ...s,
+      status: { audio: "running" as const, ...status }[s.stage] ?? s.status,
+    })),
+    assets: [
+      ...battle.assets.filter((a) => a.kind !== "narration_audio"),
+      ...made.map((k) => ({
+        ...asset("narration_audio", `/media/${k}`),
+        script_kind: k,
+      })),
+    ],
+  });
+  const update = (show: Show, b: BattleRecord) =>
+    nextShow(show, { type: "update", battle: b });
+
+  test("starts on the verdict, pictures and intro's voice; waits for each, so nothing pops in", () => {
+    expect(update(START, recording(["intro"]))).toEqual(intro);
+    expect(update(START, recording([]))).toBe(START);
+    expect(update(START, recording(["intro"], { images: "running" }))).toBe(
+      START,
+    );
+    expect(update(START, { ...recording(["intro"]), scripts: [] })).toBe(START);
+    // The audio stage settled without the intro's voice: the show starts captions-only.
+    expect(update(START, recording([], { audio: "fallback" }))).toEqual(intro);
+  });
+
+  test("after the intro, the fight holds while its voice is recorded, then starts on it", () => {
+    const held = nextShow(intro, {
+      type: "intro-done",
+      battle: recording(["intro"]),
+    });
+    expect(held).toEqual(standby);
+    expect(update(held, recording(["intro"]))).toBe(held);
+    expect(update(held, recording(["intro", "play_by_play"]))).toEqual(fight);
+    expect(update(held, recording(["intro"], { audio: "fallback" }))).toEqual(
+      fight,
+    );
+    expect(update(held, battle)).toEqual(fight);
+    const ready = recording(["intro", "play_by_play"]);
+    expect(nextShow(intro, { type: "intro-done", battle: ready })).toEqual(
+      fight,
+    );
+    // The held card keeps the intro's file, so the Start click's unlock carries into the fight.
+    expect(audioPlan(ready.assets, "standby").narration).toBe("/media/intro");
+  });
+
+  test("no intro lines: the show goes straight to the hold for the fight's voice", () => {
+    const noIntro = recording([]);
+    noIntro.scripts = battle.scripts.filter((s) => s.kind !== "intro");
+    expect(update(START, noIntro)).toEqual(standby);
+  });
+
+  test("the hold gives up after FIGHT_VOICE_WAIT_MS, and Skip to verdict still works", () => {
+    expect(FIGHT_VOICE_WAIT_MS).toBe(45_000);
+    expect(nextShow(standby, { type: "voice-late" })).toEqual(fight);
+    expect(nextShow(intro, { type: "voice-late" })).toBe(intro);
+    expect(canSkip(standby, recording(["intro"]))).toBe(true);
+    expect(nextShow(standby, { type: "skip" })).toEqual({
+      phase: "verdict",
+      revealed: true,
+    });
   });
 });
 
