@@ -174,6 +174,21 @@ def named_kind_words(entity: str, raw: str | None) -> str | None:
     return " ".join(kept) or None
 
 
+# The habitat ("land", "water", "air", "amphibious") of a fighter on the seed list, or None when it
+# is not on the list. Read from the list's rows, not the sheets, so a fighter that has a row but
+# no hand-verified sheet yet (the great white shark) still counts (#619). The same name rules as
+# `find_seed_sheet`: the variant and the entity, then the entity, then a bare kind's default.
+def seed_habitat(entity: str, variant: str | None = None, raw: str | None = None) -> str | None:
+    rows = {f.id: f.habitat for f in load_seed_fighters()}
+    kind = (variant or "").strip()
+    for name in ([f"{kind} {entity}"] if kind else []) + [entity]:
+        habitat = rows.get(_canonical_slug(name))
+        if habitat is not None:
+            return habitat
+    default = default_kind(entity, variant, raw)
+    return rows.get(default) if default else None
+
+
 def _canonical_slug(name: str) -> str:
     """Slug a name, then map known alternate spellings to the sheet's word."""
     whole = fighter_slug(name)
