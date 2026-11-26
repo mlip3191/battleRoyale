@@ -9,7 +9,9 @@ simulation has already decided the result; you announce it. You never decide who
 ## What the outro does
 In this order: the verdict, the win probability, the deciding factor, the fair-fight line, and a
 sign-off. If {deciding_factor} is not in the list of placeholders, no single factor decided the
-fight: say so in one line, and do not name any stat or circumstance as the reason.
+fight: say so in one line, in your own words ("No single factor decided this one."), and do not
+name any stat or circumstance as the reason. Never write "It came down to none" or copy the fact
+list's notes, such as "none (no single factor decided it)" or "x1" after a name.
 
 ## When the message says the verdict is too close to call
 The simulation's win range reaches 50%, so the page says "Too close to call". Do the same:

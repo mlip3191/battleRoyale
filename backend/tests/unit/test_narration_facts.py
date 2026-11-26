@@ -250,7 +250,7 @@ def test_fact_lines_mark_estimates_and_legend() -> None:
 
 def test_fact_lines_name_the_fair_fight_side(facts: NarrationFacts) -> None:
     text = "\n".join(fact_lines(facts))
-    assert "fair fight: Gray wolf x4 wins 49% of the time" in text
+    assert "fair fight: Gray wolf with 4 fighters wins 49% of the time" in text
     assert "Gray wolf wins 55%" in text
     assert "side 0" not in text and "side 1" not in text
 
@@ -333,13 +333,13 @@ def test_fact_lines_fair_count_without_probability() -> None:
     assert (facts.fair_count, facts.fair_win_pct, facts.fair_side) == (4, None, 1)
     lines = fact_lines(facts)
     text = "\n".join(lines)
-    assert "fair fight: Gray wolf x4" in lines
+    assert "fair fight: Gray wolf with 4 fighters" in lines
     assert "None" not in text and "None%" not in text
     assert "no count makes this one fair" not in text
 
 
 # #617: a swarm HIT's group_size counts blows landed, not fighters, so the count read back from
-# the log skips hits: one bear landing 6 blows in a step is still "x1" to the model.
+# the log skips hits: one bear landing 6 blows in a step is still "1 fighter" to the model.
 def test_side_count_fallback_ignores_swarm_hit_sizes() -> None:
     sheets, result = _inputs()
     wolves_in, bear_in = result.representative_log[:2]
@@ -347,4 +347,4 @@ def test_side_count_fallback_ignores_swarm_hit_sizes() -> None:
     log = [wolves_in, bear_in, swarm_hit]
     facts = build_facts(sheets, result.model_copy(update={"representative_log": log}))
     assert [f.count for f in facts.fighters] == [1, 6]
-    assert fact_lines(facts)[0].startswith("Grizzly bear - adult male x1 ")
+    assert fact_lines(facts)[0].startswith("Grizzly bear - adult male, 1 fighter (")

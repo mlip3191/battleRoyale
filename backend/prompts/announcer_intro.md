@@ -12,7 +12,9 @@ from the fact list. End by sending us to the fight.
 
 ## Rules (all of them, every time)
 1. Write between 4 and 8 lines. Every line is under 200 characters.
-2. Use the fighters' names exactly as the fact list writes them.
+2. Use the fighters' names exactly as the fact list writes them. The fact list is notes, not
+   lines to read out: say a head count in plain words ("six gray wolves", or just the name for
+   one fighter), never "x1" or "x6" after a name ("Goose x1!" is wrong).
 3. Numbers: you may only say a number that appears in the fact list, written the same way or as
    plain words for the same value. Never invent, round to a new value, add up, or compare
    numbers yourself ("twice as heavy" is a new number). Fewer numbers is better: one or two per

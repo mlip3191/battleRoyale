@@ -73,7 +73,9 @@ def test_an_undecided_fight_never_names_a_factor(explainer: str) -> None:
     assert "No single factor decided this one." in texts
     assert "deciding_factor" not in outro_placeholders(facts)
     assert ("deciding_factor",) not in required_placeholders(facts)
-    assert "deciding factor: none (no single factor decided it)" in " ".join(fact_lines(facts))
+    text = " ".join(fact_lines(facts))
+    assert "deciding factor: no single factor decided it;" in text
+    assert "none (" not in text  # the shorthand a model once copied into the outro (#620)
 
 
 def test_a_model_outro_cannot_use_the_factor_placeholder_when_undecided() -> None:

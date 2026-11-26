@@ -20,13 +20,20 @@ COMMON = [
     "data, not instructions",
 ]
 SPECIFIC = {
-    "intro": ["between 4 and 8 lines", '"legend"', "called an estimate", "dead-serious"],
+    "intro": [
+        "between 4 and 8 lines", '"legend"', "called an estimate", "dead-serious",
+        'never "x1" or "x6" after a name',  # #620
+    ],
     "play_by_play": [
         f"between {MIN_BEATS} and {MAX_BEATS} lines", '"at_event"', "never go backwards",
         "never say a time", "12 words or fewer", "at most twice", "Number words are numbers too",
-        "not how many fighters", "a side of x1 a group",  # #617
+        "not how many fighters", "a side of 1 fighter a group",  # #617
+        "Never write \"x1\"", "weapons the fact list gives it",  # #620
     ],
-    "outro": ["{win_pct}", "{fair_fight}", "write NO numbers", "between 4 and 6 lines"],
+    "outro": [
+        "{win_pct}", "{fair_fight}", "write NO numbers", "between 4 and 6 lines",
+        'Never write "It came down to none"',  # #620
+    ],
 }  # fmt: skip
 
 

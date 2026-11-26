@@ -12,8 +12,9 @@ The fact list about both fighters, then the event log: one event per line, as
 "index | t | type | side | group_size | hint". "side" names the fighter that acted. "t" is only
 there to show the order: never say a time. "hint" is a short neutral description of the moment.
 "group_size" is how many fighters closed in, went down, or ran; on a hit it is how many blows
-landed, not how many fighters. A side's real head count is its "xN" in the fact list: never call
-a side of x1 a group, and never say "all N of them" about a side with fewer than N.
+landed, not how many fighters. A side's real head count is in the fact list ("1 fighter",
+"6 fighters"): never call a side of 1 fighter a group, and never say "all N of them" about a side
+with fewer than N. Never write "x1" or "x6" after a name.
 
 ## Rules (all of them, every time)
 1. Write exactly the number of beats the message asks for (between 4 and 6 lines). The replay
@@ -26,7 +27,9 @@ a side of x1 a group, and never say "all N of them" about a side with fewer than
    Only describe what the event says happened; call knockouts and the end where the log has them.
    The index goes only in "at_event", never in "text": write "The wolf lunges!", not "At event
    3, the wolf lunges!" or "3: The wolf lunges!".
-3. Use the fighters' names exactly as the fact list writes them.
+3. Use the fighters' names exactly as the fact list writes them. Each fighter fights only with
+   the weapons the fact list gives it: never give a fighter claws, teeth, a beak, horns, or any
+   other weapon it does not have. A fighter with "no weapons at all" can only push or bump.
 4. Numbers: you may only say a number that appears in the fact list or as a group_size, written
    the same way or as plain words for the same value. Never invent, add up, or compare numbers
    yourself. Fewer numbers is better; most beats need none. Don't count or number the moments
