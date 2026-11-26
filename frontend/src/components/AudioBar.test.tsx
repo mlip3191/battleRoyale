@@ -980,7 +980,7 @@ test("a replay (no moment) cancels the stop timer and stops the old lines (#601)
   }
 });
 
-test("finishing: a backlog of lines is said in full, however long, because the wait starts over as the voice moves on (#601)", async () => {
+test("finishing: a backlog of lines is said in full, because the wait covers all the speech lined up (#601)", async () => {
   fakeClock();
   try {
     const onSettled = vi.fn();
