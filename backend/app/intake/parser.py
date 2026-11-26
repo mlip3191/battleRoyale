@@ -40,7 +40,13 @@ from app.models.matchup import FighterRequest, IntakeResult, Matchup
 from app.models.terrain import Terrain
 from app.providers.base import ChatLLM, ChatMessage
 from app.providers.registry import get_intake_chat
-from app.research.seed_fighters import DEFAULT_KINDS, named_kind_words, picked_default, spoken_name
+from app.research.seed_fighters import (
+    DEFAULT_KINDS,
+    named_kind_words,
+    picked_default,
+    seed_habitat,
+    spoken_name,
+)
 from app.safety import (
     SafetyUnavailable,
     SafetyVerdict,
@@ -96,6 +102,8 @@ EXAMPLE_OPTIONS = [
     "a dozen house cats vs a golden retriever",
     "a toaster vs a goose",
 ]
+# Said when no place was typed and the sides can't share the arena (#619, ARCHITECTURE section 14).
+SHORELINE_NOTE = "No place given, so they meet on the shoreline."
 TERRAIN_PHRASES = {
     Terrain.OPEN_FIELD: " on an open field",
     Terrain.FOREST: " in the forest",
@@ -230,6 +238,14 @@ def describe(count: int, entity: str) -> str:
 # Swap one side's words in the user's text for new words, ignoring case.
 def _replace_side(text: str, raw: str, new: str) -> str:
     return re.sub(re.escape(raw.strip()), new, text, count=1, flags=re.I)
+
+
+# With no place typed, a water-only fighter against a land-only one meets on the shoreline, so
+# neither is stranded (#619). Habitats come from the seed list; a fighter not on it, or two sides
+# that can share the arena, leave the default alone.
+def meets_on_the_shoreline(fighters: Sequence[FighterRequest]) -> bool:
+    habitats = {seed_habitat(f.entity, f.variant, f.raw) for f in fighters}
+    return habitats == {"water", "land"}
 
 
 # Friendly message once the matchup is understood.
@@ -519,6 +535,14 @@ def read_matchup(
         if typed != Terrain.ARENA:
             terrain, terrain_note = typed, typed_note
     fighters = [request for request, _ in built]
+    if (
+        terrain == Terrain.ARENA
+        and terrain_note is None
+        and not typed_place
+        and not parsed.terrain
+        and meets_on_the_shoreline(fighters)
+    ):
+        terrain, terrain_note = Terrain.SHORELINE, SHORELINE_NOTE  # a typed place always wins
     spoken_picks = [pick for _, pick in _default_picks(fighters)]
     # One note per fighter: a model note that repeats a default-kind pick gives way to it (#621).
     model_notes = [
