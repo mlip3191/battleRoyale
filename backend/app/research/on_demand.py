@@ -3,13 +3,13 @@
 An unlisted animal starts as an all-estimate sheet (estimate_sheet.py, shaped by #517). This
 module fetches its Wikipedia article, stores it (ingest_on_demand), and runs the same extraction
 as the seed fighters (build_sheet_with_evidence), so every number it keeps carries a quote that
-code checked. Before that it stores the animal's Wikidata measurements as facts, read by code
-as for the seed fighters, and reads the article's taxobox "Class:" row with code, so an ostrich
-is a bird even when the lookup's label said otherwise. The article is downloaded once and
-shared by the taxobox and the stored passages (#535). Each extracted stat replaces the
-estimate's value, and a stat derived from sourced ones (reach from size) is worked out again;
-every other stat stays the labeled estimate (with its #517 size class). A sheet with at least
-one sourced stat is cached, so later battles reuse it.
+code checked. Before that it stores the animal's Wikidata measurements and its infobox's stat
+rows (#522) as facts, read by code as for the seed fighters, and reads the article's taxobox
+"Class:" row with code, so an ostrich is a bird even when the lookup's label said otherwise.
+The article is downloaded once and shared by the taxobox and the stored passages (#535). Each
+extracted stat replaces the estimate's value, and a stat derived from sourced ones (reach from
+size) is worked out again; every other stat stays the labeled estimate (with its #517 size
+class). A sheet with at least one sourced stat is cached, so later battles reuse it.
 
 The battle waits at most ON_DEMAND_RESEARCH_S, and never past the research stage's deadline
 (the legend lookup before it can use most of the stage). If the build takes longer, the battle
@@ -40,7 +40,7 @@ from app.research.defaults import PHYSICAL_ORDER
 from app.research.estimate_sheet import ANIMAL_KINDS, FLYING_HABITAT, estimate_sheet
 from app.research.extract import build_sheet_with_evidence
 from app.research.facts import store_facts, wikidata_facts
-from app.research.ingest import ingest_on_demand
+from app.research.ingest import ingest_infobox, ingest_on_demand
 from app.research.sheet_hash import compute_sheet_hash
 from app.research.sheet_store import cached_sheet, legend_client, save_sheet
 from app.research.sources import SourceDocument, SourceError, fetch_article, fetch_wikidata
@@ -132,9 +132,9 @@ async def _build(
     return sheet
 
 
-# The work of _build, on its own database connection: the taxobox's animal kind, Wikidata facts,
-# the article's passages, then extraction. An article with no animal taxobox gives nothing (it
-# may not be about this animal). Only a sheet with a sourced stat is saved.
+# The work of _build, on its own database connection: the taxobox's animal kind, Wikidata and
+# infobox facts, the article's passages, then extraction. An article with no animal taxobox gives
+# nothing (it may not be about this animal). Only a sheet with a sourced stat is saved.
 async def _research(
     estimate: StatSheet, kind: str | None, size_class: str | None, title: str
 ) -> StatSheet | None:
@@ -147,9 +147,10 @@ async def _research(
         async with client:
             article = await _article(client, title)
             animal_kind = None if article is None else kind_from_taxobox(_html(article))
-            if animal_kind is None:
+            if article is None or animal_kind is None:
                 return None
             await _store_wikidata_facts(connection, client, estimate.fighter_id, title)
+            ingest_infobox(connection, estimate.fighter_id, article)
             await ingest_on_demand(  # the same download, not a second fetch (#535)
                 connection,
                 client,

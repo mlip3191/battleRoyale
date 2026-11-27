@@ -36,21 +36,26 @@ RAM_WEAPONS = frozenset({"ramming", "crushing"})
 # Which stored facts can fill each stat, best first. Each group is (source, fields); the first
 # group with a usable fact wins, and within a group the larger field wins (size is the longest
 # dimension, so a height taller than the length is used). Wikidata fields are property IDs, as
-# facts.py stores them: P2067 mass, P2043 length, P2048 height, P2052 speed.
+# facts.py stores them: P2067 mass, P2043 length, P2048 height, P2052 speed. The article's
+# infobox rows come first (#522): they are its own summary, quoted word for word, while Wikidata
+# and the trait databases drop the context (sex, age) a figure was given with.
 FACT_GROUPS: dict[StatName, list[tuple[str, tuple[str, ...]]]] = {
     StatName.MASS: [
+        ("infobox", ("mass",)),
         ("wikidata", ("P2067",)),
         ("animaltraits", ("body mass",)),
         ("pantheria", ("5-1_AdultBodyMass_g",)),
     ],
     StatName.SIZE: [
+        ("infobox", ("length", "height")),
         ("wikidata", ("P2043", "P2048")),
         ("pantheria", ("13-1_AdultHeadBodyLen_mm",)),
     ],
-    StatName.SPEED: [("wikidata", ("P2052",))],
+    StatName.SPEED: [("infobox", ("speed",)), ("wikidata", ("P2052",))],
 }
 CONFIDENCE_ORDER = (Confidence.LOW, Confidence.MEDIUM, Confidence.HIGH)
 SOURCE_TITLES = {
+    "infobox": "Wikipedia infobox",
     "wikidata": "Wikidata",
     "animaltraits": "AnimalTraits (Herberstein et al. 2022)",
     "pantheria": "PanTHERIA (Jones et al. 2009)",
@@ -121,12 +126,12 @@ def media_name_for(display_name: str, category: str) -> str:
 # Every fact stored for a fighter.
 def load_facts(connection: sqlite3.Connection, fighter_id: str) -> list[StoredFact]:
     rows = connection.execute(
-        "SELECT source, field, value, unit, reference, license, retrieved_at FROM facts "
+        "SELECT source, field, value, unit, reference, quote, license, retrieved_at FROM facts "
         "WHERE fighter_id = ? ORDER BY fact_id",
         (fighter_id,),
     ).fetchall()
     return [
-        StoredFact(Fact(*row[:5]), license=row[5], retrieved_at=datetime.fromisoformat(row[6]))
+        StoredFact(Fact(*row[:6]), license=row[6], retrieved_at=datetime.fromisoformat(row[7]))
         for row in rows
     ]
 
@@ -176,7 +181,8 @@ def _pick(stat: StatName, facts: list[StoredFact]) -> StatValue | None:
         source=Source(
             title=SOURCE_TITLES.get(fact.source, fact.source),
             url=fact.reference.split(" ")[0],
-            quote=f"{PROPERTIES.get(fact.field, fact.field)}: {fact.value:.15g} {fact.unit}",
+            quote=fact.quote
+            or f"{PROPERTIES.get(fact.field, fact.field)}: {fact.value:.15g} {fact.unit}",
             retrieved_at=chosen.retrieved_at,
             license=chosen.license,
         ),

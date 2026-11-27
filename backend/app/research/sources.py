@@ -181,3 +181,22 @@ def save_raw(kb_dir: Path, fighter_id: str, name: str, document: SourceDocument)
         json.dumps(details, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     return path
+
+
+# A document save_raw stored, read back with its details; None when it was never saved.
+def load_raw(kb_dir: Path, fighter_id: str, name: str) -> SourceDocument | None:
+    folder = kb_dir / fighter_id
+    meta = folder / f"{name}.meta.json"
+    if not meta.is_file():
+        return None
+    details = json.loads(meta.read_text(encoding="utf-8"))
+    extension = "html" if details["media_type"] == "text/html" else "json"
+    return SourceDocument(
+        title=details["title"],
+        url=details["url"],
+        license=details["license"],
+        retrieved_at=datetime.fromisoformat(details["retrieved_at"]),
+        media_type=details["media_type"],
+        body=(folder / f"{name}.{extension}").read_bytes(),
+        pinned=details["pinned"],
+    )

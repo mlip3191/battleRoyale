@@ -31,6 +31,9 @@ class Fact:
     value: float
     unit: str
     reference: str
+    quote: str = ""
+    """The words the fact was read from, when they aren't just its field, value and unit (an
+    infobox row, #522)."""
 
 
 # Read one statement into a fact; None if it has no usable number or a unit we don't know.
@@ -78,7 +81,7 @@ def store_facts(
         )
         connection.executemany(
             "INSERT INTO facts (fighter_id, source, field, value, unit, reference, license, "
-            "retrieved_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "retrieved_at, quote) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 (
                     fighter_id,
@@ -89,6 +92,7 @@ def store_facts(
                     f.reference,
                     license_name,
                     retrieved_at,
+                    f.quote,
                 )
                 for f in facts
             ],
