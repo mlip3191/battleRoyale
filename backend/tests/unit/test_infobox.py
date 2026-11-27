@@ -36,6 +36,15 @@ def read(html: str) -> list[tuple[str, float, str, str]]:
     return [(r.field, r.value, r.unit, r.quote) for r in stat_rows(html)]
 
 
+# An infobox with one row per (label, data cell HTML).
+def table(*rows: tuple[str, str]) -> str:
+    cells = "".join(
+        f'<tr><th class="infobox-label">{label}</th><td class="infobox-data">{data}</td></tr>'
+        for label, data in rows
+    )
+    return f'<table class="infobox"><tbody>{cells}</tbody></table>'
+
+
 def test_a_row_and_its_continuation_take_the_upper_figure_quoted_word_for_word() -> None:
     assert read(DOG) == [
         ("height", 61.0, "cm", "Height: Males 56–61 cm (22–24 in)"),
@@ -62,3 +71,40 @@ def test_machine_rows_use_the_first_unit_the_stat_converts_from() -> None:
 
 def test_a_page_without_an_infobox_gives_nothing() -> None:
     assert stat_rows("<p>The toaster weighs 2 kg.</p>") == []
+
+
+# Felipe's review of #643: "25 kg – 34 kg" read as 25, against the upper-figure rule.
+def test_a_range_with_the_unit_on_both_ends_takes_the_upper_figure() -> None:
+    html = table(("Weight", "25 kg – 34 kg (55–75 lb)"), ("Length", "1.2 m to 1.5 m"))
+    assert read(html) == [
+        ("mass", 34.0, "kg", "Weight: 25 kg – 34 kg (55–75 lb)"),
+        ("length", 1.5, "m", "Length: 1.2 m to 1.5 m"),
+    ]
+
+
+def test_two_measures_in_different_units_are_not_one_range() -> None:
+    assert read(table(("Length", "1.2 m to 150 cm"))) == [
+        ("length", 1.2, "m", "Length: 1.2 m to 150 cm")
+    ]
+
+
+def test_rows_without_a_usable_measure_are_left_out() -> None:
+    html = table(
+        ("Length", "120 m² (1,300 sq ft)"),
+        ("Mass", "30 m"),
+        ("Length", "5 m/s"),
+        ("Top speed", "fast"),
+    )
+    assert read(html) == []
+
+
+# A footnote never runs past its cell, so a tag left open inside one can't swallow later rows.
+def test_a_footnote_with_a_tag_left_open_ends_with_its_cell() -> None:
+    html = table(
+        ("Weight", '25–34 kg<span class="reference"><span>[1]</span>'),
+        ("Height", "56–61 cm"),
+    )
+    assert read(html) == [
+        ("mass", 34.0, "kg", "Weight: 25–34 kg"),
+        ("height", 61.0, "cm", "Height: 56–61 cm"),
+    ]

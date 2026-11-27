@@ -29,13 +29,18 @@ FIELD_STATS = {
     "height": StatName.SIZE,
     "speed": StatName.SPEED,
 }
-# A number, an optional range end ("25-34"), then its unit ("kg", "km/h"), in normalized text.
+# A unit as written: letters, or two such parts joined by "/" ("km/h").
+UNIT = r"[A-Za-z]+(?:/[A-Za-z]+)?"
+# A number, an optional range end ("25-34", "25 kg - 34 kg"), then its unit ("kg", "km/h"), in
+# normalized text.
 MEASURE = re.compile(
-    rf"({NUMBER.pattern})(?:\s*(?:-|to)\s*({NUMBER.pattern}))?(?:\s*|-)([A-Za-z]+(?:/[A-Za-z]+)?)"
+    rf"({NUMBER.pattern})(?:\s*({UNIT})?\s*(?:-|to)\s*({NUMBER.pattern}))?(?:\s*|-)({UNIT})"
 )
 # The same limit extraction puts on a model's quote (extract.MAX_QUOTE_CHARS).
 MAX_QUOTE_CHARS = 300
 FOOTNOTE = re.compile(r"\[[^\]]*\]")
+# End tags a skipped footnote or style can't run past (a footnote sits inside one cell).
+CELL_ENDS = ("td", "th", "tr")
 
 
 @dataclass(frozen=True)
@@ -85,7 +90,11 @@ class _Rows(HTMLParser):
         if self._skip is not None:
             if tag == self._skip[0]:
                 self._skip = None if self._skip[1] == 1 else (tag, self._skip[1] - 1)
-        elif tag == "th":
+                return
+            if tag not in CELL_ENDS:
+                return
+            self._skip = None  # a footnote ends with its cell, even with a tag left open inside
+        if tag == "th":
             self._in_label = False
         elif tag == "td" and self._cell is not None:
             self._cells.append("".join(self._cell))
@@ -127,8 +136,10 @@ def infobox_rows(html: str) -> list[tuple[str, str]]:
 # (docs/research.md prefers the upper figure), with the unit as written.
 def row_measure(text: str, stat: StatName) -> tuple[float, str] | None:
     for match in MEASURE.finditer(normalize_text(text)):
-        written = (match.group(2) or match.group(1)).replace(",", "")
-        value, unit = float(written), match.group(3)
+        low, low_unit, high, unit = match.groups()
+        if high and low_unit and low_unit != unit:
+            high, unit = None, low_unit  # "1.2 m to 150 cm" is two measures: read the first
+        value = float((high or low).replace(",", ""))
         try:
             to_stat_unit(value, unit, stat)
         except UnitError:
