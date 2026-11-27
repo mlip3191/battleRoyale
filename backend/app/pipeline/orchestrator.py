@@ -81,7 +81,7 @@ MISSING_REFERENCES = "No size reference for {names} yet, so both sides fight at 
 ESTIMATED_FIGHTER = "We have no stat sheet for {names}, so its stats are estimates."
 ESTIMATED_FIGHTERS = "We have no stat sheet for {names}, so their stats are estimates."
 # Research note when a fighter's research outlived the battle's wait (#622). The Results page
-# shows a rematch button when the note ends with RESEARCH_REMATCH, so keep that wording in step
+# shows a rematch button when the note contains RESEARCH_REMATCH, so keep that wording in step
 # with REMATCH_PROMISE in frontend/src/components/Verdict.tsx.
 RESEARCH_REMATCH = "A rematch will use sourced stats."
 RESEARCHING_FIGHTER = (
