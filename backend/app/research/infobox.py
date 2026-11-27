@@ -137,14 +137,18 @@ def infobox_rows(html: str) -> list[tuple[str, str]]:
 def row_measure(text: str, stat: StatName) -> tuple[float, str] | None:
     for match in MEASURE.finditer(normalize_text(text)):
         low, low_unit, high, unit = match.groups()
+        # "1.2 m to 150 cm" is two measures, not one range: each is tried in turn.
         if high and low_unit and low_unit != unit:
-            high, unit = None, low_unit  # "1.2 m to 150 cm" is two measures: read the first
-        value = float((high or low).replace(",", ""))
-        try:
-            to_stat_unit(value, unit, stat)
-        except UnitError:
-            continue
-        return value, unit
+            measures = [(low, low_unit), (high, unit)]
+        else:
+            measures = [(high or low, unit)]
+        for written, written_unit in measures:
+            value = float(written.replace(",", ""))
+            try:
+                to_stat_unit(value, written_unit, stat)
+            except UnitError:
+                continue
+            return value, written_unit
     return None
 
 

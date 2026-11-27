@@ -82,9 +82,17 @@ def test_a_range_with_the_unit_on_both_ends_takes_the_upper_figure() -> None:
     ]
 
 
+# The first one the stat converts from is read, so an unusable first unit doesn't hide the second.
 def test_two_measures_in_different_units_are_not_one_range() -> None:
-    assert read(table(("Length", "1.2 m to 150 cm"))) == [
-        ("length", 1.2, "m", "Length: 1.2 m to 150 cm")
+    html = table(
+        ("Length", "1.2 m to 150 cm"),
+        ("Weight", "25 males – 34 kg"),
+        ("Height", "5 m/s to 6 m"),
+    )
+    assert read(html) == [
+        ("length", 1.2, "m", "Length: 1.2 m to 150 cm"),
+        ("mass", 34.0, "kg", "Weight: 25 males – 34 kg"),
+        ("height", 6.0, "m", "Height: 5 m/s to 6 m"),
     ]
 
 
