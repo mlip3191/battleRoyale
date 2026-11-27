@@ -228,7 +228,9 @@ export function ResearchRematchCard({
 
   return (
     <section className={styles.card} aria-labelledby="research-running-title">
-      <h2 id="research-running-title">Research still running</h2>
+      <h2 id="research-running-title">
+        Fought on estimates while research ran
+      </h2>
       <p>{note}</p>
       {failed && (
         <ErrorPanel message="We couldn't book that fight. Check your connection and try again." />

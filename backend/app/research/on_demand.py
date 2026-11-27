@@ -124,10 +124,16 @@ async def researched_or_estimate(
 async def _build(
     estimate: StatSheet, kind: str | None, size_class: str | None, title: str
 ) -> StatSheet | None:
+    started = time.monotonic()
     try:
         sheet = await asyncio.wait_for(_research(estimate, kind, size_class, title), BUILD_LIMIT_S)
-    except TimeoutError:
-        _gave_up(estimate.fighter_id, f"timed out after {BUILD_LIMIT_S:g} s.")
+    except TimeoutError as error:
+        # The build limit, or a TimeoutError from inside the build (the same class since 3.11):
+        # only the limit says "timed out after"; any other keeps its own name and message.
+        if time.monotonic() - started >= BUILD_LIMIT_S:
+            _gave_up(estimate.fighter_id, f"timed out after {BUILD_LIMIT_S:g} s.")
+        else:
+            _gave_up(estimate.fighter_id, f"{type(error).__name__}: {error}")
         sheet = None
     except Exception as error:  # noqa: BLE001 - research is a bonus: any failure means estimates
         _gave_up(estimate.fighter_id, f"{type(error).__name__}: {error}")
@@ -152,7 +158,11 @@ async def _research(
     try:
         apply_migrations(connection)
         async with client:
-            article = await _article(client, title)
+            try:
+                article = await fetch_article(client, title)
+            except (SourceError, httpx.HTTPError) as error:  # a network fix, not a missing page
+                _gave_up(fighter_id, f"couldn't fetch the article for {title!r}: {error}")
+                return None
             if article is None:
                 _gave_up(fighter_id, f"no article for {title!r}.")
                 return None
@@ -206,14 +216,6 @@ async def _store_wikidata_facts(
     facts = wikidata_facts(json.loads(document.body))
     retrieved_at = document.retrieved_at.isoformat()
     store_facts(connection, fighter_id, "wikidata", facts, document.license, retrieved_at)
-
-
-# The fighter's article, or None when there is none or it can't be fetched.
-async def _article(client: httpx.AsyncClient, title: str) -> SourceDocument | None:
-    try:
-        return await fetch_article(client, title)
-    except (SourceError, httpx.HTTPError):
-        return None
 
 
 # The article's HTML as text.

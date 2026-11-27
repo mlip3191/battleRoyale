@@ -611,7 +611,9 @@ const withResearchNote = (detail: string): BattleRecord => ({
 
 test("research still running: the note and a Rematch button that runs the same matchup", async () => {
   show(withResearchNote(STILL_RUNNING));
-  const card = screen.getByRole("region", { name: "Research still running" });
+  const card = screen.getByRole("region", {
+    name: "Fought on estimates while research ran",
+  });
   expect(card.textContent).toContain(STILL_RUNNING);
   fireEvent.click(within(card).getByRole("button", { name: "Rematch" }));
   expect(api.createBattle).toHaveBeenCalledWith(record.matchup);
@@ -625,7 +627,9 @@ test("no rematch card for a plain estimate note or a finished research stage", (
     ),
   );
   expect(
-    screen.queryByRole("region", { name: "Research still running" }),
+    screen.queryByRole("region", {
+      name: "Fought on estimates while research ran",
+    }),
   ).toBeNull();
   cleanup();
   show(record);

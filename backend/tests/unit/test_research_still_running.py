@@ -20,6 +20,7 @@ from app.pipeline import orchestrator, stages
 from app.pipeline.orchestrator import ESTIMATED_FIGHTER, RESEARCHING_FIGHTER, RESEARCHING_FIGHTERS
 from app.research import on_demand
 from app.research.estimate_sheet import estimate_sheet
+from app.research.sources import SourceError
 from tests.conftest import mock_settings
 from tests.unit.test_estimate_sheet import battle, matchup, research_stage
 from tests.unit.test_on_demand_research import MOOSE, OSTRICH, go_live, quoted_mass, stub_research
@@ -129,6 +130,23 @@ async def test_no_article_is_logged(monkeypatch, caplog) -> None:
     assert reasons(caplog) == ["On-demand research for ostrich gave up: no article for 'ostrich'."]
 
 
+async def test_an_unreachable_wikipedia_is_not_called_a_missing_article(
+    monkeypatch, caplog
+) -> None:
+    stub_research(monkeypatch)
+
+    async def unreachable(client, title):
+        raise SourceError("Wikipedia did not answer", status=503)
+
+    monkeypatch.setattr(on_demand, "fetch_article", unreachable)
+    caplog.set_level(logging.INFO, logger=LOGGER)
+    assert await on_demand._research(OSTRICH, "real_animal", "medium", "ostrich") is None
+    assert reasons(caplog) == [
+        "On-demand research for ostrich gave up: "
+        "couldn't fetch the article for 'ostrich': Wikipedia did not answer"
+    ]
+
+
 async def test_an_article_with_no_animal_taxobox_is_logged(monkeypatch, caplog) -> None:
     stub_research(monkeypatch, article="<p>Ostrich may refer to: a band</p>")
     caplog.set_level(logging.INFO, logger=LOGGER)
@@ -165,6 +183,18 @@ async def test_a_build_that_times_out_says_so(monkeypatch, caplog) -> None:
     caplog.set_level(logging.INFO, logger=LOGGER)
     assert await on_demand._build(MOOSE, "real_animal", "large", "moose") is None
     assert reasons(caplog) == ["On-demand research for moose gave up: timed out after 0.05 s."]
+
+
+async def test_a_timeout_inside_the_build_keeps_its_own_message(monkeypatch, caplog) -> None:
+    async def research(*args):
+        raise TimeoutError("the chat model took too long")
+
+    monkeypatch.setattr(on_demand, "_research", research)
+    caplog.set_level(logging.INFO, logger=LOGGER)
+    assert await on_demand._build(MOOSE, "real_animal", "large", "moose") is None
+    assert reasons(caplog) == [
+        "On-demand research for moose gave up: TimeoutError: the chat model took too long"
+    ]
 
 
 async def test_a_build_that_breaks_names_the_error(monkeypatch, caplog) -> None:
