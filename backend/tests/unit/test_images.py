@@ -89,6 +89,15 @@ async def test_a_brand_media_name_falls_back_without_calling_the_provider(
     assert asset.fallback and asset.url == "" and fake.calls == []
 
 
+# D-69 fighters (military units, weapons, gods of myth) are drawn without insignia, flags or gore,
+# in a new style version so no picture drawn without those words is reused (#529).
+def test_the_negative_prompt_keeps_insignia_flags_and_gore_out() -> None:
+    words = {word.strip() for word in style.NEGATIVE_PROMPT.split(",")}
+    assert {"insignia", "flag", "badge", "blood", "gore"} <= words
+    assert {"text", "letters", "watermark", "logo"} <= words  # the v1 words stay
+    assert style.STYLE_VERSION == "v2"
+
+
 # Gods of mythology and military units may fight (D-69), so they keep real art (#529).
 @pytest.mark.parametrize("media_name", ["thor", "zeus", "odin", "navy seal", "green beret"])
 def test_myth_gods_and_military_units_are_not_brands(media_name: str) -> None:

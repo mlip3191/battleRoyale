@@ -9,11 +9,14 @@ the hand test, and there was no reason to pin other values. If the server's defa
 pin them here (and bump STYLE_VERSION).
 """
 
-STYLE_VERSION = "v1"
+STYLE_VERSION = "v2"  # v2: insignia, flags and gore kept out of D-69 fighters' pictures (#529)
 SEED = 1234
 SPRITE_SIZE = (512, 512)  # width, height; multiples of 16
 BATTLEFIELD_SIZE = (768, 432)
-NEGATIVE_PROMPT = "text, letters, watermark, logo, signature, frame, multiple characters"
+NEGATIVE_PROMPT = (
+    "text, letters, watermark, logo, signature, frame, multiple characters, "
+    "insignia, flag, badge, blood, gore"
+)
 
 # {article} is "a" or "an"; {subject} is the media_name plus plain-word lore phrases.
 SPRITE_TEMPLATE = (
