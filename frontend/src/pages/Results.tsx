@@ -14,6 +14,8 @@ import WhyItWon from "../components/WhyItWon.tsx";
 import {
   FairFightCard,
   NextChallengerCard,
+  ResearchRematchCard,
+  researchStillRunning,
   sideName,
   VerdictBanner,
   winnerOf,
@@ -35,6 +37,9 @@ export default function Results() {
   const waiting = !error && (!battle || battle.status === "running");
   // Only a fight with a winner has a champ for the next challenger to face.
   const winner = result ? winnerOf(result) : null;
+  // A fighter fought on estimates while its research ran on: offer the rematch (#622).
+  const stillResearching =
+    battle?.status === "done" ? researchStillRunning(battle.stages) : null;
 
   return (
     <main id={MAIN_ID} tabIndex={-1}>
@@ -52,6 +57,10 @@ export default function Results() {
       )}
       <LoadingTicker message={waiting ? "Tallying the scorecards…" : ""} />
       {result && <VerdictBanner result={result} names={names} />}
+      {/* Right under the verdict it qualifies: these stats were estimates this time (#622). */}
+      {stillResearching && battle && (
+        <ResearchRematchCard note={stillResearching} matchup={battle.matchup} />
+      )}
       {battle?.status === "done" && !result && (
         <ErrorPanel
           title="No verdict"

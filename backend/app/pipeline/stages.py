@@ -31,7 +31,7 @@ from app.narration.templates import template_scripts
 from app.pipeline import challenger as next_challenger
 from app.providers.registry import get_provider
 from app.research.estimate_sheet import estimate_sheet
-from app.research.on_demand import researched_or_estimate
+from app.research.on_demand import research_running, researched_or_estimate
 from app.research.seed_fighters import fighter_slug, find_seed_fighter
 from app.research.sheet_store import (
     not_a_legend_flies,
@@ -129,6 +129,9 @@ class Research:
     """size_reference names with no sheet yet; those sides fight at their normal size."""
     estimated: list[str] = field(default_factory=list)
     """Fighters (as typed) with no sheet at all; they fight on all-estimate sheets (#345)."""
+    researching: list[str] = field(default_factory=list)
+    """Fighters on estimates whose research is still running, so a rematch gets sourced stats
+    (#622). A name here is not also in `estimated`."""
 
 
 # Find one fighter's stat sheet (G04): seed sheet, cached sheet, or one built and cached now.
@@ -207,11 +210,12 @@ async def research(matchup: Matchup) -> Research:
     )
     looked_up = cast(list[tuple[StatSheet, bool]], list(found[: len(fighters)]))
     sheets = [sheet for sheet, _ in looked_up]
-    estimated = [
-        _typed_name(f.entity, f.variant)
-        for f, (_, is_estimate) in zip(fighters, looked_up, strict=True)
-        if is_estimate
-    ]
+    estimated: list[str] = []
+    researching: list[str] = []
+    for f, (sheet, is_estimate) in zip(fighters, looked_up, strict=True):
+        if is_estimate:
+            running = research_running(sheet.fighter_id)  # its build outlived the wait (#622)
+            (researching if running else estimated).append(_typed_name(f.entity, f.variant))
     found_refs = iter(found[len(fighters) :])
     reference_sheets: list[StatSheet | None] = []
     missing: list[str] = []
@@ -223,7 +227,7 @@ async def research(matchup: Matchup) -> Research:
         reference_sheets.append(sheet)
         if sheet is None:
             missing.append(ref)
-    return Research(sheets, reference_sheets, missing, estimated)
+    return Research(sheets, reference_sheets, missing, estimated, researching)
 
 
 # The matchup the engine sees: a size swap whose reference has no sheet fights at normal size.
