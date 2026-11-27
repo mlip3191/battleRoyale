@@ -7,6 +7,7 @@ import {
   type FairFight,
   type Matchup,
   type SimulationResult,
+  type StageStatus,
   type StatSheet,
 } from "../api/client.ts";
 import { ErrorPanel, srOnly } from "./Broadcast.tsx";
@@ -186,6 +187,63 @@ export function FairFightCard({
           {chance !== null && `: ${pct(chance)} win chance`}.
         </p>
       )}
+    </section>
+  );
+}
+
+// The promise that ends the research note when a fighter's research outlived the battle's wait
+// (#622). Keep it in step with RESEARCH_REMATCH in backend/app/pipeline/orchestrator.py.
+export const REMATCH_PROMISE = "A rematch will use sourced stats.";
+
+// The research note when research was still running, so a rematch is worth offering; else null.
+export const researchStillRunning = (stages: readonly StageStatus[]) => {
+  const research = stages.find((s) => s.stage === "research");
+  const note = research?.status === "fallback" ? (research.detail ?? "") : "";
+  return note.includes(REMATCH_PROMISE) ? note : null;
+};
+
+// The research note and a button that runs the same matchup again, on the sheet research has
+// since cached (the repeat-battle cache key includes each sheet's hash, so it's a fresh fight).
+export function ResearchRematchCard({
+  note,
+  matchup,
+}: {
+  note: string;
+  matchup: Matchup;
+}) {
+  const [starting, setStarting] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const navigate = useNavigate();
+
+  const fight = () => {
+    setStarting(true);
+    setFailed(false);
+    createBattle(matchup)
+      .then(({ battle_id }) => navigate(`/battle/${battle_id}`))
+      .catch(() => {
+        setStarting(false);
+        setFailed(true);
+      });
+  };
+
+  return (
+    <section className={styles.card} aria-labelledby="research-running-title">
+      <h2 id="research-running-title">Research still running</h2>
+      <p>{note}</p>
+      {failed && (
+        <ErrorPanel message="We couldn't book that fight. Check your connection and try again." />
+      )}
+      <button
+        type="button"
+        className={styles.fight}
+        onClick={fight}
+        disabled={starting}
+      >
+        {starting ? "Ringing the bell…" : "Rematch"}
+      </button>
+      <p role="status" aria-live="polite" className={srOnly}>
+        {starting ? "Ringing the bell… booking the rematch." : ""}
+      </p>
     </section>
   );
 }

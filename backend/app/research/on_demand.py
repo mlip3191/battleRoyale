@@ -14,7 +14,9 @@ one sourced stat is cached, so later battles reuse it.
 The battle waits at most ON_DEMAND_RESEARCH_S, and never past the research stage's deadline
 (the legend lookup before it can use most of the stage). If the build takes longer, the battle
 fights on the estimate and the build carries on in the background, so the next battle gets the
-researched sheet. A name that gave no sourced stat is not tried again for
+researched sheet; research_running tells that battle's research note to say so and offer a
+rematch (#622). Every way a build ends with nothing logs one line saying why. A name that gave no
+sourced stat is not tried again for
 NOTHING_FOUND_MEMORY_S, and an article without an animal taxobox gives nothing, so a name that
 lands on an unrelated page never lends it its numbers. Researched sheets had no safety check of
 their own, so like legends they are never listed in fighter search or offered as the next
@@ -124,8 +126,11 @@ async def _build(
 ) -> StatSheet | None:
     try:
         sheet = await asyncio.wait_for(_research(estimate, kind, size_class, title), BUILD_LIMIT_S)
+    except TimeoutError:
+        _gave_up(estimate.fighter_id, f"timed out after {BUILD_LIMIT_S:g} s.")
+        sheet = None
     except Exception as error:  # noqa: BLE001 - research is a bonus: any failure means estimates
-        logger.warning("On-demand research for %s failed: %s", estimate.fighter_id, error)
+        _gave_up(estimate.fighter_id, f"{type(error).__name__}: {error}")
         sheet = None
     if sheet is None or all(value.is_estimate for value in sheet.stats.values()):
         _remember_nothing_found(estimate.fighter_id)
@@ -138,16 +143,22 @@ async def _build(
 async def _research(
     estimate: StatSheet, kind: str | None, size_class: str | None, title: str
 ) -> StatSheet | None:
+    fighter_id = estimate.fighter_id
     client = legend_client()
     if client is None:
+        _gave_up(fighter_id, "no web client.")
         return None
     connection = connect()
     try:
         apply_migrations(connection)
         async with client:
             article = await _article(client, title)
-            animal_kind = None if article is None else kind_from_taxobox(_html(article))
+            if article is None:
+                _gave_up(fighter_id, f"no article for {title!r}.")
+                return None
+            animal_kind = kind_from_taxobox(_html(article))
             if animal_kind is None:
+                _gave_up(fighter_id, "the article has no animal taxobox.")
                 return None
             await _store_wikidata_facts(connection, client, estimate.fighter_id, title)
             await ingest_on_demand(  # the same download, not a second fetch (#535)
@@ -173,6 +184,7 @@ async def _research(
         built = await build_sheet_with_evidence(connection, providers, profile_of(base))
         sheet = merged(base, built)
         if sheet is None:
+            _gave_up(fighter_id, "no stat in the article could be sourced.")
             return base if base is not estimate else None  # a better kind, nothing sourced
         save_sheet(connection, sheet)
         return sheet
@@ -260,6 +272,17 @@ def _inputs_sourced(stat: StatName, sourced: dict[StatName, StatValue]) -> bool:
     if stat == StatName.REACH:
         return StatName.SIZE in sourced
     return StatName.MASS in sourced and StatName.SPEED in sourced
+
+
+# True while this fighter's build is still running after its battle stopped waiting (#622).
+def research_running(fighter_id: str) -> bool:
+    build = _BUILDS.get(fighter_id)
+    return build is not None and not build.done()
+
+
+# One log line saying why a build ends with nothing to cache, so no give-up is silent (#622).
+def _gave_up(fighter_id: str, reason: str) -> None:
+    logger.warning("On-demand research for %s gave up: %s", fighter_id, reason)
 
 
 # True when this fighter's research found nothing within the last NOTHING_FOUND_MEMORY_S.

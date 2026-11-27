@@ -80,6 +80,16 @@ MISSING_REFERENCES = "No size reference for {names} yet, so both sides fight at 
 # Research note when a fighter has no sheet and fights on code estimates (#345).
 ESTIMATED_FIGHTER = "We have no stat sheet for {names}, so its stats are estimates."
 ESTIMATED_FIGHTERS = "We have no stat sheet for {names}, so their stats are estimates."
+# Research note when a fighter's research outlived the battle's wait (#622). The Results page
+# shows a rematch button when the note ends with RESEARCH_REMATCH, so keep that wording in step
+# with REMATCH_PROMISE in frontend/src/components/Verdict.tsx.
+RESEARCH_REMATCH = "A rematch will use sourced stats."
+RESEARCHING_FIGHTER = (
+    "Research on {names} is still running, so its stats here are estimates. " + RESEARCH_REMATCH
+)
+RESEARCHING_FIGHTERS = (
+    "Research on {names} is still running, so their stats here are estimates. " + RESEARCH_REMATCH
+)
 
 # Running battles; holding a reference keeps a task from being garbage-collected mid-fight.
 _tasks: set[asyncio.Task[None]] = set()
@@ -113,7 +123,7 @@ async def run_battle(battle_id: str, store: BattleStore) -> None:
         await store.set_stage(battle_id, stage, "running", _looking_up(matchup))
         found = await _required(stage, lambda: stages.research(matchup), RESEARCH_FAILED)
         await store.update(battle_id, stat_sheets=found.sheets)
-        if found.estimated or found.missing_references:
+        if found.estimated or found.researching or found.missing_references:
             await store.set_stage(battle_id, stage, "fallback", _research_note(found))
         else:
             await store.set_stage(battle_id, stage, "done")
@@ -334,9 +344,12 @@ async def _settle_unfinished(battle_id: str, store: BattleStore, reason: str) ->
             await store.set_stage(battle_id, change.stage, "fallback", reason)
 
 
-# The research "fallback" note: estimated fighters first, then missing size references.
+# The research "fallback" note: fighters still being researched, then estimated fighters, then
+# missing size references.
 def _research_note(found: Research) -> str:
     notes = []
+    if found.researching:
+        notes.append(_names_note(found.researching, RESEARCHING_FIGHTER, RESEARCHING_FIGHTERS))
     if found.estimated:
         notes.append(_estimated_note(found.estimated))
     if found.missing_references:
@@ -346,8 +359,13 @@ def _research_note(found: Research) -> str:
 
 # The research note naming each fighter that fights on estimates, e.g. 'wolverine'.
 def _estimated_note(names: list[str]) -> str:
+    return _names_note(names, ESTIMATED_FIGHTER, ESTIMATED_FIGHTERS)
+
+
+# A note naming each fighter once ('moose' and 'warthog'), with the one- or two-name wording.
+def _names_note(names: list[str], one: str, two: str) -> str:
     unique = list(dict.fromkeys(names))  # at most two sides; the same name twice is one sheet
-    template = ESTIMATED_FIGHTER if len(unique) == 1 else ESTIMATED_FIGHTERS
+    template = one if len(unique) == 1 else two
     return template.format(names=" and ".join(repr(name) for name in unique))
 
 

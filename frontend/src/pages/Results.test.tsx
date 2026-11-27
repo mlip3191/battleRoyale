@@ -595,3 +595,49 @@ test("a draw has no winner, so no reasons card (#582)", () => {
   show(draw);
   expect(screen.queryByRole("region", { name: /in plain words/ })).toBeNull();
 });
+
+// #622: a fighter whose research outlived the battle's wait fought on estimates. The research
+// note says so, and a one-click rematch runs the same matchup again on the sourced sheet.
+const STILL_RUNNING =
+  "Research on 'moose' is still running, so its stats here are estimates. A rematch will use sourced stats.";
+
+// The done record with the research stage ended "fallback" and the given note.
+const withResearchNote = (detail: string): BattleRecord => ({
+  ...record,
+  stages: record.stages.map((s) =>
+    s.stage === "research" ? { ...s, status: "fallback" as const, detail } : s,
+  ),
+});
+
+test("research still running: the note and a Rematch button that runs the same matchup", async () => {
+  show(withResearchNote(STILL_RUNNING));
+  const card = screen.getByRole("region", { name: "Research still running" });
+  expect(card.textContent).toContain(STILL_RUNNING);
+  fireEvent.click(within(card).getByRole("button", { name: "Rematch" }));
+  expect(api.createBattle).toHaveBeenCalledWith(record.matchup);
+  await waitFor(() => expect(screen.getByText("Broadcast page")).toBeTruthy());
+});
+
+test("no rematch card for a plain estimate note or a finished research stage", () => {
+  show(
+    withResearchNote(
+      "We have no stat sheet for 'wolverine', so its stats are estimates.",
+    ),
+  );
+  expect(
+    screen.queryByRole("region", { name: "Research still running" }),
+  ).toBeNull();
+  cleanup();
+  show(record);
+  expect(screen.queryByRole("button", { name: "Rematch" })).toBeNull();
+});
+
+test("a rematch that can't be booked keeps the card and says so", async () => {
+  api.createBattle.mockRejectedValue(new Error("offline"));
+  show(withResearchNote(STILL_RUNNING));
+  fireEvent.click(screen.getByRole("button", { name: "Rematch" }));
+  await waitFor(() =>
+    expect(screen.getByText(/couldn't book that fight/)).toBeTruthy(),
+  );
+  expect(screen.getByRole("button", { name: "Rematch" })).toBeTruthy();
+});
